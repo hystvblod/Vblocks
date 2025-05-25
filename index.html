@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Vblocks - Accueil</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      font-family: sans-serif;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #fond {
+      max-width: 100%;
+      max-height: 100%;
+      height: auto;
+      width: auto;
+      display: block;
+    }
+
+    .zone {
+      position: absolute;
+      z-index: 10;
+      cursor: pointer;
+    }
+
+    .info {
+      position: absolute;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      z-index: 11;
+      cursor: pointer;
+    }
+
+    .tooltip-box {
+      position: absolute;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: none;
+      font-size: 0.9em;
+      max-width: 220px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img id="fond" src="themes/menu-vblocks.png" alt="menu">
+
+    <a href="classic/classic.html" class="zone" id="classic"></a>
+    <a href="infini/infini.html" class="zone" id="infini"></a>
+    <a href="challenge/challenge.html" class="zone" id="challenge"></a>
+
+    <div class="info" id="info1"></div>
+    <div class="info" id="info2"></div>
+    <div class="info" id="info3"></div>
+
+    <div class="tooltip-box" id="tip1">🎮 Mode classique avec montée de vitesse progressive</div>
+    <div class="tooltip-box" id="tip2">🧘 Mode relax sans fin, sans accélération</div>
+    <div class="tooltip-box" id="tip3">🏆 Missions spéciales avec objectifs</div>
+  </div>
+
+  <script>
+    const fond = document.getElementById("fond");
+
+    const zones = {
+      classic:   { top: 0.40, left: 0.20, width: 0.62, height: 0.087 },
+      infini:    { top: 0.54, left: 0.20, width: 0.62, height: 0.087 },
+      challenge: { top: 0.69, left: 0.20, width: 0.62, height: 0.087 },
+    };
+
+    const infos = {
+      info1: { top: 0.43, left: 0.73 },
+      info2: { top: 0.575, left: 0.73 },
+      info3: { top: 0.72, left: 0.73 },
+    };
+
+    function positionElements() {
+      const fondRect = fond.getBoundingClientRect();
+
+      for (let id in zones) {
+        const el = document.getElementById(id);
+        const z = zones[id];
+        el.style.top = (fondRect.top + z.top * fondRect.height) + "px";
+        el.style.left = (fondRect.left + z.left * fondRect.width) + "px";
+        el.style.width = (z.width * fondRect.width) + "px";
+        el.style.height = (z.height * fondRect.height) + "px";
+      }
+
+      for (let id in infos) {
+        const el = document.getElementById(id);
+        const z = infos[id];
+        el.style.top = (fondRect.top + z.top * fondRect.height) + "px";
+        el.style.left = (fondRect.left + z.left * fondRect.width) + "px";
+      }
+    }
+
+    fond.onload = positionElements;
+    window.addEventListener('resize', positionElements);
+
+    for (let i = 1; i <= 3; i++) {
+      const el = document.getElementById("info" + i);
+      el.addEventListener("click", function (e) {
+        e.stopPropagation();
+        document.querySelectorAll('.tooltip-box').forEach(t => t.style.display = 'none');
+        const tip = document.getElementById("tip" + i);
+        if (tip) {
+          tip.style.top = el.style.top;
+          tip.style.left = parseFloat(el.style.left) - 230 + "px";
+          tip.style.display = 'block';
+        }
+      });
+    }
+
+    document.addEventListener("click", () => {
+      document.querySelectorAll('.tooltip-box').forEach(t => t.style.display = 'none');
+    });
+  </script>
+</body>
+</html>

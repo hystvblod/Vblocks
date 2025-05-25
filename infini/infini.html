@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>V-Blocks - Infini</title>
+
+  <link rel="stylesheet" href="../themes/nature.css" id="theme-style">
+  <style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+    body {
+      padding: 10px;
+    }
+
+    #game-container {
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+
+    @media (max-width: 768px) {
+      #game-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+
+      #holdCanvas, #nextCanvas {
+        width: 80px !important;
+        height: 80px !important;
+      }
+
+      #score, #highscore {
+        font-size: 18px;
+      }
+
+      button {
+        font-size: 14px;
+        padding: 6px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1 class="logo">
+    <img src="../themes/logo-vblocks.png" alt="Logo V-Blocks" style="height: 90px; vertical-align: middle; margin-right: 10px;">
+    V-Blocks Infini
+  </h1>
+
+  <div id="game-container">
+    <div class="side-panel">
+      <p>Réserve</p>
+      <canvas id="holdCanvas" width="120" height="120"></canvas>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="side-panel">
+      <p>Suivante</p>
+      <canvas id="nextCanvas" width="120" height="120"></canvas>
+    </div>
+  </div>
+
+  <div id="score">Score : 0</div>
+  <div id="highscore">Record : 0</div>
+
+  <div id="controls">
+    <button id="music-btn">🔊 Musique</button>
+    <button onclick="location.reload()">🔁 Rejouer</button>
+  </div>
+
+  <div id="options">
+    <button onclick="changeTheme('nuit')">🌙 Nuit</button>
+    <button onclick="changeTheme('neon')">💡 Néon</button>
+    <button onclick="changeTheme('nature')">🌿 Nature</button>
+    <button onclick="changeTheme('bubble')">🫧 Bubble</button>
+    <button onclick="changeTheme('retro')">🕹️ Retro</button>
+  </div>
+
+  <audio id="music" src="../assets/sounds/chill.mp3" loop></audio>
+  <script src="game_infini.js"></script>
+
+  <script>
+    const themes = {
+      nuit:   { css: "nuit.css" },
+      neon:   { css: "neon.css" },
+      nature: { css: "nature.css" },
+      bubble: { css: "bubble.css" },
+      retro:  { css: "retro.css" }
+    };
+
+    function changeTheme(name) {
+      const theme = themes[name];
+      if (!theme) return;
+      document.getElementById("theme-style").href = "../themes/" + theme.css;
+      if (typeof loadBlockImages === "function") {
+        loadBlockImages(name);
+      }
+    }
+
+    const music = document.getElementById("music");
+    const musicBtn = document.getElementById("music-btn");
+
+    musicBtn.onclick = () => {
+      if (music.paused) {
+        music.play();
+        musicBtn.textContent = "🔊 Musique";
+      } else {
+        music.pause();
+        musicBtn.textContent = "🔇 Muet";
+      }
+    };
+  </script>
+</body>
+</html>

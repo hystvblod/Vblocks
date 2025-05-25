@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>V-Blocks Challenge</title>
+  <link rel="stylesheet" href="../themes/nature.css" id="theme-style">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: var(--canvas-bg, #000);
+      font-family: 'Orbitron', sans-serif;
+      overflow: hidden;
+    }
+    #game-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      gap: 20px;
+    }
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .button-top {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    #pause-button, #settings-button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    canvas {
+      background: var(--canvas-bg, #000);
+      border: 2px solid #fff;
+    }
+    .infos-box {
+      text-align: center;
+      font-size: 14px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 5px;
+      width: 120px;
+    }
+    .popup-menu {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .pause-box button {
+      margin: 5px 0;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">
+    <img src="../themes/logo-vblocks.png" alt="Logo V-Blocks" style="height: 80px;">
+  </div>
+
+  <div class="button-top">
+    <button id="pause-button">⏸️</button>
+  </div>
+
+  <h1 style="text-align: center; margin-top: 5px;">V-Blocks Challenge</h1>
+
+  <div class="button-top">
+    <button id="settings-button">⚙️</button>
+  </div>
+
+  <div id="game-container">
+    <div class="side-panel">
+      <p>Réserve</p>
+      <canvas id="holdCanvas" width="120" height="120"></canvas>
+      <div class="infos-box">
+        <div id="timer">Temps restant : 60s</div>
+        <div id="niveau">Niveau : 1</div>
+        <div id="objectif">Objectif : 500 pts</div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="300" height="600"></canvas>
+
+    <div class="side-panel">
+      <p>Suivante</p>
+      <canvas id="nextCanvas" width="120" height="120"></canvas>
+      <div class="infos-box">
+        <div id="score">Score : 0</div>
+        <div id="highscore">Record : 0</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pause-menu" class="popup-menu">
+    <div class="pause-box">
+      <p>Pause</p>
+      <button id="resume-button">Reprendre</button>
+      <button id="menu-button">Menu principal</button>
+    </div>
+  </div>
+
+  <div id="settings-menu" class="popup-menu">
+    <div class="pause-box">
+      <p>Paramètres</p>
+      <button id="mute-button">Mute Musique</button>
+      <button id="theme-button">Changer Thème</button>
+      <button id="close-settings-button">Fermer</button>
+    </div>
+  </div>
+
+  <div id="theme-menu" class="popup-menu">
+    <div class="pause-box">
+      <p>🎨 Choisir un Thème</p>
+      <button class="theme-select-button" data-theme="nature">Nature</button>
+      <button class="theme-select-button" data-theme="bubble">Bubble</button>
+      <button class="theme-select-button" data-theme="retro">Retro</button>
+      <button class="theme-select-button" data-theme="neon">Neon</button>
+      <button class="theme-select-button" data-theme="nuit">Nuit</button>
+      <button id="back-theme-button">Retour</button>
+    </div>
+  </div>
+
+  <audio id="music" src="../assets/sounds/chill.mp3" loop></audio>
+
+  <script src="game_challenge.js"></script>
+  <script src="../scripts/pause.js"></script>
+  <script src="../scripts/settings.js"></script>
+</body>
+</html>
