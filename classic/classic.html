@@ -2,89 +2,49 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V-Blocks - Classique</title>
-  <link id="theme-style" rel="stylesheet" href="../themes/nature.css" />
-
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100vh;
-      box-sizing: border-box;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VFind – Mode Classique</title>
+  <link rel="stylesheet" href="style/main.css" />
 </head>
-
 <body>
-  <h1 class="logo">
-    <img src="../assets/logo.png" alt="Logo" style="height: 60px; vertical-align: middle;" />
-    <span style="font-size: 32px; font-weight: bold;">V-Blocks</span>
-  </h1>
-
-  <div id="game-container">
-    <div class="side-panel">
-      <p>Réserve</p>
-      <canvas id="holdCanvas" width="120" height="120"></canvas>
+  <div class="solo-container">
+    <div class="solo-header">
+      <a href="index.html" class="btn-icon" title="Accueil">
+        <img src="assets/icons/arrow_back.svg" alt="Accueil" width="28" height="28"/>
+      </a>
+      <h1>Mode Classique</h1>
+      <a href="parametres.html" class="btn-icon" title="Paramètres">
+        <img src="assets/icons/settings.svg" alt="Paramètres" width="28" height="28"/>
+      </a>
     </div>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <div class="side-panel">
-      <p>Suivante</p>
-      <canvas id="nextCanvas" width="120" height="120"></canvas>
+    <div class="solo-solde-bar">
+      <div class="solde-block">
+        <img src="assets/img/vcoin.webp" class="icon-solo-piece" alt="pièces"/>
+        <span id="classic-pieces">123</span>
+      </div>
+      <div class="solde-block">
+        <img src="assets/img/jeton_p.webp" class="icon-solo-jeton" alt="jetons"/>
+        <span id="classic-jetons">6</span>
+      </div>
     </div>
+    <div class="solo-defi-card">
+      <div class="solo-defi-titre">Défi du jour</div>
+      <div class="solo-defi-texte" id="classic-defi-texte">
+        Trouve et prends en photo un objet bleu !
+      </div>
+      <div class="solo-defi-photo" id="classic-defi-photo">
+        <!-- Prévisualisation photo ici -->
+      </div>
+      <div class="solo-btn-row">
+        <button class="solo-btn-action" onclick="ouvrirCameraClassic()">📸 Prendre la photo</button>
+        <button class="solo-btn-action" onclick="changerDefiClassic()">🔄 Changer de défi</button>
+      </div>
+    </div>
+    <footer>
+      &copy; 2025 VFind – Tous droits réservés
+    </footer>
   </div>
-
-  <div id="score">Score : 0</div>
-  <div id="highscore">Record : 0</div>
-
-  <div id="controls">
-    <button id="music-btn">🔊 Musique</button>
-    <button onclick="location.reload()">🔁 Rejouer</button>
-  </div>
-
-  <div id="options">
-    <button onclick="changeTheme('nuit')">🌙 Nuit</button>
-    <button onclick="changeTheme('neon')">💡 Néon</button>
-    <button onclick="changeTheme('nature')">🌿 Nature</button>
-    <button onclick="changeTheme('bubble')">🫧 Bubble</button>
-    <button onclick="changeTheme('retro')">🕹️ Retro</button>
-  </div>
-
-  <audio id="music" src="../assets/sounds/chill.mp3" loop></audio>
-  <script src="game_classic.js"></script>
-
-  <script>
-    const themes = {
-      nuit: "nuit.css",
-      neon: "neon.css",
-      nature: "nature.css",
-      bubble: "bubble.css",
-      retro: "retro.css"
-    };
-
-    function changeTheme(name) {
-      const link = document.getElementById("theme-style");
-      if (themes[name]) {
-        link.href = "../themes/" + themes[name];
-        if (typeof loadBlockImages === "function") loadBlockImages(name);
-      }
-    }
-
-    const music = document.getElementById("music");
-    const musicBtn = document.getElementById("music-btn");
-
-    musicBtn.onclick = () => {
-      if (music.paused) {
-        music.play();
-        musicBtn.textContent = "🔊 Musique";
-      } else {
-        music.pause();
-        musicBtn.textContent = "🔇 Muet";
-      }
-    };
-  </script>
+  <!-- Script du mode classique -->
+  <script type="module" src="js/classic.js"></script>
 </body>
 </html>

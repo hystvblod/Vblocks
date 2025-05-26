@@ -1,136 +1,117 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Vblocks - Accueil</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VFind – Accueil</title>
+  <link rel="stylesheet" href="style/main.css" />
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-      font-family: sans-serif;
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-    }
-
-    .container {
-      position: relative;
+    /* Patchs rapides pour accueil responsive si besoin (provisoire, sinon tout passe dans main.css) */
+    .index-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      background: #313142;
+      padding-bottom: 40px;
       width: 100vw;
-      height: 100vh;
+      max-width: 100vw;
+      box-sizing: border-box;
+    }
+    .main-logo {
+      max-width: 220px;
+      width: 65vw;
+      margin: 32px auto 14px auto;
+      display: block;
+    }
+    .main-title {
+      font-size: 2.3rem;
+      font-weight: bold;
+      color: #FFD700;
+      margin: 0 0 16px 0;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    .main-buttons {
+      width: 100%;
+      max-width: 360px;
+      margin: 20px auto 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .main-button {
+      background-color: #FFD700;
+      color: #222239;
+      font-weight: bold;
+      padding: 1.1rem 1rem;
+      font-size: 1.18rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 14px #0003;
+      cursor: pointer;
+      transition: transform 0.18s, background 0.18s;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 100%;
+      border: none;
+      margin: 0;
+      text-decoration: none;
     }
-
-    #fond {
-      max-width: 100%;
-      max-height: 100%;
-      height: auto;
-      width: auto;
-      display: block;
+    .main-button:hover {
+      background: #fff7a8;
+      transform: scale(1.03);
     }
-
-    .zone {
-      position: absolute;
-      z-index: 10;
-      cursor: pointer;
+    footer {
+      width: 100%;
+      text-align: center;
+      color: #babada;
+      font-size: 1rem;
+      margin-top: auto;
+      padding: 22px 0 10px 0;
+      letter-spacing: 1px;
+      background: none;
+      border-top: 1px solid #2c2c4a33;
     }
-
-    .info {
-      position: absolute;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      z-index: 11;
-      cursor: pointer;
+    @media (max-width: 600px) {
+      .main-title {
+        font-size: 1.45rem;
+      }
+      .main-logo {
+        max-width: 140px;
+        width: 90vw;
+      }
+      .main-buttons {
+        max-width: 97vw;
+      }
+      .main-button {
+        font-size: 1rem;
+        padding: 1rem 0.5rem;
+      }
     }
-
-    .tooltip-box {
-      position: absolute;
-      background: white;
-      padding: 8px 12px;
-      border-radius: 8px;
-      display: none;
-      font-size: 0.9em;
-      max-width: 220px;
-      z-index: 100;
+    @media (max-width: 400px) {
+      .main-title {
+        font-size: 1.07rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <img id="fond" src="themes/menu-vblocks.png" alt="menu">
-
-    <a href="classic/classic.html" class="zone" id="classic"></a>
-    <a href="infini/infini.html" class="zone" id="infini"></a>
-    <a href="challenge/challenge.html" class="zone" id="challenge"></a>
-
-    <div class="info" id="info1"></div>
-    <div class="info" id="info2"></div>
-    <div class="info" id="info3"></div>
-
-    <div class="tooltip-box" id="tip1">🎮 Mode classique avec montée de vitesse progressive</div>
-    <div class="tooltip-box" id="tip2">🧘 Mode relax sans fin, sans accélération</div>
-    <div class="tooltip-box" id="tip3">🏆 Missions spéciales avec objectifs</div>
+  <div class="index-container">
+    <img src="assets/logo_vfind.webp" alt="VFind" class="main-logo" />
+    <h1 class="main-title">Le défi photo géolocalisé <br> simple et fun !</h1>
+    <div class="main-buttons">
+      <a href="solo.html" class="main-button">Mode Solo</a>
+      <a href="duel_random.html" class="main-button">Mode Duel (Aléatoire)</a>
+      <a href="duel.html" class="main-button">Mode Duel (Entre amis)</a>
+      <a href="boutique.html" class="main-button">Boutique / Cadres</a>
+      <a href="profil.html" class="main-button">Mon Profil</a>
+      <a href="parametres.html" class="main-button">Paramètres</a>
+    </div>
+    <footer>
+      &copy; 2025 VFind – Tous droits réservés
+    </footer>
   </div>
-
-  <script>
-    const fond = document.getElementById("fond");
-
-    const zones = {
-      classic:   { top: 0.40, left: 0.20, width: 0.62, height: 0.087 },
-      infini:    { top: 0.54, left: 0.20, width: 0.62, height: 0.087 },
-      challenge: { top: 0.69, left: 0.20, width: 0.62, height: 0.087 },
-    };
-
-    const infos = {
-      info1: { top: 0.43, left: 0.73 },
-      info2: { top: 0.575, left: 0.73 },
-      info3: { top: 0.72, left: 0.73 },
-    };
-
-    function positionElements() {
-      const fondRect = fond.getBoundingClientRect();
-
-      for (let id in zones) {
-        const el = document.getElementById(id);
-        const z = zones[id];
-        el.style.top = (fondRect.top + z.top * fondRect.height) + "px";
-        el.style.left = (fondRect.left + z.left * fondRect.width) + "px";
-        el.style.width = (z.width * fondRect.width) + "px";
-        el.style.height = (z.height * fondRect.height) + "px";
-      }
-
-      for (let id in infos) {
-        const el = document.getElementById(id);
-        const z = infos[id];
-        el.style.top = (fondRect.top + z.top * fondRect.height) + "px";
-        el.style.left = (fondRect.left + z.left * fondRect.width) + "px";
-      }
-    }
-
-    fond.onload = positionElements;
-    window.addEventListener('resize', positionElements);
-
-    for (let i = 1; i <= 3; i++) {
-      const el = document.getElementById("info" + i);
-      el.addEventListener("click", function (e) {
-        e.stopPropagation();
-        document.querySelectorAll('.tooltip-box').forEach(t => t.style.display = 'none');
-        const tip = document.getElementById("tip" + i);
-        if (tip) {
-          tip.style.top = el.style.top;
-          tip.style.left = parseFloat(el.style.left) - 230 + "px";
-          tip.style.display = 'block';
-        }
-      });
-    }
-
-    document.addEventListener("click", () => {
-      document.querySelectorAll('.tooltip-box').forEach(t => t.style.display = 'none');
-    });
-  </script>
 </body>
 </html>
