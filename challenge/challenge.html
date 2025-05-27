@@ -3,48 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VFind – Mode Challenge</title>
-  <link rel="stylesheet" href="style/main.css" />
+  <title>VBlocks - Challenge</title>
+  <link rel="stylesheet" href="../style/main.css" />
+  <link rel="stylesheet" href="../themes/nature.css" id="theme-link" />
+  <link rel="icon" href="../assets/images/vblocks-logo.png.png" />
 </head>
 <body>
-  <div class="solo-container">
-    <div class="solo-header">
-      <a href="index.html" class="btn-icon" title="Accueil">
-        <img src="assets/icons/arrow_back.svg" alt="Accueil" width="28" height="28"/>
-      </a>
-      <h1>Mode Challenge</h1>
-      <a href="parametres.html" class="btn-icon" title="Paramètres">
-        <img src="assets/icons/settings.svg" alt="Paramètres" width="28" height="28"/>
-      </a>
+  <header>
+    <div class="header-logo">
+      <img src="../assets/images/vblocks-logo.png.png" alt="Logo">
     </div>
-    <div class="solo-solde-bar">
-      <div class="solde-block">
-        <img src="assets/img/vcoin.webp" class="icon-solo-piece" alt="pièces"/>
-        <span id="challenge-pieces">123</span>
-      </div>
-      <div class="solde-block">
-        <img src="assets/img/jeton_p.webp" class="icon-solo-jeton" alt="jetons"/>
-        <span id="challenge-jetons">6</span>
-      </div>
+    <div class="header-title">Mode Challenge</div>
+    <a class="header-home" href="../index.html" title="Accueil">🏠</a>
+  </header>
+  <main class="container-game">
+    <div class="score-bar">
+      <span>Score : <span id="score">0</span></span>
+      <span>Défis : <span id="challenges">0</span></span>
+      <span>Niveau : <span id="level">1</span></span>
     </div>
-    <div class="solo-defi-card">
-      <div class="solo-defi-titre">Défi du jour</div>
-      <div class="solo-defi-texte" id="challenge-defi-texte">
-        Trouve et prends en photo un objet qui commence par la lettre “A” !
-      </div>
-      <div class="solo-defi-photo" id="challenge-defi-photo">
-        <!-- Prévisualisation photo ici -->
-      </div>
-      <div class="solo-btn-row">
-        <button class="solo-btn-action" onclick="ouvrirCameraChallenge()">📸 Prendre la photo</button>
-        <button class="solo-btn-action" onclick="changerDefiChallenge()">🔄 Changer de défi</button>
-      </div>
+    <canvas id="game-canvas" width="300" height="510"></canvas>
+    <div class="game-buttons">
+      <button class="game-btn" id="pauseBtn">Pause</button>
+      <button class="game-btn" id="settingsBtn">Options</button>
+      <button class="game-btn" id="replayBtn">Rejouer</button>
     </div>
-    <footer>
-      &copy; 2025 VFind – Tous droits réservés
-    </footer>
-  </div>
-  <!-- Script du mode challenge -->
-  <script type="module" src="js/challenge.js"></script>
+  </main>
+  <script src="controls.js"></script>
+  <script src="game_challenge.js"></script>
+  <script src="intro.js"></script>
+  <script src="score.js"></script>
+  <script src="../scripts/pause.js"></script>
+  <script src="../scripts/settings.js"></script>
 </body>
 </html>

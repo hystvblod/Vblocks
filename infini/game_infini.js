@@ -7,44 +7,42 @@ const nextCtx = nextCanvas.getContext("2d");
 
 const COLS = 10, ROWS = 20;
 let BLOCK_SIZE = 30;
-canvas.width = COLS * BLOCK_SIZE;
-canvas.height = ROWS * BLOCK_SIZE;
 
+// ---------- VERSION RESPONSIVE CANVAS ----------
 function resizeCanvas() {
-  const top = document.querySelector("h1").offsetHeight || 0;
-  const score = document.getElementById("score")?.offsetHeight || 0;
-  const highscore = document.getElementById("highscore")?.offsetHeight || 0;
-  const buttons = document.getElementById("controls")?.offsetHeight || 0;
-  const options = document.getElementById("options")?.offsetHeight || 0;
-
-  const reserved = top + score + highscore + buttons + options + 80;
-  const availableHeight = window.innerHeight - reserved;
-  const availableWidth = window.innerWidth * 0.9;
-
+  const availableWidth = Math.min(window.innerWidth * 0.97, 420);
+  const availableHeight = Math.max(window.innerHeight * 0.73, 300);
   const blockW = Math.floor(availableWidth / COLS);
   const blockH = Math.floor(availableHeight / ROWS);
-  BLOCK_SIZE = Math.min(blockW, blockH, 30);
+  BLOCK_SIZE = Math.min(blockW, blockH, 32);
 
   canvas.width = COLS * BLOCK_SIZE;
   canvas.height = ROWS * BLOCK_SIZE;
   canvas.style.width = canvas.width + "px";
   canvas.style.height = canvas.height + "px";
 
+  const miniSize = Math.max(Math.floor(BLOCK_SIZE * 4), 60);
+  [holdCanvas, nextCanvas].forEach(c => {
+    c.width = c.height = miniSize;
+    c.style.width = c.style.height = miniSize + "px";
+  });
+
   drawBoard();
+  drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
+  drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
 }
 window.addEventListener("resize", resizeCanvas);
-window.addEventListener("load", resizeCanvas);
+window.addEventListener("orientationchange", resizeCanvas);
+setTimeout(resizeCanvas, 30);
 
-
+// ---------- LOGIQUE JEU ----------
 let currentTheme = "nature";
-
 if (!window.currentColors) {
   window.currentColors = {
     I: "#5cb85c", J: "#388e3c", L: "#7bb661",
     O: "#cddc39", S: "#a2d149", T: "#558b2f", Z: "#9ccc65"
   };
 }
-
 const blockImages = {};
 function loadBlockImages(themeName) {
   ['I','J','L','O','S','T','Z'].forEach(letter => {
@@ -53,9 +51,7 @@ function loadBlockImages(themeName) {
     img.src = `../themes/${themeName}/${letter}.png`;
     blockImages[letter] = img;
   });
-
   currentTheme = themeName;
-
   if (themeName === "retro") {
     window.currentColors = {
       I: "#00f0ff", J: "#0044ff", L: "#ff6600",
@@ -68,10 +64,7 @@ function loadBlockImages(themeName) {
     };
   }
 }
-
 loadBlockImages(currentTheme);
-
-// 👇 Début du jeu
 
 let board = Array.from({ length: ROWS }, () => Array(COLS).fill(""));
 let currentPiece, nextPiece, heldPiece = null;
@@ -181,11 +174,12 @@ function holdPiece() {
   drawMiniPiece(holdCtx, heldPiece);
 }
 
-function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE) {
+function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE, alpha = 1) {
   const img = blockImages[letter];
   const px = x * size;
   const py = y * size;
-
+  ctx.save();
+  ctx.globalAlpha = alpha;
   if (currentTheme === "nuit") {
     ctx.fillStyle = "#ccc";
     ctx.fillRect(px, py, size, size);
@@ -215,6 +209,34 @@ function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE) {
     ctx.strokeStyle = "#333";
     ctx.strokeRect(px, py, size, size);
   }
+  ctx.restore();
+}
+
+// --- Ghost Piece ---
+function drawGhostPiece() {
+  const ghost = {
+    shape: currentPiece.shape,
+    letter: currentPiece.letter,
+    x: currentPiece.x,
+    y: currentPiece.y
+  };
+  while (!ghostCollision(ghost)) ghost.y++;
+  ghost.y--;
+  ghost.shape.forEach((row, dy) =>
+    row.forEach((val, dx) => {
+      if (val) drawBlockCustom(ctx, ghost.x + dx, ghost.y + dy, ghost.letter, BLOCK_SIZE, 0.22);
+    })
+  );
+}
+function ghostCollision(piece) {
+  return piece.shape.some((row, dy) =>
+    row.some((val, dx) => {
+      if (!val) return false;
+      const x = piece.x + dx;
+      const y = piece.y + dy;
+      return x < 0 || x >= COLS || y >= ROWS || (y >= 0 && board[y][x]);
+    })
+  );
 }
 
 function drawBoard() {
@@ -224,6 +246,7 @@ function drawBoard() {
       if (letter) drawBlockCustom(ctx, x, y, letter);
     })
   );
+  drawGhostPiece();
   currentPiece.shape.forEach((row, dy) =>
     row.forEach((val, dx) => {
       if (val) drawBlockCustom(ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter);
@@ -231,14 +254,16 @@ function drawBoard() {
   );
 }
 
-function drawMiniPiece(ctxRef, piece, size = 20) {
-  ctxRef.clearRect(0, 0, 120, 120);
-  if (!piece) return;
+// --- Affichage mini pièces ---
+function drawMiniPiece(ctxRef, piece, size = null) {
+  if (!piece) return ctxRef.clearRect(0, 0, ctxRef.canvas.width, ctxRef.canvas.height);
+  size = size || Math.max(Math.floor(BLOCK_SIZE * 0.9), 15);
+  ctxRef.clearRect(0, 0, ctxRef.canvas.width, ctxRef.canvas.height);
   const shape = piece.shape;
   const w = shape[0].length;
   const h = shape.length;
-  const offsetX = (120 - w * size) / 2;
-  const offsetY = (120 - h * size) / 2;
+  const offsetX = (ctxRef.canvas.width - w * size) / 2;
+  const offsetY = (ctxRef.canvas.height - h * size) / 2;
   shape.forEach((row, y) =>
     row.forEach((val, x) => {
       if (val) {
@@ -261,6 +286,7 @@ function reset() {
   drawMiniPiece(nextCtx, nextPiece);
 }
 
+// --- Contrôles clavier ---
 document.addEventListener("keydown", e => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
   if (e.key === "p" || e.key === "P") {
@@ -271,13 +297,55 @@ document.addEventListener("keydown", e => {
   }
   if (gameOver || paused) return;
   switch (e.key) {
-    case "ArrowLeft": move(-1); break;
-    case "ArrowRight": move(1); break;
-    case "ArrowDown": dropPiece(); break;
-    case "ArrowUp": rotatePiece(); break;
-    case "c": case "C": holdPiece(); break;
+    case "ArrowLeft": move(-1); drawBoard(); break;
+    case "ArrowRight": move(1); drawBoard(); break;
+    case "ArrowDown": dropPiece(); drawBoard(); break;
+    case "ArrowUp": rotatePiece(); drawBoard(); break;
+    case "c": case "C": holdPiece(); drawBoard(); break;
   }
 });
+
+// --- Contrôle tactile mobile ---
+let touchStartX = 0, touchStartY = 0, touchMoved = false;
+
+canvas.addEventListener("touchstart", (e) => {
+  if (gameOver || paused) return;
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  touchMoved = false;
+}, {passive: true});
+
+canvas.addEventListener("touchend", (e) => {
+  if (gameOver || paused) return;
+  if (!touchMoved) {
+    rotatePiece();
+    drawBoard();
+    return;
+  }
+}, {passive: true});
+
+canvas.addEventListener("touchmove", (e) => {
+  if (gameOver || paused) return;
+  const t = e.touches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  if (Math.abs(dx) > 30 || Math.abs(dy) > 30) touchMoved = true;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 20) {
+      move(1); drawBoard();
+      touchStartX = t.clientX;
+    } else if (dx < -20) {
+      move(-1); drawBoard();
+      touchStartX = t.clientX;
+    }
+  } else {
+    if (dy > 20) {
+      dropPiece(); drawBoard();
+      touchStartY = t.clientY;
+    }
+  }
+}, {passive: false});
 
 nextPiece = newPiece();
 reset();

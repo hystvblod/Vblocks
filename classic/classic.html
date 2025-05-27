@@ -3,48 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VFind – Mode Classique</title>
-  <link rel="stylesheet" href="style/main.css" />
+  <title>VBlocks - Classique</title>
+  <link rel="stylesheet" href="../style/main.css" />
+  <link rel="stylesheet" href="../themes/nature.css" id="theme-link" />
+  <link rel="icon" href="../assets/images/vblocks-logo.png.png" />
 </head>
 <body>
-  <div class="solo-container">
-    <div class="solo-header">
-      <a href="index.html" class="btn-icon" title="Accueil">
-        <img src="assets/icons/arrow_back.svg" alt="Accueil" width="28" height="28"/>
-      </a>
-      <h1>Mode Classique</h1>
-      <a href="parametres.html" class="btn-icon" title="Paramètres">
-        <img src="assets/icons/settings.svg" alt="Paramètres" width="28" height="28"/>
-      </a>
+  <header>
+    <div class="header-logo">
+      <img src="../assets/images/vblocks-logo.png.png" alt="Logo">
     </div>
-    <div class="solo-solde-bar">
-      <div class="solde-block">
-        <img src="assets/img/vcoin.webp" class="icon-solo-piece" alt="pièces"/>
-        <span id="classic-pieces">123</span>
-      </div>
-      <div class="solde-block">
-        <img src="assets/img/jeton_p.webp" class="icon-solo-jeton" alt="jetons"/>
-        <span id="classic-jetons">6</span>
-      </div>
+    <div class="header-title">Mode Classique</div>
+    <a class="header-home" href="../index.html" title="Accueil">🏠</a>
+  </header>
+  <main class="container-game">
+    <div class="score-bar">
+      <span>Score : <span id="score">0</span></span>
+      <span>Lignes : <span id="lines">0</span></span>
+      <span>Niveau : <span id="level">1</span></span>
     </div>
-    <div class="solo-defi-card">
-      <div class="solo-defi-titre">Défi du jour</div>
-      <div class="solo-defi-texte" id="classic-defi-texte">
-        Trouve et prends en photo un objet bleu !
-      </div>
-      <div class="solo-defi-photo" id="classic-defi-photo">
-        <!-- Prévisualisation photo ici -->
-      </div>
-      <div class="solo-btn-row">
-        <button class="solo-btn-action" onclick="ouvrirCameraClassic()">📸 Prendre la photo</button>
-        <button class="solo-btn-action" onclick="changerDefiClassic()">🔄 Changer de défi</button>
-      </div>
+    <canvas id="game-canvas" width="300" height="510"></canvas>
+    <div class="game-buttons">
+      <button class="game-btn" id="pauseBtn">Pause</button>
+      <button class="game-btn" id="settingsBtn">Options</button>
+      <button class="game-btn" id="replayBtn">Rejouer</button>
     </div>
-    <footer>
-      &copy; 2025 VFind – Tous droits réservés
-    </footer>
-  </div>
-  <!-- Script du mode classique -->
-  <script type="module" src="js/classic.js"></script>
+  </main>
+  <script src="controls.js"></script>
+  <script src="game_classic.js"></script>
+  <script src="intro.js"></script>
+  <script src="score.js"></script>
+  <script src="../scripts/pause.js"></script>
+  <script src="../scripts/settings.js"></script>
 </body>
 </html>

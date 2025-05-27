@@ -1,3 +1,4 @@
+// Sélecteurs canvas (assure-toi d'avoir ces IDs dans ton HTML)
 const canvas     = document.getElementById("gameCanvas");
 const ctx        = canvas.getContext("2d");
 const holdCanvas = document.getElementById("holdCanvas");
@@ -5,14 +6,33 @@ const holdCtx    = holdCanvas.getContext("2d");
 const nextCanvas = document.getElementById("nextCanvas");
 const nextCtx    = nextCanvas.getContext("2d");
 
-
 let BLOCK_SIZE = 30;
 const COLS = 10, ROWS = 20;
-canvas.width = COLS * BLOCK_SIZE;
-canvas.height = ROWS * BLOCK_SIZE;
-canvas.style.width = canvas.width + "px";
-canvas.style.height = canvas.height + "px";
 
+// Responsive canvas & side panels (next/hold)
+function resizeAllCanvas() {
+  const maxW = Math.min(window.innerWidth * 0.95, 420);
+  BLOCK_SIZE = Math.floor(maxW / COLS);
+
+  canvas.width = COLS * BLOCK_SIZE;
+  canvas.height = ROWS * BLOCK_SIZE;
+  canvas.style.width = canvas.width + "px";
+  canvas.style.height = canvas.height + "px";
+
+  const miniSize = Math.max(Math.floor(BLOCK_SIZE * 4), 60);
+  [holdCanvas, nextCanvas].forEach(c => {
+    c.width = c.height = miniSize;
+    c.style.width = c.style.height = miniSize + "px";
+  });
+
+  drawBoard();
+  drawMiniPiece(holdCtx, heldPiece);
+  drawMiniPiece(nextCtx, nextPiece);
+}
+
+window.addEventListener("resize", resizeAllCanvas);
+window.addEventListener("orientationchange", resizeAllCanvas);
+setTimeout(resizeAllCanvas, 40);
 
 let currentTheme = "nature";
 if (!window.currentColors) {
@@ -21,19 +41,6 @@ if (!window.currentColors) {
     O: "#cddc39", S: "#a2d149", T: "#558b2f", Z: "#9ccc65"
   };
 }
-
-if (currentTheme === "neon") {
-  window.currentColors = {
-    I: "#00ffff", // Cyan
-    J: "#007bff", // Bleu néon
-    L: "#ff8800", // Orange néon
-    O: "#ffff00", // Jaune néon
-    S: "#00ff00", // Vert néon
-    T: "#ff00ff", // Rose néon
-    Z: "#ff0033"  // Rouge néon
-  };
-}
-
 const blockImages = {};
 function loadBlockImages(themeName) {
   ['I','J','L','O','S','T','Z'].forEach(letter => {
@@ -42,8 +49,6 @@ function loadBlockImages(themeName) {
     blockImages[letter] = img;
   });
   currentTheme = themeName;
-
-  // Appliquer les couleurs si thème neon
   if (themeName === "neon") {
     window.currentColors = {
       I: "#00ffff", J: "#007bff", L: "#ff8800",
@@ -121,10 +126,8 @@ function clearLines() {
     return true;
   });
   while (board.length < ROWS) board.unshift(Array(COLS).fill(""));
-
   score += lines * 100;
   document.getElementById("score").textContent = "Score : " + score;
-
   if (score > highscore) {
     highscore = score;
     localStorage.setItem("vblocks_highscore", highscore);
@@ -139,11 +142,12 @@ function reset() {
   drawMiniPiece(nextCtx, nextPiece);
 }
 
-function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE) {
+function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE, alpha = 1) {
   const img = blockImages[letter];
   const px = x * size;
   const py = y * size;
-
+  ctx.save();
+  ctx.globalAlpha = alpha;
   if (currentTheme === "nuit") {
     ctx.fillStyle = "#ccc";
     ctx.fillRect(px, py, size, size);
@@ -166,6 +170,34 @@ function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE) {
     ctx.strokeStyle = "#333";
     ctx.strokeRect(px, py, size, size);
   }
+  ctx.restore();
+}
+
+// --- Ghost Piece ---
+function drawGhostPiece() {
+  const ghost = {
+    shape: currentPiece.shape,
+    letter: currentPiece.letter,
+    x: currentPiece.x,
+    y: currentPiece.y
+  };
+  while (!ghostCollision(ghost)) ghost.y++;
+  ghost.y--;
+  ghost.shape.forEach((row, dy) =>
+    row.forEach((val, dx) => {
+      if (val) drawBlockCustom(ctx, ghost.x + dx, ghost.y + dy, ghost.letter, BLOCK_SIZE, 0.22);
+    })
+  );
+}
+function ghostCollision(piece) {
+  return piece.shape.some((row, dy) =>
+    row.some((val, dx) => {
+      if (!val) return false;
+      const x = piece.x + dx;
+      const y = piece.y + dy;
+      return x < 0 || x >= COLS || y >= ROWS || (y >= 0 && board[y][x]);
+    })
+  );
 }
 
 function drawBoard() {
@@ -175,6 +207,7 @@ function drawBoard() {
       if (letter) drawBlockCustom(ctx, x, y, letter);
     })
   );
+  drawGhostPiece();
   currentPiece.shape.forEach((row, dy) =>
     row.forEach((val, dx) => {
       if (val) {
@@ -182,7 +215,6 @@ function drawBoard() {
       }
     })
   );
-
   if (paused && !gameOver) {
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -192,44 +224,25 @@ function drawBoard() {
   }
 }
 
-function drawMiniPiece(ctxRef, piece, size = 20) {
-  ctxRef.clearRect(0, 0, 120, 120);
-  if (!piece) return;
+function drawMiniPiece(ctxRef, piece, size = null) {
+  if (!piece) return ctxRef.clearRect(0, 0, ctxRef.canvas.width, ctxRef.canvas.height);
+  size = size || Math.max(Math.floor(BLOCK_SIZE * 0.9), 15);
+  ctxRef.clearRect(0, 0, ctxRef.canvas.width, ctxRef.canvas.height);
   const shape = piece.shape;
   const w = shape[0].length;
   const h = shape.length;
-  const offsetX = (120 - w * size) / 2;
-  const offsetY = (120 - h * size) / 2;
-
+  const offsetX = (ctxRef.canvas.width - w * size) / 2;
+  const offsetY = (ctxRef.canvas.height - h * size) / 2;
   shape.forEach((row, y) =>
     row.forEach((val, x) => {
       if (val) {
         const px = offsetX + x * size;
         const py = offsetY + y * size;
         const color = window.currentColors?.[piece.letter] || "#999";
-
-        if (currentTheme === "neon") {
-          ctxRef.fillStyle = "#111";
-          ctxRef.fillRect(px, py, size, size);
-          ctxRef.shadowColor = color;
-          ctxRef.shadowBlur = 10;
-          ctxRef.strokeStyle = color;
-          ctxRef.strokeRect(px + 1, py + 1, size - 2, size - 2);
-          ctxRef.shadowBlur = 0;
-        } else if (currentTheme === "nuit") {
-          ctxRef.fillStyle = "#ccc";
-          ctxRef.fillRect(px, py, size, size);
-        } else {
-          const img = blockImages[piece.letter];
-          if (img && img.complete && img.naturalWidth > 0) {
-            ctxRef.drawImage(img, px, py, size, size);
-          } else {
-            ctxRef.fillStyle = color;
-            ctxRef.fillRect(px, py, size, size);
-            ctxRef.strokeStyle = "#333";
-            ctxRef.strokeRect(px, py, size, size);
-          }
-        }
+        ctxRef.fillStyle = color;
+        ctxRef.fillRect(px, py, size, size);
+        ctxRef.strokeStyle = "#333";
+        ctxRef.strokeRect(px, py, size, size);
       }
     })
   );
@@ -268,6 +281,7 @@ function holdPiece() {
   drawMiniPiece(holdCtx, heldPiece);
 }
 
+// --- Contrôles clavier & tactile ---
 document.addEventListener("keydown", e => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
   if (e.key === "p" || e.key === "P") {
@@ -278,18 +292,60 @@ document.addEventListener("keydown", e => {
   }
   if (gameOver || paused) return;
   switch (e.key) {
-    case "ArrowLeft": move(-1); break;
-    case "ArrowRight": move(1); break;
-    case "ArrowDown": dropPiece(); break;
-    case "ArrowUp": rotatePiece(); break;
-    case "c": case "C": holdPiece(); break;
+    case "ArrowLeft": move(-1); drawBoard(); break;
+    case "ArrowRight": move(1); drawBoard(); break;
+    case "ArrowDown": dropPiece(); drawBoard(); break;
+    case "ArrowUp": rotatePiece(); drawBoard(); break;
+    case "c": case "C": holdPiece(); drawBoard(); break;
   }
 });
+
+// --- Contrôle tactile moderne (mobile) ---
+let touchStartX = 0, touchStartY = 0, touchMoved = false;
+
+canvas.addEventListener("touchstart", (e) => {
+  if (gameOver || paused) return;
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  touchMoved = false;
+}, {passive: true});
+
+canvas.addEventListener("touchend", (e) => {
+  if (gameOver || paused) return;
+  if (!touchMoved) {
+    rotatePiece();
+    drawBoard();
+    return;
+  }
+}, {passive: true});
+
+canvas.addEventListener("touchmove", (e) => {
+  if (gameOver || paused) return;
+  const t = e.touches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  if (Math.abs(dx) > 30 || Math.abs(dy) > 30) touchMoved = true;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 20) {
+      move(1); drawBoard();
+      touchStartX = t.clientX;
+    } else if (dx < -20) {
+      move(-1); drawBoard();
+      touchStartX = t.clientX;
+    }
+  } else {
+    if (dy > 20) {
+      dropPiece(); drawBoard();
+      touchStartY = t.clientY;
+    }
+  }
+}, {passive: false});
 
 setInterval(() => {
   if (dropInterval > 50) {
     dropInterval -= 30;
-    console.log("Vitesse accélérée à", dropInterval);
+    //console.log("Vitesse accélérée à", dropInterval);
   }
 }, 20000);
 
@@ -307,31 +363,3 @@ function update(time = 0) {
 }
 requestAnimationFrame(update);
 
-
-
-
-
-function resizeCanvas() {
-  const top = document.querySelector("h1")?.offsetHeight || 0;
-  const score = document.getElementById("score")?.offsetHeight || 0;
-  const highscore = document.getElementById("highscore")?.offsetHeight || 0;
-  const controls = document.getElementById("controls")?.offsetHeight || 0;
-  const options = document.getElementById("options")?.offsetHeight || 0;
-
-  const reserved = top + score + highscore + controls + options + 80;
-  const availableHeight = window.innerHeight - reserved;
-  const availableWidth = window.innerWidth * 0.9;
-
-  const blockW = Math.floor(availableWidth / COLS);
-  const blockH = Math.floor(availableHeight / ROWS);
-  BLOCK_SIZE = Math.min(blockW, blockH);
-
-  canvas.width = COLS * BLOCK_SIZE;
-  canvas.height = ROWS * BLOCK_SIZE;
-  canvas.style.width = canvas.width + "px";
-  canvas.style.height = canvas.height + "px";
-
-  drawBoard();
-}
-window.addEventListener("resize", resizeCanvas);
-window.addEventListener("load", () => { setTimeout(() => { resizeCanvas(); }, 10); });

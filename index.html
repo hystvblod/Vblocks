@@ -3,115 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VFind – Accueil</title>
+  <title>VBlocks - Accueil</title>
   <link rel="stylesheet" href="style/main.css" />
-  <style>
-    /* Patchs rapides pour accueil responsive si besoin (provisoire, sinon tout passe dans main.css) */
-    .index-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      background: #313142;
-      padding-bottom: 40px;
-      width: 100vw;
-      max-width: 100vw;
-      box-sizing: border-box;
-    }
-    .main-logo {
-      max-width: 220px;
-      width: 65vw;
-      margin: 32px auto 14px auto;
-      display: block;
-    }
-    .main-title {
-      font-size: 2.3rem;
-      font-weight: bold;
-      color: #FFD700;
-      margin: 0 0 16px 0;
-      text-align: center;
-      letter-spacing: 1px;
-    }
-    .main-buttons {
-      width: 100%;
-      max-width: 360px;
-      margin: 20px auto 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .main-button {
-      background-color: #FFD700;
-      color: #222239;
-      font-weight: bold;
-      padding: 1.1rem 1rem;
-      font-size: 1.18rem;
-      border-radius: 16px;
-      box-shadow: 0 4px 14px #0003;
-      cursor: pointer;
-      transition: transform 0.18s, background 0.18s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      border: none;
-      margin: 0;
-      text-decoration: none;
-    }
-    .main-button:hover {
-      background: #fff7a8;
-      transform: scale(1.03);
-    }
-    footer {
-      width: 100%;
-      text-align: center;
-      color: #babada;
-      font-size: 1rem;
-      margin-top: auto;
-      padding: 22px 0 10px 0;
-      letter-spacing: 1px;
-      background: none;
-      border-top: 1px solid #2c2c4a33;
-    }
-    @media (max-width: 600px) {
-      .main-title {
-        font-size: 1.45rem;
-      }
-      .main-logo {
-        max-width: 140px;
-        width: 90vw;
-      }
-      .main-buttons {
-        max-width: 97vw;
-      }
-      .main-button {
-        font-size: 1rem;
-        padding: 1rem 0.5rem;
-      }
-    }
-    @media (max-width: 400px) {
-      .main-title {
-        font-size: 1.07rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="themes/nature.css" id="theme-link" />
+  <link rel="icon" href="assets/images/vblocks-logo.png.png" />
 </head>
 <body>
-  <div class="index-container">
-    <img src="assets/logo_vfind.webp" alt="VFind" class="main-logo" />
-    <h1 class="main-title">Le défi photo géolocalisé <br> simple et fun !</h1>
-    <div class="main-buttons">
-      <a href="solo.html" class="main-button">Mode Solo</a>
-      <a href="duel_random.html" class="main-button">Mode Duel (Aléatoire)</a>
-      <a href="duel.html" class="main-button">Mode Duel (Entre amis)</a>
-      <a href="boutique.html" class="main-button">Boutique / Cadres</a>
-      <a href="profil.html" class="main-button">Mon Profil</a>
-      <a href="parametres.html" class="main-button">Paramètres</a>
-    </div>
-    <footer>
-      &copy; 2025 VFind – Tous droits réservés
-    </footer>
+  <header>
+    <img src="assets/images/vblocks-logo.png.png" alt="Logo VBlocks" class="logo-main" />
+  </header>
+  <h1>VBlocks</h1>
+  <nav class="menu-jeux">
+    <a href="classic/classic.html">Mode Classique</a>
+    <a href="challenge/challenge.html">Mode Challenge</a>
+    <a href="infini/infini.html">Mode Infini</a>
+  </nav>
+  <div class="menu-theme">
+    <button class="active" data-theme="nature.css">Nature</button>
+    <button data-theme="bubble.css">Bubble</button>
+    <button data-theme="neon.css">Neon</button>
+    <button data-theme="retro.css">Retro</button>
+    <button data-theme="nuit.css">Nuit</button>
   </div>
+  <script>
+    // Switch theme
+    const themeLink = document.getElementById("theme-link");
+    document.querySelectorAll('.menu-theme button').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.menu-theme button').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        themeLink.href = "themes/" + btn.dataset.theme;
+      }
+    });
+  </script>
 </body>
 </html>
