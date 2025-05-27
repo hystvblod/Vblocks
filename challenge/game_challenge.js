@@ -397,4 +397,8 @@ function update(time = 0) {
   if (!paused) {
     dropPiece();
   }
-  reque
+  requestAnimationFrame(update);
+}
+loadBlockImages(currentTheme);
+resizeCanvas();
+update();
