@@ -1,12 +1,6 @@
-function whenReady(fn) {
-  if (window.cordova || window.Capacitor) {
-    document.addEventListener('deviceready', fn, false);
-  } else if (document.readyState !== 'loading') {
-    fn();
-  } else {
-    document.addEventListener('DOMContentLoaded', fn);
-  }
-}
+const { whenReady } = typeof module !== 'undefined' && module.exports
+  ? require('../scripts/utils')
+  : window;
 
 whenReady(() => {
   // Contrôles directionnels (boutons physiques)
