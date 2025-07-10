@@ -1,5 +1,15 @@
 // Begin classic/controls.js
-document.addEventListener("DOMContentLoaded", () => {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(() => {
   // Contrôles directionnels (boutons physiques)
   const btnLeft   = document.querySelector("button[data-action='left']");
   const btnRight  = document.querySelector("button[data-action='right']");
@@ -91,17 +101,20 @@ document.addEventListener("DOMContentLoaded", () => {
 const canvas     = document.getElementById("gameCanvas");
 const ctx        = canvas.getContext("2d");
 const holdCanvas = document.getElementById("holdCanvas");
-const holdCtx    = holdCanvas.getContext("2d");
+const holdCtx    = holdCanvas ? holdCanvas.getContext("2d") : null;
 const nextCanvas = document.getElementById("nextCanvas");
-const nextCtx    = nextCanvas.getContext("2d");
+const nextCtx    = nextCanvas ? nextCanvas.getContext("2d") : null;
 
 let BLOCK_SIZE = 30;
 const COLS = 10, ROWS = 20;
 
 // Responsive canvas & side panels (next/hold)
 function resizeAllCanvas() {
-  const maxW = Math.min(window.innerWidth * 0.95, 420);
-  BLOCK_SIZE = Math.floor(maxW / COLS);
+  const availableWidth = Math.min(window.innerWidth * 0.97, 420);
+  const availableHeight = Math.max(window.innerHeight * 0.73, 300);
+  const blockW = Math.floor(availableWidth / COLS);
+  const blockH = Math.floor(availableHeight / ROWS);
+  BLOCK_SIZE = Math.min(blockW, blockH, 32);
 
   canvas.width = COLS * BLOCK_SIZE;
   canvas.height = ROWS * BLOCK_SIZE;
@@ -109,14 +122,16 @@ function resizeAllCanvas() {
   canvas.style.height = canvas.height + "px";
 
   const miniSize = Math.max(Math.floor(BLOCK_SIZE * 4), 60);
-  [holdCanvas, nextCanvas].forEach(c => {
-    c.width = c.height = miniSize;
-    c.style.width = c.style.height = miniSize + "px";
-  });
+  if (holdCanvas && nextCanvas) {
+    [holdCanvas, nextCanvas].forEach(c => {
+      c.width = c.height = miniSize;
+      c.style.width = c.style.height = miniSize + "px";
+    });
+  }
 
   drawBoard();
-  drawMiniPiece(holdCtx, heldPiece);
-  drawMiniPiece(nextCtx, nextPiece);
+  if (holdCtx) drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
+  if (nextCtx) drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
 }
 
 window.addEventListener("resize", resizeAllCanvas);
@@ -228,7 +243,7 @@ function reset() {
   currentPiece = nextPiece || newPiece();
   nextPiece    = newPiece();
   holdUsed     = false;
-  drawMiniPiece(nextCtx, nextPiece);
+  if (nextCtx) drawMiniPiece(nextCtx, nextPiece);
 }
 
 function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE, alpha = 1) {
@@ -367,7 +382,7 @@ function holdPiece() {
     [heldPiece, currentPiece] = [{ ...currentPiece }, { ...heldPiece }];
   }
   holdUsed = true;
-  drawMiniPiece(holdCtx, heldPiece);
+  if (holdCtx) drawMiniPiece(holdCtx, heldPiece);
 }
 
 // --- Contrôles clavier & tactile ---
@@ -454,12 +469,12 @@ requestAnimationFrame(update);
 
 
 
-// Begin classic/intro.js
+// Begin scripts/intro.js
 // Fichier d'intro réservé aux futures animations (logo, écran titre...)
 console.log("Bienvenue dans V-Blocks 🎮");
 
 
-// Begin classic/score.js
+// Begin scripts/score.js
 function updateBestScore() {
   let best = localStorage.getItem("vblocks_best_score");
   if (!best || score > best) {
@@ -469,7 +484,17 @@ function updateBestScore() {
 
 
 // Begin scripts/pause.js
-document.addEventListener("DOMContentLoaded", function() {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(function() {
   const settingsButton = document.getElementById("settings-button");
   const settingsMenu = document.getElementById("settings-menu");
   const themeMenu = document.getElementById("theme-menu");
@@ -551,7 +576,17 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // Begin scripts/settings.js
-document.addEventListener("DOMContentLoaded", function() {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(function() {
   const settingsButton = document.getElementById("settings-button");
   const settingsMenu = document.getElementById("settings-menu");
   const themeMenu = document.getElementById("theme-menu");

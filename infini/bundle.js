@@ -1,5 +1,15 @@
 // Begin infini/controls.js
-document.addEventListener("DOMContentLoaded", () => {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(() => {
   // Contrôles directionnels (boutons physiques)
   const btnLeft   = document.querySelector("button[data-action='left']");
   const btnRight  = document.querySelector("button[data-action='right']");
@@ -47,9 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const holdCanvas = document.getElementById("holdCanvas");
-const holdCtx = holdCanvas.getContext("2d");
+const holdCtx = holdCanvas ? holdCanvas.getContext("2d") : null;
 const nextCanvas = document.getElementById("nextCanvas");
-const nextCtx = nextCanvas.getContext("2d");
+const nextCtx = nextCanvas ? nextCanvas.getContext("2d") : null;
 
 const COLS = 10, ROWS = 20;
 let BLOCK_SIZE = 30;
@@ -68,14 +78,16 @@ function resizeCanvas() {
   canvas.style.height = canvas.height + "px";
 
   const miniSize = Math.max(Math.floor(BLOCK_SIZE * 4), 60);
-  [holdCanvas, nextCanvas].forEach(c => {
-    c.width = c.height = miniSize;
-    c.style.width = c.style.height = miniSize + "px";
-  });
+  if (holdCanvas && nextCanvas) {
+    [holdCanvas, nextCanvas].forEach(c => {
+      c.width = c.height = miniSize;
+      c.style.width = c.style.height = miniSize + "px";
+    });
+  }
 
   drawBoard();
-  drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
-  drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
+  if (holdCtx) drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
+  if (nextCtx) drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
 }
 window.addEventListener("resize", resizeCanvas);
 window.addEventListener("orientationchange", resizeCanvas);
@@ -217,7 +229,7 @@ function holdPiece() {
     [heldPiece, currentPiece] = [{ ...currentPiece }, { ...heldPiece }];
   }
   holdUsed = true;
-  drawMiniPiece(holdCtx, heldPiece);
+  if (holdCtx) drawMiniPiece(holdCtx, heldPiece);
 }
 
 function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE, alpha = 1) {
@@ -329,7 +341,7 @@ function reset() {
   currentPiece = nextPiece || newPiece();
   nextPiece = newPiece();
   holdUsed = false;
-  drawMiniPiece(nextCtx, nextPiece);
+  if (nextCtx) drawMiniPiece(nextCtx, nextPiece);
 }
 
 // --- Contrôles clavier ---
@@ -409,12 +421,12 @@ function update(time = 0) {
 requestAnimationFrame(update);
 
 
-// Begin infini/intro.js
+// Begin scripts/intro.js
 // Fichier d'intro réservé aux futures animations (logo, écran titre...)
 console.log("Bienvenue dans V-Blocks 🎮");
 
 
-// Begin infini/score.js
+// Begin scripts/score.js
 function updateBestScore() {
   let best = localStorage.getItem("vblocks_best_score");
   if (!best || score > best) {
@@ -424,7 +436,17 @@ function updateBestScore() {
 
 
 // Begin scripts/pause.js
-document.addEventListener("DOMContentLoaded", function() {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(function() {
   const settingsButton = document.getElementById("settings-button");
   const settingsMenu = document.getElementById("settings-menu");
   const themeMenu = document.getElementById("theme-menu");
@@ -506,7 +528,17 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // Begin scripts/settings.js
-document.addEventListener("DOMContentLoaded", function() {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(function() {
   const settingsButton = document.getElementById("settings-button");
   const settingsMenu = document.getElementById("settings-menu");
   const themeMenu = document.getElementById("theme-menu");

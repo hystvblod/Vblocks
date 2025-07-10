@@ -2,9 +2,19 @@ const fs = require('fs');
 const path = require('path');
 
 const config = {
-  classic: ['controls.js', 'game_classic.js', 'intro.js', 'score.js'],
+  classic: [
+    'controls.js',
+    'game_classic.js',
+    '../scripts/intro.js',
+    '../scripts/score.js'
+  ],
   challenge: ['controls.js', 'game_challenge.js', 'intro.js', 'score.js'],
-  infini: ['controls.js', 'game_infini.js', 'intro.js', 'score.js']
+  infini: [
+    'controls.js',
+    'game_infini.js',
+    '../scripts/intro.js',
+    '../scripts/score.js'
+  ]
 };
 
 const common = ['scripts/pause.js', 'scripts/settings.js'];
