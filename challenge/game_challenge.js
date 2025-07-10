@@ -318,7 +318,17 @@ document.addEventListener("keydown", (e) => {
 });
 
 // --- Contrôles boutons physiques (optionnel)
-document.addEventListener("DOMContentLoaded", () => {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(() => {
   const btnLeft   = document.querySelector("button[data-action='left']");
   const btnRight  = document.querySelector("button[data-action='right']");
   const btnRotate = document.querySelector("button[data-action='rotate']");
