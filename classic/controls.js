@@ -1,4 +1,14 @@
-document.addEventListener("DOMContentLoaded", () => {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(() => {
   // Contrôles directionnels (boutons physiques)
   const btnLeft   = document.querySelector("button[data-action='left']");
   const btnRight  = document.querySelector("button[data-action='right']");

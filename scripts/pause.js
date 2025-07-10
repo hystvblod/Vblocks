@@ -1,4 +1,14 @@
-document.addEventListener("DOMContentLoaded", function() {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(function() {
   const settingsButton = document.getElementById("settings-button");
   const settingsMenu = document.getElementById("settings-menu");
   const themeMenu = document.getElementById("theme-menu");
