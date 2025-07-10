@@ -421,12 +421,12 @@ function update(time = 0) {
 requestAnimationFrame(update);
 
 
-// Begin scripts/intro.js
+// Begin infini/intro.js
 // Fichier d'intro réservé aux futures animations (logo, écran titre...)
 console.log("Bienvenue dans V-Blocks 🎮");
 
 
-// Begin scripts/score.js
+// Begin infini/score.js
 function updateBestScore() {
   let best = localStorage.getItem("vblocks_best_score");
   if (!best || score > best) {

@@ -48,9 +48,9 @@ document.addEventListener("keydown", e => {
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const holdCanvas = document.getElementById("holdCanvas");
-const holdCtx = holdCanvas.getContext("2d");
+const holdCtx = holdCanvas ? holdCanvas.getContext("2d") : null;
 const nextCanvas = document.getElementById("nextCanvas");
-const nextCtx = nextCanvas.getContext("2d");
+const nextCtx = nextCanvas ? nextCanvas.getContext("2d") : null;
 
 const COLS = 10, ROWS = 20;
 let BLOCK_SIZE = 30;
@@ -126,14 +126,16 @@ function resizeCanvas() {
   canvas.style.height = canvas.height + "px";
 
   const miniSize = Math.max(Math.floor(BLOCK_SIZE * 4), 60);
-  [holdCanvas, nextCanvas].forEach(c => {
-    c.width = c.height = miniSize;
-    c.style.width = c.style.height = miniSize + "px";
-  });
+  if (holdCanvas && nextCanvas) {
+    [holdCanvas, nextCanvas].forEach(c => {
+      c.width = c.height = miniSize;
+      c.style.width = c.style.height = miniSize + "px";
+    });
+  }
 
   drawBoard();
-  drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
-  drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
+  if (holdCtx) drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
+  if (nextCtx) drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
 }
 window.addEventListener("resize", resizeCanvas);
 window.addEventListener("orientationchange", resizeCanvas);
@@ -231,8 +233,8 @@ function drawBoard() {
     );
   }
 
-  drawMiniPiece(nextCtx, nextPiece, null);
-  drawMiniPiece(holdCtx, heldPiece, null);
+  if (nextCtx) drawMiniPiece(nextCtx, nextPiece, null);
+  if (holdCtx) drawMiniPiece(holdCtx, heldPiece, null);
 }
 
 function drawMiniPiece(ctxRef, piece, size = null) {
@@ -365,15 +367,17 @@ document.addEventListener("keydown", (e) => {
 });
 
 // --- Contrôles boutons physiques (optionnel)
-<<<<<<< HEAD
-document.addEventListener("DOMContentLoaded", () => {
-=======
-const { whenReady } = typeof module !== 'undefined' && module.exports
-  ? require('../scripts/utils')
-  : window;
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
 
 whenReady(() => {
->>>>>>> 9770c98e5e4ab3bebde4b1c2d41b1e49634b5588
   const btnLeft   = document.querySelector("button[data-action='left']");
   const btnRight  = document.querySelector("button[data-action='right']");
   const btnRotate = document.querySelector("button[data-action='rotate']");
@@ -460,12 +464,22 @@ update();
 
 
 // Begin challenge/intro.js
-window.onload = function() {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(function () {
   alert("Bienvenue dans V-Blocks ! Le but du jeu est simple : remplir des lignes avec les pièces qui tombent. Bon jeu !");
 
   // Optionnellement, tu peux ajouter une animation ou un petit message personnalisé
   // avant de lancer le jeu
-};
+});
 
 
 // Begin challenge/score.js
@@ -505,7 +519,17 @@ function clearLines(board) {
 
 
 // Begin scripts/pause.js
-document.addEventListener("DOMContentLoaded", function() {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(function() {
   const settingsButton = document.getElementById("settings-button");
   const settingsMenu = document.getElementById("settings-menu");
   const themeMenu = document.getElementById("theme-menu");
@@ -587,7 +611,17 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // Begin scripts/settings.js
-document.addEventListener("DOMContentLoaded", function() {
+function whenReady(fn) {
+  if (window.cordova || window.Capacitor) {
+    document.addEventListener('deviceready', fn, false);
+  } else if (document.readyState !== 'loading') {
+    fn();
+  } else {
+    document.addEventListener('DOMContentLoaded', fn);
+  }
+}
+
+whenReady(function() {
   const settingsButton = document.getElementById("settings-button");
   const settingsMenu = document.getElementById("settings-menu");
   const themeMenu = document.getElementById("theme-menu");

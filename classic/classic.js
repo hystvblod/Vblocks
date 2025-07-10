@@ -1,4 +1,4 @@
-// Begin infini/controls.js
+// Begin classic/controls.js
 function whenReady(fn) {
   if (window.cordova || window.Capacitor) {
     document.addEventListener('deviceready', fn, false);
@@ -18,10 +18,10 @@ whenReady(() => {
   const btnTheme  = document.getElementById("theme-btn");
   const btnMusic  = document.getElementById("music-btn");
 
-  if (btnLeft)   btnLeft.addEventListener("click", () => { if (!gameOver && !paused) { move(-1); drawBoard(); }});
-  if (btnRight)  btnRight.addEventListener("click", () => { if (!gameOver && !paused) { move(1); drawBoard(); }});
-  if (btnRotate) btnRotate.addEventListener("click", () => { if (!gameOver && !paused) { rotatePiece(); drawBoard(); }});
-  if (btnDrop)   btnDrop.addEventListener("click", () => { if (!gameOver && !paused) { dropPiece(); drawBoard(); }});
+  if (btnLeft)   btnLeft.addEventListener("click", () => { if (!gameOver) { move(-1); drawBoard(); }});
+  if (btnRight)  btnRight.addEventListener("click", () => { if (!gameOver) { move(1); drawBoard(); }});
+  if (btnRotate) btnRotate.addEventListener("click", () => { if (!gameOver) { rotatePiece(); drawBoard(); }});
+  if (btnDrop)   btnDrop.addEventListener("click", () => { if (!gameOver) { dropPiece(); drawBoard(); }});
 
   // Changement de thème (cycle)
   if (btnTheme) {
@@ -29,9 +29,8 @@ whenReady(() => {
       const link = document.getElementById("theme-style");
       const themes = ["nuit", "neon", "nature", "bubble", "retro"];
       let current = themes.findIndex(t => link.href.includes(t));
-      const nextTheme = themes[(current + 1) % themes.length];
-      link.href = "../themes/" + nextTheme + ".css";
-      loadBlockImages(nextTheme);
+      link.href = "../themes/" + themes[(current + 1) % themes.length] + ".css";
+      loadBlockImages(themes[(current + 1) % themes.length]);
       drawBoard();
     });
   }
@@ -50,22 +49,67 @@ whenReady(() => {
       }
     });
   }
+
+  // --- Contrôle tactile sur le plateau (tap = rotation, swipe = move/drop) ---
+  const canvas = document.getElementById("gameCanvas");
+  let touchStartX = 0, touchStartY = 0, touchMoved = false;
+
+  if (canvas) {
+    canvas.addEventListener("touchstart", (e) => {
+      if (gameOver || paused) return;
+      const t = e.touches[0];
+      touchStartX = t.clientX;
+      touchStartY = t.clientY;
+      touchMoved = false;
+    }, {passive: true});
+
+    canvas.addEventListener("touchend", (e) => {
+      if (gameOver || paused) return;
+      if (!touchMoved) {
+        rotatePiece();
+        drawBoard();
+      }
+    }, {passive: true});
+
+    canvas.addEventListener("touchmove", (e) => {
+      if (gameOver || paused) return;
+      const t = e.touches[0];
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+      if (Math.abs(dx) > 30 || Math.abs(dy) > 30) touchMoved = true;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 20) {
+          move(1); drawBoard();
+          touchStartX = t.clientX;
+        } else if (dx < -20) {
+          move(-1); drawBoard();
+          touchStartX = t.clientX;
+        }
+      } else {
+        if (dy > 20) {
+          dropPiece(); drawBoard();
+          touchStartY = t.clientY;
+        }
+      }
+    }, {passive: false});
+  }
 });
 
 
-// Begin infini/game_infini.js
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+// Begin classic/game_classic.js
+// Sélecteurs canvas (assure-toi d'avoir ces IDs dans ton HTML)
+const canvas     = document.getElementById("gameCanvas");
+const ctx        = canvas.getContext("2d");
 const holdCanvas = document.getElementById("holdCanvas");
-const holdCtx = holdCanvas ? holdCanvas.getContext("2d") : null;
+const holdCtx    = holdCanvas ? holdCanvas.getContext("2d") : null;
 const nextCanvas = document.getElementById("nextCanvas");
-const nextCtx = nextCanvas ? nextCanvas.getContext("2d") : null;
+const nextCtx    = nextCanvas ? nextCanvas.getContext("2d") : null;
 
-const COLS = 10, ROWS = 20;
 let BLOCK_SIZE = 30;
+const COLS = 10, ROWS = 20;
 
-// ---------- VERSION RESPONSIVE CANVAS ----------
-function resizeCanvas() {
+// Responsive canvas & side panels (next/hold)
+function resizeAllCanvas() {
   const availableWidth = Math.min(window.innerWidth * 0.97, 420);
   const availableHeight = Math.max(window.innerHeight * 0.73, 300);
   const blockW = Math.floor(availableWidth / COLS);
@@ -89,11 +133,11 @@ function resizeCanvas() {
   if (holdCtx) drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
   if (nextCtx) drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
 }
-window.addEventListener("resize", resizeCanvas);
-window.addEventListener("orientationchange", resizeCanvas);
-setTimeout(resizeCanvas, 30);
 
-// ---------- LOGIQUE JEU ----------
+window.addEventListener("resize", resizeAllCanvas);
+window.addEventListener("orientationchange", resizeAllCanvas);
+setTimeout(resizeAllCanvas, 40);
+
 let currentTheme = "nature";
 if (!window.currentColors) {
   window.currentColors = {
@@ -105,17 +149,11 @@ const blockImages = {};
 function loadBlockImages(themeName) {
   ['I','J','L','O','S','T','Z'].forEach(letter => {
     const img = new Image();
-    img.onload = () => drawBoard();
     img.src = `../themes/${themeName}/${letter}.png`;
     blockImages[letter] = img;
   });
   currentTheme = themeName;
-  if (themeName === "retro") {
-    window.currentColors = {
-      I: "#00f0ff", J: "#0044ff", L: "#ff6600",
-      O: "#ffff33", S: "#00ff44", T: "#ff00cc", Z: "#ff0033"
-    };
-  } else if (themeName === "neon") {
+  if (themeName === "neon") {
     window.currentColors = {
       I: "#00ffff", J: "#007bff", L: "#ff8800",
       O: "#ffff00", S: "#00ff00", T: "#ff00ff", Z: "#ff0033"
@@ -124,22 +162,27 @@ function loadBlockImages(themeName) {
 }
 loadBlockImages(currentTheme);
 
-let board = Array.from({ length: ROWS }, () => Array(COLS).fill(""));
+let board        = Array.from({ length: ROWS }, () => Array(COLS).fill(""));
 let currentPiece, nextPiece, heldPiece = null;
-let holdUsed = false;
-let score = 0;
-let highscore = localStorage.getItem("vblocks_highscore") || 0;
+let holdUsed     = false;
+let score        = 0;
+let highscore    = localStorage.getItem("vblocks_highscore") || 0;
 let dropInterval = 500;
-let lastTime = 0;
-let gameOver = false;
-let paused = false;
+let lastTime     = 0;
+let gameOver     = false;
+let paused       = false;
 
 document.getElementById("score").textContent = "Score : 0";
 document.getElementById("highscore").textContent = "Record : " + highscore;
 
 const PIECES = [
-  [[1,1,1,1]], [[1,0,0],[1,1,1]], [[0,0,1],[1,1,1]],
-  [[1,1],[1,1]], [[0,1,1],[1,1,0]], [[0,1,0],[1,1,1]], [[1,1,0],[0,1,1]]
+  [[1,1,1,1]],
+  [[1,0,0],[1,1,1]],
+  [[0,0,1],[1,1,1]],
+  [[1,1],[1,1]],
+  [[0,1,1],[1,1,0]],
+  [[0,1,0],[1,1,1]],
+  [[1,1,0],[0,1,1]]
 ];
 const LETTERS = ['I','J','L','O','S','T','Z'];
 
@@ -196,40 +239,11 @@ function clearLines() {
   }
 }
 
-function move(offset) {
-  currentPiece.x += offset;
-  if (collision()) currentPiece.x -= offset;
-}
-
-function dropPiece() {
-  currentPiece.y++;
-  if (collision()) {
-    currentPiece.y--;
-    merge();
-    reset();
-    if (collision()) {
-      alert("🎮 Game Over !");
-      gameOver = true;
-    }
-  }
-}
-
-function rotatePiece() {
-  const shape = currentPiece.shape;
-  currentPiece.shape = shape[0].map((_, i) => shape.map(r => r[i])).reverse();
-  if (collision()) currentPiece.shape = shape;
-}
-
-function holdPiece() {
-  if (holdUsed) return;
-  if (!heldPiece) {
-    heldPiece = { ...currentPiece };
-    reset();
-  } else {
-    [heldPiece, currentPiece] = [{ ...currentPiece }, { ...heldPiece }];
-  }
-  holdUsed = true;
-  if (holdCtx) drawMiniPiece(holdCtx, heldPiece);
+function reset() {
+  currentPiece = nextPiece || newPiece();
+  nextPiece    = newPiece();
+  holdUsed     = false;
+  if (nextCtx) drawMiniPiece(nextCtx, nextPiece);
 }
 
 function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE, alpha = 1) {
@@ -251,13 +265,6 @@ function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE, alpha = 1) {
     ctx.lineWidth = 2;
     ctx.strokeRect(px + 1, py + 1, size - 2, size - 2);
     ctx.shadowBlur = 0;
-  } else if (currentTheme === "retro") {
-    const color = window.currentColors?.[letter] || "#fff";
-    ctx.fillStyle = color;
-    ctx.fillRect(px, py, size, size);
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(px, py, size, size);
   } else if (img && img.complete && img.naturalWidth > 0) {
     ctx.drawImage(img, px, py, size, size);
   } else {
@@ -307,12 +314,20 @@ function drawBoard() {
   drawGhostPiece();
   currentPiece.shape.forEach((row, dy) =>
     row.forEach((val, dx) => {
-      if (val) drawBlockCustom(ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter);
+      if (val) {
+        drawBlockCustom(ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter);
+      }
     })
   );
+  if (paused && !gameOver) {
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 24px Arial";
+    ctx.fillText("⏸️ Pause", canvas.width / 2 - 40, canvas.height / 2);
+  }
 }
 
-// --- Affichage mini pièces ---
 function drawMiniPiece(ctxRef, piece, size = null) {
   if (!piece) return ctxRef.clearRect(0, 0, ctxRef.canvas.width, ctxRef.canvas.height);
   size = size || Math.max(Math.floor(BLOCK_SIZE * 0.9), 15);
@@ -337,14 +352,40 @@ function drawMiniPiece(ctxRef, piece, size = null) {
   );
 }
 
-function reset() {
-  currentPiece = nextPiece || newPiece();
-  nextPiece = newPiece();
-  holdUsed = false;
-  if (nextCtx) drawMiniPiece(nextCtx, nextPiece);
+function move(offset) {
+  currentPiece.x += offset;
+  if (collision()) currentPiece.x -= offset;
+}
+function dropPiece() {
+  currentPiece.y++;
+  if (collision()) {
+    currentPiece.y--;
+    merge();
+    reset();
+    if (collision()) {
+      alert("Game Over");
+      gameOver = true;
+    }
+  }
+}
+function rotatePiece() {
+  const shape = currentPiece.shape;
+  currentPiece.shape = shape[0].map((_, i) => shape.map(r => r[i])).reverse();
+  if (collision()) currentPiece.shape = shape;
+}
+function holdPiece() {
+  if (holdUsed) return;
+  if (!heldPiece) {
+    heldPiece = { ...currentPiece };
+    reset();
+  } else {
+    [heldPiece, currentPiece] = [{ ...currentPiece }, { ...heldPiece }];
+  }
+  holdUsed = true;
+  if (holdCtx) drawMiniPiece(holdCtx, heldPiece);
 }
 
-// --- Contrôles clavier ---
+// --- Contrôles clavier & tactile ---
 document.addEventListener("keydown", e => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
   if (e.key === "p" || e.key === "P") {
@@ -363,7 +404,7 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// --- Contrôle tactile mobile ---
+// --- Contrôle tactile moderne (mobile) ---
 let touchStartX = 0, touchStartY = 0, touchMoved = false;
 
 canvas.addEventListener("touchstart", (e) => {
@@ -405,9 +446,15 @@ canvas.addEventListener("touchmove", (e) => {
   }
 }, {passive: false});
 
+setInterval(() => {
+  if (dropInterval > 50) {
+    dropInterval -= 30;
+    //console.log("Vitesse accélérée à", dropInterval);
+  }
+}, 20000);
+
 nextPiece = newPiece();
 reset();
-
 function update(time = 0) {
   if (gameOver || paused) return;
   const delta = time - lastTime;
@@ -421,12 +468,13 @@ function update(time = 0) {
 requestAnimationFrame(update);
 
 
-// Begin scripts/intro.js
+
+// Begin classic/intro.js
 // Fichier d'intro réservé aux futures animations (logo, écran titre...)
 console.log("Bienvenue dans V-Blocks 🎮");
 
 
-// Begin scripts/score.js
+// Begin classic/score.js
 function updateBestScore() {
   let best = localStorage.getItem("vblocks_best_score");
   if (!best || score > best) {
