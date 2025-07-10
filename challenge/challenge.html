@@ -16,24 +16,27 @@
     <div class="header-title">Mode Challenge</div>
     <a class="header-home" href="../index.html" title="Accueil">🏠</a>
   </header>
-  <main class="container-game">
+  <main id="game-container" class="container-game">
     <div class="score-bar">
       <span>Score : <span id="score">0</span></span>
       <span>Défis : <span id="challenges">0</span></span>
       <span>Niveau : <span id="level">1</span></span>
     </div>
-    <canvas id="game-canvas" width="300" height="510"></canvas>
+    <div id="hold-container">
+      <p>Hold</p>
+      <canvas id="holdCanvas" width="80" height="80"></canvas>
+    </div>
+    <canvas id="gameCanvas" width="300" height="510"></canvas>
+    <div id="next-container">
+      <p>Next</p>
+      <canvas id="nextCanvas" width="80" height="80"></canvas>
+    </div>
     <div class="game-buttons">
       <button class="game-btn" id="pauseBtn">Pause</button>
       <button class="game-btn" id="settingsBtn">Options</button>
       <button class="game-btn" id="replayBtn">Rejouer</button>
     </div>
   </main>
-  <script src="controls.js"></script>
-  <script src="game_challenge.js"></script>
-  <script src="intro.js"></script>
-  <script src="score.js"></script>
-  <script src="../scripts/pause.js"></script>
-  <script src="../scripts/settings.js"></script>
+  <script src="bundle.js"></script>
 </body>
 </html>

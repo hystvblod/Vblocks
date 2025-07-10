@@ -1,9 +1,55 @@
+// Begin infini/controls.js
+document.addEventListener("DOMContentLoaded", () => {
+  // Contrôles directionnels (boutons physiques)
+  const btnLeft   = document.querySelector("button[data-action='left']");
+  const btnRight  = document.querySelector("button[data-action='right']");
+  const btnRotate = document.querySelector("button[data-action='rotate']");
+  const btnDrop   = document.querySelector("button[data-action='drop']");
+  const btnTheme  = document.getElementById("theme-btn");
+  const btnMusic  = document.getElementById("music-btn");
+
+  if (btnLeft)   btnLeft.addEventListener("click", () => { if (!gameOver && !paused) { move(-1); drawBoard(); }});
+  if (btnRight)  btnRight.addEventListener("click", () => { if (!gameOver && !paused) { move(1); drawBoard(); }});
+  if (btnRotate) btnRotate.addEventListener("click", () => { if (!gameOver && !paused) { rotatePiece(); drawBoard(); }});
+  if (btnDrop)   btnDrop.addEventListener("click", () => { if (!gameOver && !paused) { dropPiece(); drawBoard(); }});
+
+  // Changement de thème (cycle)
+  if (btnTheme) {
+    btnTheme.addEventListener("click", () => {
+      const link = document.getElementById("theme-style");
+      const themes = ["nuit", "neon", "nature", "bubble", "retro"];
+      let current = themes.findIndex(t => link.href.includes(t));
+      const nextTheme = themes[(current + 1) % themes.length];
+      link.href = "../themes/" + nextTheme + ".css";
+      loadBlockImages(nextTheme);
+      drawBoard();
+    });
+  }
+
+  // Bouton musique
+  if (btnMusic) {
+    btnMusic.addEventListener("click", () => {
+      const music = document.getElementById("music");
+      if (!music) return;
+      if (music.paused) {
+        music.play();
+        btnMusic.textContent = "🔊 Musique";
+      } else {
+        music.pause();
+        btnMusic.textContent = "🔇 Muet";
+      }
+    });
+  }
+});
+
+
+// Begin infini/game_infini.js
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const holdCanvas = document.getElementById("holdCanvas");
-const holdCtx = holdCanvas ? holdCanvas.getContext("2d") : null;
+const holdCtx = holdCanvas.getContext("2d");
 const nextCanvas = document.getElementById("nextCanvas");
-const nextCtx = nextCanvas ? nextCanvas.getContext("2d") : null;
+const nextCtx = nextCanvas.getContext("2d");
 
 const COLS = 10, ROWS = 20;
 let BLOCK_SIZE = 30;
@@ -22,16 +68,14 @@ function resizeCanvas() {
   canvas.style.height = canvas.height + "px";
 
   const miniSize = Math.max(Math.floor(BLOCK_SIZE * 4), 60);
-  if (holdCanvas && nextCanvas) {
-    [holdCanvas, nextCanvas].forEach(c => {
-      c.width = c.height = miniSize;
-      c.style.width = c.style.height = miniSize + "px";
-    });
-  }
+  [holdCanvas, nextCanvas].forEach(c => {
+    c.width = c.height = miniSize;
+    c.style.width = c.style.height = miniSize + "px";
+  });
 
   drawBoard();
-  if (holdCtx) drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
-  if (nextCtx) drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
+  drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
+  drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
 }
 window.addEventListener("resize", resizeCanvas);
 window.addEventListener("orientationchange", resizeCanvas);
@@ -173,7 +217,7 @@ function holdPiece() {
     [heldPiece, currentPiece] = [{ ...currentPiece }, { ...heldPiece }];
   }
   holdUsed = true;
-  if (holdCtx) drawMiniPiece(holdCtx, heldPiece);
+  drawMiniPiece(holdCtx, heldPiece);
 }
 
 function drawBlockCustom(ctx, x, y, letter, size = BLOCK_SIZE, alpha = 1) {
@@ -285,7 +329,7 @@ function reset() {
   currentPiece = nextPiece || newPiece();
   nextPiece = newPiece();
   holdUsed = false;
-  if (nextCtx) drawMiniPiece(nextCtx, nextPiece);
+  drawMiniPiece(nextCtx, nextPiece);
 }
 
 // --- Contrôles clavier ---
@@ -363,3 +407,178 @@ function update(time = 0) {
   requestAnimationFrame(update);
 }
 requestAnimationFrame(update);
+
+
+// Begin infini/intro.js
+// Fichier d'intro réservé aux futures animations (logo, écran titre...)
+console.log("Bienvenue dans V-Blocks 🎮");
+
+
+// Begin infini/score.js
+function updateBestScore() {
+  let best = localStorage.getItem("vblocks_best_score");
+  if (!best || score > best) {
+    localStorage.setItem("vblocks_best_score", score);
+  }
+}
+
+
+// Begin scripts/pause.js
+document.addEventListener("DOMContentLoaded", function() {
+  const settingsButton = document.getElementById("settings-button");
+  const settingsMenu = document.getElementById("settings-menu");
+  const themeMenu = document.getElementById("theme-menu");
+
+  const muteButton = document.getElementById("mute-button");
+  const themeButton = document.getElementById("theme-button");
+  const closeSettingsButton = document.getElementById("close-settings-button");
+  const backFromThemeButton = document.getElementById("back-theme-button");
+  const themeStyle = document.getElementById("theme-style");
+  const music = document.getElementById("music");
+
+  const themeButtons = document.querySelectorAll(".theme-select-button");
+
+  if (!settingsButton || !settingsMenu || !themeButton || !closeSettingsButton || !backFromThemeButton || !themeStyle) {
+    console.error("Un ou plusieurs éléments du DOM manquent !");
+    return;
+  }
+
+  settingsButton.addEventListener("click", showSettingsMenu);
+  muteButton.addEventListener("click", toggleMusic);
+  themeButton.addEventListener("click", showThemeMenu);
+  closeSettingsButton.addEventListener("click", hideSettingsMenu);
+  backFromThemeButton.addEventListener("click", backToSettings);
+
+  themeButtons.forEach(button => {
+    button.addEventListener("click", function() {
+      const newTheme = this.getAttribute("data-theme");
+      if (newTheme && typeof changeTheme === 'function') {
+        changeTheme(newTheme); // Appelle la fonction de changement de thème
+        hideAllMenus();
+      } else {
+        console.error("Erreur : fonction changeTheme() non trouvée !");
+      }
+    });
+  });
+
+  function showSettingsMenu() {
+    paused = true;
+    if (music && !music.paused) music.pause();
+    settingsMenu.style.display = "flex";
+    themeMenu.style.display = "none";
+  }
+
+  function hideSettingsMenu() {
+    paused = false;
+    if (music && music.paused) music.play();
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "none";
+  }
+
+  function toggleMusic() {
+    if (!music) return;
+    if (music.paused) {
+      music.play();
+      muteButton.textContent = "Mute Musique";
+    } else {
+      music.pause();
+      muteButton.textContent = "Unmute Musique";
+    }
+  }
+
+  function showThemeMenu() {
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "flex";
+  }
+
+  function backToSettings() {
+    themeMenu.style.display = "none";
+    settingsMenu.style.display = "flex";
+  }
+
+  function hideAllMenus() {
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "none";
+    paused = false;
+    if (music && music.paused) music.play();
+  }
+});
+
+
+// Begin scripts/settings.js
+document.addEventListener("DOMContentLoaded", function() {
+  const settingsButton = document.getElementById("settings-button");
+  const settingsMenu = document.getElementById("settings-menu");
+  const themeMenu = document.getElementById("theme-menu");
+
+  const muteButton = document.getElementById("mute-button");
+  const themeButton = document.getElementById("theme-button");
+  const closeSettingsButton = document.getElementById("close-settings-button");
+  const backFromThemeButton = document.getElementById("back-theme-button");
+  const themeStyle = document.getElementById("theme-style");
+  const themeButtons = document.querySelectorAll(".theme-select-button");
+  const music = document.getElementById("music");
+
+  if (!settingsButton || !settingsMenu || !themeMenu || !muteButton || !themeButton || !closeSettingsButton || !backFromThemeButton || !themeStyle) {
+    console.error("Un ou plusieurs éléments du DOM sont introuvables !");
+    return;
+  }
+
+  settingsButton.addEventListener("click", showSettingsMenu);
+  muteButton.addEventListener("click", toggleMusic);
+  themeButton.addEventListener("click", showThemeMenu);
+  closeSettingsButton.addEventListener("click", hideSettingsMenu);
+  backFromThemeButton.addEventListener("click", backToSettings);
+
+  themeButtons.forEach(button => {
+    button.addEventListener("click", function() {
+      const newTheme = this.getAttribute("data-theme");
+      if (newTheme) {
+        themeStyle.setAttribute("href", `../themes/${newTheme}.css`);
+        loadBlockImages(newTheme);
+        drawBoard();
+      }
+      backToSettings(); // Revenir au menu paramètres
+    });
+  });
+
+  function showSettingsMenu() {
+    paused = true;
+    if (music && !music.paused) music.pause();
+    settingsMenu.style.display = "flex";
+    themeMenu.style.display = "none";
+  }
+
+  function hideSettingsMenu() {
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "none";
+    paused = false; // LE JEU REDÉMARRE seulement ici
+    if (!gameOver) {
+      requestAnimationFrame(update);
+    }
+    if (music && music.paused) music.play();
+  }
+
+  function toggleMusic() {
+    if (!music) return;
+    if (music.paused) {
+      music.play();
+      muteButton.textContent = "Mute Musique";
+    } else {
+      music.pause();
+      muteButton.textContent = "Unmute Musique";
+    }
+  }
+
+  function showThemeMenu() {
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "flex";
+  }
+
+  function backToSettings() {
+    themeMenu.style.display = "none";
+    settingsMenu.style.display = "flex";
+  }
+});
+
+
