@@ -169,7 +169,7 @@ h1 {
   color: #ffe04a;
   text-shadow: 1px 1px 4px #201;
 }
-#game-canvas {
+#gameCanvas {
   display: block;
   margin: 0 auto;
   border-radius: 22px;
@@ -220,7 +220,7 @@ h1 {
   .header-title { font-size: 1.2rem; }
   .score-bar { font-size: 1.01rem; gap: 0.5em; }
   .game-btn { font-size: 1.01rem; padding: 0.5em 0.8em; min-width: 72px;}
-  #game-canvas { border-radius: 16px; }
+  #gameCanvas { border-radius: 16px; }
   .container-game { margin-top: 0.8vw; }
 }
 
@@ -229,10 +229,17 @@ h1 {
   .logo-main { width: 49px; }
   .header-title { font-size: 1rem; }
   .score-bar { font-size: 0.98rem; }
-  #game-canvas { max-width: 99vw; }
+  #gameCanvas { max-width: 99vw; }
   .container-game { margin-top: 0.2vw; }
   .menu-jeux { gap: 0.5rem; }
   .menu-jeux a { padding: 0.7em 0.4em; font-size: 0.98rem; min-height: 39px;}
   h1 { font-size: 1.25rem; }
   body { padding: 0 0 6vw 0; }
+}
+
+/* ======= Tiny Mobile (max 360px) ======= */
+@media (max-width: 360px) {
+  .menu-jeux a { font-size: 0.92rem; }
+  .game-btn { font-size: 0.9rem; padding: 0.45em 0.7em; }
+  .score-bar { font-size: 0.9rem; }
 }

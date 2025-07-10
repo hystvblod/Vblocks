@@ -1,9 +1,9 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const holdCanvas = document.getElementById("holdCanvas");
-const holdCtx = holdCanvas.getContext("2d");
+const holdCtx = holdCanvas ? holdCanvas.getContext("2d") : null;
 const nextCanvas = document.getElementById("nextCanvas");
-const nextCtx = nextCanvas.getContext("2d");
+const nextCtx = nextCanvas ? nextCanvas.getContext("2d") : null;
 
 const COLS = 10, ROWS = 20;
 let BLOCK_SIZE = 30;
@@ -79,14 +79,16 @@ function resizeCanvas() {
   canvas.style.height = canvas.height + "px";
 
   const miniSize = Math.max(Math.floor(BLOCK_SIZE * 4), 60);
-  [holdCanvas, nextCanvas].forEach(c => {
-    c.width = c.height = miniSize;
-    c.style.width = c.style.height = miniSize + "px";
-  });
+  if (holdCanvas && nextCanvas) {
+    [holdCanvas, nextCanvas].forEach(c => {
+      c.width = c.height = miniSize;
+      c.style.width = c.style.height = miniSize + "px";
+    });
+  }
 
   drawBoard();
-  drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
-  drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
+  if (holdCtx) drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
+  if (nextCtx) drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
 }
 window.addEventListener("resize", resizeCanvas);
 window.addEventListener("orientationchange", resizeCanvas);
@@ -184,8 +186,8 @@ function drawBoard() {
     );
   }
 
-  drawMiniPiece(nextCtx, nextPiece, null);
-  drawMiniPiece(holdCtx, heldPiece, null);
+  if (nextCtx) drawMiniPiece(nextCtx, nextPiece, null);
+  if (holdCtx) drawMiniPiece(holdCtx, heldPiece, null);
 }
 
 function drawMiniPiece(ctxRef, piece, size = null) {
