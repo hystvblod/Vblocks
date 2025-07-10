@@ -469,12 +469,12 @@ requestAnimationFrame(update);
 
 
 
-// Begin classic/intro.js
+// Begin scripts/intro.js
 // Fichier d'intro réservé aux futures animations (logo, écran titre...)
 console.log("Bienvenue dans V-Blocks 🎮");
 
 
-// Begin classic/score.js
+// Begin scripts/score.js
 function updateBestScore() {
   let best = localStorage.getItem("vblocks_best_score");
   if (!best || score > best) {
