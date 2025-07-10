@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<<<<<<< HEAD
   <meta charset="UTF-8">
   <title>VBlocks - Accueil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -202,6 +203,41 @@
     });
     window.addEventListener('resize', () => {
       tooltip.style.display = 'none';
+=======
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VBlocks - Accueil</title>
+  <link rel="stylesheet" href="style/main.css" />
+  <link rel="stylesheet" href="themes/nature.css" id="theme-link" />
+  <link rel="icon" href="assets/images/vblocks-logo.png.png" />
+</head>
+<body>
+  <header>
+    <img src="assets/images/vblocks-logo.png.png" alt="Logo VBlocks" class="logo-main" />
+  </header>
+  <h1>VBlocks</h1>
+  <nav class="menu-jeux">
+    <a href="classic/classic.html">Mode Classique</a>
+    <a href="challenge/challenge.html">Mode Challenge</a>
+    <a href="infini/infini.html">Mode Infini</a>
+  </nav>
+  <div class="menu-theme">
+    <button class="active" data-theme="nature.css">Nature</button>
+    <button data-theme="bubble.css">Bubble</button>
+    <button data-theme="neon.css">Neon</button>
+    <button data-theme="retro.css">Retro</button>
+    <button data-theme="nuit.css">Nuit</button>
+  </div>
+  <script>
+    // Switch theme
+    const themeLink = document.getElementById("theme-link");
+    document.querySelectorAll('.menu-theme button').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.menu-theme button').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        themeLink.href = "themes/" + btn.dataset.theme;
+      }
+>>>>>>> 618373d962f316de7428428727fc51f67479ac8a
     });
   </script>
 </body>

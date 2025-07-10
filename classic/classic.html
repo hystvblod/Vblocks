@@ -2,89 +2,38 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>V-Blocks - Classique</title>
-  <link id="theme-style" rel="stylesheet" href="../themes/nature.css" />
-
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100vh;
-      box-sizing: border-box;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VBlocks - Classique</title>
+  <link rel="stylesheet" href="../style/main.css" />
+  <link rel="stylesheet" href="../themes/nature.css" id="theme-link" />
+  <link rel="icon" href="../assets/images/vblocks-logo.png.png" />
 </head>
-
 <body>
-  <h1 class="logo">
-    <img src="../assets/logo.png" alt="Logo" style="height: 60px; vertical-align: middle;" />
-    <span style="font-size: 32px; font-weight: bold;">V-Blocks</span>
-  </h1>
-
-  <div id="game-container">
-    <div class="side-panel">
-      <p>Réserve</p>
-      <canvas id="holdCanvas" width="120" height="120"></canvas>
+  <header>
+    <div class="header-logo">
+      <img src="../assets/images/vblocks-logo.png.png" alt="Logo">
     </div>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <div class="side-panel">
-      <p>Suivante</p>
-      <canvas id="nextCanvas" width="120" height="120"></canvas>
+    <div class="header-title">Mode Classique</div>
+    <a class="header-home" href="../index.html" title="Accueil">🏠</a>
+  </header>
+  <main class="container-game">
+    <div class="score-bar">
+      <span>Score : <span id="score">0</span></span>
+      <span>Lignes : <span id="lines">0</span></span>
+      <span>Niveau : <span id="level">1</span></span>
     </div>
-  </div>
-
-  <div id="score">Score : 0</div>
-  <div id="highscore">Record : 0</div>
-
-  <div id="controls">
-    <button id="music-btn">🔊 Musique</button>
-    <button onclick="location.reload()">🔁 Rejouer</button>
-  </div>
-
-  <div id="options">
-    <button onclick="changeTheme('nuit')">🌙 Nuit</button>
-    <button onclick="changeTheme('neon')">💡 Néon</button>
-    <button onclick="changeTheme('nature')">🌿 Nature</button>
-    <button onclick="changeTheme('bubble')">🫧 Bubble</button>
-    <button onclick="changeTheme('retro')">🕹️ Retro</button>
-  </div>
-
-  <audio id="music" src="../assets/sounds/chill.mp3" loop></audio>
+    <canvas id="game-canvas" width="300" height="510"></canvas>
+    <div class="game-buttons">
+      <button class="game-btn" id="pauseBtn">Pause</button>
+      <button class="game-btn" id="settingsBtn">Options</button>
+      <button class="game-btn" id="replayBtn">Rejouer</button>
+    </div>
+  </main>
+  <script src="controls.js"></script>
   <script src="game_classic.js"></script>
-
-  <script>
-    const themes = {
-      nuit: "nuit.css",
-      neon: "neon.css",
-      nature: "nature.css",
-      bubble: "bubble.css",
-      retro: "retro.css"
-    };
-
-    function changeTheme(name) {
-      const link = document.getElementById("theme-style");
-      if (themes[name]) {
-        link.href = "../themes/" + themes[name];
-        if (typeof loadBlockImages === "function") loadBlockImages(name);
-      }
-    }
-
-    const music = document.getElementById("music");
-    const musicBtn = document.getElementById("music-btn");
-
-    musicBtn.onclick = () => {
-      if (music.paused) {
-        music.play();
-        musicBtn.textContent = "🔊 Musique";
-      } else {
-        music.pause();
-        musicBtn.textContent = "🔇 Muet";
-      }
-    };
-  </script>
+  <script src="intro.js"></script>
+  <script src="score.js"></script>
+  <script src="../scripts/pause.js"></script>
+  <script src="../scripts/settings.js"></script>
 </body>
 </html>

@@ -1,19 +1,43 @@
 document.addEventListener("keydown", e => {
-  if (gameOver || paused) return;
+  if (gameOver || paused) {
+    // Permet de sortir de la pause avec 'P'
+    if ((e.key === "p" || e.key === "P") && paused) {
+      paused = false;
+      update();
+      drawBoard();
+    }
+    return;
+  }
 
   // Empêcher le comportement par défaut pour les touches directionnelles
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
 
-  // Commandes pour déplacer les pièces et autres actions
   switch (e.key) {
-    case "ArrowLeft": move(-1); break;
-    case "ArrowRight": move(1); break;
-    case "ArrowDown": dropPiece(); break;
-    case "ArrowUp": rotatePiece(); break;
-    case "c": case "C": holdPiece(); break;
-    case "p": case "P": // Pause
-      paused = !paused;
-      if (!paused) update();
+    case "ArrowLeft":
+      move(-1);
+      drawBoard();
+      break;
+    case "ArrowRight":
+      move(1);
+      drawBoard();
+      break;
+    case "ArrowDown":
+      dropPiece();
+      drawBoard();
+      break;
+    case "ArrowUp":
+      rotatePiece();
+      drawBoard();
+      break;
+    case "c":
+    case "C":
+      holdPiece();
+      drawBoard();
+      break;
+    case "p":
+    case "P":
+      paused = true;
+      drawBoard();
       break;
   }
 });

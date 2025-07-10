@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Contrôles directionnels
+  // Contrôles directionnels (boutons physiques)
   const btnLeft   = document.querySelector("button[data-action='left']");
   const btnRight  = document.querySelector("button[data-action='right']");
   const btnRotate = document.querySelector("button[data-action='rotate']");
@@ -7,19 +7,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnTheme  = document.getElementById("theme-btn");
   const btnMusic  = document.getElementById("music-btn");
 
-  if (btnLeft)   btnLeft.addEventListener("click", () => { if (!gameOver) move(-1); });
-  if (btnRight)  btnRight.addEventListener("click", () => { if (!gameOver) move(1); });
-  if (btnRotate) btnRotate.addEventListener("click", () => { if (!gameOver) rotatePiece(); });
-  if (btnDrop)   btnDrop.addEventListener("click", () => { if (!gameOver) dropPiece(); });
+  if (btnLeft)   btnLeft.addEventListener("click", () => { if (!gameOver && !paused) { move(-1); drawBoard(); }});
+  if (btnRight)  btnRight.addEventListener("click", () => { if (!gameOver && !paused) { move(1); drawBoard(); }});
+  if (btnRotate) btnRotate.addEventListener("click", () => { if (!gameOver && !paused) { rotatePiece(); drawBoard(); }});
+  if (btnDrop)   btnDrop.addEventListener("click", () => { if (!gameOver && !paused) { dropPiece(); drawBoard(); }});
 
-  // Changement de thème
+  // Changement de thème (cycle)
   if (btnTheme) {
     btnTheme.addEventListener("click", () => {
       const link = document.getElementById("theme-style");
       const themes = ["nuit", "neon", "nature", "bubble", "retro"];
       let current = themes.findIndex(t => link.href.includes(t));
-      link.href = "../themes/" + themes[(current + 1) % themes.length] + ".css";
-      loadBlockImages(themes[(current + 1) % themes.length]);
+      const nextTheme = themes[(current + 1) % themes.length];
+      link.href = "../themes/" + nextTheme + ".css";
+      loadBlockImages(nextTheme);
+      drawBoard();
     });
   }
 
