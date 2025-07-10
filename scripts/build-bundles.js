@@ -9,8 +9,11 @@ const config = {
 
 const common = ['scripts/pause.js', 'scripts/settings.js'];
 
+const outputNames = { classic: 'classic.js', infini: 'infini.js' };
+
 for (const [dir, files] of Object.entries(config)) {
-  const outPath = path.join(__dirname, '..', dir, 'bundle.js');
+  const outFile = outputNames[dir] || 'bundle.js';
+  const outPath = path.join(__dirname, '..', dir, outFile);
   let bundle = '';
   const inputs = files.map(f => path.join(dir, f)).concat(common);
 
