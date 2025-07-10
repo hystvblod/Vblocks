@@ -1,9 +1,56 @@
+// Begin challenge/controls.js
+document.addEventListener("keydown", e => {
+  if (gameOver || paused) {
+    // Permet de sortir de la pause avec 'P'
+    if ((e.key === "p" || e.key === "P") && paused) {
+      paused = false;
+      update();
+      drawBoard();
+    }
+    return;
+  }
+
+  // Empêcher le comportement par défaut pour les touches directionnelles
+  if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
+
+  switch (e.key) {
+    case "ArrowLeft":
+      move(-1);
+      drawBoard();
+      break;
+    case "ArrowRight":
+      move(1);
+      drawBoard();
+      break;
+    case "ArrowDown":
+      dropPiece();
+      drawBoard();
+      break;
+    case "ArrowUp":
+      rotatePiece();
+      drawBoard();
+      break;
+    case "c":
+    case "C":
+      holdPiece();
+      drawBoard();
+      break;
+    case "p":
+    case "P":
+      paused = true;
+      drawBoard();
+      break;
+  }
+});
+
+
+// Begin challenge/game_challenge.js
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const holdCanvas = document.getElementById("holdCanvas");
-const holdCtx = holdCanvas ? holdCanvas.getContext("2d") : null;
+const holdCtx = holdCanvas.getContext("2d");
 const nextCanvas = document.getElementById("nextCanvas");
-const nextCtx = nextCanvas ? nextCanvas.getContext("2d") : null;
+const nextCtx = nextCanvas.getContext("2d");
 
 const COLS = 10, ROWS = 20;
 let BLOCK_SIZE = 30;
@@ -79,16 +126,14 @@ function resizeCanvas() {
   canvas.style.height = canvas.height + "px";
 
   const miniSize = Math.max(Math.floor(BLOCK_SIZE * 4), 60);
-  if (holdCanvas && nextCanvas) {
-    [holdCanvas, nextCanvas].forEach(c => {
-      c.width = c.height = miniSize;
-      c.style.width = c.style.height = miniSize + "px";
-    });
-  }
+  [holdCanvas, nextCanvas].forEach(c => {
+    c.width = c.height = miniSize;
+    c.style.width = c.style.height = miniSize + "px";
+  });
 
   drawBoard();
-  if (holdCtx) drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
-  if (nextCtx) drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
+  drawMiniPiece(holdCtx, heldPiece, miniSize / 4);
+  drawMiniPiece(nextCtx, nextPiece, miniSize / 4);
 }
 window.addEventListener("resize", resizeCanvas);
 window.addEventListener("orientationchange", resizeCanvas);
@@ -186,8 +231,8 @@ function drawBoard() {
     );
   }
 
-  if (nextCtx) drawMiniPiece(nextCtx, nextPiece, null);
-  if (holdCtx) drawMiniPiece(holdCtx, heldPiece, null);
+  drawMiniPiece(nextCtx, nextPiece, null);
+  drawMiniPiece(holdCtx, heldPiece, null);
 }
 
 function drawMiniPiece(ctxRef, piece, size = null) {
@@ -320,17 +365,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 // --- Contrôles boutons physiques (optionnel)
-function whenReady(fn) {
-  if (window.cordova || window.Capacitor) {
-    document.addEventListener('deviceready', fn, false);
-  } else if (document.readyState !== 'loading') {
-    fn();
-  } else {
-    document.addEventListener('DOMContentLoaded', fn);
-  }
-}
-
-whenReady(() => {
+document.addEventListener("DOMContentLoaded", () => {
   const btnLeft   = document.querySelector("button[data-action='left']");
   const btnRight  = document.querySelector("button[data-action='right']");
   const btnRotate = document.querySelector("button[data-action='rotate']");
@@ -414,3 +449,209 @@ function update(time = 0) {
 loadBlockImages(currentTheme);
 resizeCanvas();
 update();
+
+
+// Begin challenge/intro.js
+window.onload = function() {
+  alert("Bienvenue dans V-Blocks ! Le but du jeu est simple : remplir des lignes avec les pièces qui tombent. Bon jeu !");
+
+  // Optionnellement, tu peux ajouter une animation ou un petit message personnalisé
+  // avant de lancer le jeu
+};
+
+
+// Begin challenge/score.js
+let score = 0;
+let highscore = localStorage.getItem("vblocks_highscore") || 0;
+
+// Mise à jour du score en fonction des lignes complètes
+function updateScore(lines) {
+  score += lines * 100;
+  document.getElementById("score").textContent = "Score : " + score;
+
+  // Mise à jour du record
+  if (score > highscore) {
+    highscore = score;
+    localStorage.setItem("vblocks_highscore", highscore);
+    document.getElementById("highscore").textContent = "Record : " + highscore;
+  }
+}
+
+// Appelle cette fonction pour mettre à jour le score à chaque ligne complète
+function clearLines(board) {
+  let lines = 0;
+  board = board.filter(row => {
+    if (row.every(cell => cell !== "")) {
+      lines++;
+      return false;
+    }
+    return true;
+  });
+
+  // Ajouter des lignes vides au-dessus
+  while (board.length < ROWS) board.unshift(Array(COLS).fill(""));
+
+  // Mise à jour du score
+  updateScore(lines);
+}
+
+
+// Begin scripts/pause.js
+document.addEventListener("DOMContentLoaded", function() {
+  const settingsButton = document.getElementById("settings-button");
+  const settingsMenu = document.getElementById("settings-menu");
+  const themeMenu = document.getElementById("theme-menu");
+
+  const muteButton = document.getElementById("mute-button");
+  const themeButton = document.getElementById("theme-button");
+  const closeSettingsButton = document.getElementById("close-settings-button");
+  const backFromThemeButton = document.getElementById("back-theme-button");
+  const themeStyle = document.getElementById("theme-style");
+  const music = document.getElementById("music");
+
+  const themeButtons = document.querySelectorAll(".theme-select-button");
+
+  if (!settingsButton || !settingsMenu || !themeButton || !closeSettingsButton || !backFromThemeButton || !themeStyle) {
+    console.error("Un ou plusieurs éléments du DOM manquent !");
+    return;
+  }
+
+  settingsButton.addEventListener("click", showSettingsMenu);
+  muteButton.addEventListener("click", toggleMusic);
+  themeButton.addEventListener("click", showThemeMenu);
+  closeSettingsButton.addEventListener("click", hideSettingsMenu);
+  backFromThemeButton.addEventListener("click", backToSettings);
+
+  themeButtons.forEach(button => {
+    button.addEventListener("click", function() {
+      const newTheme = this.getAttribute("data-theme");
+      if (newTheme && typeof changeTheme === 'function') {
+        changeTheme(newTheme); // Appelle la fonction de changement de thème
+        hideAllMenus();
+      } else {
+        console.error("Erreur : fonction changeTheme() non trouvée !");
+      }
+    });
+  });
+
+  function showSettingsMenu() {
+    paused = true;
+    if (music && !music.paused) music.pause();
+    settingsMenu.style.display = "flex";
+    themeMenu.style.display = "none";
+  }
+
+  function hideSettingsMenu() {
+    paused = false;
+    if (music && music.paused) music.play();
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "none";
+  }
+
+  function toggleMusic() {
+    if (!music) return;
+    if (music.paused) {
+      music.play();
+      muteButton.textContent = "Mute Musique";
+    } else {
+      music.pause();
+      muteButton.textContent = "Unmute Musique";
+    }
+  }
+
+  function showThemeMenu() {
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "flex";
+  }
+
+  function backToSettings() {
+    themeMenu.style.display = "none";
+    settingsMenu.style.display = "flex";
+  }
+
+  function hideAllMenus() {
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "none";
+    paused = false;
+    if (music && music.paused) music.play();
+  }
+});
+
+
+// Begin scripts/settings.js
+document.addEventListener("DOMContentLoaded", function() {
+  const settingsButton = document.getElementById("settings-button");
+  const settingsMenu = document.getElementById("settings-menu");
+  const themeMenu = document.getElementById("theme-menu");
+
+  const muteButton = document.getElementById("mute-button");
+  const themeButton = document.getElementById("theme-button");
+  const closeSettingsButton = document.getElementById("close-settings-button");
+  const backFromThemeButton = document.getElementById("back-theme-button");
+  const themeStyle = document.getElementById("theme-style");
+  const themeButtons = document.querySelectorAll(".theme-select-button");
+  const music = document.getElementById("music");
+
+  if (!settingsButton || !settingsMenu || !themeMenu || !muteButton || !themeButton || !closeSettingsButton || !backFromThemeButton || !themeStyle) {
+    console.error("Un ou plusieurs éléments du DOM sont introuvables !");
+    return;
+  }
+
+  settingsButton.addEventListener("click", showSettingsMenu);
+  muteButton.addEventListener("click", toggleMusic);
+  themeButton.addEventListener("click", showThemeMenu);
+  closeSettingsButton.addEventListener("click", hideSettingsMenu);
+  backFromThemeButton.addEventListener("click", backToSettings);
+
+  themeButtons.forEach(button => {
+    button.addEventListener("click", function() {
+      const newTheme = this.getAttribute("data-theme");
+      if (newTheme) {
+        themeStyle.setAttribute("href", `../themes/${newTheme}.css`);
+        loadBlockImages(newTheme);
+        drawBoard();
+      }
+      backToSettings(); // Revenir au menu paramètres
+    });
+  });
+
+  function showSettingsMenu() {
+    paused = true;
+    if (music && !music.paused) music.pause();
+    settingsMenu.style.display = "flex";
+    themeMenu.style.display = "none";
+  }
+
+  function hideSettingsMenu() {
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "none";
+    paused = false; // LE JEU REDÉMARRE seulement ici
+    if (!gameOver) {
+      requestAnimationFrame(update);
+    }
+    if (music && music.paused) music.play();
+  }
+
+  function toggleMusic() {
+    if (!music) return;
+    if (music.paused) {
+      music.play();
+      muteButton.textContent = "Mute Musique";
+    } else {
+      music.pause();
+      muteButton.textContent = "Unmute Musique";
+    }
+  }
+
+  function showThemeMenu() {
+    settingsMenu.style.display = "none";
+    themeMenu.style.display = "flex";
+  }
+
+  function backToSettings() {
+    themeMenu.style.display = "none";
+    settingsMenu.style.display = "flex";
+  }
+});
+
+
