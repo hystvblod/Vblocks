@@ -459,13 +459,6 @@ requestAnimationFrame(update);
 console.log("Bienvenue dans V-Blocks 🎮");
 
 
-// Begin classic/score.js
-function updateBestScore() {
-  let best = localStorage.getItem("vblocks_best_score");
-  if (!best || score > best) {
-    localStorage.setItem("vblocks_best_score", score);
-  }
-}
 
 
 // Begin scripts/pause.js
