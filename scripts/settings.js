@@ -1,8 +1,4 @@
-const { whenReady } = typeof module !== 'undefined' && module.exports
-  ? require('./utils')
-  : window;
-
-whenReady(function() {
+document.addEventListener("DOMContentLoaded", function() {
   const settingsButton = document.getElementById("settings-button");
   const settingsMenu = document.getElementById("settings-menu");
   const themeMenu = document.getElementById("theme-menu");

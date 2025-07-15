@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>V-Blocks - Challenge</title>
+  <link rel="stylesheet" href="../themes/themes.css" id="theme-style" />
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      width: 100vw; height: 100dvh;
+      overflow: hidden;
+      font-family: 'Quicksand', Arial, sans-serif;
+    }
+    body {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      width: 100vw; height: 100dvh;
+      min-height: 100dvh;
+      background: var(--body-bg, #f9ffec);
+      color: var(--body-color, #222);
+      transition: background 0.4s, color 0.3s;
+    }
+    .game-header {
+      width: 100vw;
+      text-align: center;
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+    .game-header span {
+      font-size: 2em;
+      font-weight: 900;
+      color: var(--title-color, #2b8e2f);
+      letter-spacing: 2px;
+      text-shadow: var(--title-shadow, none);
+    }
+    .challenge-box {
+      background: var(--box-bg, #f9ffec);
+      border: 2px dashed var(--box-border, #4bbf50);
+      border-radius: 15px;
+      padding: 10px 7px 7px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 12px var(--box-shadow, #4bbf5011);
+      text-align: center;
+    }
+    .challenge-label {
+      font-weight: bold;
+      color: var(--panel-text, #22a321);
+      font-size: 1em; margin-bottom: 2px; letter-spacing: 1px;
+    }
+    .challenge-defi {
+      color: var(--body-color, #1d421d);
+      font-size: 1em; margin-bottom: 6px; font-weight: 600;
+    }
+    .challenge-timer {
+      font-weight: bold; font-size: 1.18em;
+      color: var(--timer-color, #d15510);
+      margin-bottom: 3px;
+    }
+    .top-canvas-row {
+      width: 96vw; max-width: 410px;
+      display: flex; justify-content: space-between; margin-bottom: 10px;
+    }
+    .side-canvas-block {
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .side-canvas-block label {
+      font-size: 1em;
+      color: var(--panel-text, #38a75f);
+      font-weight: 700; margin-bottom: 2px;
+    }
+    #holdCanvas, #nextCanvas {
+      width: 52px; height: 52px;
+      background: var(--canvas-panel-bg, #f7fff3);
+      border: 2px dashed var(--canvas-panel-border, #7edc7c);
+      border-radius: 0.4em;
+      box-shadow: 0 2px 7px var(--canvas-panel-shadow, #a5eabb33);
+      display: block;
+      margin: 0 auto;
+    }
+    .canvas-main-wrap {
+      width: 96vw; max-width: 410px;
+      display: flex; justify-content: center; margin-bottom: 10px;
+    }
+    #gameCanvas {
+      width: 90vw; max-width: 340px;
+      aspect-ratio: 10 / 20;
+      background: var(--canvas-bg, #ecf7e2);
+      border-radius: 0.4em;
+      box-shadow: 0 6px 32px var(--canvas-shadow, #5ee47c23);
+      touch-action: none;
+    }
+    .score-row {
+      margin-top: 10px; font-size: 1.15em; font-weight: 700;
+      display: flex; justify-content: center; gap: 1.3em;
+      color: var(--score-color, #135523);
+      letter-spacing: 0.6px; width: 94vw; max-width: 410px;
+    }
+    .score-label { min-width: 60px; text-align: right; }
+    .score-value { min-width: 44px; text-align: left; }
+    #end-popup {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+      background: rgba(20,25,30,0.82);
+      display: none; align-items: center; justify-content: center;
+      z-index: 999;
+    }
+    #end-popup .popup-content {
+      background: var(--box-bg, #fff);
+      border-radius: 17px;
+      padding: 24px 20px; box-shadow: 0 4px 30px #0004;
+      text-align: center; max-width: 300px;
+    }
+    #end-popup .popup-content .msg {
+      font-size: 1.1em; margin-bottom: 14px; font-weight: 600;
+    }
+    #end-popup .popup-content button {
+      margin: 6px; padding: 9px 24px; font-size: 1em;
+      border-radius: 10px; border: none;
+      background: var(--btn-bg, #4bbf50);
+      color: var(--btn-color, #fff);
+      font-weight: 600; cursor: pointer;
+      box-shadow: var(--btn-shadow, none);
+    }
+    #end-popup .popup-content button:hover {
+      background: var(--btn-hover-bg, #22a321);
+      color: var(--btn-hover-color, #fff);
+    }
+    @media (max-width: 480px) {
+      .game-header span { font-size: 1.4em; }
+      #gameCanvas { max-width: 99vw; }
+    }
+  </style>
+  <script>
+    // Thème au chargement
+    const theme = localStorage.getItem('themeVBlocks') || 'neon';
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.setAttribute('data-theme', theme);
+      window.currentTheme = theme;
+      if (typeof loadBlockImages === "function") loadBlockImages(theme);
+    });
+  </script>
+</head>
+<body>
+  <div class="game-header">
+    <span>V-Blocks Challenge</span>
+  </div>
+  <div class="challenge-box" id="challenge-box">
+    <div class="challenge-label">Défi <span id="challenge-num"></span></div>
+    <div class="challenge-defi" id="challenge-defi"></div>
+    <div class="challenge-timer" id="challenge-timer"></div>
+  </div>
+  <div class="top-canvas-row">
+    <div class="side-canvas-block">
+      <label>Réserve</label>
+      <canvas id="holdCanvas" width="52" height="52"></canvas>
+    </div>
+    <div class="side-canvas-block">
+      <label>Suivante</label>
+      <canvas id="nextCanvas" width="52" height="52"></canvas>
+    </div>
+  </div>
+  <div class="canvas-main-wrap">
+    <canvas id="gameCanvas" width="180" height="360"></canvas>
+  </div>
+  <div class="score-row">
+    <span class="score-label">Score</span>
+    <span class="score-value" id="score">0</span>
+    <span class="score-label">Record</span>
+    <span class="score-value" id="highscore">0</span>
+  </div>
+  <!-- POPUP -->
+  <div id="end-popup">
+    <div class="popup-content">
+      <div class="msg" id="end-msg"></div>
+      <button id="replay-btn">Rejouer</button>
+      <button id="next-btn">Défi suivant</button>
+      <button onclick="location.reload()">Menu</button>
+    </div>
+  </div>
+  <script src="js/game_challenge.js"></script>
+</body>
+</html>

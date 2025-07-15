@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title data-i18n="settings.title">Paramètres</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link id="theme-style" rel="stylesheet" href="style/main.css"/>
+  <style>
+    body {
+      font-family: 'Poppins', 'Quicksand', Arial, sans-serif;
+      background: linear-gradient(130deg,#e9ffe5 60%,#e7f0fd 100%);
+      min-height: 100vh; margin: 0; color: #333;
+    }
+    .param-container {
+      max-width: 430px; margin: 2vw auto 0 auto; background: #ffffffdd;
+      border-radius: 2.2em; box-shadow: 0 4px 32px #85c9b422;
+      padding: 2.2em 1.2em 2.2em 1.2em; display: flex; flex-direction: column; gap: 2.1em;
+    }
+    h1 { text-align: center; color: #259148; margin: 0 0 1em 0; font-size: 2.1em; font-weight: 900; }
+    .param-group { margin-bottom: 1.5em; }
+    label { font-weight: bold; display: block; margin-bottom: 0.5em; }
+    .switch {
+      display: flex; align-items: center; gap: 1.2em; margin-top: 0.2em;
+    }
+    input[type="checkbox"] {
+      width: 24px; height: 24px;
+      accent-color: #259148;
+    }
+    .lang-select {
+      display: flex; flex-wrap: wrap; gap: 1em;
+      margin-top: 0.7em;
+    }
+    .lang-option {
+      display: flex; align-items: center; gap: 0.38em;
+      padding: 0.35em 0.7em; border-radius: 10px; cursor: pointer;
+      background: #fff; color: #222; border: 1.4px solid #e0e0e0;
+      font-weight: 600; transition: border .18s, box-shadow .18s;
+    }
+    .lang-option.selected {
+      border: 2px solid #22539f; background: #eaf2ff;
+      box-shadow: 0 2px 9px #22539f14;
+    }
+    .flag { width: 22px; height: 16px; vertical-align: middle; }
+    .btn-delete {
+      background: #fff0f2; color: #cb234b;
+      border: none; border-radius: 1em; font-weight: 800; font-size: 1.08em;
+      padding: 0.88em 0; width: 100%; cursor: pointer;
+      margin-top: 2em; transition: background 0.13s, color 0.13s;
+      box-shadow: 0 1px 8px #ffb8ce1a;
+    }
+    .btn-delete:active { background: #ffd2e0; color: #8d1a34; }
+    small { font-size: 0.98em; color: #555; }
+    .danger { color: #cb234b; }
+    .subtle { color: #888; font-size: 0.98em; }
+    @media (max-width: 530px) {
+      .param-container { max-width: 99vw; padding: 1.3em 0.3em 1.3em 0.3em; }
+      h1 { font-size: 1.3em;}
+    }
+  </style>
+</head>
+<body>
+  <div class="param-container">
+    <h1 data-i18n="settings.title">⚙️ Paramètres</h1>
+
+    <!-- Langue et drapeaux -->
+    <div class="param-group">
+      <label data-i18n="settings.language.label">Langue de l'interface :</label>
+      <div id="langue-select" class="lang-select"></div>
+      <div class="switch">
+        <input type="checkbox" id="flag-toggle">
+        <span id="flag-label" data-i18n="settings.flags.on">Drapeaux activés</span>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="param-group">
+      <label data-i18n="settings.notifications.label">Notifications :</label>
+      <div class="switch">
+        <input type="checkbox" id="notif-toggle">
+        <span id="notif-label" data-i18n="settings.notifications.on">Activées</span>
+      </div>
+    </div>
+
+    <!-- Partage social -->
+    <div class="param-group">
+      <label data-i18n="settings.share.label">Partage social :</label>
+      <div class="switch">
+        <input type="checkbox" id="share-toggle">
+        <span id="share-label" data-i18n="settings.share.on">Autorisés</span>
+      </div>
+      <small data-i18n="settings.share.note">
+        ⚠️ En mode Duel, les photos sont toujours envoyées pour comparaison.<br>
+        Cette option ne concerne que la diffusion publique (ex : Instagram).
+      </small>
+    </div>
+
+    <!-- Publicités -->
+    <div class="param-group">
+      <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
+      <div class="switch">
+        <input type="checkbox" id="ads-toggle">
+        <span id="ads-label" data-i18n="settings.ads.on">Activées</span>
+      </div>
+      <small data-i18n="settings.ads.note">Tu peux modifier ton choix RGPD à tout moment ici.</small>
+    </div>
+
+    <!-- Suppression du compte -->
+    <div class="param-group">
+      <label class="danger" data-i18n="settings.delete.title">Suppression de mon compte</label>
+      <button class="btn-delete" id="deleteAccountBtn" data-i18n="settings.delete.btn">Supprimer définitivement mon compte</button>
+      <small class="subtle" data-i18n="settings.delete.note">Attention, cette action est irréversible !</small>
+    </div>
+
+    <button onclick="history.back()" data-i18n="settings.back">⬅️ Retour</button>
+  </div>
+  <script>
+    // === LANGUES & DRAPEAUX (reprend structure existante) ===
+    const langues = [
+      { code: "fr", label: "Français", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#0055a4"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ef4135"/></svg>` },
+      { code: "en", label: "English (US)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#b22234"/><g><rect width="22" height="1.23" y="1.23" fill="#fff"/><rect width="22" height="1.23" y="3.69" fill="#fff"/><rect width="22" height="1.23" y="6.15" fill="#fff"/><rect width="22" height="1.23" y="8.61" fill="#fff"/><rect width="22" height="1.23" y="11.07" fill="#fff"/><rect width="22" height="1.23" y="13.53" fill="#fff"/></g><rect width="8.8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.2" cy="1" r="0.35"/><circle cx="2.4" cy="1" r="0.35"/><circle cx="3.6" cy="1" r="0.35"/><circle cx="4.8" cy="1" r="0.35"/><circle cx="6" cy="1" r="0.35"/><circle cx="7.2" cy="1" r="0.35"/><circle cx="1.8" cy="2" r="0.35"/><circle cx="3" cy="2" r="0.35"/><circle cx="4.2" cy="2" r="0.35"/><circle cx="5.4" cy="2" r="0.35"/><circle cx="6.6" cy="2" r="0.35"/><circle cx="2.4" cy="3" r="0.35"/><circle cx="3.6" cy="3" r="0.35"/><circle cx="4.8" cy="3" r="0.35"/><circle cx="6" cy="3" r="0.35"/><circle cx="7.2" cy="3" r="0.35"/><circle cx="1.2" cy="4" r="0.35"/><circle cx="2.4" cy="4" r="0.35"/><circle cx="3.6" cy="4" r="0.35"/><circle cx="4.8" cy="4" r="0.35"/><circle cx="6" cy="4" r="0.35"/><circle cx="1.8" cy="5" r="0.35"/><circle cx="3" cy="5" r="0.35"/><circle cx="4.2" cy="5" r="0.35"/><circle cx="5.4" cy="5" r="0.35"/><circle cx="6.6" cy="5" r="0.35"/><circle cx="2.4" cy="6" r="0.35"/><circle cx="3.6" cy="6" r="0.35"/><circle cx="4.8" cy="6" r="0.35"/><circle cx="6" cy="6" r="0.35"/><circle cx="7.2" cy="6" r="0.35"/></g></svg>` },
+      // Ajoute ici toutes tes autres langues comme dans ta version actuelle
+    ];
+    const supportedLangs = langues.map(l => l.code);
+    const langueSelect = document.getElementById("langue-select");
+    let userLang = navigator.language?.split("-")[0] || "fr";
+    let currentLang = supportedLangs.includes(userLang) ? userLang : "fr";
+    const savedLang = localStorage.getItem("langue");
+    if (savedLang && supportedLangs.includes(savedLang)) currentLang = savedLang;
+    // Drapeaux visibles ?
+    const flagToggle = document.getElementById("flag-toggle");
+    const flagLabel = document.getElementById("flag-label");
+    flagToggle.checked = localStorage.getItem("flagsEnabled") !== "false";
+    flagLabel.textContent = flagToggle.checked

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>V-Blocks - Classique</title>
+  <link rel="stylesheet" href="../themes/themes.css" id="theme-style" />
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      width: 100vw; height: 100dvh;
+      overflow: hidden;
+      box-sizing: border-box;
+      font-family: 'Quicksand', Arial, sans-serif;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100vw;
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow: hidden;
+      position: relative;
+      background: var(--body-bg, #e3ffe5);
+      color: var(--body-color, #222);
+      transition: background 0.4s, color 0.3s;
+    }
+    .game-header {
+      width: 100vw;
+      text-align: center;
+      margin-top: 18px;
+      margin-bottom: 12px;
+      flex: none;
+    }
+    .game-header span {
+      font-size: 2.1em;
+      font-weight: 900;
+      color: var(--title-color, #379a36);
+      letter-spacing: 2px;
+      text-shadow: var(--title-shadow, none);
+    }
+    .top-canvas-row {
+      width: 96vw; max-width: 410px;
+      display: flex; flex-direction: row;
+      align-items: flex-end; justify-content: space-between;
+      margin-bottom: 10px;
+      flex: none;
+    }
+    .side-canvas-block {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 2px;
+    }
+    .side-canvas-block label {
+      font-size: 1em;
+      color: var(--panel-text, #38a75f);
+      font-weight: 700; margin-bottom: 2px;
+      text-align: center;
+    }
+    #holdCanvas, #nextCanvas {
+      width: 52px; height: 52px;
+      background: var(--canvas-panel-bg, #f7fff3);
+      border: 2px dashed var(--canvas-panel-border, #7edc7c);
+      border-radius: 0.4em;
+      box-shadow: 0 2px 7px var(--canvas-panel-shadow, #a5eabb33);
+      display: block;
+      margin: 0 auto;
+    }
+    .canvas-main-wrap {
+      width: 96vw; max-width: 410px;
+      display: flex; justify-content: center; align-items: center;
+      margin-bottom: 10px;
+      flex: none;
+    }
+    #gameCanvas {
+      width: 90vw; max-width: 340px;
+      aspect-ratio: 10 / 20;
+      background: var(--canvas-bg, #ecf7e2);
+      border-radius: 0.4em;
+      box-shadow: 0 6px 32px var(--canvas-shadow, #5ee47c23);
+      display: block;
+      margin: 0 auto;
+      touch-action: none;
+      flex: none;
+    }
+    .score-row {
+      margin-top: 10px;
+      font-size: 1.15em;
+      font-weight: 700;
+      display: flex; justify-content: center; gap: 1.3em;
+      color: var(--score-color, #135523);
+      width: 94vw; max-width: 410px;
+      letter-spacing: 0.6px;
+      flex: none;
+    }
+    .score-label { min-width: 60px; text-align: right; }
+    .score-value { min-width: 44px; text-align: left; }
+    .points-total {
+      margin-top: 7px;
+      font-size: 1.04em;
+      color: var(--score-color, #4e6f39);
+      font-weight: 600;
+      text-align: center;
+    }
+    #controls {
+      display: flex; justify-content: center; gap: 1.1em;
+      margin: 15px 0 0 0;
+      width: 100vw; max-width: 410px;
+      flex: none;
+    }
+    #controls button {
+      background: var(--btn-bg, #cbfae2);
+      color: var(--btn-color, #134c26);
+      font-weight: 700; border: none; border-radius: 1.1em;
+      padding: 0.68em 1.4em; font-size: 1.03em;
+      cursor: pointer; box-shadow: 0 1.5px 7px var(--btn-shadow, #44bc6138);
+      transition: background 0.16s, color 0.13s;
+      border: 2px solid var(--btn-border, transparent);
+    }
+    #controls button:active {
+      background: var(--btn-hover-bg, #89e7b2);
+      color: var(--btn-hover-color, #063c1a);
+      border-color: var(--btn-hover-border, #063c1a);
+    }
+    @media (max-width: 480px) {
+      .game-header span { font-size: 1.2em; }
+      #gameCanvas { max-width: 99vw; }
+      .top-canvas-row, .canvas-main-wrap, .score-row, #controls { max-width: 99vw; }
+      .score-row { font-size: 0.99em; }
+      #controls button { font-size: 0.98em; }
+    }
+  </style>
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      const theme = localStorage.getItem('themeVBlocks') || 'neon';
+      document.body.setAttribute('data-theme', theme);
+      if (typeof loadBlockImages === "function") loadBlockImages(theme);
+    });
+  </script>
+</head>
+<body>
+  <div class="game-header">
+    <span>V-Blocks</span>
+  </div>
+  <div class="top-canvas-row">
+    <div class="side-canvas-block">
+      <label data-i18n="reserve">Réserve</label>
+      <canvas id="holdCanvas" width="52" height="52"></canvas>
+    </div>
+    <div class="side-canvas-block">
+      <label data-i18n="suivante">Suivante</label>
+      <canvas id="nextCanvas" width="52" height="52"></canvas>
+    </div>
+  </div>
+  <div class="canvas-main-wrap">
+    <canvas id="gameCanvas" width="180" height="360"></canvas>
+  </div>
+  <div class="score-row">
+    <span class="score-label" data-i18n="score">Score</span>
+    <span class="score-value" id="score">0</span>
+    <span class="score-label" data-i18n="record">Record</span>
+    <span class="score-value" id="highscore">0</span>
+  </div>
+  <div class="points-total">
+    Total cumulé : <span id="total-points">0</span>
+  </div>
+  <div id="controls">
+    <button id="music-btn"><span data-i18n="btn.music">Musique</span></button>
+    <button onclick="location.reload()"><span data-i18n="btn.replay">Rejouer</span></button>
+  </div>
+  <audio id="music" src="../assets/sounds/chill.mp3" loop></audio>
+  <script src="js/game_classic.js"></script>
+</body>
+</html>

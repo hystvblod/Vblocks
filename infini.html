@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>V-Blocks - Infini</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+  <!-- ✅ Script qui force NEON par défaut si rien -->
+  <script>
+    let theme = localStorage.getItem('themeVBlocks') || 'neon';
+    localStorage.setItem('themeVBlocks', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  </script>
+
+  <!-- ✅ Ton CSS commun -->
+  <link rel="stylesheet" href="themes/themes.css" id="theme-style" />
+
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      width: 100vw; height: 100dvh;
+      overflow: hidden;
+      box-sizing: border-box;
+      font-family: 'Quicksand', Arial, sans-serif;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: var(--body-bg, #111);
+      color: var(--body-color, #ccc);
+      transition: background 0.4s, color 0.3s;
+    }
+    .game-header {
+      width: 100vw;
+      text-align: center;
+      margin-top: 18px;
+      margin-bottom: 12px;
+    }
+    .game-header span {
+      font-size: 2.1em;
+      font-weight: 900;
+      color: var(--title-color, #379a36);
+      letter-spacing: 2px;
+    }
+    .top-canvas-row {
+      width: 96vw; max-width: 410px;
+      display: flex; justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 10px;
+    }
+    .side-canvas-block {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .side-canvas-block label {
+      font-size: 1em; font-weight: 700; margin-bottom: 2px;
+      color: var(--panel-text, #38a75f);
+    }
+    #holdCanvas, #nextCanvas {
+      width: 52px; height: 52px;
+      background: var(--canvas-panel-bg, #f7fff3);
+      border: 2px dashed var(--canvas-panel-border, #7edc7c);
+      border-radius: 0.4em; box-shadow: 0 2px 7px #a5eabb33;
+    }
+    .canvas-main-wrap {
+      width: 96vw; max-width: 410px;
+      display: flex; justify-content: center; margin-bottom: 10px;
+    }
+    #gameCanvas {
+      width: 90vw; max-width: 340px; aspect-ratio: 10/20;
+      background: var(--canvas-bg, #ecf7e2);
+      border-radius: 0.4em; box-shadow: 0 6px 32px #5ee47c23;
+      touch-action: none;
+    }
+    .score-row {
+      margin-top: 10px;
+      font-size: 1.15em; font-weight: 700;
+      display: flex; justify-content: center; gap: 1.3em;
+      color: var(--score-color, #135523);
+    }
+    .score-label { min-width: 60px; text-align: right; }
+    .score-value { min-width: 44px; text-align: left; }
+    #controls {
+      display: flex; justify-content: center; gap: 1.1em;
+      margin-top: 15px;
+    }
+    #controls button {
+      background: var(--btn-bg, #cbfae2);
+      color: var(--btn-color, #134c26);
+      font-weight: 700; border: none; border-radius: 1.1em;
+      padding: 0.68em 1.4em; font-size: 1.03em;
+      cursor: pointer; box-shadow: 0 1.5px 7px #44bc6138;
+    }
+    #controls button:active {
+      background: var(--btn-hover-bg, #89e7b2);
+      color: var(--btn-hover-color, #063c1a);
+    }
+  </style>
+</head>
+<body>
+  <div class="game-header">
+    <span>V-Blocks Infini</span>
+  </div>
+
+  <div class="top-canvas-row">
+    <div class="side-canvas-block">
+      <label>Réserve</label>
+      <canvas id="holdCanvas" width="52" height="52"></canvas>
+    </div>
+    <div class="side-canvas-block">
+      <label>Suivante</label>
+      <canvas id="nextCanvas" width="52" height="52"></canvas>
+    </div>
+  </div>
+
+  <div class="canvas-main-wrap">
+    <canvas id="gameCanvas" width="180" height="360"></canvas>
+  </div>
+
+  <div class="score-row">
+    <span class="score-label">Score</span>
+    <span class="score-value" id="score">0</span>
+    <span class="score-label">Record</span>
+    <span class="score-value" id="highscore">0</span>
+  </div>
+
+  <div id="controls">
+    <button id="music-btn">Musique</button>
+    <button onclick="location.reload()">Rejouer</button>
+  </div>
+
+  <audio id="music" src="../assets/sounds/chill.mp3" loop></audio>
+
+  <script>
+    const music = document.getElementById("music");
+    document.getElementById("music-btn").onclick = function() {
+      if (music.paused) {
+        music.play();
+        this.textContent = "Musique";
+      } else {
+        music.pause();
+        this.textContent = "Muet";
+      }
+    };
+  </script>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/userData.js"></script>
+  <script src="js/game_infini.js"></script>
+</body>
+</html>

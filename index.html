@@ -4,205 +4,124 @@
   <meta charset="UTF-8">
   <title>VBlocks - Accueil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100vw;
-      height: 100vh;
-      font-family: 'Quicksand', Arial, sans-serif;
-      background: radial-gradient(ellipse at 60% 40%, #7061e8 0%, #5db9e3 55%, #483070 100%);
-      overflow: hidden;
-    }
-    .container {
-      width: 100vw;
-      height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      gap: 2vh;
-    }
-    .vblocks-logo {
-      width: 320px;
-      max-width: 88vw;
-      margin-bottom: 3vh;
-      filter: drop-shadow(0 8px 36px #28205c66);
-      animation: pop-in .9s cubic-bezier(.21,1.1,.45,1.12);
-      user-select: none;
-      display: block;
-    }
-    @keyframes pop-in {
-      from { transform: scale(.86) translateY(40px); opacity:0; }
-      to { transform: scale(1) translateY(0); opacity:1; }
-    }
-    .menu-list {
-      display: flex;
-      flex-direction: column;
-      gap: 2.1rem;
-      width: 92vw;
-      max-width: 410px;
-    }
-    .menu-btn {
-      width: 100%;
-      border: none;
-      outline: none;
-      border-radius: 2rem;
-      padding: 0;
-      margin: 0 auto;
-      font-size: 1.38rem;
-      box-shadow: 0 7px 36px #2c2a5150, 0 1.5px 1px #fff5;
-      cursor: pointer;
-      min-height: 68px;
-      transition: transform .13s, box-shadow .15s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-    }
-    .menu-btn:hover, .menu-btn:focus-visible {
-      transform: scale(1.035) translateY(-1.5px);
-      box-shadow: 0 9px 42px #25206e88;
-      filter: brightness(1.04);
-      outline: none;
-    }
-    .menu-btn.blue {
-      background: linear-gradient(90deg, #7fbeff 0%, #63dcfb 100%);
-      color: #fff;
-      box-shadow: 0 4px 18px #1e64a772;
-    }
-    .menu-btn.purple {
-      background: linear-gradient(90deg, #b29eff 0%, #a96beb 100%);
-      color: #fff;
-      box-shadow: 0 4px 18px #7f4df165;
-    }
-    .menu-btn.yellow {
-      background: linear-gradient(90deg, #ffd85a 0%, #ffb954 100%);
-      color: #784e03;
-      box-shadow: 0 4px 18px #b17e1348;
-      text-shadow: 0 1px 1px #fff5;
-    }
-    .menu-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      gap: 0.28rem;
-    }
-    .label {
-      font-family: 'Quicksand', Arial, sans-serif;
-      font-size: 1.33em;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-      user-select: none;
-      text-shadow: 0 2px 12px #25206e30;
-      line-height: 1.1;
-      margin-bottom: 0.18rem;
-      text-align: center;
-      width: 100%;
-      display: block;
-    }
-    .info-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #f5f6f9;
-      color: #4845ae;
-      font-size: 1.33rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto;
-      margin-top: 4px;
-      box-shadow: 0 1px 8px #a8a0d037;
-      cursor: pointer;
-      border: none;
-      outline: none;
-      transition: background .16s, color .16s, transform .13s;
-      font-family: inherit;
-      font-weight: 700;
-    }
-    .info-btn:hover, .info-btn:focus-visible {
-      background: #ffe06c;
-      color: #915e04;
-      outline: none;
-      transform: scale(1.13);
-    }
-    /* Responsive */
-    @media (max-width: 540px) {
-      .vblocks-logo { width: 70vw; margin-bottom: 2vh;}
-      .menu-list { gap: 1.1rem; max-width: 99vw; }
-      .menu-btn { font-size: 1.09rem; min-height: 48px;}
-      .info-btn { width: 27px; height: 27px; font-size: 1.08rem;}
-      .label { font-size: 1.07em;}
-    }
-    .tooltip-box {
-      position: fixed;
-      background: #fff;
-      color: #2e2378;
-      padding: 10px 18px;
-      border-radius: 14px;
-      box-shadow: 0 2px 20px #211b3e44;
-      font-size: 1.08rem;
-      display: none;
-      z-index: 99;
-      max-width: 270px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-weight: 500;
-      letter-spacing: 0.2px;
-    }
-  </style>
+  <link rel="stylesheet" href="style/main.css" />
 </head>
 <body>
+  <!-- Boutons top-bar (profil, paramètres) -->
+  <div class="top-buttons top-buttons-home">
+    <a href="profil.html" class="btn-icon" title="Profil">
+      <img src="assets/icons/user.svg" alt="Profil" />
+      <span data-i18n="menu.profil" style="display:none;">Profil</span>
+    </a>
+    <a href="parametres.html" class="btn-icon" title="Paramètres">
+      <img src="assets/icons/settings.svg" alt="Paramètres" />
+      <span data-i18n="menu.parametres" style="display:none;">Paramètres</span>
+    </a>
+  </div>
+  <!-- -------- POPUP RGPD/CONSENT PUBS -------- -->
+  <div id="popup-consent" class="popup-consent-bg" style="display:none;">
+    <div class="popup-consent-box">
+      <h2 data-i18n="index.rgpd.title">Confidentialité & Publicités</h2>
+      <p data-i18n="index.rgpd.body1">
+        VBlocks utilise des identifiants publicitaires pour diffuser des pubs personnalisées.<br>
+        Tu peux refuser ou accepter la personnalisation.
+      </p>
+      <small data-i18n="index.rgpd.body2">(Tu peux changer d'avis plus tard dans les paramètres)</small>
+      <div style="display:flex;gap:1em;justify-content:center;margin-top:1em;">
+        <button id="consent-accept" class="btn-accept" data-i18n="index.rgpd.accept">Accepter</button>
+        <button id="consent-refuse" class="btn-refuse" data-i18n="index.rgpd.refuse">Refuser</button>
+      </div>
+    </div>
+  </div>
+  <!-- -------- FIN POPUP RGPD/CONSENT -------- -->
   <div class="container">
     <img class="vblocks-logo" src="assets/images/vblocks-logo.png" alt="VBlocks Logo" draggable="false" />
     <div class="menu-list">
-      <button class="menu-btn blue" onclick="location.href='classic/classic.html'">
-        <div class="menu-content">
-          <span class="label">Classic</span>
-          <button type="button" class="info-btn" data-tip="🎮 Mode classique avec montée de vitesse progressive">?</button>
-        </div>
+      <button class="menu-btn blue" onclick="location.href='classic.html'">
+        <span class="btn-label">Classic</span>
+        <span class="info-btn" tabindex="0" data-i18n="tip.classic" data-tip="Mode classique avec montée de vitesse progressive">?</span>
       </button>
-      <button class="menu-btn purple" onclick="location.href='infini/infini.html'">
-        <div class="menu-content">
-          <span class="label">Infini</span>
-          <button type="button" class="info-btn" data-tip="🧘 Mode relax sans fin, sans accélération">?</button>
-        </div>
+      <button class="menu-btn purple" onclick="location.href='infini.html'">
+        <span class="btn-label">Infini</span>
+        <span class="info-btn" tabindex="0" data-i18n="tip.infini" data-tip="Mode relax sans fin, sans accélération">?</span>
       </button>
-      <button class="menu-btn yellow" onclick="location.href='challenge/challenge.html'">
-        <div class="menu-content">
-          <span class="label">Challenge</span>
-          <button type="button" class="info-btn" data-tip="🏆 Missions spéciales avec objectifs">?</button>
-        </div>
+      <button class="menu-btn yellow" onclick="location.href='challenge.html'">
+        <span class="btn-label">Challenge</span>
+        <span class="info-btn" tabindex="0" data-i18n="tip.challenge" data-tip="Missions spéciales avec objectifs">?</span>
       </button>
+      <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="location.href='concours.html'">
+  <span class="btn-label" data-i18n="menu.concours">Concours</span>
+  <span class="info-btn" tabindex="0" data-i18n="tip.concours" data-tip="Participe au concours pour gagner !">?</span>
+</button>
     </div>
   </div>
   <div class="tooltip-box" id="tooltip"></div>
   <script>
-    // Gestion des tooltips propres
+    // Tooltip parfait sous le bouton, centré, propre et prêt i18n
     const tooltip = document.getElementById('tooltip');
     document.querySelectorAll('.info-btn').forEach(el => {
       el.addEventListener('click', function (e) {
         e.stopPropagation();
-        tooltip.innerHTML = el.dataset.tip;
-        const rect = el.getBoundingClientRect();
+        let text = el.getAttribute('data-tip');
+        const parentBtn = el.closest('.menu-btn');
+        const rect = parentBtn.getBoundingClientRect();
+        tooltip.innerHTML = text;
+        tooltip.style.width = '';
         tooltip.style.display = 'block';
-        tooltip.style.top = (rect.top + window.scrollY + rect.height + 8) + 'px';
-        tooltip.style.left = (rect.left + window.scrollX + rect.width / 2) + 'px';
+        const scrollTop = window.scrollY || window.pageYOffset;
+        const scrollLeft = window.scrollX || window.pageXOffset;
+        tooltip.style.top = (rect.bottom + scrollTop) + 'px';
+        tooltip.style.left = (rect.left + rect.width/2 + scrollLeft) + 'px';
+        tooltip.classList.add('visible');
       });
     });
     document.addEventListener('click', () => {
-      tooltip.style.display = 'none';
+      tooltip.classList.remove('visible');
     });
     window.addEventListener('resize', () => {
-      tooltip.style.display = 'none';
+      tooltip.classList.remove('visible');
+    });
+
+    // Affiche la popup de consentement pubs au lancement (RGPD)
+    window.addEventListener("DOMContentLoaded", function() {
+      const consent = localStorage.getItem("rgpdConsent");
+      if (!consent) {
+        document.getElementById("popup-consent").style.display = "flex";
+      }
+      document.getElementById("consent-accept").onclick = function() {
+        localStorage.setItem("rgpdConsent", "accept");
+        document.getElementById("popup-consent").style.display = "none";
+        // TODO : Initialiser le SDK pub SEULEMENT si accept
+      };
+      document.getElementById("consent-refuse").onclick = function() {
+        localStorage.setItem("rgpdConsent", "refuse");
+        document.getElementById("popup-consent").style.display = "none";
+      };
     });
   </script>
-</body>
-</html>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script src="js/userData.js"></script>
+<script>
+  async function checkConcoursStatus() {
+    const { data, error } = await sb
+      .from('config')
+      .select('concours_enabled')
+      .eq('id', 'global')
+      .single();
+
+    if (error) {
+      console.error("Erreur config :", error);
+      return;
+    }
+
+    if (data?.concours_enabled) {
+      document.getElementById("btnConcours").style.display = "block";
+    } else {
+      document.getElementById("btnConcours").style.display = "none";
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    checkConcoursStatus();
+  });
+</script>
