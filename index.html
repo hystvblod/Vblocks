@@ -5,9 +5,25 @@
   <title>VBlocks - Accueil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style/main.css" />
+  <style>
+    /* ...ton CSS normal ici... */
+
+    /* Ajout couleur pro pour Concours & Boutique UNIQUEMENT */
+.menu-btn.green {
+  background: #72eb63 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 15px #2fd7b144;
+}
+.menu-btn.orange {
+  background: #f0d642  !important;
+  color: #fff !important;
+  box-shadow: 0 3px 15px #2fd7b144;
+}
+
+  </style>
 </head>
 <body>
-  <!-- Boutons top-bar (profil, paramètres) -->
+  <!-- Boutons top-bar (profil, paramètres uniquement) -->
   <div class="top-buttons top-buttons-home">
     <a href="profil.html" class="btn-icon" title="Profil">
       <img src="assets/icons/user.svg" alt="Profil" />
@@ -49,10 +65,15 @@
         <span class="btn-label">Challenge</span>
         <span class="info-btn" tabindex="0" data-i18n="tip.challenge" data-tip="Missions spéciales avec objectifs">?</span>
       </button>
+            <button class="menu-btn green" onclick="location.href='boutique.html'">
+        <span class="btn-label" data-i18n="menu.boutique">Boutique</span>
+             <span class="info-btn" tabindex="0" data-i18n="tip.boutique" data-tip="Personnalise ton jeu">?</span>
+      </button>
       <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="location.href='concours.html'">
-  <span class="btn-label" data-i18n="menu.concours">Concours</span>
-  <span class="info-btn" tabindex="0" data-i18n="tip.concours" data-tip="Participe au concours pour gagner !">?</span>
-</button>
+        <span class="btn-label" data-i18n="menu.concours">Concours</span>
+           
+      </button>
+
     </div>
   </div>
   <div class="tooltip-box" id="tooltip"></div>
@@ -100,28 +121,30 @@
     });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script src="js/userData.js"></script>
-<script>
-  async function checkConcoursStatus() {
-    const { data, error } = await sb
-      .from('config')
-      .select('concours_enabled')
-      .eq('id', 'global')
-      .single();
+  <script src="js/userData.js"></script>
+  <script>
+    async function checkConcoursStatus() {
+      const { data, error } = await sb
+        .from('config')
+        .select('concours_enabled')
+        .eq('id', 'global')
+        .single();
 
-    if (error) {
-      console.error("Erreur config :", error);
-      return;
+      if (error) {
+        console.error("Erreur config :", error);
+        return;
+      }
+
+      if (data?.concours_enabled) {
+        document.getElementById("btnConcours").style.display = "block";
+      } else {
+        document.getElementById("btnConcours").style.display = "none";
+      }
     }
 
-    if (data?.concours_enabled) {
-      document.getElementById("btnConcours").style.display = "block";
-    } else {
-      document.getElementById("btnConcours").style.display = "none";
-    }
-  }
-
-  window.addEventListener("DOMContentLoaded", () => {
-    checkConcoursStatus();
-  });
-</script>
+    window.addEventListener("DOMContentLoaded", () => {
+      checkConcoursStatus();
+    });
+  </script>
+</body>
+</html>

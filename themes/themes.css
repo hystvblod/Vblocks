@@ -249,7 +249,7 @@ body[data-theme="retro"] {
   --btn-shadow: 0 0 10px #eec643;
 }
 /* ---- GOTHIC ---- */
-body[data-theme="gothic"] {
+body[data-theme="vitraux"] {
   --body-bg: linear-gradient(130deg, #25111a 60%, #302e37 100%);
   --body-color: #eaeaea;
   --title-color: #eaeaea;
@@ -274,7 +274,7 @@ body[data-theme="gothic"] {
   --btn-hover-color: #eaeaea;
   --btn-hover-border: #a23b6c;
   --btn-shadow: 0 0 10px #970036;
-  background-image: url('gothic/vitrail.png');
+  background-image: url('vitraux/vitrail.png');
 }
 /* ---- CANDY ---- */
 body[data-theme="candy"] {

@@ -1,75 +1,134 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title data-i18n="settings.title">Paramètres</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link id="theme-style" rel="stylesheet" href="style/main.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style/main.css" />
   <style>
     body {
-      font-family: 'Poppins', 'Quicksand', Arial, sans-serif;
-      background: linear-gradient(130deg,#e9ffe5 60%,#e7f0fd 100%);
-      min-height: 100vh; margin: 0; color: #333;
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Quicksand', Arial, sans-serif;
+      background: radial-gradient(ellipse at 60% 40%, #7061e8 0%, #5db9e3 55%, #483070 100%);
+      color: #fff;
     }
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 65px;
+      z-index: 30;
+      padding: 0 12px;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    .top-left, .top-right {
+      display: flex; align-items: center;
+      pointer-events: all;
+    }
+    .top-left { flex: 1; }
+    .top-right { gap: 20px; }
+    .btn-back {
+      display: flex; align-items: center; justify-content: center;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: none; border: none;
+      transition: background 0.14s;
+      margin-left: -8px;
+      cursor: pointer; padding: 0;
+    }
+    .btn-back svg { width: 32px; height: 32px; display: block; }
+    .btn-back:hover { background: #23236028; }
+    .btn-icon {
+      background: none; border: none;
+      display: flex; align-items: center; justify-content: center;
+      padding: 6px; cursor: pointer; border-radius: 50%;
+      transition: background 0.15s; width: 44px; height: 44px;
+    }
+    .btn-icon img {
+      width: 26px; height: 26px; display: block;
+      filter: drop-shadow(0 1px 2px #2228);
+    }
+    .btn-icon:hover { background: #23236022; }
+
     .param-container {
-      max-width: 430px; margin: 2vw auto 0 auto; background: #ffffffdd;
-      border-radius: 2.2em; box-shadow: 0 4px 32px #85c9b422;
-      padding: 2.2em 1.2em 2.2em 1.2em; display: flex; flex-direction: column; gap: 2.1em;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-start; min-height: 100vh;
+      padding-top: 6.2em; gap: 2em;
     }
-    h1 { text-align: center; color: #259148; margin: 0 0 1em 0; font-size: 2.1em; font-weight: 900; }
-    .param-group { margin-bottom: 1.5em; }
-    label { font-weight: bold; display: block; margin-bottom: 0.5em; }
+    h1 {
+      font-size: 2em; font-weight: 900; color: #fff;
+      text-align: center; text-shadow: 0 3px 16px #2e6ead44, 0 1px 1px #fff7;
+      margin: 0;
+    }
+    .param-group {
+      background: rgba(255,255,255,0.1);
+      padding: 1.2em 1.5em;
+      border-radius: 1.5em;
+      box-shadow: 0 2px 10px #0002;
+      width: 90%; max-width: 400px;
+    }
+    label { font-weight: 800; font-size: 1.1em; display: block; margin-bottom: 0.6em; }
+    .lang-select {
+      display: flex; flex-wrap: wrap; gap: 0.7em; justify-content: center; margin-top: 0.5em;
+    }
+    .lang-option {
+      display: flex; align-items: center; gap: 0.4em;
+      padding: 0.35em 0.7em; border-radius: 1em;
+      background: #e6f6ea; color: #156c31; border: none; font-weight: 700;
+      cursor: pointer; box-shadow: 0 2px 8px #a2dcd220;
+      transition: background 0.13s, transform 0.13s;
+    }
+    .lang-option.selected {
+      background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%);
+      color: #0e4b26; transform: scale(1.05);
+    }
+    .flag { width: 22px; height: 16px; }
     .switch {
-      display: flex; align-items: center; gap: 1.2em; margin-top: 0.2em;
+      display: flex; align-items: center; gap: 0.8em; margin-top: 0.7em;
     }
     input[type="checkbox"] {
       width: 24px; height: 24px;
-      accent-color: #259148;
+      accent-color: #70dcff;
     }
-    .lang-select {
-      display: flex; flex-wrap: wrap; gap: 1em;
-      margin-top: 0.7em;
+    button.return-btn {
+      background: none; border: 2px dashed #b8ffdb88; color: #fff;
+      border-radius: 1.3em; padding: 0.6em 1.4em; font-size: 1em;
+      font-weight: 700; cursor: pointer; margin-top: 1em;
     }
-    .lang-option {
-      display: flex; align-items: center; gap: 0.38em;
-      padding: 0.35em 0.7em; border-radius: 10px; cursor: pointer;
-      background: #fff; color: #222; border: 1.4px solid #e0e0e0;
-      font-weight: 600; transition: border .18s, box-shadow .18s;
-    }
-    .lang-option.selected {
-      border: 2px solid #22539f; background: #eaf2ff;
-      box-shadow: 0 2px 9px #22539f14;
-    }
-    .flag { width: 22px; height: 16px; vertical-align: middle; }
-    .btn-delete {
-      background: #fff0f2; color: #cb234b;
-      border: none; border-radius: 1em; font-weight: 800; font-size: 1.08em;
-      padding: 0.88em 0; width: 100%; cursor: pointer;
-      margin-top: 2em; transition: background 0.13s, color 0.13s;
-      box-shadow: 0 1px 8px #ffb8ce1a;
-    }
-    .btn-delete:active { background: #ffd2e0; color: #8d1a34; }
-    small { font-size: 0.98em; color: #555; }
-    .danger { color: #cb234b; }
-    .subtle { color: #888; font-size: 0.98em; }
-    @media (max-width: 530px) {
-      .param-container { max-width: 99vw; padding: 1.3em 0.3em 1.3em 0.3em; }
-      h1 { font-size: 1.3em;}
-    }
+    button.return-btn:hover { background: rgba(255, 255, 255, 0.1); }
   </style>
 </head>
 <body>
+  <div class="top-bar">
+    <div class="top-left">
+      <a href="index.html" class="btn-back" title="Retour">
+        <svg viewBox="0 0 36 36" fill="none">
+          <path d="M23.5 28L15 19.5L23.5 11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+    <div class="top-right">
+      <a href="profil.html" class="btn-icon" title="Profil">
+        <img src="assets/icons/user.svg" alt="Profil" />
+      </a>
+      <a href="parametres.html" class="btn-icon" title="Paramètres">
+        <img src="assets/icons/settings.svg" alt="Paramètres" />
+      </a>
+    </div>
+  </div>
+
   <div class="param-container">
     <h1 data-i18n="settings.title">⚙️ Paramètres</h1>
 
-    <!-- Langue et drapeaux -->
+    <!-- Sélection langue -->
     <div class="param-group">
       <label data-i18n="settings.language.label">Langue de l'interface :</label>
       <div id="langue-select" class="lang-select"></div>
-      <div class="switch">
-        <input type="checkbox" id="flag-toggle">
-        <span id="flag-label" data-i18n="settings.flags.on">Drapeaux activés</span>
-      </div>
     </div>
 
     <!-- Notifications -->
@@ -81,19 +140,6 @@
       </div>
     </div>
 
-    <!-- Partage social -->
-    <div class="param-group">
-      <label data-i18n="settings.share.label">Partage social :</label>
-      <div class="switch">
-        <input type="checkbox" id="share-toggle">
-        <span id="share-label" data-i18n="settings.share.on">Autorisés</span>
-      </div>
-      <small data-i18n="settings.share.note">
-        ⚠️ En mode Duel, les photos sont toujours envoyées pour comparaison.<br>
-        Cette option ne concerne que la diffusion publique (ex : Instagram).
-      </small>
-    </div>
-
     <!-- Publicités -->
     <div class="param-group">
       <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
@@ -101,33 +147,80 @@
         <input type="checkbox" id="ads-toggle">
         <span id="ads-label" data-i18n="settings.ads.on">Activées</span>
       </div>
-      <small data-i18n="settings.ads.note">Tu peux modifier ton choix RGPD à tout moment ici.</small>
     </div>
 
-    <!-- Suppression du compte -->
-    <div class="param-group">
-      <label class="danger" data-i18n="settings.delete.title">Suppression de mon compte</label>
-      <button class="btn-delete" id="deleteAccountBtn" data-i18n="settings.delete.btn">Supprimer définitivement mon compte</button>
-      <small class="subtle" data-i18n="settings.delete.note">Attention, cette action est irréversible !</small>
-    </div>
-
-    <button onclick="history.back()" data-i18n="settings.back">⬅️ Retour</button>
+    <button onclick="history.back()" class="return-btn" data-i18n="settings.back">⬅️ Retour</button>
   </div>
+
   <script>
-    // === LANGUES & DRAPEAUX (reprend structure existante) ===
+    // LISTE DES LANGUES + DRAPEAUX
     const langues = [
       { code: "fr", label: "Français", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#0055a4"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ef4135"/></svg>` },
       { code: "en", label: "English (US)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#b22234"/><g><rect width="22" height="1.23" y="1.23" fill="#fff"/><rect width="22" height="1.23" y="3.69" fill="#fff"/><rect width="22" height="1.23" y="6.15" fill="#fff"/><rect width="22" height="1.23" y="8.61" fill="#fff"/><rect width="22" height="1.23" y="11.07" fill="#fff"/><rect width="22" height="1.23" y="13.53" fill="#fff"/></g><rect width="8.8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.2" cy="1" r="0.35"/><circle cx="2.4" cy="1" r="0.35"/><circle cx="3.6" cy="1" r="0.35"/><circle cx="4.8" cy="1" r="0.35"/><circle cx="6" cy="1" r="0.35"/><circle cx="7.2" cy="1" r="0.35"/><circle cx="1.8" cy="2" r="0.35"/><circle cx="3" cy="2" r="0.35"/><circle cx="4.2" cy="2" r="0.35"/><circle cx="5.4" cy="2" r="0.35"/><circle cx="6.6" cy="2" r="0.35"/><circle cx="2.4" cy="3" r="0.35"/><circle cx="3.6" cy="3" r="0.35"/><circle cx="4.8" cy="3" r="0.35"/><circle cx="6" cy="3" r="0.35"/><circle cx="7.2" cy="3" r="0.35"/><circle cx="1.2" cy="4" r="0.35"/><circle cx="2.4" cy="4" r="0.35"/><circle cx="3.6" cy="4" r="0.35"/><circle cx="4.8" cy="4" r="0.35"/><circle cx="6" cy="4" r="0.35"/><circle cx="1.8" cy="5" r="0.35"/><circle cx="3" cy="5" r="0.35"/><circle cx="4.2" cy="5" r="0.35"/><circle cx="5.4" cy="5" r="0.35"/><circle cx="6.6" cy="5" r="0.35"/><circle cx="2.4" cy="6" r="0.35"/><circle cx="3.6" cy="6" r="0.35"/><circle cx="4.8" cy="6" r="0.35"/><circle cx="6" cy="6" r="0.35"/><circle cx="7.2" cy="6" r="0.35"/></g></svg>` },
-      // Ajoute ici toutes tes autres langues comme dans ta version actuelle
+      { code: "de", label: "Deutsch", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="5.33" fill="#000"/><rect y="5.33" width="22" height="5.33" fill="#dd0000"/><rect y="10.67" width="22" height="5.33" fill="#ffce00"/></svg>` },
+      { code: "it", label: "Italiano", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#009246"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ce2b37"/></svg>` },
+      { code: "es", label: "Español", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#aa151b"/><rect y="4" width="22" height="8" fill="#f1bf00"/></svg>` },
+      // Portugais européen 🇵🇹
+      { code: "pt", label: "Português", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="8" height="16" fill="#00874B"/><rect x="8" width="14" height="16" fill="#FF0000"/><circle cx="9.5" cy="8" r="3.3" fill="#fff" stroke="#FFD700" stroke-width="1"/><rect x="8.6" y="5.5" width="1.8" height="5" fill="#00874B" stroke="#FFD700" stroke-width="0.5"/><circle cx="9.5" cy="8" r="1.2" fill="#00874B" stroke="#FFD700" stroke-width="0.4"/></svg>` },
+      // Portugais brésilien 🇧🇷
+      { code: "ptbr", label: "Português (BR)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#3eae47"/><ellipse cx="11" cy="8" rx="8" ry="6" fill="#ffcc29"/><circle cx="11" cy="8" r="4" fill="#3e4095"/><path d="M8.3 8.4a3 3 0 0 1 5.4 0" stroke="#fff" stroke-width=".8" fill="none"/><text x="11" y="10.5" font-size="3.3" fill="#fff" text-anchor="middle" alignment-baseline="middle" font-family="Arial">BR</text></svg>` },
+      { code: "ar", label: "العربية", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><rect width="22" height="8" y="0" fill="#198754"/><polygon points="5,8 13,4 13,12" fill="#fff"/><circle cx="16" cy="8" r="3" fill="#198754"/></svg>` },
+      { code: "idn", label: "Bahasa Indonesia", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="8" y="0" fill="#ff0000"/><rect width="22" height="8" y="8" fill="#fff"/></svg>` },
+      { code: "ja", label: "日本語", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><circle cx="11" cy="8" r="4" fill="#bc002d"/></svg>` },
+      { code: "ko", label: "한국어", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><circle cx="11" cy="8" r="4" fill="#003478"/><circle cx="11" cy="8" r="2.5" fill="#c60c30"/></svg>` },
     ];
-    const supportedLangs = langues.map(l => l.code);
     const langueSelect = document.getElementById("langue-select");
-    let userLang = navigator.language?.split("-")[0] || "fr";
-    let currentLang = supportedLangs.includes(userLang) ? userLang : "fr";
-    const savedLang = localStorage.getItem("langue");
-    if (savedLang && supportedLangs.includes(savedLang)) currentLang = savedLang;
-    // Drapeaux visibles ?
-    const flagToggle = document.getElementById("flag-toggle");
-    const flagLabel = document.getElementById("flag-label");
-    flagToggle.checked = localStorage.getItem("flagsEnabled") !== "false";
-    flagLabel.textContent = flagToggle.checked
+    let selectedLang = localStorage.getItem("langue") || "fr";
+
+    langues.forEach(l => {
+      const opt = document.createElement('div');
+      opt.className = 'lang-option' + (l.code === selectedLang ? ' selected' : '');
+      opt.innerHTML = l.flag + l.label;
+      opt.setAttribute("data-i18n", `lang.${l.code}`);
+      opt.onclick = () => {
+        localStorage.setItem("langue", l.code);
+        document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        if (window.setLang) window.setLang(l.code);
+        location.reload();
+      };
+      langueSelect.appendChild(opt);
+    });
+
+    // Notifications i18n
+    const notifToggle = document.getElementById("notif-toggle");
+    const notifLabel = document.getElementById("notif-label");
+    notifToggle.checked = localStorage.getItem("notifEnabled") === "true";
+    notifLabel.textContent = notifToggle.checked
+      ? (window.i18nGet ? window.i18nGet("settings.notifications.on") : "Activées")
+      : (window.i18nGet ? window.i18nGet("settings.notifications.off") : "Désactivées");
+    notifToggle.addEventListener("change", () => {
+      localStorage.setItem("notifEnabled", notifToggle.checked);
+      notifLabel.textContent = notifToggle.checked
+        ? (window.i18nGet ? window.i18nGet("settings.notifications.on") : "Activées")
+        : (window.i18nGet ? window.i18nGet("settings.notifications.off") : "Désactivées");
+    });
+
+    // Publicités i18n
+    const adsToggle = document.getElementById("ads-toggle");
+    const adsLabel = document.getElementById("ads-label");
+    adsToggle.checked = localStorage.getItem("adsEnabled") !== "false";
+    adsLabel.textContent = adsToggle.checked
+      ? (window.i18nGet ? window.i18nGet("settings.ads.on") : "Activées")
+      : (window.i18nGet ? window.i18nGet("settings.ads.off") : "Désactivées");
+    adsToggle.addEventListener("change", () => {
+      localStorage.setItem("adsEnabled", adsToggle.checked ? "true" : "false");
+      adsLabel.textContent = adsToggle.checked
+        ? (window.i18nGet ? window.i18nGet("settings.ads.on") : "Activées")
+        : (window.i18nGet ? window.i18nGet("settings.ads.off") : "Désactivées");
+      window.userConsent = adsToggle.checked ? "accept" : "refuse";
+      location.reload();
+    });
+
+    // Lance la traduction auto sur tout
+    window.addEventListener("DOMContentLoaded", () => {
+      if (window.i18nTranslateAll) window.i18nTranslateAll();
+    });
+  </script>
+</body>
+</html>

@@ -12,9 +12,41 @@
       font-family: 'Quicksand', Arial, sans-serif;
       background: radial-gradient(ellipse at 60% 40%, #7061e8 0%, #5db9e3 55%, #483070 100%);
     }
-    .top-buttons {
-      position: absolute; top: 18px; right: 18px;
-      display: flex; gap: 20px; z-index: 5;
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 65px;
+      z-index: 30;
+      padding: 0 12px;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+    .top-left, .top-right {
+      display: flex; align-items: center;
+      pointer-events: all;
+    }
+    .top-left { flex: 1; }
+    .top-right { gap: 20px; }
+    .btn-back {
+      display: flex; align-items: center; justify-content: center;
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: none; border: none;
+      transition: background 0.14s;
+      margin-left: -8px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .btn-back svg {
+      width: 32px; height: 32px;
+      display: block;
+    }
+    .btn-back:hover {
+      background: #23236028;
     }
     .btn-icon {
       background: none; border: none;
@@ -79,7 +111,6 @@
       background: rgba(255, 255, 255, 0.1);
       transform: scale(1.03);
     }
-
     .theme-btn-vb, .applis-btn-vb {
       width: 98%;
       margin: 0.5em auto 0 auto;
@@ -101,18 +132,16 @@
       gap: 0.67em;
       text-align: center;
     }
-
     .theme-btn-vb:active, .applis-btn-vb:active {
       background: linear-gradient(90deg,#47bcd3 0%,#a6f382 100%);
       color: #143e1a;
     }
-
     @media (max-width: 520px) {
       .profil-title { font-size: 1.18em;}
       .profil-logo { width: 68px; margin-top: 0.1em;}
       .profil-content { padding-top: 3.7em; }
+      .top-bar { padding-left: 2px; padding-right: 2px; }
     }
-
     .popup-bg {
       position: fixed; inset: 0; background: rgba(0,0,0,0.5);
       display: none; justify-content: center; align-items: center; z-index: 5000;
@@ -135,7 +164,6 @@
     .popup-box button:last-child { background: #eee; color: #333; }
     #pseudoError { color: #d33; font-size: 0.95em; margin-top: 0.5em; min-height: 1.1em; }
 
-    /* === Sélecteur de thème VBlocks === */
     .theme-choice-vb.locked {
       filter: grayscale(1);
       opacity: 0.6;
@@ -174,13 +202,22 @@
   </style>
 </head>
 <body>
-  <div class="top-buttons">
-    <a href="profil.html" class="btn-icon" title="Profil">
-      <img src="assets/icons/user.svg" alt="Profil" />
-    </a>
-    <a href="parametres.html" class="btn-icon" title="Paramètres">
-      <img src="assets/icons/settings.svg" alt="Paramètres" />
-    </a>
+  <div class="top-bar">
+    <div class="top-left">
+      <a href="index.html" class="btn-back" title="Retour" tabindex="0">
+        <svg viewBox="0 0 36 36" fill="none">
+          <path d="M23.5 28L15 19.5L23.5 11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+    <div class="top-right">
+      <a href="profil.html" class="btn-icon" title="Profil">
+        <img src="assets/icons/user.svg" alt="Profil" />
+      </a>
+      <a href="parametres.html" class="btn-icon" title="Paramètres">
+        <img src="assets/icons/settings.svg" alt="Paramètres" />
+      </a>
+    </div>
   </div>
 
   <div class="profil-content">
@@ -190,7 +227,6 @@
     <button class="profil-change-pseudo" id="btnChangePseudo">
       ✏️ <span data-i18n="profil.btn.changePseudo">Modifier mon pseudo</span>
     </button>
-
     <button class="theme-btn-vb" id="changeThemeBtn">
       🎨 <span data-i18n="profil.btn.theme">Changer le thème graphique</span>
     </button>
@@ -222,100 +258,105 @@
     </div>
   </div>
 
-  <script>
-    // Gestion pseudo
-    document.getElementById("btnChangePseudo").onclick = () => {
-      document.getElementById("popupPseudo").classList.add("active");
-      document.getElementById("pseudoError").textContent = "";
-    };
-    document.getElementById("btnCancelPseudo").onclick = () => {
-      document.getElementById("popupPseudo").classList.remove("active");
-    };
-    document.getElementById("btnSavePseudo").onclick = () => {
-      const pseudo = document.getElementById("newPseudo").value.trim();
-      if (pseudo.length < 3) {
-        document.getElementById("pseudoError").textContent = "Pseudo trop court.";
-        return;
-      }
-      localStorage.setItem("pseudo", pseudo);
-      document.getElementById("profilPseudo").textContent = pseudo;
-      document.getElementById("popupPseudo").classList.remove("active");
-    };
-    window.addEventListener("DOMContentLoaded", () => {
-      const p = localStorage.getItem("pseudo") || "MonPseudo";
-      document.getElementById("profilPseudo").textContent = p;
-    });
-
-    // === Gestion thèmes VBlocks ===
-
-    // Met ici ta liste de tous les thèmes CSS gérés
-    const ALL_THEMES = [
-      "neon",   // par défaut
-      "nuit", "nature", "bubble", "retro",
-      "gothic", "candy", "luxury", "space", "cyber"
-    ];
-
-    // Fonctions de gestion thèmes (tu peux aussi les centraliser dans userData.js si tu veux)
-    if (!localStorage.getItem("unlockedVBlocksThemes")) {
-      localStorage.setItem("unlockedVBlocksThemes", JSON.stringify(["neon"]));
-    }
-    function getUnlockedThemes() {
-      return JSON.parse(localStorage.getItem("unlockedVBlocksThemes") || '["neon"]');
-    }
-    function unlockTheme(theme) {
-      let unlocked = getUnlockedThemes();
-      if (!unlocked.includes(theme)) {
-        unlocked.push(theme);
-        localStorage.setItem("unlockedVBlocksThemes", JSON.stringify(unlocked));
-      }
-    }
-    function getCurrentTheme() {
-      return localStorage.getItem("themeVBlocks") || "neon";
-    }
-
-    // Ouverture du popup de thème
-    document.getElementById("changeThemeBtn").onclick = openThemePopup;
-
-    function openThemePopup() {
-      const popup = document.getElementById('theme-selector-popup');
-      const themeList = document.getElementById('themeListVB');
-      const unlocked = getUnlockedThemes();
-      let html = '';
-      ALL_THEMES.forEach(theme => {
-        const locked = !unlocked.includes(theme);
-        html += `<button class="theme-choice-vb${locked ? ' locked' : ''}" data-theme="${theme}" ${locked ? 'disabled' : ''}>
-          ${theme.charAt(0).toUpperCase() + theme.slice(1)}${locked ? ' 🔒' : ''}
-        </button>`;
-      });
-      themeList.innerHTML = html;
-      popup.classList.add("active");
-      // Sélection courante
-      let selectedTheme = getCurrentTheme();
-      // Ajoute la classe active sur le thème courant
-      document.querySelectorAll('.theme-choice-vb').forEach(btn => {
-        if(btn.dataset.theme === selectedTheme) btn.classList.add('active');
-      });
-      document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn => {
-        btn.onclick = function() {
-          document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
-          btn.classList.add('active');
-          selectedTheme = btn.dataset.theme;
-        }
-      });
-      document.getElementById('btnValiderTheme').onclick = () => {
-        if (selectedTheme) {
-          localStorage.setItem("themeVBlocks", selectedTheme);
-          popup.classList.remove("active");
-          alert('Thème appliqué : ' + selectedTheme);
-          document.body.setAttribute('data-theme', selectedTheme);
-        }
-      };
-      document.getElementById('btnCancelTheme').onclick = () => {
-        popup.classList.remove("active");
-      };
-    }
-  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="js/userData.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      let user = null;
+      if (window.supabase && supabase.auth && typeof supabase.auth.user === "function") {
+        user = supabase.auth.user();
+      }
+      if (user) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('theme_vblocks')
+          .eq('id', user.id)
+          .single();
+        if (!error && data && data.theme_vblocks) {
+          localStorage.setItem('themeVBlocks', data.theme_vblocks);
+          document.body.setAttribute('data-theme', data.theme_vblocks);
+        } else {
+          const theme = localStorage.getItem('themeVBlocks') || 'neon';
+          document.body.setAttribute('data-theme', theme);
+        }
+      } else {
+        const theme = localStorage.getItem('themeVBlocks') || 'neon';
+        document.body.setAttribute('data-theme', theme);
+      }
+      // Pseudo
+      const p = localStorage.getItem("pseudo") || "MonPseudo";
+      document.getElementById("profilPseudo").textContent = p;
+
+      // Popup pseudo
+      document.getElementById("btnChangePseudo").onclick = () => {
+        document.getElementById("popupPseudo").classList.add("active");
+        document.getElementById("pseudoError").textContent = "";
+      };
+      document.getElementById("btnCancelPseudo").onclick = () => {
+        document.getElementById("popupPseudo").classList.remove("active");
+      };
+      document.getElementById("btnSavePseudo").onclick = () => {
+        const pseudo = document.getElementById("newPseudo").value.trim();
+        if (pseudo.length < 3) {
+          document.getElementById("pseudoError").textContent = "Pseudo trop court.";
+          return;
+        }
+        localStorage.setItem("pseudo", pseudo);
+        document.getElementById("profilPseudo").textContent = pseudo;
+        document.getElementById("popupPseudo").classList.remove("active");
+      };
+
+      // Sélecteur de thème
+      document.getElementById("changeThemeBtn").onclick = openThemePopup;
+
+      function openThemePopup() {
+        const ALL_THEMES = window.getAllThemes();
+        const popup = document.getElementById('theme-selector-popup');
+        const themeList = document.getElementById('themeListVB');
+        const unlocked = JSON.parse(localStorage.getItem("unlockedVBlocksThemes") || '["neon"]');
+        let html = '';
+        ALL_THEMES.forEach(theme => {
+          const locked = !unlocked.includes(theme);
+          html += `<button class="theme-choice-vb${locked ? ' locked' : ''}" data-theme="${theme}" ${locked ? 'disabled' : ''}>
+            ${theme.charAt(0).toUpperCase() + theme.slice(1)}${locked ? ' 🔒' : ''}
+          </button>`;
+        });
+        themeList.innerHTML = html;
+        popup.classList.add("active");
+        // Sélection courante
+        let selectedTheme = localStorage.getItem("themeVBlocks") || "neon";
+        // Ajoute la classe active sur le thème courant
+        document.querySelectorAll('.theme-choice-vb').forEach(btn => {
+          if(btn.dataset.theme === selectedTheme) btn.classList.add('active');
+        });
+        document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn => {
+          btn.onclick = function() {
+            document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedTheme = btn.dataset.theme;
+          }
+        });
+        document.getElementById('btnValiderTheme').onclick = async () => {
+          if (selectedTheme) {
+            localStorage.setItem("themeVBlocks", selectedTheme);
+            document.body.setAttribute('data-theme', selectedTheme);
+            try {
+              const user = (supabase.auth.user && supabase.auth.user());
+              if (user) {
+                await supabase
+                  .from('users')
+                  .update({ theme_vblocks: selectedTheme })
+                  .eq('id', user.id);
+              }
+            } catch (e) { /* offline, pas grave */ }
+            location.reload();
+          }
+        };
+        document.getElementById('btnCancelTheme').onclick = () => {
+          popup.classList.remove("active");
+        };
+      }
+    });
+  </script>
 </body>
-</html>
+</html> 
