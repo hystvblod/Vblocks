@@ -91,15 +91,16 @@
       display: flex; flex-wrap: wrap; gap: 0.7em; justify-content: center; margin-top: 0.5em;
     }
     .lang-option {
-      display: flex; align-items: center; gap: 0.4em;
-      padding: 0.35em 0.7em; border-radius: 1em;
+      display: flex; align-items: center; gap: 0.5em;
+      padding: 0.35em 0.85em; border-radius: 1em;
       background: #e6f6ea; color: #156c31; border: none; font-weight: 700;
       cursor: pointer; box-shadow: 0 2px 8px #a2dcd220;
       transition: background 0.13s, transform 0.13s;
+      font-size: 1.08em;
     }
     .lang-option.selected {
       background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%);
-      color: #0e4b26; transform: scale(1.05);
+      color: #0e4b26; transform: scale(1.06);
     }
     .flag { width: 22px; height: 16px; }
     .switch {
@@ -128,13 +129,13 @@
   <div class="main-content">
     <div class="top-bar">
       <div class="top-bar-row">
-        <a href="index.html" class="btn-back" title="Retour" data-i18n="menu.retour">
-          <img src="assets/icons/arrow_back.svg" alt="Retour" data-i18n="menu.retour" />
+        <a href="index.html" class="btn-back">
+          <img src="assets/icons/arrow_back.svg">
         </a>
         <span class="main-title" data-i18n="settings.title">Paramètres</span>
         <div class="profile-row">
-          <a href="profil.html" class="btn-icon" title="Profil" data-i18n="menu.profil">
-            <img src="assets/icons/user.svg" alt="Profil" data-i18n="menu.profil" />
+          <a href="profil.html" class="btn-icon">
+            <img src="assets/icons/user.svg">
           </a>
         </div>
       </div>
@@ -176,7 +177,7 @@
     </div>
   </div>
   <script>
-    // LISTE DES LANGUES + DRAPEAUX
+    // LISTE DES LANGUES + DRAPEAUX + LABELS FIXES
     const langues = [
       { code: "fr", label: "Français", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#0055a4"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ef4135"/></svg>` },
       { code: "en", label: "English (US)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#b22234"/><g><rect width="22" height="1.23" y="1.23" fill="#fff"/><rect width="22" height="1.23" y="3.69" fill="#fff"/><rect width="22" height="1.23" y="6.15" fill="#fff"/><rect width="22" height="1.23" y="8.61" fill="#fff"/><rect width="22" height="1.23" y="11.07" fill="#fff"/><rect width="22" height="1.23" y="13.53" fill="#fff"/></g><rect width="8.8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.2" cy="1" r="0.35"/><circle cx="2.4" cy="1" r="0.35"/><circle cx="3.6" cy="1" r="0.35"/><circle cx="4.8" cy="1" r="0.35"/><circle cx="6" cy="1" r="0.35"/><circle cx="7.2" cy="1" r="0.35"/><circle cx="1.8" cy="2" r="0.35"/><circle cx="3" cy="2" r="0.35"/><circle cx="4.2" cy="2" r="0.35"/><circle cx="5.4" cy="2" r="0.35"/><circle cx="6.6" cy="2" r="0.35"/><circle cx="2.4" cy="3" r="0.35"/><circle cx="3.6" cy="3" r="0.35"/><circle cx="4.8" cy="3" r="0.35"/><circle cx="6" cy="3" r="0.35"/><circle cx="7.2" cy="3" r="0.35"/><circle cx="1.2" cy="4" r="0.35"/><circle cx="2.4" cy="4" r="0.35"/><circle cx="3.6" cy="4" r="0.35"/><circle cx="4.8" cy="4" r="0.35"/><circle cx="6" cy="4" r="0.35"/><circle cx="1.8" cy="5" r="0.35"/><circle cx="3" cy="5" r="0.35"/><circle cx="4.2" cy="5" r="0.35"/><circle cx="5.4" cy="5" r="0.35"/><circle cx="6.6" cy="5" r="0.35"/><circle cx="2.4" cy="6" r="0.35"/><circle cx="3.6" cy="6" r="0.35"/><circle cx="4.8" cy="6" r="0.35"/><circle cx="6" cy="6" r="0.35"/><circle cx="7.2" cy="6" r="0.35"/></g></svg>` },
@@ -196,8 +197,7 @@
     langues.forEach(l => {
       const opt = document.createElement('div');
       opt.className = 'lang-option' + (l.code === selectedLang ? ' selected' : '');
-      opt.innerHTML = l.flag + l.label;
-      opt.setAttribute("data-i18n", `lang.${l.code}`);
+      opt.innerHTML = l.flag + '<span style="margin-left:0.35em;">' + l.label + '</span>';
       opt.onclick = () => {
         localStorage.setItem("langue", l.code);
         document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
@@ -257,12 +257,10 @@
       ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
     });
 
-    // Traduction auto sur tout
     window.addEventListener("DOMContentLoaded", () => {
       if (window.i18nTranslateAll) window.i18nTranslateAll();
     });
   </script>
   <script src="js/i18n.js"></script>
-
 </body>
 </html>
