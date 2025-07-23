@@ -225,13 +225,16 @@
     <div class="profil-title" data-i18n="profil.title">Mon Profil</div>
     <div class="profil-id" id="profilPseudo">MonPseudo</div>
     <button class="profil-change-pseudo" id="btnChangePseudo">
-      ✏️ <span data-i18n="profil.btn.changePseudo">Modifier mon pseudo</span>
+      <span data-i18n="profil.btn.changePseudo">Modifier mon pseudo</span>
     </button>
     <button class="theme-btn-vb" id="changeThemeBtn">
-      🎨 <span data-i18n="profil.btn.theme">Changer le thème graphique</span>
+      <span data-i18n="profil.btn.theme">Thèmes</span>
+    </button>
+    <button class="applis-btn-vb" id="amisBtn">
+      <span data-i18n="profil.btn.amis">Amis</span>
     </button>
     <button class="applis-btn-vb" id="applisBtn">
-      📱 <span data-i18n="profil.btn.applis">Nos applis</span>
+      <span data-i18n="profil.btn.applis">Nos applis</span>
     </button>
   </div>
 
@@ -356,7 +359,15 @@
           popup.classList.remove("active");
         };
       }
+
+      // Redirection Amis et Applis
+      document.getElementById("amisBtn").onclick = () => {
+        window.location.href = "amis.html";
+      };
+      document.getElementById("applisBtn").onclick = () => {
+        window.location.href = "applis.html";
+      };
     });
   </script>
 </body>
-</html> 
+</html>

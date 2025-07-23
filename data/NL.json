@@ -1,0 +1,33 @@
+{
+  "amis.title": "Vrienden",
+  "menu.retour": "Terug",
+  "menu.profil": "Profiel",
+  "menu.parametres": "Instellingen",
+  "amis.titre": "Je vrienden",
+  "amis.rechercheTitre": "Vriend zoeken",
+  "amis.recherchePlaceholder": "Gebruikersnaam of ID",
+  "amis.btnRechercher": "Zoeken",
+  "amis.btnAjouter": "Toevoegen",
+  "amis.btnSupprimer": "Verwijderen",
+  "amis.rechercheAucun": "Nog geen resultaten.",
+  "amis.erreurChamp": "Voer een gebruikersnaam of ID in.",
+  "amis.listeTitre": "Vriendenlijst",
+  "amis.listeVide": "Je hebt nog geen vrienden.",
+
+  
+  "boutique.titre": "Winkel",
+  "boutique.retour": "Terug naar het spel",
+  "menu.profil": "Profiel",
+  "menu.parametres": "Instellingen",
+  "boutique.section.vcoins": "Vcoins & tokens",
+  "boutique.section.themes": "Thema's",
+  "boutique.cartouche.jetons12": "12 tokens: €0,99",
+  "boutique.cartouche.jetons50": "50 tokens: €2,99",
+  "boutique.cartouche.nopub": "Advertenties verwijderen: €2,99",
+  "boutique.cartouche.pub1jeton": "Advertentie bekijken: 1 token",
+  "boutique.cartouche.pub300points": "Advertentie bekijken: 300 punten",
+  "theme.possede": "In bezit",
+  "theme.debloquer": "Ontgrendel (3000)",
+  "boutique.alert.pasassez": "Niet genoeg munten!"
+}
+

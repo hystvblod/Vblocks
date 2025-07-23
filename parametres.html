@@ -13,57 +13,71 @@
       background: radial-gradient(ellipse at 60% 40%, #7061e8 0%, #5db9e3 55%, #483070 100%);
       color: #fff;
     }
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      max-width: 430px;
+      min-height: 100vh;
+      box-sizing: border-box;
+      align-items: center;
+      justify-content: flex-start;
+      margin: 0 auto;
+    }
     .top-bar {
       width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 65px;
-      z-index: 30;
-      padding: 0 12px;
+      max-width: 430px;
       box-sizing: border-box;
-      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      padding: 10px 10px 0 10px;
+      position: relative;
+      z-index: 10;
+      background: transparent;
     }
-    .top-left, .top-right {
-      display: flex; align-items: center;
-      pointer-events: all;
+    .top-bar-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 8px;
     }
-    .top-left { flex: 1; }
-    .top-right { gap: 20px; }
     .btn-back {
+      background: none;
+      border: none;
       display: flex; align-items: center; justify-content: center;
-      width: 48px; height: 48px;
-      border-radius: 50%;
-      background: none; border: none;
-      transition: background 0.14s;
-      margin-left: -8px;
-      cursor: pointer; padding: 0;
+      border-radius: 50%; padding: 4px;
+      cursor: pointer;
+      width: 42px; height: 42px;
+      transition: background 0.15s;
     }
-    .btn-back svg { width: 32px; height: 32px; display: block; }
-    .btn-back:hover { background: #23236028; }
-    .btn-icon {
-      background: none; border: none;
-      display: flex; align-items: center; justify-content: center;
-      padding: 6px; cursor: pointer; border-radius: 50%;
-      transition: background 0.15s; width: 44px; height: 44px;
+    .btn-back img { width: 28px; height: 28px; filter: drop-shadow(0 1px 2px #0005);}
+    .main-title {
+      flex: 1;
+      font-size: 2em; font-weight: 900;
+      color: #fff;
+      letter-spacing: 2px; line-height: 1.1;
+      text-align: center;
+      white-space: pre-line;
+      word-break: break-word;
+      user-select: none;
+      text-shadow: 0 3px 16px #2e6ead44, 0 1px 1px #fff7;
     }
-    .btn-icon img {
-      width: 26px; height: 26px; display: block;
-      filter: drop-shadow(0 1px 2px #2228);
+    .profile-row {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
     }
-    .btn-icon:hover { background: #23236022; }
-
+    .btn-icon img { width: 27px; height: 27px; }
     .param-container {
       display: flex; flex-direction: column; align-items: center;
       justify-content: flex-start; min-height: 100vh;
-      padding-top: 6.2em; gap: 2em;
-    }
-    h1 {
-      font-size: 2em; font-weight: 900; color: #fff;
-      text-align: center; text-shadow: 0 3px 16px #2e6ead44, 0 1px 1px #fff7;
-      margin: 0;
+      padding-top: 2em; gap: 2em;
+      width: 100%;
+      max-width: 430px;
+      margin: 0 auto;
     }
     .param-group {
       background: rgba(255,255,255,0.1);
@@ -101,57 +115,66 @@
       font-weight: 700; cursor: pointer; margin-top: 1em;
     }
     button.return-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    @media (max-width:480px) {
+      .main-content, .top-bar { max-width: 100vw; }
+      .top-bar { padding: 4px 3px 0 3px; max-width: 99vw; }
+      .main-title { font-size: 1.4em; }
+      .btn-back { width: 32px; height: 32px; }
+      .btn-back img, .btn-icon img { width: 20px; height: 20px; }
+    }
   </style>
 </head>
 <body>
-  <div class="top-bar">
-    <div class="top-left">
-      <a href="index.html" class="btn-back" title="Retour">
-        <svg viewBox="0 0 36 36" fill="none">
-          <path d="M23.5 28L15 19.5L23.5 11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </a>
-    </div>
-    <div class="top-right">
-      <a href="profil.html" class="btn-icon" title="Profil">
-        <img src="assets/icons/user.svg" alt="Profil" />
-      </a>
-      <a href="parametres.html" class="btn-icon" title="Paramètres">
-        <img src="assets/icons/settings.svg" alt="Paramètres" />
-      </a>
-    </div>
-  </div>
-
-  <div class="param-container">
-    <h1 data-i18n="settings.title">⚙️ Paramètres</h1>
-
-    <!-- Sélection langue -->
-    <div class="param-group">
-      <label data-i18n="settings.language.label">Langue de l'interface :</label>
-      <div id="langue-select" class="lang-select"></div>
-    </div>
-
-    <!-- Notifications -->
-    <div class="param-group">
-      <label data-i18n="settings.notifications.label">Notifications :</label>
-      <div class="switch">
-        <input type="checkbox" id="notif-toggle">
-        <span id="notif-label" data-i18n="settings.notifications.on">Activées</span>
+  <div class="main-content">
+    <div class="top-bar">
+      <div class="top-bar-row">
+        <a href="index.html" class="btn-back" title="Retour" data-i18n="menu.retour">
+          <img src="assets/icons/arrow_back.svg" alt="Retour" data-i18n="menu.retour" />
+        </a>
+        <span class="main-title" data-i18n="settings.title">Paramètres</span>
+        <div class="profile-row">
+          <a href="profil.html" class="btn-icon" title="Profil" data-i18n="menu.profil">
+            <img src="assets/icons/user.svg" alt="Profil" data-i18n="menu.profil" />
+          </a>
+        </div>
       </div>
     </div>
 
-    <!-- Publicités -->
-    <div class="param-group">
-      <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
-      <div class="switch">
-        <input type="checkbox" id="ads-toggle">
-        <span id="ads-label" data-i18n="settings.ads.on">Activées</span>
+    <div class="param-container">
+      <!-- Sélection langue -->
+      <div class="param-group">
+        <label data-i18n="settings.language.label">Langue de l'interface :</label>
+        <div id="langue-select" class="lang-select"></div>
+      </div>
+
+      <!-- Vibrations -->
+      <div class="param-group">
+        <label data-i18n="settings.vibrate.label">Vibrations :</label>
+        <div class="switch">
+          <input type="checkbox" id="vibrate-toggle">
+          <span id="vibrate-label" data-i18n="settings.vibrate.on">Activées</span>
+        </div>
+      </div>
+
+      <!-- Publicités -->
+      <div class="param-group">
+        <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
+        <div class="switch">
+          <input type="checkbox" id="ads-toggle">
+          <span id="ads-label" data-i18n="settings.ads.on">Activées</span>
+        </div>
+      </div>
+
+      <!-- Pièce fantôme -->
+      <div class="param-group">
+        <label data-i18n="settings.ghost.label">Afficher la pièce fantôme :</label>
+        <div class="switch">
+          <input type="checkbox" id="ghost-toggle">
+          <span id="ghost-label" data-i18n="settings.ghost.on">Activée</span>
+        </div>
       </div>
     </div>
-
-    <button onclick="history.back()" class="return-btn" data-i18n="settings.back">⬅️ Retour</button>
   </div>
-
   <script>
     // LISTE DES LANGUES + DRAPEAUX
     const langues = [
@@ -160,9 +183,7 @@
       { code: "de", label: "Deutsch", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="5.33" fill="#000"/><rect y="5.33" width="22" height="5.33" fill="#dd0000"/><rect y="10.67" width="22" height="5.33" fill="#ffce00"/></svg>` },
       { code: "it", label: "Italiano", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#009246"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ce2b37"/></svg>` },
       { code: "es", label: "Español", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#aa151b"/><rect y="4" width="22" height="8" fill="#f1bf00"/></svg>` },
-      // Portugais européen 🇵🇹
       { code: "pt", label: "Português", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="8" height="16" fill="#00874B"/><rect x="8" width="14" height="16" fill="#FF0000"/><circle cx="9.5" cy="8" r="3.3" fill="#fff" stroke="#FFD700" stroke-width="1"/><rect x="8.6" y="5.5" width="1.8" height="5" fill="#00874B" stroke="#FFD700" stroke-width="0.5"/><circle cx="9.5" cy="8" r="1.2" fill="#00874B" stroke="#FFD700" stroke-width="0.4"/></svg>` },
-      // Portugais brésilien 🇧🇷
       { code: "ptbr", label: "Português (BR)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#3eae47"/><ellipse cx="11" cy="8" rx="8" ry="6" fill="#ffcc29"/><circle cx="11" cy="8" r="4" fill="#3e4095"/><path d="M8.3 8.4a3 3 0 0 1 5.4 0" stroke="#fff" stroke-width=".8" fill="none"/><text x="11" y="10.5" font-size="3.3" fill="#fff" text-anchor="middle" alignment-baseline="middle" font-family="Arial">BR</text></svg>` },
       { code: "ar", label: "العربية", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><rect width="22" height="8" y="0" fill="#198754"/><polygon points="5,8 13,4 13,12" fill="#fff"/><circle cx="16" cy="8" r="3" fill="#198754"/></svg>` },
       { code: "idn", label: "Bahasa Indonesia", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="8" y="0" fill="#ff0000"/><rect width="22" height="8" y="8" fill="#fff"/></svg>` },
@@ -187,40 +208,61 @@
       langueSelect.appendChild(opt);
     });
 
-    // Notifications i18n
-    const notifToggle = document.getElementById("notif-toggle");
-    const notifLabel = document.getElementById("notif-label");
-    notifToggle.checked = localStorage.getItem("notifEnabled") === "true";
-    notifLabel.textContent = notifToggle.checked
-      ? (window.i18nGet ? window.i18nGet("settings.notifications.on") : "Activées")
-      : (window.i18nGet ? window.i18nGet("settings.notifications.off") : "Désactivées");
-    notifToggle.addEventListener("change", () => {
-      localStorage.setItem("notifEnabled", notifToggle.checked);
-      notifLabel.textContent = notifToggle.checked
-        ? (window.i18nGet ? window.i18nGet("settings.notifications.on") : "Activées")
-        : (window.i18nGet ? window.i18nGet("settings.notifications.off") : "Désactivées");
+    // Vibrations
+    const vibrateToggle = document.getElementById("vibrate-toggle");
+    const vibrateLabel = document.getElementById("vibrate-label");
+    vibrateToggle.checked = localStorage.getItem("vibrateEnabled") !== "false";
+    vibrateLabel.setAttribute("data-i18n", vibrateToggle.checked ? "settings.vibrate.on" : "settings.vibrate.off");
+    vibrateLabel.textContent = vibrateToggle.checked ? "Activées" : "Désactivées";
+    vibrateToggle.addEventListener("change", () => {
+      localStorage.setItem("vibrateEnabled", vibrateToggle.checked ? "true" : "false");
+      vibrateLabel.setAttribute("data-i18n", vibrateToggle.checked ? "settings.vibrate.on" : "settings.vibrate.off");
+      vibrateLabel.textContent = vibrateToggle.checked ? "Activées" : "Désactivées";
     });
+
+    // Helper globale
+    window.vibrateIfEnabled = async function (ms = 60) {
+      const vibrateEnabled = localStorage.getItem("vibrateEnabled") !== "false";
+      if (!vibrateEnabled) return;
+      if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.Plugins?.Haptics) {
+        await window.Capacitor.Plugins.Haptics.vibrate({ duration: ms });
+      } else if ("vibrate" in navigator) {
+        navigator.vibrate(ms);
+      }
+    }
 
     // Publicités i18n
     const adsToggle = document.getElementById("ads-toggle");
     const adsLabel = document.getElementById("ads-label");
     adsToggle.checked = localStorage.getItem("adsEnabled") !== "false";
-    adsLabel.textContent = adsToggle.checked
-      ? (window.i18nGet ? window.i18nGet("settings.ads.on") : "Activées")
-      : (window.i18nGet ? window.i18nGet("settings.ads.off") : "Désactivées");
+    adsLabel.setAttribute("data-i18n", adsToggle.checked ? "settings.ads.on" : "settings.ads.off");
+    adsLabel.textContent = adsToggle.checked ? "Activées" : "Désactivées";
     adsToggle.addEventListener("change", () => {
       localStorage.setItem("adsEnabled", adsToggle.checked ? "true" : "false");
-      adsLabel.textContent = adsToggle.checked
-        ? (window.i18nGet ? window.i18nGet("settings.ads.on") : "Activées")
-        : (window.i18nGet ? window.i18nGet("settings.ads.off") : "Désactivées");
+      adsLabel.setAttribute("data-i18n", adsToggle.checked ? "settings.ads.on" : "settings.ads.off");
+      adsLabel.textContent = adsToggle.checked ? "Activées" : "Désactivées";
       window.userConsent = adsToggle.checked ? "accept" : "refuse";
       location.reload();
     });
 
-    // Lance la traduction auto sur tout
+    // Pièce fantôme
+    const ghostToggle = document.getElementById("ghost-toggle");
+    const ghostLabel = document.getElementById("ghost-label");
+    ghostToggle.checked = localStorage.getItem("ghostPiece") !== "false";
+    ghostLabel.setAttribute("data-i18n", ghostToggle.checked ? "settings.ghost.on" : "settings.ghost.off");
+    ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
+    ghostToggle.addEventListener("change", () => {
+      localStorage.setItem("ghostPiece", ghostToggle.checked ? "true" : "false");
+      ghostLabel.setAttribute("data-i18n", ghostToggle.checked ? "settings.ghost.on" : "settings.ghost.off");
+      ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
+    });
+
+    // Traduction auto sur tout
     window.addEventListener("DOMContentLoaded", () => {
       if (window.i18nTranslateAll) window.i18nTranslateAll();
     });
   </script>
+  <script src="js/i18n.js"></script>
+
 </body>
 </html>

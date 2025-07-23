@@ -332,8 +332,8 @@ body[data-theme="luxury"] {
   --btn-shadow: 0 0 10px #ffe066;
   background-image: url('luxury/marble.png');
 }
-/* ---- SPACE ---- */
 body[data-theme="space"] {
+  background: transparent !important;
   --body-bg: radial-gradient(ellipse at 70% 40%, #362e60 0%, #0b0924 80%);
   --body-color: #13eaff;
   --title-color: #13eaff;
@@ -358,7 +358,7 @@ body[data-theme="space"] {
   --btn-hover-color: #13eaff;
   --btn-hover-border: #fff;
   --btn-shadow: 0 0 10px #00e6ff;
-  background-image: url('space/stars.png');
+
 }
 /* ---- CYBER ---- */
 body[data-theme="cyber"] {
@@ -390,3 +390,29 @@ body[data-theme="cyber"] {
 }
 
 /* ============ AJOUTE D'AUTRES THEMES ICI SI NÉCESSAIRE ============ */
+body[data-theme="space"] {
+  background: transparent !important;
+}
+body[data-theme="space"] #starfield {
+  display: block !important;
+  position: fixed !important;
+  top: 0; left: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 100vw !important;
+  min-height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  z-index: 0 !important;
+  pointer-events: none !important; /* boutons cliquables */
+  background: transparent !important;
+}
+body[data-theme="space"] .main-content,
+body[data-theme="space"] .top-bar,
+body[data-theme="space"] .game-flex-wrap,
+body[data-theme="space"] .score-row,
+body[data-theme="space"] #controls {
+  position: relative !important;
+  z-index: 2 !important;
+}
+

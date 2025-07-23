@@ -2,35 +2,31 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>VBlocks - Accueil</title>
+  <title data-i18n="home.title">VBlocks - Accueil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style/main.css" />
   <style>
-    /* ...ton CSS normal ici... */
-
-    /* Ajout couleur pro pour Concours & Boutique UNIQUEMENT */
-.menu-btn.green {
-  background: #72eb63 !important;
-  color: #ffffff !important;
-  box-shadow: 0 3px 15px #2fd7b144;
-}
-.menu-btn.orange {
-  background: #f0d642  !important;
-  color: #fff !important;
-  box-shadow: 0 3px 15px #2fd7b144;
-}
-
+    .menu-btn.green {
+      background: #72eb63 !important;
+      color: #ffffff !important;
+      box-shadow: 0 3px 15px #2fd7b144;
+    }
+    .menu-btn.orange {
+      background: #f0d642  !important;
+      color: #fff !important;
+      box-shadow: 0 3px 15px #2fd7b144;
+    }
   </style>
 </head>
 <body>
   <!-- Boutons top-bar (profil, paramètres uniquement) -->
   <div class="top-buttons top-buttons-home">
-    <a href="profil.html" class="btn-icon" title="Profil">
-      <img src="assets/icons/user.svg" alt="Profil" />
+    <a href="profil.html" class="btn-icon" title="Profil" data-i18n="menu.profil">
+      <img src="assets/icons/user.svg" alt="Profil" data-i18n="menu.profil" />
       <span data-i18n="menu.profil" style="display:none;">Profil</span>
     </a>
-    <a href="parametres.html" class="btn-icon" title="Paramètres">
-      <img src="assets/icons/settings.svg" alt="Paramètres" />
+    <a href="parametres.html" class="btn-icon" title="Paramètres" data-i18n="menu.parametres">
+      <img src="assets/icons/settings.svg" alt="Paramètres" data-i18n="menu.parametres" />
       <span data-i18n="menu.parametres" style="display:none;">Paramètres</span>
     </a>
   </div>
@@ -53,37 +49,37 @@
   <div class="container">
     <img class="vblocks-logo" src="assets/images/vblocks-logo.png" alt="VBlocks Logo" draggable="false" />
     <div class="menu-list">
+      <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="location.href='concours.html'">
+        <span class="btn-label" data-i18n="menu.concours">Concours</span>
+      </button>
       <button class="menu-btn blue" onclick="location.href='classic.html'">
-        <span class="btn-label">Classic</span>
+        <span class="btn-label" data-i18n="menu.classic">Classic</span>
         <span class="info-btn" tabindex="0" data-i18n="tip.classic" data-tip="Mode classique avec montée de vitesse progressive">?</span>
       </button>
       <button class="menu-btn purple" onclick="location.href='infini.html'">
-        <span class="btn-label">Infini</span>
+        <span class="btn-label" data-i18n="menu.infini">Infini</span>
         <span class="info-btn" tabindex="0" data-i18n="tip.infini" data-tip="Mode relax sans fin, sans accélération">?</span>
       </button>
-      <button class="menu-btn yellow" onclick="location.href='challenge.html'">
-        <span class="btn-label">Challenge</span>
-        <span class="info-btn" tabindex="0" data-i18n="tip.challenge" data-tip="Missions spéciales avec objectifs">?</span>
+      <button class="menu-btn yellow" onclick="location.href='duel.html'">
+        <span class="btn-label" data-i18n="menu.duel">Duel</span>
+        <span class="info-btn" tabindex="0" data-i18n="tip.duel" data-tip="Défi tes amis">?</span>
       </button>
-            <button class="menu-btn green" onclick="location.href='boutique.html'">
+      <button class="menu-btn green" onclick="location.href='boutique.html'">
         <span class="btn-label" data-i18n="menu.boutique">Boutique</span>
-             <span class="info-btn" tabindex="0" data-i18n="tip.boutique" data-tip="Personnalise ton jeu">?</span>
+        <span class="info-btn" tabindex="0" data-i18n="tip.boutique" data-tip="Personnalise ton jeu">?</span>
       </button>
-      <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="location.href='concours.html'">
-        <span class="btn-label" data-i18n="menu.concours">Concours</span>
-           
-      </button>
-
     </div>
   </div>
   <div class="tooltip-box" id="tooltip"></div>
   <script>
-    // Tooltip parfait sous le bouton, centré, propre et prêt i18n
+    // Tooltip i18n clean
     const tooltip = document.getElementById('tooltip');
     document.querySelectorAll('.info-btn').forEach(el => {
       el.addEventListener('click', function (e) {
         e.stopPropagation();
         let text = el.getAttribute('data-tip');
+        // i18n dynamic
+        if (window.i18nGet) text = window.i18nGet(el.getAttribute('data-i18n')) || text;
         const parentBtn = el.closest('.menu-btn');
         const rect = parentBtn.getBoundingClientRect();
         tooltip.innerHTML = text;
@@ -103,7 +99,7 @@
       tooltip.classList.remove('visible');
     });
 
-    // Affiche la popup de consentement pubs au lancement (RGPD)
+    // Popup RGPD consent au démarrage
     window.addEventListener("DOMContentLoaded", function() {
       const consent = localStorage.getItem("rgpdConsent");
       if (!consent) {
@@ -134,7 +130,6 @@
         console.error("Erreur config :", error);
         return;
       }
-
       if (data?.concours_enabled) {
         document.getElementById("btnConcours").style.display = "block";
       } else {
@@ -144,6 +139,7 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       checkConcoursStatus();
+      if (window.i18nTranslateAll) window.i18nTranslateAll();
     });
   </script>
 </body>

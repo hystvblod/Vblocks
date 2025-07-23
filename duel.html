@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>V-Blocks - Duel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="themes/themes.css" id="theme-style" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0; padding: 0;
+      font-family: 'Quicksand', Arial, sans-serif;
+      background: var(--body-bg, #111);
+      color: var(--body-color, #ccc);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      min-height: 100dvh;
+      width: 100vw;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100vw;
+      max-width: 430px;
+      height: 100dvh;
+      min-height: 100dvh;
+      box-sizing: border-box;
+      padding: 0;
+    }
+    .header-row {
+      width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 10px 2px 10px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+    .header-side {
+      display: flex; align-items: center; gap: 8px; min-width: 50px;
+    }
+    .header-center {
+      flex: 1 1 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .main-title {
+      font-size: 1.2em; font-weight: 900;
+      color: var(--title-color, #39ff14);
+      letter-spacing: 2px; line-height: 1.12;
+      text-align: center;
+      white-space: pre-line;
+      word-break: break-word;
+    }
+    .btn-back img { width: 28px; height: 28px; }
+    .btn-icon img { width: 24px; height: 24px; }
+    .pieces-row, .vcoins, .score-row, #controls { display: none; }
+    #gameZone { display: none; }
+    #duelPopup {
+      position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 1000;
+      background: rgba(12,16,44,0.85); display: flex; align-items: center; justify-content: center;
+    }
+    #duelPopup > div {
+      background: #23294a; border-radius: 1em; box-shadow: 0 0 18px #00fff74c;
+      padding: 32px 18px 24px; min-width: 270px; max-width: 96vw;
+      color: #fff; text-align: center;
+    }
+    .duel-btn { margin: 8px 4px 0 4px; font-size: 1.12em; font-weight: bold; border-radius: 0.7em; border: none; padding: 0.52em 1.6em; background: #161649; color: #39ff14; cursor: pointer; }
+    .duel-btn:hover { background: #181885; }
+    .duel-link { font-size: 1.01em; background: #151537; border-radius: 0.5em; padding: 0.4em 1em; color: #ffd800; margin-bottom: 10px; user-select: all; }
+    .duel-code { font-size: 1.5em; letter-spacing: 2px; margin: 8px 0 6px 0; color: #ffd800; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <div class="main-content">
+    <div class="header-row">
+      <div class="header-side">
+        <a href="index.html" class="btn-back" title="Retour">
+          <img src="assets/icons/arrow_back.svg" alt="Retour" />
+        </a>
+      </div>
+      <div class="header-center">
+        <div class="main-title">V-Blocks<br>Duel</div>
+      </div>
+      <div class="header-side">
+        <a href="profil.html" class="btn-icon" title="Profil">
+          <img src="assets/icons/user.svg" alt="Profil" />
+        </a>
+        <a href="parametres.html" class="btn-icon" title="Paramètres">
+          <img src="assets/icons/settings.svg" alt="Paramètres" />
+        </a>
+      </div>
+    </div>
+
+    <!-- POPUP DUEL (attente, confirmation, décompte...) -->
+    <div id="duelPopup"></div>
+
+    <!-- ZONE DE JEU MASQUÉE AU DÉBUT -->
+    <div id="gameZone">
+      <div class="pieces-row">
+        <div class="piece-block">
+          <label>Réserve</label>
+          <canvas id="holdCanvas" width="44" height="44"></canvas>
+        </div>
+        <div class="piece-block">
+          <div style="color:#39ff14;font-weight:700;font-size:1em;">DUEL</div>
+        </div>
+        <div class="piece-block">
+          <label>Suivante</label>
+          <canvas id="nextCanvas" width="44" height="44"></canvas>
+        </div>
+      </div>
+      <div class="vcoins">
+        <img src="assets/images/vcoin.webp" alt="VCoins" class="vcoin-icon">
+        <span id="vcoin-amount">0</span>
+      </div>
+      <div class="game-flex-wrap">
+        <canvas id="gameCanvas" width="180" height="360"></canvas>
+      </div>
+      <div class="score-row" id="score-row">
+        <div class="score-group">
+          <span class="score-label">Score</span>
+          <span class="score-value" id="score">0</span>
+        </div>
+        <div class="score-group">
+          <span class="highscore-global">Highscore Global&nbsp;:</span>
+          <span class="highscore-value" id="highscore-global">0</span>
+        </div>
+      </div>
+      <div id="controls">
+        <button id="music-btn">Musique</button>
+        <button onclick="location.reload()">Rejouer</button>
+      </div>
+    </div>
+  </div>
+  <audio id="music" src="assets/sounds/chill.mp3" loop></audio>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/pub.js"></script>
+  <script src="js/userData.js"></script>
+  <script src="js/game.js"></script>
+  <script>
+    // Utilise window.sb partout, ne redeclare jamais sb !
+    // Utilise aussi window.getUserId (exposé par userData.js)
+
+    function genDuelCode(len = 6) {
+      const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+      let code = '';
+      for (let i = 0; i < len; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+      return code;
+    }
+
+    function showDuelPopup(state, data = {}) {
+      const popup = document.getElementById('duelPopup');
+      popup.style.display = 'flex';
+      let html = '';
+      if (state === 'choice') {
+        html = `
+          <div>
+            <h2>Duel</h2>
+            <button class="duel-btn" id="btnNewDuel">Créer un duel</button>
+            <br>
+            <button class="duel-btn" id="btnJoinDuel">Rejoindre un duel</button>
+          </div>
+        `;
+      }
+      if (state === 'wait') {
+        html = `
+          <div>
+            <h2>Invite un ami en duel !</h2>
+            <div>Code :</div>
+            <div class="duel-code">${data.code}</div>
+            <div class="duel-link"><input style="width:99%;font-size:1em;" value="${location.origin}${location.pathname}?duel=${data.code}&player=2" readonly onclick="this.select()"></div>
+            <div style="margin-top:1em;">En attente d'un adversaire...</div>
+          </div>
+        `;
+      }
+      if (state === 'confirm') {
+        html = `
+          <div>
+            <h2>Duel trouvé !</h2>
+            <div>Tu veux accepter le duel ?</div>
+            <button class="duel-btn" id="btnAcceptDuel">Accepter</button>
+            <button class="duel-btn" id="btnRefuseDuel">Refuser</button>
+          </div>
+        `;
+      }
+      if (state === 'countdown') {
+        html = `<div><h2>Duel prêt !</h2><div id="countdown" style="font-size:2.5em">3</div></div>`;
+      }
+      popup.innerHTML = html;
+    }
+
+    // === FLOW LOGIQUE DUEL ===
+    let duelId = null, duelCode = null, playerNum = 1;
+
+    async function startDuelFlow() {
+      // Détecte params URL
+      const urlParams = new URLSearchParams(window.location.search);
+      duelCode = urlParams.get('duel');
+      playerNum = parseInt(urlParams.get('player')) || 1;
+
+      if (!duelCode) {
+        // Pas de code => propose choix créer/rejoindre
+        showDuelPopup('choice');
+        document.getElementById('btnNewDuel').onclick = createNewDuel;
+        document.getElementById('btnJoinDuel').onclick = joinExistingDuel;
+      } else {
+        // On a un code => check/join room
+        let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
+        duelId = data?.id;
+        if (!data) {
+          showDuelPopup('choice');
+          alert("Ce duel n'existe pas ou a expiré.");
+          return;
+        }
+        if (playerNum === 1) {
+          showDuelPopup('wait', { code: duelCode });
+        } else if (playerNum === 2) {
+          await window.sb.from('duels').update({ player2: window.getUserId(), status: "pending" }).eq('id', duelId);
+          showDuelPopup('confirm');
+          document.getElementById('btnAcceptDuel').onclick = async () => {
+            await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
+          };
+          document.getElementById('btnRefuseDuel').onclick = () => { window.location = "index.html"; };
+        }
+        pollDuelStatus();
+      }
+    }
+
+    async function createNewDuel() {
+      duelCode = genDuelCode();
+      playerNum = 1;
+      let { data, error } = await window.sb.from('duels').insert([{
+        code: duelCode,
+        player1: window.getUserId(),
+        status: "waiting"
+      }]).select().single();
+      duelId = data?.id;
+      if (error || !duelId) {
+        alert("Erreur lors de la création du duel.");
+        showDuelPopup('choice');
+        return;
+      }
+      showDuelPopup('wait', { code: duelCode });
+      pollDuelStatus();
+    }
+
+    function joinExistingDuel() {
+      const popup = document.getElementById('duelPopup');
+      popup.innerHTML = `
+        <div>
+          <h2>Rejoindre un duel</h2>
+          <input id="inputCode" maxlength="8" placeholder="Code duel..." style="font-size:1.2em;letter-spacing:2px;text-align:center">
+          <button class="duel-btn" id="btnJoinOk">OK</button>
+          <button class="duel-btn" onclick="location.reload()">Annuler</button>
+        </div>
+      `;
+      document.getElementById('btnJoinOk').onclick = function() {
+        let code = document.getElementById('inputCode').value.trim().toUpperCase();
+        if (!code) return;
+        window.location.href = `${location.pathname}?duel=${code}&player=2`;
+      };
+    }
+
+    async function pollDuelStatus() {
+      let tries = 0;
+      while (tries++ < 80) {
+        let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
+        if (!data) break;
+        if (data.status === "waiting") {
+          showDuelPopup('wait', { code: duelCode });
+        }
+        if (playerNum === 2 && data.status === "pending") {
+          showDuelPopup('confirm');
+        }
+        if (data.status === "ready") {
+          if (!data.pieces_seq) {
+            const seq = Array.from({ length: 60 }, () => Math.floor(Math.random() * 7)).join(',');
+            await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', data.id);
+          }
+          showDuelPopup('countdown');
+          let n = 3;
+          const ctd = setInterval(() => {
+            document.getElementById('countdown').textContent = n;
+            n--;
+            if (n < 0) {
+              clearInterval(ctd);
+              document.getElementById('duelPopup').style.display = 'none';
+              document.getElementById('gameZone').style.display = '';
+              VBlocksGame.initGame({ mode: 'duel', duelId: data.id, duelPlayerNum: playerNum });
+            }
+          }, 1000);
+          break;
+        }
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", startDuelFlow);
+
+    setTimeout(()=>{
+      const music = document.getElementById("music");
+      const btn = document.getElementById("music-btn");
+      if(music && btn){
+        btn.onclick = function() {
+          if (music.paused) {
+            music.play();
+            this.textContent = "Musique";
+          } else {
+            music.pause();
+            this.textContent = "Muet";
+          }
+        };
+      }
+    }, 500);
+
+    async function updateVCoinsDisplay() {
+      let vcoins = 0;
+      try {
+        if(window.userData && userData.getVCoins) {
+          vcoins = await userData.getVCoins();
+        } else {
+          vcoins = parseInt(localStorage.getItem("vblocks_vcoins") || "0", 10);
+        }
+      } catch(e) { vcoins = 0; }
+      let el = document.getElementById("vcoin-amount");
+      if(el) el.textContent = vcoins;
+    }
+    updateVCoinsDisplay();
+    window.addEventListener("storage", updateVCoinsDisplay);
+  </script>
+</body>
+</html>

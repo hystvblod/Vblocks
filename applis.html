@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>VBlocks - Nos applis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style/main.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Quicksand', Arial, sans-serif;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 60% 40%, #7061e8 0%, #5db9e3 55%, #483070 100%);
+    }
+    .top-buttons {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 10px 0 8px;
+      gap: 16px; z-index: 2;
+      pointer-events: none;
+    }
+    .top-buttons .btn-back,
+    .top-buttons .btn-icon {
+      pointer-events: all;
+    }
+    .btn-back, .btn-icon {
+      background: none; border: none;
+      display: flex; align-items: center; justify-content: center;
+      padding: 6px; cursor: pointer; border-radius: 50%;
+      transition: background 0.15s; width: 44px; height: 44px;
+    }
+    .btn-back img, .btn-back svg,
+    .btn-icon img, .btn-icon svg {
+      width: 26px; height: 26px; display: block;
+      filter: drop-shadow(0 1px 2px #2228);
+    }
+    .btn-back:hover, .btn-icon:hover { background: #23236022; }
+    .container {
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      min-height: 100vh; padding-top: 5.5em; gap: 2.3em;
+    }
+    .vblocks-logo {
+      width: 90px; margin-bottom: 0.5em; user-select: none; pointer-events: none;
+      filter: drop-shadow(0 5px 18px #a3c8fd44);
+      border-radius: 1.1em;
+    }
+    .titre-page {
+      color: #fff; font-size: 2em; font-weight: bold; text-align: center; margin-bottom: 0.3em;
+      text-shadow: 0 3px 16px #2e6ead44, 0 1px 1px #fff7;
+      letter-spacing: 0.03em;
+    }
+    .appli-grid {
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2em 1.4em;
+      justify-items: center;
+      align-items: stretch;
+    }
+    .appli-card {
+      background: #4ea6ff;
+      border-radius: 1.5em;
+      box-shadow: 0 3px 18px #23365025;
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      justify-content: flex-start;
+      cursor: pointer;
+      transition: transform 0.13s, box-shadow 0.15s;
+      padding: 1em 1.2em 1em 1.1em;
+      border: none;
+      min-width: 0;
+      width: 100%;
+      max-width: 400px;
+      min-height: 128px;
+      height: 148px;
+    }
+    .appli-card:hover {
+      transform: scale(1.035);
+      box-shadow: 0 10px 36px #23365045;
+      filter: brightness(1.09);
+    }
+    .appli-photo {
+      width: 106px; height: 100%; min-height: 92px; min-width: 84px; max-width: 110px;
+      object-fit: cover;
+      border-radius: 1.1em;
+      background: #fff;
+      margin-right: 1.35em;
+      box-shadow: 0 2px 15px #23236a22;
+      border: 2.5px solid #fff8;
+      display: block;
+      align-self: center;
+    }
+    .appli-texts {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+    }
+    .appli-title {
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.20em;
+      text-align: left;
+      margin-bottom: 0.33em;
+      letter-spacing: 0.01em;
+      text-shadow: 0 2px 8px #2e3783aa, 0 1px 0px #0006;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .appli-desc {
+      color: #fff;
+      font-size: 1em;
+      text-align: left;
+      line-height: 1.24em;
+      opacity: 0.93;
+      font-weight: 500;
+      width: 100%;
+      margin-top: 0.03em;
+      word-break: break-word;
+      padding-right: 0.1em;
+    }
+    .appli-card.green  { background: #72eb63; }
+    .appli-card.purple { background: #ad7ef7; }
+    .appli-card.yellow { background: #ffe164; }
+    .appli-card.yellow .appli-title, .appli-card.yellow .appli-desc {
+      color: #fff !important; text-shadow: 0 2px 8px #b1a411aa, 0 1px 0px #0004;
+    }
+    @media (max-width: 900px) {
+      .appli-grid { max-width: 540px; }
+      .appli-card { max-width: 98vw; }
+    }
+    @media (max-width: 700px) {
+      .appli-grid { grid-template-columns: 1fr; max-width: 340px; }
+      .appli-card { min-height: 102px; height: auto; flex-direction: row;}
+      .appli-photo { width: 65px; min-width: 52px; max-width: 74px; }
+    }
+    @media (max-width: 520px) {
+      .vblocks-logo { width: 62px;}
+      .titre-page { font-size: 1.17em;}
+      .container { padding-top: 3.6em; }
+      .appli-photo { width: 45px; min-width: 42px;}
+      .appli-card { padding: 0.8em 0.6em 0.8em 0.6em; min-height: 68px; height: auto; }
+      .appli-title { font-size: 1em;}
+      .appli-desc { font-size: 0.93em;}
+    }
+  </style>
+</head>
+<body>
+  <div class="top-buttons">
+    <a href="profil.html" class="btn-back" title="Retour">
+      <img src="assets/icons/arrow_back.svg" alt="Retour" />
+    </a>
+    <div style="display: flex; gap: 16px;">
+      <a href="profil.html" class="btn-icon" title="Profil">
+        <img src="assets/icons/user.svg" alt="Profil" />
+      </a>
+      <a href="parametres.html" class="btn-icon" title="Paramètres">
+        <img src="assets/icons/settings.svg" alt="Paramètres" />
+      </a>
+    </div>
+  </div>
+  <div class="container">
+    <img class="vblocks-logo" src="assets/images/vblocks-logo.png" alt="VBlocks Logo" draggable="false" />
+    <div class="titre-page" data-i18n="apps.title">Nos applis</div>
+    <div class="appli-grid">
+      <button class="appli-card blue" onclick="window.open('https://play.google.com/store/apps/details?id=vfindz', '_blank')">
+        <img class="appli-photo" src="assets/images/vfindz.jpg" alt="VFindz" />
+        <div class="appli-texts">
+          <span class="appli-title" data-i18n="vfindz.title">VFindz</span>
+          <span class="appli-desc" data-i18n="vfindz.desc">
+            Le jeu photo viral : relève des défis, poste ta photo, participe à des concours et gagne des lots !
+          </span>
+        </div>
+      </button>
+      <button class="appli-card green" onclick="window.open('https://play.google.com/store/apps/details?id=vblocks', '_blank')">
+        <img class="appli-photo" src="assets/vblocks-photo.jpg" alt="VBlocks" />
+        <div class="appli-texts">
+          <span class="appli-title" data-i18n="vblocks.title">VBlocks</span>
+          <span class="appli-desc" data-i18n="vblocks.desc">
+            Tetris revisité façon moderne, thèmes animés, records et défis solo/duo.
+          </span>
+        </div>
+      </button>
+      <button class="appli-card purple" onclick="window.open('https://play.google.com/store/apps/details?id=vzone', '_blank')">
+        <img class="appli-photo" src="assets/vzone-photo.jpg" alt="VZone" />
+        <div class="appli-texts">
+          <span class="appli-title" data-i18n="vzone.title">VZone</span>
+          <span class="appli-desc" data-i18n="vzone.desc">
+            Evite les balles énnemies ! Jeu d’adresse simple et addictif à partager.
+          </span>
+        </div>
+      </button>
+ 
+          </span>
+        </div>
+      </button>
+    </div>
+  </div>
+  <!-- i18n script à brancher si besoin -->
+  <script>
+    // Branche ici ton moteur i18n si besoin !
+  </script>
+</body>
+</html>

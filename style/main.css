@@ -353,7 +353,7 @@ html, body {
       margin-bottom: 2.0em;
       text-shadow: 0 4px 22px #3e54c860, 0 1px 1px #fff5;
       text-align: center;
-      background: linear-gradient(90deg,#ffffff,#63dcfb 90%);
+      background: linear-gradient(90deg,#ffffff,#ffffff 90%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -613,3 +613,66 @@ html, body {
       font-weight: 700; cursor: pointer; margin-top: 1em;
     }
     button.return-btn:hover { background: rgba(255, 255, 255, 0.1); }
+
+.top-bar {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start; /* ou center selon le rendu */
+  justify-content: space-between;
+  box-sizing: border-box;
+  padding: 10px 10px 0 10px;
+  position: relative;
+  z-index: 30;
+}
+
+.center-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.main-title {
+  font-size: 1.25em; font-weight: 900;
+  color: var(--title-color, #39ff14);
+  letter-spacing: 2px;
+  line-height: 1.1;
+  text-align: center;
+  white-space: pre-line;
+  word-break: break-word;
+  margin-bottom: 2px;
+  user-select: none;
+}
+.solde-inline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 2px;
+}
+.vcoins, .jetons {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  justify-content: center;
+}
+.vcoins {
+  font-size: 1.19em;
+  color: #ffd800;
+  margin-bottom: 1px;
+}
+.jetons {
+  font-size: 1.07em;
+  color: #36e7ff;
+}
+.vcoin-icon, .jeton-icon {
+  width: 27px;
+  height: 27px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
