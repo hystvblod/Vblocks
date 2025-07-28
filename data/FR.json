@@ -83,7 +83,7 @@
   "vzone.desc": "Évite les balles ennemies ! Jeu d’adresse simple et addictif à partager.", 
   
   "game.title": "V-Blocks - Classique",
-  "game.main_title": "V-Blocks<br>Classique",
+  "game.main_title": "V-Blocks-Classique",
   "jetons.alt": "Jetons",
   "game.hold": "Réserve",
   "game.next": "Suivante",
@@ -93,8 +93,8 @@
   "game.music": "Musique",
   "game.mute": "Muet",
   "game.replay": "Rejouer",
-    "duel.title": "V-Blocks - Duel",
-  "duel.main_title": "V-Blocks\nDuel",
+    "duel.title": "V-Blocks-Duel",
+  "duel.main_title": "V-Blocks-Duel",
   "duel.hold": "Réserve",
   "duel.next": "Suivante",
   "duel.score": "Score",
@@ -121,7 +121,126 @@
   "duel.popup.join.title": "Rejoindre un duel",
   "duel.popup.join.placeholder": "Code duel...",
   "duel.popup.join.ok": "OK",
-  "duel.popup.join.cancel": "Annuler"
+  "duel.popup.join.cancel": "Annuler",
 
+  "button.back": "Retour",
+  "main.title.infini": "V-Blocks\nInfini",
+  "button.profile": "Profil",
+  "button.settings": "Paramètres",
+
+
+  "wallet.vcoins": "VCoins",
+  "wallet.jetons": "Jetons",
+
+
+  "hold.label": "Réserve",
+  "next.label": "Suivante",
+
+
+  "score.label": "Score",
+  "highscore.global": "Record :",
+  "highscore.value": "Record :",
+
+
+  "button.music": "Musique",
+  "button.mute": "Muet",
+  "button.replay": "Rejouer",
+  "button.pause": "Pause",
+
+  "button.back": "Retour",
+  "button.profile": "Profil",
+  "button.settings": "Paramètres",
+
+
+  "profil.title": "Mon Profil",
+  "profil.btn.changePseudo": "Modifier mon pseudo",
+  "profil.btn.theme": "Thèmes",
+  "profil.btn.amis": "Amis",
+  "profil.btn.applis": "Nos applis",
+
+
+  "profil.popup.pseudoTitle": "Ton nouveau pseudo",
+  "profil.popup.validate": "Valider",
+  "profil.popup.cancel": "Annuler",
+  "profil.popup.error.short": "Pseudo trop court.",
+
+  "profil.popup.themeTitle": "Choisis ton thème VBlocks",
+  "profil.popup.themeValidate": "Valider",
+  "profil.popup.themeCancel": "Annuler",
+
+  "duel.title": "V-Blocks - Duel",
+  "duel.main_title": "V-Blocks - Duel",
+  "duel.hold": "Réserve",
+  "duel.next": "Suivante",
+  "duel.score": "Score",
+  "duel.highscore_global": "Record global :",
+  "duel.music": "Musique",
+  "duel.mute": "Muet",
+  "duel.replay": "Rejouer",
+
+  "duel.popup.choice.title": "Duel",
+  "duel.popup.choice.new": "Créer un duel",
+  "duel.popup.choice.join": "Rejoindre un duel",
+
+  "duel.popup.wait.title": "Invite un ami en duel !",
+  "duel.popup.wait.code": "Code :",
+  "duel.popup.wait.text": "En attente d'un adversaire...",
+
+  "duel.popup.confirm.title": "Duel trouvé !",
+  "duel.popup.confirm.text": "Tu veux accepter le duel ?",
+  "duel.popup.confirm.accept": "Accepter",
+  "duel.popup.confirm.refuse": "Refuser",
+
+  "duel.popup.countdown.title": "Duel prêt !",
+
+  "duel.popup.join.title": "Rejoindre un duel",
+  "duel.popup.join.placeholder": "Code duel...",
+  "duel.popup.join.ok": "OK",
+  "duel.popup.join.cancel": "Annuler",
+  
+  "duel.finished": "DUEL TERMINÉ !",
+  "duel.yourscore": "Ton score :",
+  "duel.opponentscore": "Score adverse :",
+  "duel.waiting": "En attente...",
+  "gameover.title": "Partie terminée !",
+  "gameover.points": "points gagnés !",
+  "gameover.tokens": "Solde jetons :",
+  "gameover.revive_token": "Utiliser 1 jeton pour reprendre",
+  "gameover.revive_ad": "Regarder une pub pour reprendre",
+  "gameover.quit": "Quitter",
+  "ad.fake": "Publicité...",
+  "ad.wait": "Attends 3 secondes",
+  "error.save_score": "Erreur lors de la sauvegarde du score ou des VCoins !",
+  "error.duel_not_found": "Duel introuvable ou séquence absente.",
+  "error.duel_create": "Erreur lors de la création du duel.",
+  "button.replay": "Rejouer",
+
+"theme.bubble": "Bubble",
+"theme.nature": "Nature",
+"theme.nuit": "Nuit",
+"theme.luxury": "Luxury",
+"theme.space": "Space",
+"theme.candy": "Candy",
+"theme.cyber": "Cyber",
+"theme.vitraux": "Vitraux",
+"theme.pixel": "Pixel Art",
+"theme.halloween": "Halloween",
+
+"boutique.cartouche.jetons12": "12 jetons : 0,99€",
+"boutique.cartouche.jetons50": "50 jetons : 2,99€",
+"boutique.cartouche.nopub": "Supprimer pubs : 2,99€",
+"boutique.cartouche.pub1jeton": "Regarder pub : 1 jeton",
+"boutique.cartouche.pub300points": "Regarder pub : 300 points",
+
+
+"boutique.alert.vcoins_update_error": "Erreur lors de la mise à jour des VCoins !",
+"theme.deja_possede": "Thème déjà possédé !",
+"boutique.alert.pasassez": "Pas assez de pièces !",
+"theme.debloque": "Thème débloqué !",
+"theme.activated": "Nouveau style activé : {THEME}",
+"boutique.btn.selectionne": "Sélectionné",
+"boutique.btn.utiliser": "Utiliser",
+"boutique.btn.debloquer": "Débloquer ({PRICE})"
 
 }
+

@@ -3,15 +3,22 @@
 
   let highscoreCloud = 0; // Record cloud global
 
+  // Fonction i18n de traduction (remplace par ta fonction si besoin)
+  function t(key, params) {
+    let str = (window.i18n && window.i18n[key]) || key;
+    if(params) Object.keys(params).forEach(k => {
+      str = str.replace(`{${k}}`, params[k]);
+    });
+    return str;
+  }
+
   function initGame(opts){
-    const mode = (opts && opts.mode) || 'classic'; // 'classic', 'infini', 'duel'
-    // Pour le DUEL
+    const mode = (opts && opts.mode) || 'classic';
     const duelId = opts?.duelId || null;
-    const duelPlayerNum = opts?.duelPlayerNum || 1; // 1 ou 2
+    const duelPlayerNum = opts?.duelPlayerNum || 1;
     let piecesSequence = null;
     let piecesUsed = 0;
 
-    // --- OPTION : pièce fantôme activée (par défaut true)
     let ghostPieceEnabled = localStorage.getItem('ghostPiece') !== 'false';
     global.toggleGhostPiece = function(enabled) {
       ghostPieceEnabled = !!enabled;
@@ -19,7 +26,6 @@
       drawBoard();
     };
 
-    //--- SETUP CANVAS ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const holdCanvas = document.getElementById('holdCanvas');
@@ -32,36 +38,33 @@
     canvas.width = COLS * BLOCK_SIZE;
     canvas.height = ROWS * BLOCK_SIZE;
 
-    // --- THEMES ---
     const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space'];
     let currentTheme = localStorage.getItem('themeVBlocks') || 'neon';
     let currentThemeIndex = THEMES.indexOf(currentTheme);
     const blockImages = {};
-function loadBlockImages(themeName){
-  const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "candy"];
-  let imagesToLoad = 0, imagesLoaded = 0;
-
-  ['I','J','L','O','S','T','Z'].forEach(l => {
-    if(themesWithPNG.includes(themeName)){
-      imagesToLoad++;
-      const img = new Image();
-      img.onload = () => {
-        imagesLoaded++;
-        // Quand TOUTES les images sont chargées, on redessine la pièce suivante
-        if(imagesLoaded === imagesToLoad) {
-          if(typeof drawMiniPiece === "function") {
-            drawMiniPiece(nextCtx, nextPiece);
-          }
+    function loadBlockImages(themeName){
+      const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "candy"];
+      let imagesToLoad = 0, imagesLoaded = 0;
+      ['I','J','L','O','S','T','Z'].forEach(l => {
+        if(themesWithPNG.includes(themeName)){
+          imagesToLoad++;
+          const img = new Image();
+          img.onload = () => {
+            imagesLoaded++;
+            if(imagesLoaded === imagesToLoad) {
+              if(typeof drawMiniPiece === "function") {
+                drawMiniPiece(nextCtx, nextPiece);
+              }
+            }
+            drawBoard();
+          };
+          img.src = `themes/${themeName}/${l}.png`;
+          blockImages[l] = img;
+        }else{
+          blockImages[l] = null;
         }
-        drawBoard(); // Si besoin, pour la grille
-      };
-      img.src = `themes/${themeName}/${l}.png`;
-      blockImages[l] = img;
-    }else{
-      blockImages[l] = null;
-    }
-  });
-  currentTheme = themeName;
+      });
+      currentTheme = themeName;
       if(themeName === 'retro'){
         global.currentColors = {I:'#00f0ff',J:'#0044ff',L:'#ff6600',O:'#ffff33',S:'#00ff44',T:'#ff00cc',Z:'#ff0033'};
       }else if(themeName === 'neon'){
@@ -104,8 +107,6 @@ function loadBlockImages(themeName){
     let paused = false;
     let combo = 0;
     let linesCleared = 0;
-
-    // === HISTORIQUE POUR REWIND ===
     let history = [];
     function saveHistory() {
       history.push({
@@ -121,7 +122,6 @@ function loadBlockImages(themeName){
       if (history.length > 7) history.shift();
     }
 
-    // --- POPUP/REWIND ---
     async function getJetons() {
       return (await userData.getJetons?.()) ?? 0;
     }
@@ -136,7 +136,7 @@ function loadBlockImages(themeName){
       return new Promise(resolve => {
         const ad = document.createElement('div');
         ad.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:2em;";
-        ad.innerHTML = "<div>Publicité...<br>Attends 3 secondes</div>";
+        ad.innerHTML = `<div>${t("ad.fake")}<br>${t("ad.wait")}</div>`;
         document.body.appendChild(ad);
         setTimeout(()=>{ad.remove();resolve();},3000);
       });
@@ -144,8 +144,6 @@ function loadBlockImages(themeName){
 
     // ----- DUEL --------
     async function setupDuelSequence() {
-      // player1: la séquence existe déjà (crée avant lancement) !
-      // player2: attends que player1 ait push la séquence
       if (!duelId) return;
       let tries = 0, data = null;
       while (tries++ < 20) {
@@ -153,7 +151,7 @@ function loadBlockImages(themeName){
         if (res?.data && res.data.pieces_seq) { data = res.data; break; }
         await new Promise(r=>setTimeout(r,1500));
       }
-      if (!data) throw new Error("Duel introuvable ou séquence absente.");
+      if (!data) throw new Error(t("error.duel_not_found"));
       piecesSequence = data.pieces_seq.split(',').map(x=>parseInt(x));
       piecesUsed = 0;
     }
@@ -176,10 +174,11 @@ function loadBlockImages(themeName){
         if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
         await new Promise(r=>setTimeout(r,1500));
       }
-      let msg = `<div style="font-weight:bold;">DUEL TERMINÉ !</div>
-      <div>Ton score : <b>${myScore}</b></div>
-      <div>Score adverse : <b>${otherScore != null ? otherScore : "En attente..."}</b></div>
-      <button onclick="location.reload()">Rejouer</button>`;
+      let msg = `
+        <div style="font-weight:bold;">${t("duel.finished")}</div>
+        <div>${t("duel.yourscore")} <b>${myScore}</b></div>
+        <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
+        <button onclick="location.reload()">${t("button.replay")}</button>`;
       let div = document.createElement("div");
       div.id = "duel-popup";
       div.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;";
@@ -194,30 +193,24 @@ function loadBlockImages(themeName){
 
       (async function saveScoreAndRewards(points) {
         try {
-          // Score cloud
           await setLastScoreSupabase(points);
-
-          // Highscore cloud : check, set only if better
           const cloudHigh = await getHighScoreSupabase();
           if (points > cloudHigh) {
             await setHighScoreSupabase(points);
             highscoreCloud = points;
             updateHighscoreDisplay();
           }
-          // Ajout VCoins (bonus supabase)
           await userData.addVCoins?.(points);
           updateBalancesHeader();
         } catch (err) {
-          alert("Erreur lors de la sauvegarde du score ou des VCoins !");
+          alert(t("error.save_score"));
           console.error(err);
         }
       })(points);
 
-      // Popup UI
       const old = document.getElementById('gameover-popup');
       if (old) old.remove();
 
-      // Ajoute gestion DUEL ici !
       if (mode === 'duel') {
         handleDuelEnd(points);
         return;
@@ -232,15 +225,15 @@ function loadBlockImages(themeName){
       popup.innerHTML = `
         <div style="background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:220px">
           <div style="font-size:1.2em;font-weight:bold;margin-bottom:10px;">
-            <span>Partie terminée !</span><br>
-            <span>+${points} points gagnés !</span>
+            <span>${t("gameover.title")}</span><br>
+            <span>+${points} ${t("gameover.points")}</span>
           </div>
           <div style="margin-bottom:10px">
-            <span>Solde jetons : <b id="solde-jetons-popup">…</b></span>
+            <span>${t("gameover.tokens")} <b id="solde-jetons-popup">…</b></span>
           </div>
-          <button id="popup-jeton">Utiliser 1 jeton pour reprendre</button><br>
-          <button id="popup-pub" style="margin-top:8px">Regarder une pub pour reprendre</button><br>
-          <button id="popup-stop" style="margin-top:16px">Quitter</button>
+          <button id="popup-jeton">${t("gameover.revive_token")}</button><br>
+          <button id="popup-pub" style="margin-top:8px">${t("gameover.revive_ad")}</button><br>
+          <button id="popup-stop" style="margin-top:16px">${t("gameover.quit")}</button>
         </div>
       `;
       document.body.appendChild(popup);
@@ -298,11 +291,11 @@ function loadBlockImages(themeName){
       `;
       overlay.textContent = countdown;
       document.body.appendChild(overlay);
-      let t = setInterval(()=>{
+      let tmr = setInterval(()=>{
         countdown--;
         overlay.textContent = countdown;
         if (countdown <= 0) {
-          clearInterval(t);
+          clearInterval(tmr);
           overlay.remove();
           paused = false;
           gameOver = false;

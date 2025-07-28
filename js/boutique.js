@@ -1,26 +1,32 @@
 // === Boutique VBlocks : JS complet, compatible Capacitor, Synchro Supabase+LocalStorage ===
 
+// Helper i18n universel (compatible avec window.i18n ou autre système)
+function t(key) {
+  if (window.i18n && window.i18n[key]) return window.i18n[key];
+  return key;
+}
+
 // Liste des thèmes
 const THEMES = [
-  { key: "bubble",     name: "Bubble",     locked: false },
-  { key: "nature",     name: "Nature",     locked: false },
-  { key: "nuit",       name: "Nuit",       locked: false },
-  { key: "luxury",     name: "Luxury",     locked: true  },
-  { key: "space",      name: "Space",      locked: true  },
-  { key: "candy",      name: "Candy",      locked: true  },
-  { key: "cyber",      name: "Cyber",      locked: true  },
-  { key: "vitraux",    name: "Vitraux",     locked: true  },
-  { key: "pixel",      name: "Pixel Art",  locked: true  },
-  { key: "halloween",  name: "Halloween",  locked: true  }
+  { key: "bubble",     locked: false },
+  { key: "nature",     locked: false },
+  { key: "nuit",       locked: false },
+  { key: "luxury",     locked: true  },
+  { key: "space",      locked: true  },
+  { key: "candy",      locked: true  },
+  { key: "cyber",      locked: true  },
+  { key: "vitraux",    locked: true  },
+  { key: "pixel",      locked: true  },
+  { key: "halloween",  locked: true  }
 ];
 
-// Cartouches d’achats supplémentaires (ajoute si besoin, exemple)
+// Cartouches d’achats supplémentaires (full i18n)
 const SPECIAL_CARTOUCHES = [
-  { label: '12 jetons : 0,99€',        icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue' },
-  { label: '50 jetons : 2,99€',        icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple' },
-  { label: 'Supprimer pubs : 2,99€',   icon: '<img src="assets/images/ads.png" alt="No Ads">',   color: 'color-yellow' },
-  { label: 'Regarder pub : 1 jeton',   icon: '<img src="assets/images/jeton.webp" alt="Pub">',   color: 'color-green' },
-  { label: 'Regarder pub : 300 points',icon: '<img src="assets/images/vcoin.webp" alt="Pub">',   color: 'color-blue' }
+  { key: "boutique.cartouche.jetons12",  icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue' },
+  { key: "boutique.cartouche.jetons50",  icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple' },
+  { key: "boutique.cartouche.nopub",     icon: '<img src="assets/images/ads.png" alt="No Ads">',   color: 'color-yellow' },
+  { key: "boutique.cartouche.pub1jeton", icon: '<img src="assets/images/jeton.webp" alt="Pub">',   color: 'color-green' },
+  { key: "boutique.cartouche.pub300points", icon: '<img src="assets/images/vcoin.webp" alt="Pub">', color: 'color-blue' }
 ];
 
 const THEME_PRICE = 200;
@@ -51,7 +57,7 @@ async function addVCoinsSupabase(amount) {
     delta: amount
   });
   if (error) {
-    alert("Erreur lors de la mise à jour des VCoins !");
+    alert(t("boutique.alert.vcoins_update_error"));
     throw error;
   }
   let newBalance = data?.[0]?.new_balance ?? 0;
@@ -66,11 +72,11 @@ async function acheterTheme(themeKey, prix) {
   let coins = user?.vcoins ?? 0;
   let themes = Array.isArray(user?.themes_possedes) ? user.themes_possedes : [];
   if (themes.includes(themeKey)) {
-    alert("Thème déjà possédé !");
+    alert(t("theme.deja_possede"));
     return false;
   }
   if (coins < prix) {
-    alert("Pas assez de pièces !");
+    alert(t("boutique.alert.pasassez"));
     return false;
   }
   // Déduit les coins (RPC sécurisé)
@@ -81,7 +87,7 @@ async function acheterTheme(themeKey, prix) {
   // Synchro localStorage pour l'UI
   setUnlockedThemes(themes);
   localStorage.setItem('vblocks_vcoins', newBalance);
-  alert("Thème débloqué !");
+  alert(t("theme.debloque"));
   renderThemes();
   return true;
 }
@@ -92,7 +98,7 @@ async function activerTheme(themeKey) {
   const userId = getUserId();
   await sb.from('users').update({ theme_actif: themeKey }).eq('id', userId);
   renderThemes();
-  alert("Nouveau style activé : " + THEMES.find(t=>t.key===themeKey).name);
+  alert(t("theme.activated").replace("{THEME}", t("theme."+themeKey)));
 }
 
 // --- Affichage des cartouches d’achats ---
@@ -101,7 +107,7 @@ function renderAchats() {
   let achatsHtml = SPECIAL_CARTOUCHES.map(c => `
     <div class="special-cartouche ${c.color}">
       <span class="theme-ico">${c.icon}</span>
-      <span class="theme-label">${c.label}</span>
+      <span class="theme-label">${t(c.key)}</span>
     </div>
   `).join('');
   $achatsList.innerHTML = achatsHtml;
@@ -120,15 +126,15 @@ function renderThemes() {
     const card = document.createElement('div');
     card.className = 'theme-card' + (current === theme.key ? " selected" : "") + (isUnlocked ? "" : " locked");
     card.innerHTML = `
-      <div class="theme-name">${theme.name}</div>
+      <div class="theme-name">${t("theme."+theme.key)}</div>
       <img class="theme-img" src="img/theme_${theme.key}.png" alt="" loading="lazy">
     `;
     if (isUnlocked) {
       card.innerHTML += (current === theme.key)
-        ? `<button class="theme-btn selected" disabled>Sélectionné</button>`
-        : `<button class="theme-btn" onclick="activerTheme('${theme.key}')">Utiliser</button>`;
+        ? `<button class="theme-btn selected" disabled>${t("boutique.btn.selectionne")}</button>`
+        : `<button class="theme-btn" onclick="activerTheme('${theme.key}')">${t("boutique.btn.utiliser")}</button>`;
     } else {
-      card.innerHTML += `<button class="theme-btn locked" onclick="acheterTheme('${theme.key}', ${THEME_PRICE})">Débloquer (${THEME_PRICE})</button>`;
+      card.innerHTML += `<button class="theme-btn locked" onclick="acheterTheme('${theme.key}', ${THEME_PRICE})">${t("boutique.btn.debloquer").replace("{PRICE}", THEME_PRICE)}</button>`;
     }
     list.appendChild(card);
   });
