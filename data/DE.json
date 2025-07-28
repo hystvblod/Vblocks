@@ -72,7 +72,46 @@
   "boutique.cartouche.pub300points": "Werbung ansehen: 300 Punkte",
   "theme.possede": "Besessen",
   "theme.debloquer": "Freischalten (3000)",
-  "boutique.alert.pasassez": "Nicht genug Münzen!"
+  "boutique.alert.pasassez": "Nicht genug Münzen!",
+  
+  "apps.title": "Unsere Apps",
+  "menu.retour": "Zurück",
+  "menu.profil": "Profil",
+  "menu.parametres": "Einstellungen",
+  "vfindz.title": "VFindz",
+  "vfindz.desc": "Das virale Fotospiel: Meistere Herausforderungen, poste dein Foto, nimm an Wettbewerben teil und gewinne Preise!",
+  "vzone.title": "VZone",
+  "vzone.desc": "Weiche den feindlichen Kugeln aus! Ein einfaches und süchtig machendes Geschicklichkeitsspiel zum Teilen.",
+   "duel.title": "V-Blocks - Duell",
+  "duel.main_title": "V-Blocks\nDuell",
+  "duel.hold": "Reserviert",
+  "duel.next": "Nächste",
+  "duel.score": "Punktzahl",
+  "duel.highscore_global": "Globaler Rekord:",
+  "duel.music": "Musik",
+  "duel.mute": "Stumm",
+  "duel.replay": "Neu spielen",
+
+  "duel.popup.choice.title": "Duell",
+  "duel.popup.choice.new": "Duell erstellen",
+  "duel.popup.choice.join": "Duell beitreten",
+
+  "duel.popup.wait.title": "Lade einen Freund zum Duell ein!",
+  "duel.popup.wait.code": "Code:",
+  "duel.popup.wait.text": "Warte auf einen Gegner...",
+
+  "duel.popup.confirm.title": "Duell gefunden!",
+  "duel.popup.confirm.text": "Willst du das Duell annehmen?",
+  "duel.popup.confirm.accept": "Annehmen",
+  "duel.popup.confirm.refuse": "Ablehnen",
+
+  "duel.popup.countdown.title": "Duell bereit!",
+
+  "duel.popup.join.title": "Duell beitreten",
+  "duel.popup.join.placeholder": "Duell-Code...",
+  "duel.popup.join.ok": "OK",
+  "duel.popup.join.cancel": "Abbrechen"
+
 }
 
 

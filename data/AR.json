@@ -72,7 +72,46 @@
   "boutique.cartouche.pub300points": "شاهد إعلان: 300 نقطة",
   "theme.possede": "مملوك",
   "theme.debloquer": "فتح (3000)",
-  "boutique.alert.pasassez": "ليست لديك عملات كافية!"
+  "boutique.alert.pasassez": "ليست لديك عملات كافية!",
+  
+  "apps.title": "تطبيقاتنا",
+  "menu.retour": "عودة",
+  "menu.profil": "الملف الشخصي",
+  "menu.parametres": "الإعدادات",
+  "vfindz.title": "VFindz",
+  "vfindz.desc": "لعبة الصور الفيروسية: أكمل التحديات، انشر صورتك، شارك في المسابقات واربح الجوائز!",
+  "vzone.title": "VZone",
+  "vzone.desc": "تجنب الكرات المعادية! لعبة مهارة بسيطة وإدمانية للمشاركة.", 
+    "duel.title": "في-بلوكس - مبارزة",
+  "duel.main_title": "في-بلوكس\nمبارزة",
+  "duel.hold": "احتياطي",
+  "duel.next": "التالي",
+  "duel.score": "النقاط",
+  "duel.highscore_global": "الرقم القياسي العالمي:",
+  "duel.music": "موسيقى",
+  "duel.mute": "صامت",
+  "duel.replay": "إعادة اللعب",
+
+  "duel.popup.choice.title": "مبارزة",
+  "duel.popup.choice.new": "إنشاء مبارزة",
+  "duel.popup.choice.join": "انضم إلى مبارزة",
+
+  "duel.popup.wait.title": "ادعُ صديقك للمبارزة!",
+  "duel.popup.wait.code": "الرمز:",
+  "duel.popup.wait.text": "في انتظار الخصم...",
+
+  "duel.popup.confirm.title": "تم العثور على مبارزة!",
+  "duel.popup.confirm.text": "هل تريد قبول المبارزة؟",
+  "duel.popup.confirm.accept": "قبول",
+  "duel.popup.confirm.refuse": "رفض",
+
+  "duel.popup.countdown.title": "المبارزة جاهزة!",
+
+  "duel.popup.join.title": "انضم إلى مبارزة",
+  "duel.popup.join.placeholder": "رمز المبارزة...",
+  "duel.popup.join.ok": "موافق",
+  "duel.popup.join.cancel": "إلغاء"
+
 }
 
 

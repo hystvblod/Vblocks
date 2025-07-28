@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>V-Blocks - Duel</title>
+  <title data-i18n="duel.title">V-Blocks - Duel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <link rel="stylesheet" href="themes/themes.css" id="theme-style" />
   <style>
@@ -85,7 +85,7 @@
         </a>
       </div>
       <div class="header-center">
-        <div class="main-title">V-Blocks<br>Duel</div>
+        <div class="main-title" data-i18n="duel.main_title">V-Blocks<br>Duel</div>
       </div>
       <div class="header-side">
         <a href="profil.html" class="btn-icon" title="Profil">
@@ -104,14 +104,14 @@
     <div id="gameZone">
       <div class="pieces-row">
         <div class="piece-block">
-          <label>Réserve</label>
+          <label data-i18n="duel.hold">Réserve</label>
           <canvas id="holdCanvas" width="44" height="44"></canvas>
         </div>
         <div class="piece-block">
-          <div style="color:#39ff14;font-weight:700;font-size:1em;">DUEL</div>
+          <div style="color:#39ff14;font-weight:700;font-size:1em;" data-i18n="duel.main_title">DUEL</div>
         </div>
         <div class="piece-block">
-          <label>Suivante</label>
+          <label data-i18n="duel.next">Suivante</label>
           <canvas id="nextCanvas" width="44" height="44"></canvas>
         </div>
       </div>
@@ -124,17 +124,17 @@
       </div>
       <div class="score-row" id="score-row">
         <div class="score-group">
-          <span class="score-label">Score</span>
+          <span class="score-label" data-i18n="duel.score">Score</span>
           <span class="score-value" id="score">0</span>
         </div>
         <div class="score-group">
-          <span class="highscore-global">Highscore Global&nbsp;:</span>
+          <span class="highscore-global" data-i18n="duel.highscore_global">Highscore Global&nbsp;:</span>
           <span class="highscore-value" id="highscore-global">0</span>
         </div>
       </div>
       <div id="controls">
-        <button id="music-btn">Musique</button>
-        <button onclick="location.reload()">Rejouer</button>
+        <button id="music-btn" data-i18n="duel.music">Musique</button>
+        <button onclick="location.reload()" data-i18n="duel.replay">Rejouer</button>
       </div>
     </div>
   </div>
@@ -155,6 +155,9 @@
       return code;
     }
 
+    // Fonction utilitaire pour injecter les textes i18n dans les popups
+    function i18nT(key) { return (window.i18n && window.i18n[key]) || key; }
+
     function showDuelPopup(state, data = {}) {
       const popup = document.getElementById('duelPopup');
       popup.style.display = 'flex';
@@ -162,36 +165,38 @@
       if (state === 'choice') {
         html = `
           <div>
-            <h2>Duel</h2>
-            <button class="duel-btn" id="btnNewDuel">Créer un duel</button>
+            <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
+            <button class="duel-btn" id="btnNewDuel" data-i18n="duel.popup.choice.new">${i18nT("duel.popup.choice.new")}</button>
             <br>
-            <button class="duel-btn" id="btnJoinDuel">Rejoindre un duel</button>
+            <button class="duel-btn" id="btnJoinDuel" data-i18n="duel.popup.choice.join">${i18nT("duel.popup.choice.join")}</button>
           </div>
         `;
       }
       if (state === 'wait') {
         html = `
           <div>
-            <h2>Invite un ami en duel !</h2>
-            <div>Code :</div>
+            <h2 data-i18n="duel.popup.wait.title">${i18nT("duel.popup.wait.title")}</h2>
+            <div data-i18n="duel.popup.wait.code">${i18nT("duel.popup.wait.code")}</div>
             <div class="duel-code">${data.code}</div>
-            <div class="duel-link"><input style="width:99%;font-size:1em;" value="${location.origin}${location.pathname}?duel=${data.code}&player=2" readonly onclick="this.select()"></div>
-            <div style="margin-top:1em;">En attente d'un adversaire...</div>
+            <div class="duel-link">
+              <input style="width:99%;font-size:1em;" value="${location.origin}${location.pathname}?duel=${data.code}&player=2" readonly onclick="this.select()">
+            </div>
+            <div style="margin-top:1em;" data-i18n="duel.popup.wait.text">${i18nT("duel.popup.wait.text")}</div>
           </div>
         `;
       }
       if (state === 'confirm') {
         html = `
           <div>
-            <h2>Duel trouvé !</h2>
-            <div>Tu veux accepter le duel ?</div>
-            <button class="duel-btn" id="btnAcceptDuel">Accepter</button>
-            <button class="duel-btn" id="btnRefuseDuel">Refuser</button>
+            <h2 data-i18n="duel.popup.confirm.title">${i18nT("duel.popup.confirm.title")}</h2>
+            <div data-i18n="duel.popup.confirm.text">${i18nT("duel.popup.confirm.text")}</div>
+            <button class="duel-btn" id="btnAcceptDuel" data-i18n="duel.popup.confirm.accept">${i18nT("duel.popup.confirm.accept")}</button>
+            <button class="duel-btn" id="btnRefuseDuel" data-i18n="duel.popup.confirm.refuse">${i18nT("duel.popup.confirm.refuse")}</button>
           </div>
         `;
       }
       if (state === 'countdown') {
-        html = `<div><h2>Duel prêt !</h2><div id="countdown" style="font-size:2.5em">3</div></div>`;
+        html = `<div><h2 data-i18n="duel.popup.countdown.title">${i18nT("duel.popup.countdown.title")}</h2><div id="countdown" style="font-size:2.5em">3</div></div>`;
       }
       popup.innerHTML = html;
     }
@@ -255,10 +260,10 @@
       const popup = document.getElementById('duelPopup');
       popup.innerHTML = `
         <div>
-          <h2>Rejoindre un duel</h2>
-          <input id="inputCode" maxlength="8" placeholder="Code duel..." style="font-size:1.2em;letter-spacing:2px;text-align:center">
-          <button class="duel-btn" id="btnJoinOk">OK</button>
-          <button class="duel-btn" onclick="location.reload()">Annuler</button>
+          <h2 data-i18n="duel.popup.join.title">${i18nT("duel.popup.join.title")}</h2>
+          <input id="inputCode" maxlength="8" placeholder="${i18nT("duel.popup.join.placeholder")}" style="font-size:1.2em;letter-spacing:2px;text-align:center">
+          <button class="duel-btn" id="btnJoinOk" data-i18n="duel.popup.join.ok">${i18nT("duel.popup.join.ok")}</button>
+          <button class="duel-btn" onclick="location.reload()" data-i18n="duel.popup.join.cancel">${i18nT("duel.popup.join.cancel")}</button>
         </div>
       `;
       document.getElementById('btnJoinOk').onclick = function() {
@@ -311,10 +316,10 @@
         btn.onclick = function() {
           if (music.paused) {
             music.play();
-            this.textContent = "Musique";
+            this.textContent = i18nT("duel.music");
           } else {
             music.pause();
-            this.textContent = "Muet";
+            this.textContent = i18nT("duel.mute");
           }
         };
       }

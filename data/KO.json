@@ -71,6 +71,45 @@
   "boutique.cartouche.pub300points": "광고 보기: 300포인트",
   "theme.possede": "보유 중",
   "theme.debloquer": "해제 (3000)",
-  "boutique.alert.pasassez": "코인이 부족합니다!"
+  "boutique.alert.pasassez": "코인이 부족합니다!",
+    "game.title": "V-Blocks - 클래식",
+  "game.main_title": "V-Blocks<br>클래식",
+  "game.hold": "보관",
+  "game.next": "다음",
+  "game.pause_btn": "일시정지",
+  "game.score": "점수",
+  "game.record": "기록:",
+  "game.music": "음악",
+  "game.mute": "음소거",
+  "game.replay": "다시하기", 
+   "duel.title": "V-Blocks - 대결",
+  "duel.main_title": "V-Blocks\n대결",
+  "duel.hold": "예비",
+  "duel.next": "다음",
+  "duel.score": "점수",
+  "duel.highscore_global": "글로벌 기록:",
+  "duel.music": "음악",
+  "duel.mute": "음소거",
+  "duel.replay": "다시하기",
+
+  "duel.popup.choice.title": "대결",
+  "duel.popup.choice.new": "대결 만들기",
+  "duel.popup.choice.join": "대결 참가",
+
+  "duel.popup.wait.title": "친구를 대결에 초대하세요!",
+  "duel.popup.wait.code": "코드:",
+  "duel.popup.wait.text": "상대방을 기다리는 중...",
+
+  "duel.popup.confirm.title": "대결 발견!",
+  "duel.popup.confirm.text": "대결을 수락하시겠습니까?",
+  "duel.popup.confirm.accept": "수락",
+  "duel.popup.confirm.refuse": "거절",
+
+  "duel.popup.countdown.title": "대결 준비 완료!",
+
+  "duel.popup.join.title": "대결 참가",
+  "duel.popup.join.placeholder": "대결 코드...",
+  "duel.popup.join.ok": "확인",
+  "duel.popup.join.cancel": "취소"
 
 }

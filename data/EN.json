@@ -72,7 +72,56 @@
   "boutique.cartouche.pub300points": "Watch ad: 300 points",
   "theme.possede": "Owned",
   "theme.debloquer": "Unlock (3000)",
-  "boutique.alert.pasassez": "Not enough coins!"
+  "boutique.alert.pasassez": "Not enough coins!",
+  
+  "apps.title": "Our apps",
+  "menu.retour": "Back",
+  "menu.profil": "Profile",
+  "menu.parametres": "Settings",
+  "vfindz.title": "VFindz",
+  "vfindz.desc": "The viral photo game: complete challenges, post your photo, join contests and win prizes!",
+  "vzone.title": "VZone",
+  "vzone.desc": "Dodge the enemy balls! A simple and addictive skill game to share.",
+    "game.title": "V-Blocks - Classic",
+  "game.main_title": "V-Blocks<br>Classic",
+  "game.hold": "Hold",
+  "game.next": "Next",
+  "game.pause_btn": "Pause",
+  "game.score": "Score",
+  "game.record": "Highscore:",
+  "game.music": "Music",
+  "game.mute": "Mute",
+  "game.replay": "Play Again", 
+    "duel.title": "V-Blocks - Duel",
+  "duel.main_title": "V-Blocks\nDuel",
+  "duel.hold": "Hold",
+  "duel.next": "Next",
+  "duel.score": "Score",
+  "duel.highscore_global": "Global record:",
+  "duel.music": "Music",
+  "duel.mute": "Mute",
+  "duel.replay": "Replay",
+
+  "duel.popup.choice.title": "Duel",
+  "duel.popup.choice.new": "Create a duel",
+  "duel.popup.choice.join": "Join a duel",
+
+  "duel.popup.wait.title": "Invite a friend to a duel!",
+  "duel.popup.wait.code": "Code:",
+  "duel.popup.wait.text": "Waiting for an opponent...",
+
+  "duel.popup.confirm.title": "Duel found!",
+  "duel.popup.confirm.text": "Do you want to accept the duel?",
+  "duel.popup.confirm.accept": "Accept",
+  "duel.popup.confirm.refuse": "Decline",
+
+  "duel.popup.countdown.title": "Duel ready!",
+
+  "duel.popup.join.title": "Join a duel",
+  "duel.popup.join.placeholder": "Duel code...",
+  "duel.popup.join.ok": "OK",
+  "duel.popup.join.cancel": "Cancel"
+
 }
 
 

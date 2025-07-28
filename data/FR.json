@@ -71,5 +71,57 @@
   "boutique.cartouche.pub300points": "Regarder pub : 300 points",
   "theme.possede": "Possédé",
   "theme.debloquer": "Débloquer (3000)",
-  "boutique.alert.pasassez": "Pas assez de pièces !"
+  "boutique.alert.pasassez": "Pas assez de pièces !",
+  
+  "apps.title": "Nos applis",
+  "menu.retour": "Retour",
+  "menu.profil": "Profil",
+  "menu.parametres": "Paramètres",
+  "vfindz.title": "VFindz",
+  "vfindz.desc": "Le jeu photo viral : relève des défis, poste ta photo, participe à des concours et gagne des lots !",
+  "vzone.title": "VZone",
+  "vzone.desc": "Évite les balles ennemies ! Jeu d’adresse simple et addictif à partager.", 
+  
+  "game.title": "V-Blocks - Classique",
+  "game.main_title": "V-Blocks<br>Classique",
+  "jetons.alt": "Jetons",
+  "game.hold": "Réserve",
+  "game.next": "Suivante",
+  "game.pause_btn": "Pause",
+  "game.score": "Score",
+  "game.record": "Record :",
+  "game.music": "Musique",
+  "game.mute": "Muet",
+  "game.replay": "Rejouer",
+    "duel.title": "V-Blocks - Duel",
+  "duel.main_title": "V-Blocks\nDuel",
+  "duel.hold": "Réserve",
+  "duel.next": "Suivante",
+  "duel.score": "Score",
+  "duel.highscore_global": "Record global :",
+  "duel.music": "Musique",
+  "duel.mute": "Muet",
+  "duel.replay": "Rejouer",
+
+  "duel.popup.choice.title": "Duel",
+  "duel.popup.choice.new": "Créer un duel",
+  "duel.popup.choice.join": "Rejoindre un duel",
+
+  "duel.popup.wait.title": "Invite un ami en duel !",
+  "duel.popup.wait.code": "Code :",
+  "duel.popup.wait.text": "En attente d'un adversaire...",
+
+  "duel.popup.confirm.title": "Duel trouvé !",
+  "duel.popup.confirm.text": "Tu veux accepter le duel ?",
+  "duel.popup.confirm.accept": "Accepter",
+  "duel.popup.confirm.refuse": "Refuser",
+
+  "duel.popup.countdown.title": "Duel prêt !",
+
+  "duel.popup.join.title": "Rejoindre un duel",
+  "duel.popup.join.placeholder": "Code duel...",
+  "duel.popup.join.ok": "OK",
+  "duel.popup.join.cancel": "Annuler"
+
+
 }

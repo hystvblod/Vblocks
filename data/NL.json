@@ -28,6 +28,55 @@
   "boutique.cartouche.pub300points": "Advertentie bekijken: 300 punten",
   "theme.possede": "In bezit",
   "theme.debloquer": "Ontgrendel (3000)",
-  "boutique.alert.pasassez": "Niet genoeg munten!"
+  "boutique.alert.pasassez": "Niet genoeg munten!",
+  
+  "apps.title": "Onze apps",
+  "menu.retour": "Terug",
+  "menu.profil": "Profiel",
+  "menu.parametres": "Instellingen",
+  "vfindz.title": "VFindz",
+  "vfindz.desc": "Het virale fotospel: voltooi uitdagingen, upload je foto, doe mee aan wedstrijden en win prijzen!",
+  "vzone.title": "VZone",
+  "vzone.desc": "Ontwijk de vijandige ballen! Een eenvoudig en verslavend vaardigheidsspel om te delen.",
+    "game.title": "V-Blocks - Klassiek",
+  "game.main_title": "V-Blocks<br>Klassiek",
+  "game.hold": "Reserve",
+  "game.next": "Volgende",
+  "game.pause_btn": "Pauze",
+  "game.score": "Score",
+  "game.record": "Record:",
+  "game.music": "Muziek",
+  "game.mute": "Stil",
+  "game.replay": "Opnieuw spelen",
+    "duel.title": "V-Blocks - Duel",
+  "duel.main_title": "V-Blocks\nDuel",
+  "duel.hold": "Reserve",
+  "duel.next": "Volgende",
+  "duel.score": "Score",
+  "duel.highscore_global": "Globaal record:",
+  "duel.music": "Muziek",
+  "duel.mute": "Stil",
+  "duel.replay": "Opnieuw",
+
+  "duel.popup.choice.title": "Duel",
+  "duel.popup.choice.new": "Duel aanmaken",
+  "duel.popup.choice.join": "Deelnemen aan duel",
+
+  "duel.popup.wait.title": "Nodig een vriend uit voor een duel!",
+  "duel.popup.wait.code": "Code:",
+  "duel.popup.wait.text": "Wachten op een tegenstander...",
+
+  "duel.popup.confirm.title": "Duel gevonden!",
+  "duel.popup.confirm.text": "Wil je het duel accepteren?",
+  "duel.popup.confirm.accept": "Accepteren",
+  "duel.popup.confirm.refuse": "Weigeren",
+
+  "duel.popup.countdown.title": "Duel klaar!",
+
+  "duel.popup.join.title": "Deelnemen aan duel",
+  "duel.popup.join.placeholder": "Duelcode...",
+  "duel.popup.join.ok": "OK",
+  "duel.popup.join.cancel": "Annuleren"
+
 }
 

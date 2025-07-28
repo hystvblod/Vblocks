@@ -71,7 +71,56 @@
   "boutique.cartouche.pub300points": "Tonton iklan: 300 poin",
   "theme.possede": "Dimiliki",
   "theme.debloquer": "Buka (3000)",
-  "boutique.alert.pasassez": "Koin tidak cukup!"
+  "boutique.alert.pasassez": "Koin tidak cukup!",
+  
+  "apps.title": "Aplikasi kami",
+  "menu.retour": "Kembali",
+  "menu.profil": "Profil",
+  "menu.parametres": "Pengaturan",
+  "vfindz.title": "VFindz",
+  "vfindz.desc": "Game foto viral: selesaikan tantangan, unggah fotomu, ikut kontes, dan menangkan hadiah!",
+  "vzone.title": "VZone",
+  "vzone.desc": "Hindari bola musuh! Game ketangkasan sederhana dan adiktif untuk dibagikan.",
+    "game.title": "V-Blocks - Klasik",
+  "game.main_title": "V-Blocks<br>Klasik",
+  "game.hold": "Cadangan",
+  "game.next": "Berikutnya",
+  "game.pause_btn": "Jeda",
+  "game.score": "Skor",
+  "game.record": "Rekor:",
+  "game.music": "Musik",
+  "game.mute": "Bisu",
+  "game.replay": "Main lagi", 
+  "duel.title": "V-Blocks - Duel",
+  "duel.main_title": "V-Blocks\nDuel",
+  "duel.hold": "Cadangan",
+  "duel.next": "Berikutnya",
+  "duel.score": "Skor",
+  "duel.highscore_global": "Rekor global:",
+  "duel.music": "Musik",
+  "duel.mute": "Bisukan",
+  "duel.replay": "Main lagi",
+
+  "duel.popup.choice.title": "Duel",
+  "duel.popup.choice.new": "Buat duel",
+  "duel.popup.choice.join": "Gabung duel",
+
+  "duel.popup.wait.title": "Undang teman ke duel!",
+  "duel.popup.wait.code": "Kode:",
+  "duel.popup.wait.text": "Menunggu lawan...",
+
+  "duel.popup.confirm.title": "Duel ditemukan!",
+  "duel.popup.confirm.text": "Ingin menerima duel?",
+  "duel.popup.confirm.accept": "Terima",
+  "duel.popup.confirm.refuse": "Tolak",
+
+  "duel.popup.countdown.title": "Duel siap!",
+
+  "duel.popup.join.title": "Gabung duel",
+  "duel.popup.join.placeholder": "Kode duel...",
+  "duel.popup.join.ok": "OK",
+  "duel.popup.join.cancel": "Batal"
+
 }
 
 

@@ -72,7 +72,57 @@
   "boutique.cartouche.pub300points": "Ver anuncio: 300 puntos",
   "theme.possede": "Poseído",
   "theme.debloquer": "Desbloquear (3000)",
-  "boutique.alert.pasassez": "¡No tienes suficientes monedas!"
+  "boutique.alert.pasassez": "¡No tienes suficientes monedas!",
+  
+  "apps.title": "Nuestras apps",
+  "menu.retour": "Volver",
+  "menu.profil": "Perfil",
+  "menu.parametres": "Ajustes",
+  "vfindz.title": "VFindz",
+  "vfindz.desc": "El juego de fotos viral: supera retos, sube tu foto, participa en concursos y gana premios.",
+  "vzone.title": "VZone",
+  "vzone.desc": "¡Evita las bolas enemigas! Un juego de habilidad simple y adictivo para compartir.",
+    "game.title": "V-Blocks - Clásico",
+  "game.main_title": "V-Blocks<br>Clásico",
+  "game.hold": "Reserva",
+  "game.next": "Siguiente",
+  "game.pause_btn": "Pausa",
+  "game.score": "Puntuación",
+  "game.record": "Récord:",
+  "game.music": "Música",
+  "game.mute": "Silencio",
+  "game.replay": "Jugar de nuevo", 
+    "duel.title": "V-Blocks - Duelo",
+  "duel.main_title": "V-Blocks\nDuelo",
+  "duel.hold": "Reserva",
+  "duel.next": "Siguiente",
+  "duel.score": "Puntuación",
+  "duel.highscore_global": "Récord global:",
+  "duel.music": "Música",
+  "duel.mute": "Silencio",
+  "duel.replay": "Reintentar",
+
+  "duel.popup.choice.title": "Duelo",
+  "duel.popup.choice.new": "Crear un duelo",
+  "duel.popup.choice.join": "Unirse a un duelo",
+
+  "duel.popup.wait.title": "¡Invita a un amigo a un duelo!",
+  "duel.popup.wait.code": "Código:",
+  "duel.popup.wait.text": "Esperando a un oponente...",
+
+  "duel.popup.confirm.title": "¡Duelo encontrado!",
+  "duel.popup.confirm.text": "¿Quieres aceptar el duelo?",
+  "duel.popup.confirm.accept": "Aceptar",
+  "duel.popup.confirm.refuse": "Rechazar",
+
+  "duel.popup.countdown.title": "¡Duelo listo!",
+
+  "duel.popup.join.title": "Unirse a un duelo",
+  "duel.popup.join.placeholder": "Código del duelo...",
+  "duel.popup.join.ok": "OK",
+  "duel.popup.join.cancel": "Cancelar"
+
+
 }
 
 

@@ -2,13 +2,17 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>V-Blocks - Classique</title>
+  <title data-i18n="game.title">V-Blocks - Classique</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <script>
     let currentTheme = localStorage.getItem('themeVBlocks') || 'neon';
     document.documentElement.setAttribute('data-theme', currentTheme);
     window.addEventListener('DOMContentLoaded', () => {
       document.body.setAttribute('data-theme', currentTheme);
+      if(window.i18n && window.i18n["game.title"]) document.title = window.i18n["game.title"];
+      // Pour main-title aussi :
+      let mt = document.querySelector('.main-title');
+      if (mt && window.i18n && window.i18n["game.main_title"]) mt.innerHTML = window.i18n["game.main_title"];
     });
   </script>
   <link rel="stylesheet" href="themes/themes.css" id="theme-style" />
@@ -129,12 +133,12 @@
       .vcoins { font-size: .97em; }
       .jetons { font-size: .88em; }
     }
-.top-canvas-row {
-  width: 100%; max-width: 410px;
-  display: flex; justify-content: space-between; align-items: flex-end;
-  margin-bottom: 2px;
-  margin-top: -30px;
-  flex-shrink: 0;
+    .top-canvas-row {
+      width: 100%; max-width: 410px;
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 2px;
+      margin-top: -30px;
+      flex-shrink: 0;
     }
     .side-canvas-block {
       display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -198,7 +202,7 @@
         <a href="index.html" class="btn-back" title="Retour">
           <img src="assets/icons/arrow_back.svg" alt="Retour" />
         </a>
-        <span class="main-title">V-Blocks<br>Classique</span>
+        <span class="main-title" data-i18n="game.main_title">V-Blocks<br>Classique</span>
         <div class="profile-row">
           <a href="profil.html" class="btn-icon" title="Profil">
             <img src="assets/icons/user.svg" alt="Profil" />
@@ -214,7 +218,7 @@
           <span id="vcoin-amount">0</span>
         </span>
         <span class="jetons">
-          <img src="assets/images/jeton.webp" alt="Jetons" class="jeton-icon">
+          <img src="assets/images/jeton.webp" alt="Jetons" class="jeton-icon" data-i18n="jetons.alt">
           <span id="jeton-amount">0</span>
         </span>
       </div>
@@ -222,16 +226,16 @@
     <!-- PIECES -->
     <div class="top-canvas-row">
       <div class="side-canvas-block">
-        <label>Réserve</label>
+        <label data-i18n="game.hold">Réserve</label>
         <canvas id="holdCanvas" width="48" height="48"></canvas>
       </div>
       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:54px;">
-        <button id="pause-btn" title="Pause" style="background:none;border:none;cursor:pointer;padding:2px;border-radius:99px;">
+        <button id="pause-btn" title="Pause" style="background:none;border:none;cursor:pointer;padding:2px;border-radius:99px;" data-i18n="game.pause_btn">
           <img src="assets/icons/pause.svg" alt="Pause" style="width:36px;height:36px;display:block;">
         </button>
       </div>
       <div class="side-canvas-block">
-        <label>Suivante</label>
+        <label data-i18n="game.next">Suivante</label>
         <canvas id="nextCanvas" width="48" height="48"></canvas>
       </div>
     </div>
@@ -242,17 +246,17 @@
     <!-- SCORE -->
     <div class="score-row" id="score-row">
       <div class="score-group">
-        <span class="score-label">Score</span>
+        <span class="score-label" data-i18n="game.score">Score</span>
         <span class="score-value" id="score">0</span>
       </div>
       <div class="score-group">
-        <span class="highscore-global">Record&nbsp;:</span>
+        <span class="highscore-global" data-i18n="game.record">Record&nbsp;:</span>
         <span class="highscore-value" id="highscore-global">0</span>
       </div>
     </div>
     <div id="controls">
-      <button id="music-btn">Musique</button>
-      <button onclick="location.reload()">Rejouer</button>
+      <button id="music-btn" data-i18n="game.music">Musique</button>
+      <button onclick="location.reload()" data-i18n="game.replay">Rejouer</button>
     </div>
   </div>
   <audio id="music" src="assets/sounds/chill.mp3" loop></audio>
@@ -263,10 +267,10 @@
     document.getElementById("music-btn").onclick = function() {
       if (music.paused) {
         music.play();
-        this.textContent = "Musique";
+        this.textContent = (window.i18n && window.i18n["game.music"]) ? window.i18n["game.music"] : "Musique";
       } else {
         music.pause();
-        this.textContent = "Muet";
+        this.textContent = (window.i18n && window.i18n["game.mute"]) ? window.i18n["game.mute"] : "Muet";
       }
     };
 

@@ -71,7 +71,56 @@
   "boutique.cartouche.pub300points": "Ver anúncio: 300 pontos",
   "theme.possede": "Possuído",
   "theme.debloquer": "Desbloquear (3000)",
-  "boutique.alert.pasassez": "Não tens moedas suficientes!"
+  "boutique.alert.pasassez": "Não tens moedas suficientes!",
+  
+  "apps.title": "As nossas apps",
+  "menu.retour": "Voltar",
+  "menu.profil": "Perfil",
+  "menu.parametres": "Definições",
+  "vfindz.title": "VFindz",
+  "vfindz.desc": "O jogo de fotos viral: supera desafios, publica a tua foto, participa em concursos e ganha prémios!",
+  "vzone.title": "VZone",
+  "vzone.desc": "Evita as bolas inimigas! Um jogo de habilidade simples e viciante para partilhar.",
+    "game.title": "V-Blocks - Clássico",
+  "game.main_title": "V-Blocks<br>Clássico",
+  "game.hold": "Reserva",
+  "game.next": "Seguinte",
+  "game.pause_btn": "Pausa",
+  "game.score": "Pontuação",
+  "game.record": "Recorde:",
+  "game.music": "Música",
+  "game.mute": "Silenciar",
+  "game.replay": "Jogar de novo", 
+   "duel.title": "V-Blocks - Duelo",
+  "duel.main_title": "V-Blocks\nDuelo",
+  "duel.hold": "Reserva",
+  "duel.next": "Seguinte",
+  "duel.score": "Pontuação",
+  "duel.highscore_global": "Recorde global:",
+  "duel.music": "Música",
+  "duel.mute": "Mudo",
+  "duel.replay": "Repetir",
+
+  "duel.popup.choice.title": "Duelo",
+  "duel.popup.choice.new": "Criar duelo",
+  "duel.popup.choice.join": "Entrar no duelo",
+
+  "duel.popup.wait.title": "Convida um amigo para um duelo!",
+  "duel.popup.wait.code": "Código:",
+  "duel.popup.wait.text": "À espera de um adversário...",
+
+  "duel.popup.confirm.title": "Duelo encontrado!",
+  "duel.popup.confirm.text": "Queres aceitar o duelo?",
+  "duel.popup.confirm.accept": "Aceitar",
+  "duel.popup.confirm.refuse": "Recusar",
+
+  "duel.popup.countdown.title": "Duelo pronto!",
+
+  "duel.popup.join.title": "Entrar no duelo",
+  "duel.popup.join.placeholder": "Código do duelo...",
+  "duel.popup.join.ok": "OK",
+  "duel.popup.join.cancel": "Cancelar"
+
 }
 
 
