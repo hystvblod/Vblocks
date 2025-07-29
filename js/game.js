@@ -291,9 +291,11 @@
       const old = document.getElementById('gameover-popup');
       if (old) old.remove();
 
-      if (mode === 'duel') {
-        handleDuelEnd(points);
-        return;
+  if (mode === 'duel') {
+  handleDuelEnd(points);
+  return; // empêche tout bouton Rejouer
+}
+
       }
 
       const popup = document.createElement('div');
@@ -327,12 +329,21 @@
         removePopup();
         rewind();
       };
-      document.getElementById('popup-pub').onclick = function() {
-        showFakeAd().then(()=>{
-          removePopup();
-          rewind();
-        });
-      };
+document.getElementById('popup-pub').onclick = function() {
+  if (window.showRewardRevive) {
+    showRewardRevive(() => {
+      removePopup();
+      rewind();
+    });
+  } else {
+    // fallback si pub.js pas chargé
+    showFakeAd().then(()=>{
+      removePopup();
+      rewind();
+    });
+  }
+};
+
       document.getElementById('popup-stop').onclick = function() {
         removePopup();
         window.location.reload();

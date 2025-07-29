@@ -5,6 +5,7 @@
   <script src="js/userData.js"></script>
   <script src="js/pub.js"></script>
   <script src="js/achat.js"></script>
+  <script src="js/i18n.js"></script>
   <meta charset="UTF-8">
   <title data-i18n="boutique.titre"></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -45,7 +46,6 @@
     <div class="themes-list" id="themes-list"></div>
   </div>
 <script>
-// Noms affichés des thèmes : restent non traduits ici (tu peux i18n si tu veux après)
 const THEMES = [
   { key: "neon",   name: "Neon"   },
   { key: "bubble", name: "Bubble" },
@@ -59,59 +59,42 @@ const THEMES = [
   { key: "cyber",  name: "Cyber"  }
 ];
 
-// Clés i18n pour chaque cartouche (label: clé, la valeur sera injectée dynamiquement)
 const SPECIAL_CARTOUCHES = [
-  {
-    key: 'boutique.cartouche.jetons12',
-    icon: '<img src="assets/images/jeton.webp" alt="jeton">',
-    color: 'color-blue'
-  },
-  {
-    key: 'boutique.cartouche.jetons50',
-    icon: '<img src="assets/images/jeton.webp" alt="jeton">',
-    color: 'color-purple'
-  },
-  {
-    key: 'boutique.cartouche.nopub',
-    icon: '<img src="assets/images/ads.png" alt="No Ads">',
-    color: 'color-yellow'
-  },
-  {
-    key: 'boutique.cartouche.pub1jeton',
-    icon: '<img src="assets/images/jeton.webp" alt="Pub">',
-    color: 'color-green'
-  },
-  {
-    key: 'boutique.cartouche.pub300points',
-    icon: '<img src="assets/images/vcoin.webp" alt="Pub">',
-    color: 'color-blue'
-  }
+  { key: 'boutique.cartouche.jetons12', icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue' },
+  { key: 'boutique.cartouche.jetons50', icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple' },
+  { key: 'boutique.cartouche.nopub', icon: '<img src="assets/images/ads.png" alt="No Ads">', color: 'color-yellow' },
+  { key: 'boutique.cartouche.pub1jeton', icon: '<img src="assets/images/jeton.webp" alt="Pub">', color: 'color-green' },
+  { key: 'boutique.cartouche.pub300points', icon: '<img src="assets/images/vcoin.webp" alt="Pub">', color: 'color-blue' }
 ];
 
 const THEME_PRICE = 3000;
 
-// Cette fonction t() doit être définie **après chargement du JSON de langue**
-// Ex: window.i18n = {...}
-// function t(key) { return window.i18n[key] || key; }
-function t(key) { return (window.i18n && window.i18n[key]) || key; }
+function t(key) {
+  return (window.i18n && window.i18n[key]) || key;
+}
+
+function applyTranslations() {
+  if (!window.i18n) return;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.getAttribute("data-i18n");
+    if (window.i18n[key]) el.textContent = window.i18n[key];
+  });
+}
 
 async function renderThemes() {
   await userData.syncUnlockedThemes?.();
   const unlocked = await userData.getUnlockedThemes?.() || [];
 
-  // Achats (cartouches en haut)
   const $achatsList = document.getElementById('achats-list');
-  let achatsHtml = SPECIAL_CARTOUCHES.map(c => `
+  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => `
     <div class="special-cartouche ${c.color}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
     </div>
   `).join('');
-  $achatsList.innerHTML = achatsHtml;
 
-  // Thèmes (cartouches en bas)
   const $themesList = document.getElementById('themes-list');
-  let html = THEMES.map(theme => {
+  $themesList.innerHTML = THEMES.map(theme => {
     const isUnlocked = unlocked.includes(theme.key);
     return `
       <div class="theme-btn-style theme-${theme.key} ${isUnlocked ? "unlocked" : "locked"}">
@@ -124,9 +107,7 @@ async function renderThemes() {
       </div>
     `;
   }).join('');
-  $themesList.innerHTML = html;
 
-  // Débloquer
   $themesList.querySelectorAll('.theme-action:not(.possede)').forEach(btn => {
     btn.onclick = async (e) => {
       e.stopPropagation();
@@ -142,20 +123,29 @@ async function renderThemes() {
     }
   });
 
-  // i18n dynamique (après render)
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.getAttribute("data-i18n");
-    if (window.i18n && window.i18n[key]) el.textContent = window.i18n[key];
-  });
+  applyTranslations();
 
-  // Solde
   const solde = await userData.getVCoins?.();
   document.querySelector('.vcoins-solde').textContent = typeof solde === "number" ? solde : "--";
   const soldeJetons = await userData.getJetons?.();
   document.querySelectorAll('.vcoins-solde')[1].textContent = typeof soldeJetons === "number" ? soldeJetons : "--";
 }
 
-window.onload = renderThemes;
+// Attend que la langue soit bien dispo (i18n.js chargé)
+async function waitForI18n() {
+  return new Promise(resolve => {
+    const check = () => {
+      if (window.i18n) resolve();
+      else setTimeout(check, 30);
+    };
+    check();
+  });
+}
+
+window.onload = async () => {
+  await waitForI18n();
+  renderThemes();
+};
 </script>
 </body>
 </html>
