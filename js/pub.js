@@ -7,16 +7,37 @@ let compteurParties = parseInt(localStorage.getItem("compteurParties") || "0");
 
 // === Fonction pour afficher une pub interstitielle ===
 function showInterstitial() {
-  console.log("[PUB] Interstitiel affichée");
-  // 🔴 Remplace ce log par l'appel à ta régie (AdMob, AppLovin, etc.)
+  // 🔴 Appelle ici la vraie pub interstitielle (AppLovin, AdMob, etc.)
+  // Exemple pour AppLovin Capacitor :
+  // if (window.applovinMax) {
+  //   applovinMax.showInterstitialAd("AD_UNIT_ID");
+  //   return;
+  // }
+
+  // Simulation dev (à remplacer)
+  console.log("[PUB] Interstitiel affichée (dev)");
 }
 
 // === Fonction pour afficher une pub rewarded ===
 function showRewarded(callback) {
-  console.log("[PUB] Rewarded affichée");
-  // 🔴 Remplace ce log par la vraie pub
+  // 🔴 Appelle ici la vraie pub reward (AppLovin, AdMob, etc.)
+  // Exemple pour AppLovin Capacitor :
+  // if (window.applovinMax) {
+  //   applovinMax.showRewardedAd(
+  //     "AD_UNIT_ID",
+  //     (rewarded) => callback(!!rewarded),
+  //     (error) => {
+  //       alert("Erreur pub : " + error);
+  //       callback(false);
+  //     }
+  //   );
+  //   return;
+  // }
+
+  // Simulation dev (à remplacer)
+  console.log("[PUB] Rewarded affichée (dev)");
   setTimeout(() => {
-    console.log("[PUB] Rewarded terminée");
+    console.log("[PUB] Rewarded terminée (dev)");
     if (typeof callback === "function") callback(true);
   }, 3000); // Simulation 3s
 }
