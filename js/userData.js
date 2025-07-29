@@ -76,16 +76,22 @@ async function initUserData() {
 
 // 5️⃣ MAJ pseudo côté Supabase
 async function updatePseudo(newPseudo) {
-  setPseudo(newPseudo);
-  await sb.from('users').update({ pseudo: newPseudo }).eq('id', getUserId());
+  setPseudo(newPseudo); // MAJ local
+  const { error } = await sb.from('users').update({ pseudo: newPseudo }).eq('id', getUserId());
+  if (error) {
+    alert("Erreur Supabase: " + error.message);
+    return false;
+  }
+  return true;
 }
 
-// 6️⃣ Injecte le pseudo dans le profil.html (toujours en cloud, jamais local direct)
+// 6️⃣ Injecte le pseudo dans le profil.html (toujours cloud, jamais local direct)
 async function updatePseudoUI() {
   const id = getUserId();
-  let { data } = await sb.from('users').select('pseudo').eq('id', id).single();
-  let pseudo = data?.pseudo || getPseudo();
-  setPseudo(pseudo); // keep cache à jour
+  let { data, error } = await sb.from('users').select('pseudo').eq('id', id).single();
+  let pseudo = data?.pseudo;
+  if (!pseudo) pseudo = getPseudo(); // fallback
+  setPseudo(pseudo); // keep local en phase
   const el = document.getElementById("profilPseudo");
   if (el) el.textContent = pseudo;
 }
@@ -114,9 +120,11 @@ function setupPseudoPopup() {
       errorDiv.textContent = "Pseudo trop court.";
       return;
     }
-    await updatePseudo(pseudo);
-    await updatePseudoUI();
-    popup.classList.remove("active");
+    const ok = await updatePseudo(pseudo);
+    if (ok) {
+      await updatePseudoUI();
+      popup.classList.remove("active");
+    }
   };
 }
 
