@@ -1,6 +1,6 @@
 // === Configuration ===
 const INTERSTITIEL_APRES_X_PARTIES = 2;   // Nombre de parties avant pub interstitielle
-const REWARD_JETONS = 20;                 // Jetons gagnés par pub reward dans la boutique
+const REWARD_JETONS = 1;                  // Jetons gagnés par pub reward dans la boutique (corrigé)
 const REWARD_REVIVE = true;               // Activer reward revive fin de partie
 
 let compteurParties = parseInt(localStorage.getItem("compteurParties") || "0");
@@ -23,12 +23,16 @@ function showRewarded(callback) {
 
 // === Reward dans la boutique ===
 function showRewardBoutique() {
-  showRewarded((ok) => {
-    if (ok) {
-      if (window.userData && userData.addJetons) {
-        userData.addJetons(REWARD_JETONS);
+  showRewarded(async (ok) => {
+    if (ok && window.userData && userData.addJetons) {
+      try {
+        await userData.addJetons(REWARD_JETONS); // ⚡️ Sécurisé Supabase
+        alert(`+${REWARD_JETONS} jeton ajouté !`);
+        // Optionnel: mettre à jour l'affichage du solde
+        if (window.renderThemes) renderThemes();
+      } catch (e) {
+        alert("Erreur lors de l'ajout de jeton: " + (e?.message || e));
       }
-      alert(`+${REWARD_JETONS} jetons ajoutés !`);
     }
   });
 }
