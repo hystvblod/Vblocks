@@ -1,6 +1,86 @@
 (function(global){
   'use strict';
 
+  // ==== GESTION MUSIQUE UNIFIÉE ==== //
+  const music = document.getElementById('music');
+  if (music) music.volume = 0.45;
+
+  function isMusicAlwaysMuted() {
+    return localStorage.getItem('alwaysMuteMusic') === 'true';
+  }
+  function playMusicAuto() {
+    if (!music) return;
+    if (!isMusicAlwaysMuted()) {
+      music.play().then(() => {
+        window.musicStarted = true;
+        refreshMusicBtn();
+      }).catch(()=>{});
+    }
+  }
+  function pauseMusic() {
+    if (music) music.pause();
+    window.musicStarted = false;
+    refreshMusicBtn();
+  }
+  function refreshMusicBtn() {
+    const btn = document.getElementById('music-btn');
+    if (!btn) return;
+    if (isMusicAlwaysMuted() || music.paused) {
+      btn.textContent = '🔇 Muet';
+    } else {
+      btn.textContent = '🎵 Musique';
+    }
+  }
+  window.setMusicAlwaysMuted = function(val) {
+    localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
+    if (val) pauseMusic();
+    refreshMusicBtn();
+  }
+  window.startMusicForGame = function() {
+    if (!music) return;
+    if (isMusicAlwaysMuted()) {
+      pauseMusic();
+      return;
+    }
+    music.currentTime = 0;
+    playMusicAuto();
+  }
+  window.addEventListener("storage", (e) => {
+    if (e.key === "alwaysMuteMusic") {
+      refreshMusicBtn();
+      if (isMusicAlwaysMuted()) pauseMusic();
+      else playMusicAuto();
+    }
+  });
+  if (window.Capacitor || window.cordova) {
+    setTimeout(playMusicAuto, 350);
+  } else {
+    window.addEventListener('pointerdown', function autoStartMusic() {
+      if (!window.musicStarted && !isMusicAlwaysMuted()) {
+        playMusicAuto();
+        window.musicStarted = true;
+      }
+    }, { once: true });
+  }
+  setTimeout(refreshMusicBtn, 200);
+  document.addEventListener('DOMContentLoaded', () => {
+    const btnMusic = document.getElementById('music-btn');
+    if (btnMusic) {
+      btnMusic.onclick = function() {
+        if (isMusicAlwaysMuted()) return;
+        if (music.paused) {
+          music.play();
+          btnMusic.textContent = '🎵 Musique';
+        } else {
+          music.pause();
+          btnMusic.textContent = '🔇 Muet';
+        }
+      };
+      refreshMusicBtn();
+    }
+  });
+  // ==== FIN MUSIQUE ====
+
   let highscoreCloud = 0; // Record cloud global
 
   // Fonction i18n de traduction (remplace par ta fonction si besoin)
@@ -33,7 +113,6 @@
     const nextCanvas = document.getElementById('nextCanvas');
     const nextCtx = nextCanvas.getContext('2d');
     
-
     const COLS = 10, ROWS = 20;
     let BLOCK_SIZE = 30;
     canvas.width = COLS * BLOCK_SIZE;
@@ -341,7 +420,7 @@
     }
     document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
 
-    function computeScore(lines){
+        function computeScore(lines){
       let pts = 0;
       switch(lines){
         case 1: pts = 10; break;
@@ -355,11 +434,11 @@
     }
 
     async function startGame(){
-      // DUEL : setup la séquence AVANT de démarrer
       if (mode === 'duel') await setupDuelSequence();
       nextPiece = newPiece();
       reset();
       saveHistory();
+      window.startMusicForGame(); // ← relance la musique au début de la partie
       requestAnimationFrame(update);
     }
 
@@ -410,7 +489,7 @@
       });
       while(board.length < ROWS) board.unshift(Array(COLS).fill(''));
       if(lines > 0){
-            if(window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
+        if(window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
         combo++;
         linesCleared += lines;
         let pts = computeScore(lines, combo);
@@ -433,9 +512,7 @@
           let level = Math.floor(linesCleared / 10);
           if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
           if (mode === 'classic') dropInterval = SPEED_TABLE[level];
-          // En duel : tu veux la même progression, sinon retire la ligne ci-dessus
         }
-        // En mode "infini", on NE TOUCHE JAMAIS à dropInterval (vitesse reste constante)
       }else{
         combo = 0;
       }
@@ -478,7 +555,6 @@
       drawMiniPiece(holdCtx, heldPiece);
     }
 
-    // --- GHOST PIECE ---
     function getGhostPiece(){
       if(!ghostPieceEnabled) return null;
       let ghost = JSON.parse(JSON.stringify(currentPiece));
@@ -597,18 +673,17 @@
       drawMiniPiece(nextCtx, nextPiece);
       drawMiniPiece(holdCtx, heldPiece);
     }
-function update(now) {
-  if (paused || gameOver) return;
-  if (!lastTime) lastTime = now;
-  const delta = now - lastTime;
-  if (delta > dropInterval) {
-    dropPiece();
-    lastTime = now;
-  }
-  drawBoard();
-  requestAnimationFrame(update);
-}
-    // HEADER : vcoins + jetons
+    function update(now) {
+      if (paused || gameOver) return;
+      if (!lastTime) lastTime = now;
+      const delta = now - lastTime;
+      if (delta > dropInterval) {
+        dropPiece();
+        lastTime = now;
+      }
+      drawBoard();
+      requestAnimationFrame(update);
+    }
     async function updateBalancesHeader(){
       const vcoins = await userData.getVCoins?.();
       const jetons = await userData.getJetons?.();
@@ -623,14 +698,6 @@ function update(now) {
         btnTheme.addEventListener('click', ()=>{
           currentThemeIndex = (currentThemeIndex+1)%THEMES.length;
           changeTheme(THEMES[currentThemeIndex]);
-        });
-      }
-      if(btnMusic){
-        btnMusic.addEventListener('click', ()=>{
-          const music = document.getElementById('music');
-          if(!music) return;
-          if(music.paused){ music.play(); btnMusic.textContent='\ud83d\udd0a Musique'; }
-          else{ music.pause(); btnMusic.textContent='\ud83d\udd07 Muet'; }
         });
       }
       updateBalancesHeader();
@@ -654,7 +721,6 @@ function update(now) {
       const t = e.touches[0];
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
-      // Swipe gauche/droite
       if(Math.abs(movedX) > Math.abs(movedY)){
         if(movedX > 24){ move(1); startX = t.clientX; }
         if(movedX < -24){ move(-1); startX = t.clientX; }
@@ -688,7 +754,7 @@ function update(now) {
       }
     });
 
-    // Fonctions SUPABASE (doivent être dispo globalement, ex via userData.js)
+    // Fonctions SUPABASE
     async function setLastScoreSupabase(score) {
       const userId = getUserId();
       await sb.from('users').update({ score }).eq('id', userId);
@@ -710,46 +776,3 @@ function update(now) {
 
   global.VBlocksGame = { initGame };
 })(this);
-// ----- GESTION MUSIQUE GLOBALE ----- //
-const music = document.getElementById('music');
-if (music) music.volume = 0.45;
-
-window.musicStarted = false;
-
-function isMusicAlwaysMuted() {
-  return localStorage.getItem('alwaysMuteMusic') === 'true';
-}
-function playMusicAuto() {
-  if (!music) return;
-  if (!isMusicAlwaysMuted()) {
-    music.play().then(() => {
-      window.musicStarted = true;
-      refreshMusicBtn();
-    }).catch(()=>{}); // Si navigateur bloque, attend premier clic
-  }
-}
-function pauseMusic() {
-  if (music) music.pause();
-  window.musicStarted = false;
-  refreshMusicBtn();
-}
-function refreshMusicBtn() {
-  const btn = document.getElementById('music-btn');
-  if (!btn) return;
-  if (isMusicAlwaysMuted() || music.paused) {
-    btn.textContent = '🔇 Muet';
-  } else {
-    btn.textContent = '🎵 Musique';
-  }
-}
-
-// Relance musique à chaque début de partie SI non désactivée dans paramètres
-window.startMusicForGame = function() {
-  if (!music) return;
-  if (isMusicAlwaysMuted()) {
-    pauseMusic();
-    return;
-  }
-  music.currentTime = 0;
-  playMusicAuto();
-}

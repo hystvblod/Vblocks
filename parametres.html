@@ -129,13 +129,15 @@
   <div class="main-content">
     <div class="top-bar">
       <div class="top-bar-row">
-        <a href="index.html" class="btn-back">
-          <img src="assets/icons/arrow_back.svg">
-        </a>
+        <!-- BTN RETOUR : bouton et pas lien -->
+        <button class="btn-back" id="btn-back" title="Retour" aria-label="Retour">
+          <img src="assets/icons/arrow_back.svg" alt="Retour">
+        </button>
         <span class="main-title" data-i18n="settings.title">Paramètres</span>
         <div class="profile-row">
-          <a href="profil.html" class="btn-icon">
-            <img src="assets/icons/user.svg">
+          <!-- BTN PROFIL : vrai lien -->
+          <a href="profil.html" class="btn-icon" id="btn-profile" title="Profil">
+            <img src="assets/icons/user.svg" alt="Profil">
           </a>
         </div>
       </div>
@@ -147,7 +149,6 @@
         <label data-i18n="settings.language.label">Langue de l'interface :</label>
         <div id="langue-select" class="lang-select"></div>
       </div>
-
       <!-- Vibrations -->
       <div class="param-group">
         <label data-i18n="settings.vibrate.label">Vibrations :</label>
@@ -156,7 +157,6 @@
           <span id="vibrate-label" data-i18n="settings.vibrate.on">Activées</span>
         </div>
       </div>
-
       <!-- Publicités -->
       <div class="param-group">
         <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
@@ -165,7 +165,6 @@
           <span id="ads-label" data-i18n="settings.ads.on">Activées</span>
         </div>
       </div>
-
       <!-- Pièce fantôme -->
       <div class="param-group">
         <label data-i18n="settings.ghost.label">Afficher la pièce fantôme :</label>
@@ -177,6 +176,31 @@
     </div>
   </div>
   <script>
+    // BTN RETOUR (natif, sinon index)
+    document.addEventListener("DOMContentLoaded", function() {
+      const btnBack = document.getElementById('btn-back');
+      if (btnBack) {
+        btnBack.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (window.vibrateIfEnabled) window.vibrateIfEnabled(40);
+          // Retour historique si possible, sinon accueil
+          if (window.history.length > 1) {
+            window.history.back();
+          } else {
+            window.location.href = "index.html";
+          }
+        });
+      }
+      // BTN PROFIL fonctionne direct via <a>, mais on peut ajouter vibration :
+      const btnProfile = document.getElementById('btn-profile');
+      if (btnProfile) {
+        btnProfile.addEventListener('click', function() {
+          if (window.vibrateIfEnabled) window.vibrateIfEnabled(30);
+        });
+      }
+    });
+
+    // --- TON CODE APRES ---
     // LISTE DES LANGUES + DRAPEAUX + LABELS FIXES
     const langues = [
       { code: "fr", label: "Français", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#0055a4"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ef4135"/></svg>` },
@@ -193,7 +217,6 @@
     ];
     const langueSelect = document.getElementById("langue-select");
     let selectedLang = localStorage.getItem("langue") || "fr";
-
     langues.forEach(l => {
       const opt = document.createElement('div');
       opt.className = 'lang-option' + (l.code === selectedLang ? ' selected' : '');

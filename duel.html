@@ -198,7 +198,34 @@
       if (state === 'countdown') {
         html = `<div><h2 data-i18n="duel.popup.countdown.title">${i18nT("duel.popup.countdown.title")}</h2><div id="countdown" style="font-size:2.5em">3</div></div>`;
       }
+      if (state === 'join') {
+        html = `
+          <div>
+            <h2 data-i18n="duel.popup.join.title">${i18nT("duel.popup.join.title")}</h2>
+            <input id="inputCode" maxlength="8" style="font-size:1.2em;letter-spacing:2px;text-align:center">
+            <button class="duel-btn" id="btnJoinOk" data-i18n="duel.popup.join.ok">${i18nT("duel.popup.join.ok")}</button>
+            <button class="duel-btn" id="btnJoinCancel" data-i18n="duel.popup.join.cancel">${i18nT("duel.popup.join.cancel")}</button>
+          </div>
+        `;
+      }
       popup.innerHTML = html;
+      // Retraduire le contenu dynamique
+      if (window.i18nTranslateAll) window.i18nTranslateAll();
+
+      // Pour les placeholders i18n (input join)
+      if (state === 'join') {
+        const input = document.getElementById('inputCode');
+        if (input && window.i18n) input.placeholder = window.i18n["duel.popup.join.placeholder"] || "Code duel...";
+        // Gestion bouton
+        document.getElementById('btnJoinOk').onclick = function() {
+          let code = document.getElementById('inputCode').value.trim().toUpperCase();
+          if (!code) return;
+          window.location.href = `${location.pathname}?duel=${code}&player=2`;
+        };
+        document.getElementById('btnJoinCancel').onclick = function() {
+          location.reload();
+        };
+      }
     }
 
     // === FLOW LOGIQUE DUEL ===
@@ -214,7 +241,9 @@
         // Pas de code => propose choix créer/rejoindre
         showDuelPopup('choice');
         document.getElementById('btnNewDuel').onclick = createNewDuel;
-        document.getElementById('btnJoinDuel').onclick = joinExistingDuel;
+        document.getElementById('btnJoinDuel').onclick = function() {
+          showDuelPopup('join');
+        };
       } else {
         // On a un code => check/join room
         let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
@@ -254,23 +283,6 @@
       }
       showDuelPopup('wait', { code: duelCode });
       pollDuelStatus();
-    }
-
-    function joinExistingDuel() {
-      const popup = document.getElementById('duelPopup');
-      popup.innerHTML = `
-        <div>
-          <h2 data-i18n="duel.popup.join.title">${i18nT("duel.popup.join.title")}</h2>
-          <input id="inputCode" maxlength="8" placeholder="${i18nT("duel.popup.join.placeholder")}" style="font-size:1.2em;letter-spacing:2px;text-align:center">
-          <button class="duel-btn" id="btnJoinOk" data-i18n="duel.popup.join.ok">${i18nT("duel.popup.join.ok")}</button>
-          <button class="duel-btn" onclick="location.reload()" data-i18n="duel.popup.join.cancel">${i18nT("duel.popup.join.cancel")}</button>
-        </div>
-      `;
-      document.getElementById('btnJoinOk').onclick = function() {
-        let code = document.getElementById('inputCode').value.trim().toUpperCase();
-        if (!code) return;
-        window.location.href = `${location.pathname}?duel=${code}&player=2`;
-      };
     }
 
     async function pollDuelStatus() {
