@@ -84,13 +84,14 @@
   let highscoreCloud = 0; // Record cloud global
 
   // Fonction i18n de traduction (remplace par ta fonction si besoin)
-  function t(key, params) {
-    let str = (window.i18n && window.i18n[key]) || key;
-    if(params) Object.keys(params).forEach(k => {
-      str = str.replace(`{${k}}`, params[k]);
-    });
-    return str;
-  }
+function t(key, params) {
+  let str = (window.i18nGet && window.i18nGet(key)) || key;
+  if(params) Object.keys(params).forEach(k => {
+    str = str.replace(`{${k}}`, params[k]);
+  });
+  return str;
+}
+
 
   function initGame(opts){
     const mode = (opts && opts.mode) || 'classic';
