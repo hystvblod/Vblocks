@@ -32,6 +32,7 @@
     const holdCtx = holdCanvas.getContext('2d');
     const nextCanvas = document.getElementById('nextCanvas');
     const nextCtx = nextCanvas.getContext('2d');
+    
 
     const COLS = 10, ROWS = 20;
     let BLOCK_SIZE = 30;
@@ -709,3 +710,46 @@ function update(now) {
 
   global.VBlocksGame = { initGame };
 })(this);
+// ----- GESTION MUSIQUE GLOBALE ----- //
+const music = document.getElementById('music');
+if (music) music.volume = 0.45;
+
+window.musicStarted = false;
+
+function isMusicAlwaysMuted() {
+  return localStorage.getItem('alwaysMuteMusic') === 'true';
+}
+function playMusicAuto() {
+  if (!music) return;
+  if (!isMusicAlwaysMuted()) {
+    music.play().then(() => {
+      window.musicStarted = true;
+      refreshMusicBtn();
+    }).catch(()=>{}); // Si navigateur bloque, attend premier clic
+  }
+}
+function pauseMusic() {
+  if (music) music.pause();
+  window.musicStarted = false;
+  refreshMusicBtn();
+}
+function refreshMusicBtn() {
+  const btn = document.getElementById('music-btn');
+  if (!btn) return;
+  if (isMusicAlwaysMuted() || music.paused) {
+    btn.textContent = '🔇 Muet';
+  } else {
+    btn.textContent = '🎵 Musique';
+  }
+}
+
+// Relance musique à chaque début de partie SI non désactivée dans paramètres
+window.startMusicForGame = function() {
+  if (!music) return;
+  if (isMusicAlwaysMuted()) {
+    pauseMusic();
+    return;
+  }
+  music.currentTime = 0;
+  playMusicAuto();
+}
