@@ -85,12 +85,26 @@
 
   // Fonction i18n de traduction (remplace par ta fonction si besoin)
 function t(key, params) {
-  let str = (window.i18nGet && window.i18nGet(key)) || key;
-  if(params) Object.keys(params).forEach(k => {
-    str = str.replace(`{${k}}`, params[k]);
-  });
-  return str;
+  // Prend d'abord i18nGet si dispo (donc la map async !)
+  if (window.i18nGet) {
+    let str = window.i18nGet(key);
+    if(params) Object.keys(params).forEach(k => {
+      str = str.replace(`{${k}}`, params[k]);
+    });
+    return str;
+  }
+  // Sinon fallback sur la map statique (pour sécurité)
+  if (window.I18N_MAP && window.I18N_MAP[key]) {
+    let str = window.I18N_MAP[key];
+    if(params) Object.keys(params).forEach(k => {
+      str = str.replace(`{${k}}`, params[k]);
+    });
+    return str;
+  }
+  // Sinon dernier recours
+  return key;
 }
+
 
 
   function initGame(opts){
