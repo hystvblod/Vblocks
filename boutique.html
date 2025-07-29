@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <meta charset="UTF-8">
+  <title data-i18n="boutique.titre"></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style/main.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
   <script src="js/userData.js"></script>
   <script src="js/pub.js"></script>
   <script src="js/achat.js"></script>
   <script src="js/i18n.js"></script>
-  <meta charset="UTF-8">
-  <title data-i18n="boutique.titre"></title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style/main.css">
   <style>
     /* Ajoute ton CSS ici si besoin */
   </style>
@@ -25,10 +25,10 @@
     </div>
     <div class="top-right">
       <a href="profil.html" class="btn-icon" title="" data-i18n="menu.profil">
-        <img src="assets/icons/user.svg" alt="Profil" />
+        <img src="assets/icons/user.svg" alt="" />
       </a>
       <a href="parametres.html" class="btn-icon" title="" data-i18n="menu.parametres">
-        <img src="assets/icons/settings.svg" alt="Paramètres" />
+        <img src="assets/icons/settings.svg" alt="" />
       </a>
     </div>
   </div>
@@ -46,9 +46,7 @@
     <div class="themes-list" id="themes-list"></div>
   </div>
 <script>
-// === Paramètres reward ===
-const REWARD_JETONS = 1;        // Jetons gagnés pour pub1jeton
-const REWARD_VCOINS = 300;      // VCoins gagnés pour pub300points
+
 
 const THEMES = [
   { key: "neon",   name: "Neon"   },
@@ -100,12 +98,12 @@ async function renderThemes() {
   // Ajoute le listener pour les cartouches Reward
   SPECIAL_CARTOUCHES.forEach((c, i) => {
     if (c.key === 'boutique.cartouche.pub1jeton' || c.key === 'boutique.cartouche.pub300points') {
-      setTimeout(() => { // laisse le temps à l'injection
+      setTimeout(() => {
         const el = document.querySelector(`.special-cartouche[data-cartouche-index="${i}"]`);
         if (el) {
           el.style.cursor = "pointer";
           el.onclick = async () => {
-            el.onclick = null; // bloque le clic jusqu'à la fin
+            el.onclick = null;
             try {
               if (c.key === 'boutique.cartouche.pub1jeton') {
                 showRewarded(async (ok) => {
@@ -118,7 +116,7 @@ async function renderThemes() {
                       alert("Erreur : " + (e?.message || e));
                     }
                   }
-                  el.onclick = arguments.callee; // réactive le clic
+                  el.onclick = arguments.callee;
                 });
               }
               if (c.key === 'boutique.cartouche.pub300points') {
