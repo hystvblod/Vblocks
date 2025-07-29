@@ -116,6 +116,7 @@
       font-weight: 700; cursor: pointer; margin-top: 1em;
     }
     button.return-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .music-btn-img { width: 32px; height: 32px; vertical-align: middle;}
     @media (max-width:480px) {
       .main-content, .top-bar { max-width: 100vw; }
       .top-bar { padding: 4px 3px 0 3px; max-width: 99vw; }
@@ -171,6 +172,18 @@
         <div class="switch">
           <input type="checkbox" id="ghost-toggle">
           <span id="ghost-label" data-i18n="settings.ghost.on">Activée</span>
+        </div>
+      </div>
+      <!-- Musique -->
+      <div class="param-group">
+        <label>Musique :</label>
+        <div class="switch" style="gap:0.6em;">
+          <button id="music-toggle-btn" aria-label="Musique"
+            style="background:none;border:none;cursor:pointer;padding:0;">
+            <img id="music-toggle-img" src="assets/icons/volume-2.svg" alt="Musique activée"
+              class="music-btn-img">
+          </button>
+          <span id="music-toggle-label">Activée</span>
         </div>
       </div>
     </div>
@@ -278,6 +291,33 @@
       localStorage.setItem("ghostPiece", ghostToggle.checked ? "true" : "false");
       ghostLabel.setAttribute("data-i18n", ghostToggle.checked ? "settings.ghost.on" : "settings.ghost.off");
       ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
+    });
+
+    // ----- MUSIQUE (DÉFINITIF) -----
+    const musicToggleBtn = document.getElementById("music-toggle-btn");
+    const musicToggleImg = document.getElementById("music-toggle-img");
+    const musicToggleLabel = document.getElementById("music-toggle-label");
+
+    let alwaysMuteMusic = localStorage.getItem('alwaysMuteMusic') === 'true';
+
+    function updateMusicToggleUI() {
+      if (alwaysMuteMusic) {
+        musicToggleImg.src = "assets/icons/volume-x.svg";
+        musicToggleImg.alt = "Musique coupée";
+        musicToggleLabel.textContent = "Coupée";
+      } else {
+        musicToggleImg.src = "assets/icons/volume-2.svg";
+        musicToggleImg.alt = "Musique activée";
+        musicToggleLabel.textContent = "Activée";
+      }
+    }
+    updateMusicToggleUI();
+
+    musicToggleBtn.addEventListener("click", () => {
+      alwaysMuteMusic = !alwaysMuteMusic;
+      localStorage.setItem('alwaysMuteMusic', alwaysMuteMusic ? 'true' : 'false');
+      updateMusicToggleUI();
+      location.reload();
     });
 
     window.addEventListener("DOMContentLoaded", () => {

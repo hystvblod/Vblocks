@@ -285,39 +285,56 @@
       pollDuelStatus();
     }
 
-    async function pollDuelStatus() {
-      let tries = 0;
-      while (tries++ < 80) {
-        let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
-        if (!data) break;
-        if (data.status === "waiting") {
-          showDuelPopup('wait', { code: duelCode });
-        }
-        if (playerNum === 2 && data.status === "pending") {
-          showDuelPopup('confirm');
-        }
-        if (data.status === "ready") {
-          if (!data.pieces_seq) {
-            const seq = Array.from({ length: 60 }, () => Math.floor(Math.random() * 7)).join(',');
-            await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', data.id);
-          }
-          showDuelPopup('countdown');
-          let n = 3;
-          const ctd = setInterval(() => {
-            document.getElementById('countdown').textContent = n;
-            n--;
-            if (n < 0) {
-              clearInterval(ctd);
-              document.getElementById('duelPopup').style.display = 'none';
-              document.getElementById('gameZone').style.display = '';
-              VBlocksGame.initGame({ mode: 'duel', duelId: data.id, duelPlayerNum: playerNum });
-            }
-          }, 1000);
-          break;
-        }
-        await new Promise(r => setTimeout(r, 1000));
-      }
+ async function pollDuelStatus() {
+  let tries = 0;
+  while (tries++ < 80) {
+    let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
+    if (!data) break;
+    if (data.status === "waiting") {
+      showDuelPopup('wait', { code: duelCode });
     }
+    if (playerNum === 2 && data.status === "pending") {
+      showDuelPopup('confirm');
+    }
+    // Joueur 1 détecte "ready" => génère la séquence et démarre
+    if (playerNum === 1 && data.status === "ready") {
+      if (!data.pieces_seq) {
+        const seq = Array.from({ length: 60 }, () => Math.floor(Math.random() * 7)).join(',');
+        await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', data.id);
+      }
+      showDuelPopup('countdown');
+      let n = 3;
+      const ctd = setInterval(() => {
+        document.getElementById('countdown').textContent = n;
+        n--;
+        if (n < 0) {
+          clearInterval(ctd);
+          document.getElementById('duelPopup').style.display = 'none';
+          document.getElementById('gameZone').style.display = '';
+          VBlocksGame.initGame({ mode: 'duel', duelId: data.id, duelPlayerNum: playerNum });
+        }
+      }, 1000);
+      break;
+    }
+    // Joueur 2 détecte "started" => démarre la partie avec la séquence
+    if (playerNum === 2 && data.status === "started" && data.pieces_seq) {
+      showDuelPopup('countdown');
+      let n = 3;
+      const ctd = setInterval(() => {
+        document.getElementById('countdown').textContent = n;
+        n--;
+        if (n < 0) {
+          clearInterval(ctd);
+          document.getElementById('duelPopup').style.display = 'none';
+          document.getElementById('gameZone').style.display = '';
+          VBlocksGame.initGame({ mode: 'duel', duelId: data.id, duelPlayerNum: playerNum });
+        }
+      }, 1000);
+      break;
+    }
+    await new Promise(r => setTimeout(r, 1000));
+  }
+}
 
     window.addEventListener("DOMContentLoaded", startDuelFlow);
 
