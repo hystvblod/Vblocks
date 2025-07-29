@@ -69,3 +69,7 @@
     await global.i18nTranslateAll();
   };
 
+})(window);
+window.i18nReady = (async () => {
+  await window.i18nTranslateAll();
+})();
