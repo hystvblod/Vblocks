@@ -46,6 +46,10 @@
     <div class="themes-list" id="themes-list"></div>
   </div>
 <script>
+// === Paramètres reward ===
+const REWARD_JETONS = 1;        // Jetons gagnés pour pub1jeton
+const REWARD_VCOINS = 300;      // VCoins gagnés pour pub300points
+
 const THEMES = [
   { key: "neon",   name: "Neon"   },
   { key: "bubble", name: "Bubble" },
@@ -86,12 +90,60 @@ async function renderThemes() {
   const unlocked = await userData.getUnlockedThemes?.() || [];
 
   const $achatsList = document.getElementById('achats-list');
-  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => `
-    <div class="special-cartouche ${c.color}">
+  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map((c, i) => `
+    <div class="special-cartouche ${c.color}" data-cartouche-index="${i}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
     </div>
   `).join('');
+
+  // Ajoute le listener pour les cartouches Reward
+  SPECIAL_CARTOUCHES.forEach((c, i) => {
+    if (c.key === 'boutique.cartouche.pub1jeton' || c.key === 'boutique.cartouche.pub300points') {
+      setTimeout(() => { // laisse le temps à l'injection
+        const el = document.querySelector(`.special-cartouche[data-cartouche-index="${i}"]`);
+        if (el) {
+          el.style.cursor = "pointer";
+          el.onclick = async () => {
+            el.onclick = null; // bloque le clic jusqu'à la fin
+            try {
+              if (c.key === 'boutique.cartouche.pub1jeton') {
+                showRewarded(async (ok) => {
+                  if (ok && window.userData && userData.addJetons) {
+                    try {
+                      await userData.addJetons(REWARD_JETONS);
+                      alert("+1 jeton ajouté !");
+                      await renderThemes();
+                    } catch(e) {
+                      alert("Erreur : " + (e?.message || e));
+                    }
+                  }
+                  el.onclick = arguments.callee; // réactive le clic
+                });
+              }
+              if (c.key === 'boutique.cartouche.pub300points') {
+                showRewarded(async (ok) => {
+                  if (ok && window.userData && userData.addVCoins) {
+                    try {
+                      await userData.addVCoins(REWARD_VCOINS);
+                      alert("+" + REWARD_VCOINS + " VCoins !");
+                      await renderThemes();
+                    } catch(e) {
+                      alert("Erreur : " + (e?.message || e));
+                    }
+                  }
+                  el.onclick = arguments.callee;
+                });
+              }
+            } catch(e) {
+              alert("Erreur JS : " + (e?.message || e));
+              el.onclick = arguments.callee;
+            }
+          };
+        }
+      }, 0);
+    }
+  });
 
   const $themesList = document.getElementById('themes-list');
   $themesList.innerHTML = THEMES.map(theme => {

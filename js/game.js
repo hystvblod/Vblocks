@@ -258,7 +258,7 @@
         <div style="font-weight:bold;">${t("duel.finished")}</div>
         <div>${t("duel.yourscore")} <b>${myScore}</b></div>
         <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
-        <button onclick="location.reload()">${t("button.replay")}</button>`;
+      `;
       let div = document.createElement("div");
       div.id = "duel-popup";
       div.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;";
@@ -291,11 +291,9 @@
       const old = document.getElementById('gameover-popup');
       if (old) old.remove();
 
-  if (mode === 'duel') {
-  handleDuelEnd(points);
-  return; // empêche tout bouton Rejouer
-}
-
+      if (mode === 'duel') {
+        handleDuelEnd(points);
+        return; // empêche tout bouton Rejouer
       }
 
       const popup = document.createElement('div');
@@ -329,20 +327,20 @@
         removePopup();
         rewind();
       };
-document.getElementById('popup-pub').onclick = function() {
-  if (window.showRewardRevive) {
-    showRewardRevive(() => {
-      removePopup();
-      rewind();
-    });
-  } else {
-    // fallback si pub.js pas chargé
-    showFakeAd().then(()=>{
-      removePopup();
-      rewind();
-    });
-  }
-};
+      document.getElementById('popup-pub').onclick = function() {
+        if (window.showRewardRevive) {
+          showRewardRevive(() => {
+            removePopup();
+            rewind();
+          });
+        } else {
+          // fallback si pub.js pas chargé
+          showFakeAd().then(()=>{
+            removePopup();
+            rewind();
+          });
+        }
+      };
 
       document.getElementById('popup-stop').onclick = function() {
         removePopup();
@@ -431,7 +429,7 @@ document.getElementById('popup-pub').onclick = function() {
     }
     document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
 
-        function computeScore(lines){
+    function computeScore(lines){
       let pts = 0;
       switch(lines){
         case 1: pts = 10; break;
