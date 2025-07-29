@@ -28,6 +28,7 @@
   "home.title": "VBlocks - Home",
   "menu.profil": "Profiel",
   "menu.parametres": "Instellingen",
+    "settings.title" : "Instellingen",
   "index.rgpd.title": "Privacy & Advertenties",
   "index.rgpd.body1": "VBlocks gebruikt advertentie-ID's om gepersonaliseerde advertenties te tonen.<br>Je kunt gepersonaliseerde advertenties weigeren of accepteren.",
   "index.rgpd.body2": "(Je kunt dit later wijzigen in de instellingen)",

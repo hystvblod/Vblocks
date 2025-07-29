@@ -28,6 +28,7 @@
   "home.title": "VBlocks - ホーム",
   "menu.profil": "プロフィール",
   "menu.parametres": "設定",
+    "settings.title" :"設定",
   "index.rgpd.title": "プライバシーと広告",
   "index.rgpd.body1": "VBlocksは広告IDを使ってパーソナライズ広告を配信します。<br>パーソナライズ広告の有無を選択できます。",
   "index.rgpd.body2": "（この設定は後から変更できます）",

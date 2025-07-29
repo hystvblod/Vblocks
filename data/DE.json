@@ -29,6 +29,7 @@
   "home.title": "VBlocks - Startseite",
   "menu.profil": "Profil",
   "menu.parametres": "Einstellungen",
+  "settings.title" :"Einstellungen",
   "index.rgpd.title": "Datenschutz & Werbung",
   "index.rgpd.body1": "VBlocks verwendet Werbe-IDs, um personalisierte Werbung anzuzeigen.<br>Du kannst Personalisierung akzeptieren oder ablehnen.",
   "index.rgpd.body2": "(Du kannst deine Meinung später in den Einstellungen ändern)",

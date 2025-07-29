@@ -291,23 +291,10 @@
       document.getElementById("profilPseudo").textContent = p;
 
       // Popup pseudo
-      document.getElementById("btnChangePseudo").onclick = () => {
-        document.getElementById("popupPseudo").classList.add("active");
-        document.getElementById("pseudoError").textContent = "";
-      };
-      document.getElementById("btnCancelPseudo").onclick = () => {
-        document.getElementById("popupPseudo").classList.remove("active");
-      };
-      document.getElementById("btnSavePseudo").onclick = () => {
-        const pseudo = document.getElementById("newPseudo").value.trim();
-        if (pseudo.length < 3) {
-          document.getElementById("pseudoError").textContent = "Pseudo trop court.";
-          return;
-        }
-        localStorage.setItem("pseudo", pseudo);
-        document.getElementById("profilPseudo").textContent = pseudo;
-        document.getElementById("popupPseudo").classList.remove("active");
-      };
+// Popup pseudo CLOUD + LOCAL via userData.js
+setupPseudoPopup();
+updatePseudoUI();
+
 
       // Sélecteur de thème
       document.getElementById("changeThemeBtn").onclick = openThemePopup;

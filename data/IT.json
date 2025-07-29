@@ -28,6 +28,7 @@
   "home.title": "VBlocks - Home",
   "menu.profil": "Profilo",
   "menu.parametres": "Impostazioni",
+      "settings.title" : "Impostazioni",
   "index.rgpd.title": "Privacy & Pubblicità",
   "index.rgpd.body1": "VBlocks utilizza identificatori pubblicitari per mostrare annunci personalizzati.<br>Puoi rifiutare o accettare la personalizzazione.",
   "index.rgpd.body2": "(Puoi cambiare idea più tardi nelle impostazioni)",

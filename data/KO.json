@@ -28,6 +28,7 @@
   "home.title": "VBlocks - 홈",
   "menu.profil": "프로필",
   "menu.parametres": "설정",
+    "settings.title" : "설정",
   "index.rgpd.title": "개인정보 & 광고",
   "index.rgpd.body1": "VBlocks는 맞춤형 광고를 위해 광고 식별자를 사용합니다.<br>맞춤 광고를 허용하거나 거부할 수 있습니다.",
   "index.rgpd.body2": "(이 설정은 나중에 변경할 수 있습니다)",
