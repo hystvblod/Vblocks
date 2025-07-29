@@ -17,18 +17,21 @@
   }
 
   // Charge le fichier de langue choisi (Promise)
-  async function loadLang(langCode) {
-    let response;
-    try {
-      response = await fetch(`${LANG_PATH}${langCode}.json`);
-      if (!response.ok) throw new Error("404");
-      return await response.json();
-    } catch (e) {
-      // Fallback FR si fichier absent
-      if (langCode !== "FR") return await loadLang("FR");
-      return {};
-    }
+async function loadLang(langCode) {
+  let response;
+  try {
+    response = await fetch(`${LANG_PATH}${langCode}.json`);
+    console.log('fetch', `${LANG_PATH}${langCode}.json`, response);
+    if (!response.ok) throw new Error("404");
+    let json = await response.json();
+    console.log("Lang loaded:", json); // <------ AJOUTE CE LOG !
+    return json;
+  } catch (e) {
+    // Fallback FR si fichier absent
+    if (langCode !== "FR") return await loadLang("FR");
+    return {};
   }
+}
 
   // Remplace tout dans le DOM avec data-i18n
   function applyI18n(i18nMap) {
