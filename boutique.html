@@ -43,7 +43,10 @@
     <div class="themes-list" id="themes-list"></div>
   </div>
 <script>
-// Noms affichés des thèmes : restent non traduits ici (tu peux i18n si tu veux après)
+// --- Helper i18n ---
+function t(key) { return window.i18nGet ? window.i18nGet(key) : key; }
+
+// Thèmes dispo
 const THEMES = [
   { key: "neon",   name: "Neon"   },
   { key: "bubble", name: "Bubble" },
@@ -57,7 +60,7 @@ const THEMES = [
   { key: "cyber",  name: "Cyber"  }
 ];
 
-// Clés i18n pour chaque cartouche (label: clé, la valeur sera injectée dynamiquement)
+// Cartouches d’achats spéciaux
 const SPECIAL_CARTOUCHES = [
   {
     key: 'boutique.cartouche.jetons12',
@@ -88,14 +91,12 @@ const SPECIAL_CARTOUCHES = [
 
 const THEME_PRICE = 3000;
 
-// Cette fonction t() doit être définie **après chargement du JSON de langue**
-function t(key) { return (window.i18n && window.i18n[key]) || key; }
-
+// Rendu principal
 async function renderThemes() {
   await userData.syncUnlockedThemes?.();
   const unlocked = await userData.getUnlockedThemes?.() || [];
 
-  // Achats (cartouches en haut)
+  // Cartouches du haut
   const $achatsList = document.getElementById('achats-list');
   let achatsHtml = SPECIAL_CARTOUCHES.map(c => `
     <div class="special-cartouche ${c.color}">
@@ -105,7 +106,7 @@ async function renderThemes() {
   `).join('');
   $achatsList.innerHTML = achatsHtml;
 
-  // Thèmes (cartouches en bas)
+  // Thèmes
   const $themesList = document.getElementById('themes-list');
   let html = THEMES.map(theme => {
     const isUnlocked = unlocked.includes(theme.key);
@@ -134,15 +135,12 @@ async function renderThemes() {
       }
       await userData.addVCoins(-THEME_PRICE);
       await unlockThemeCloud(key);
-      renderThemes();
+      await renderThemes();
       setupPubCartouches();
+      setupBoutiqueAchats();
+      // repasse i18n après un achat !
+      if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
     }
-  });
-
-  // i18n dynamique (après render)
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.getAttribute("data-i18n");
-    if (window.i18n && window.i18n[key]) el.textContent = window.i18n[key];
   });
 
   // Solde
@@ -152,7 +150,7 @@ async function renderThemes() {
   document.querySelectorAll('.vcoins-solde')[1].textContent = typeof soldeJetons === "number" ? soldeJetons : "--";
 }
 
-// BRANCHE les cartouches PUB aux bons callbacks Supabase
+// Cartouches pub
 function setupPubCartouches() {
   document.querySelectorAll('.special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
@@ -169,6 +167,8 @@ function setupPubCartouches() {
               alert("+1 jeton ajouté !");
               await renderThemes();
               setupPubCartouches();
+              setupBoutiqueAchats();
+              if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
             } catch(e) {
               alert("Erreur : " + (e?.message || e));
             }
@@ -187,6 +187,8 @@ function setupPubCartouches() {
               alert("+300 VCoins ajoutés !");
               await renderThemes();
               setupPubCartouches();
+              setupBoutiqueAchats();
+              if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
             } catch(e) {
               alert("Erreur : " + (e?.message || e));
             }
@@ -197,11 +199,51 @@ function setupPubCartouches() {
   });
 }
 
+// Brancher les achats monétaires (jetons12, jetons50, nopub)
+function setupBoutiqueAchats() {
+  document.querySelectorAll('.special-cartouche').forEach(cartouche => {
+    const label = cartouche.querySelector('.theme-label');
+    if (!label) return;
+    const key = label.dataset.i18n;
+
+    if (key === 'boutique.cartouche.jetons12') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("jetons12")) {
+          accordeAchat("jetons12");
+        }
+      };
+    }
+    if (key === 'boutique.cartouche.jetons50') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("jetons50")) {
+          accordeAchat("jetons50");
+        }
+      };
+    }
+    if (key === 'boutique.cartouche.nopub') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("nopub")) {
+          accordeAchat("nopub");
+        }
+      };
+    }
+    // Les PUB sont gérées dans setupPubCartouches, ne pas dupliquer
+  });
+}
+
 // --- INITIALISATION ---
-window.onload = async function() {
+window.i18nReady.then(async () => {
   await renderThemes();
   setupPubCartouches();
-}
+  setupBoutiqueAchats();
+  // Passe i18n sur tout le DOM après le render dynamique
+  if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+  // Met à jour aussi le titre de la page (onglet navigateur)
+  if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
+});
 </script>
 </body>
 </html>

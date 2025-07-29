@@ -144,8 +144,45 @@ function renderThemes() {
 }
 
 // --- Initialisation au chargement ---
-document.addEventListener("DOMContentLoaded", renderThemes);
+document.addEventListener("DOMContentLoaded", function() {
+  renderThemes();
+  setupBoutiqueAchats();
+});
 
-// --- Pour compatibilité Capacitor ---
-// Rien à changer, tout ce qui utilise localStorage/fetch/fonctions Supabase marche pareil en Capacitor !
-// (Pas de NodeJS requis, pas de dépendance serveur)
+
+// === Brancher les achats monétaires à la logique achat.js ===
+
+// Cette fonction va relier les boutons d'achat aux flux de paiement
+function setupBoutiqueAchats() {
+  document.querySelectorAll('.special-cartouche').forEach(cartouche => {
+    const label = cartouche.querySelector('.theme-label');
+    if (!label) return;
+    const key = label.dataset.i18n;
+
+    if (key === 'boutique.cartouche.jetons12') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("jetons12")) {
+          accordeAchat("jetons12");
+        }
+      };
+    }
+    if (key === 'boutique.cartouche.jetons50') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("jetons50")) {
+          accordeAchat("jetons50");
+        }
+      };
+    }
+    if (key === 'boutique.cartouche.nopub') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("nopub")) {
+          accordeAchat("nopub");
+        }
+      };
+    }
+    // Les cartouches PUB sont déjà gérées ailleurs
+  });
+}
