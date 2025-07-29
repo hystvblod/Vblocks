@@ -258,9 +258,11 @@
         } else if (playerNum === 2) {
           await window.sb.from('duels').update({ player2: window.getUserId(), status: "pending" }).eq('id', duelId);
           showDuelPopup('confirm');
-          document.getElementById('btnAcceptDuel').onclick = async () => {
-            await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
-          };
+    document.getElementById('btnAcceptDuel').onclick = async () => {
+  await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
+  showDuelPopup('countdown'); // ← ajoute cette ligne
+};
+
           document.getElementById('btnRefuseDuel').onclick = () => { window.location = "index.html"; };
         }
         pollDuelStatus();
