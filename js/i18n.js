@@ -70,8 +70,9 @@ async function loadLang(langCode) {
   global.setLang = async function(code) {
     localStorage.setItem("langue", code);
     await global.i18nTranslateAll();
+    
   };
-
+global.applyI18n = applyI18n;
 })(window);
 window.i18nReady = (async () => {
   await window.i18nTranslateAll();
