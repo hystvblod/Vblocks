@@ -235,7 +235,16 @@ function setupBoutiqueAchats() {
 }
 
 // --- INITIALISATION ---
-window.i18nReady.then(async () => {
+// Rend tout compatible (avec ou sans i18nReady Promise)
+function ready(fn) {
+  if (window.i18nReady && typeof window.i18nReady.then === "function") {
+    window.i18nReady.then(fn);
+  } else {
+    // Soit la i18n n’est pas async, soit pas de promesse : exécute direct
+    setTimeout(fn, 0);
+  }
+}
+ready(async () => {
   await renderThemes();
   setupPubCartouches();
   setupBoutiqueAchats();
