@@ -70,3 +70,6 @@
   };
 
 })(window);
+global.i18nReady = (async () => {
+  await global.i18nTranslateAll();
+})();

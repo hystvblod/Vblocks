@@ -89,8 +89,6 @@ const SPECIAL_CARTOUCHES = [
 const THEME_PRICE = 3000;
 
 // Cette fonction t() doit être définie **après chargement du JSON de langue**
-// Ex: window.i18n = {...}
-// function t(key) { return window.i18n[key] || key; }
 function t(key) { return (window.i18n && window.i18n[key]) || key; }
 
 async function renderThemes() {
@@ -137,6 +135,7 @@ async function renderThemes() {
       await userData.addVCoins(-THEME_PRICE);
       await unlockThemeCloud(key);
       renderThemes();
+      setupPubCartouches();
     }
   });
 
@@ -153,7 +152,56 @@ async function renderThemes() {
   document.querySelectorAll('.vcoins-solde')[1].textContent = typeof soldeJetons === "number" ? soldeJetons : "--";
 }
 
-window.onload = renderThemes;
+// BRANCHE les cartouches PUB aux bons callbacks Supabase
+function setupPubCartouches() {
+  document.querySelectorAll('.special-cartouche').forEach(cartouche => {
+    const label = cartouche.querySelector('.theme-label');
+    if (!label) return;
+    const key = label.dataset.i18n;
+    if (key === 'boutique.cartouche.pub1jeton') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        cartouche.onclick = null;
+        showRewarded(async (ok) => {
+          if (ok && window.userData && userData.addJetons) {
+            try {
+              await userData.addJetons(REWARD_JETONS);
+              alert("+1 jeton ajouté !");
+              await renderThemes();
+              setupPubCartouches();
+            } catch(e) {
+              alert("Erreur : " + (e?.message || e));
+            }
+          }
+        });
+      };
+    }
+    if (key === 'boutique.cartouche.pub300points') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        cartouche.onclick = null;
+        showRewarded(async (ok) => {
+          if (ok && window.userData && userData.addVCoins) {
+            try {
+              await userData.addVCoins(300);
+              alert("+300 VCoins ajoutés !");
+              await renderThemes();
+              setupPubCartouches();
+            } catch(e) {
+              alert("Erreur : " + (e?.message || e));
+            }
+          }
+        });
+      };
+    }
+  });
+}
+
+// --- INITIALISATION ---
+window.onload = async function() {
+  await renderThemes();
+  setupPubCartouches();
+}
 </script>
 </body>
 </html>
