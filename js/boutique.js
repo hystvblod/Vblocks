@@ -64,6 +64,20 @@ async function addVCoinsSupabase(amount) {
   localStorage.setItem('vblocks_vcoins', newBalance);
   return newBalance;
 }
+async function addJetonsSupabase(amount) {
+  const userId = getUserId();
+  const { data, error } = await sb.rpc('add_jetons', {
+    user_id: userId,
+    delta: amount
+  });
+  if (error) {
+    alert(t("boutique.alert.jetons_update_error") || error.message);
+    throw error;
+  }
+  let newBalance = data?.[0]?.new_balance ?? 0;
+  localStorage.setItem('vblocks_jetons', newBalance);
+  return newBalance;
+}
 
 // --- Achat sécurisé d’un thème ---
 async function acheterTheme(themeKey, prix) {
@@ -105,7 +119,7 @@ async function activerTheme(themeKey) {
 function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
   let achatsHtml = SPECIAL_CARTOUCHES.map(c => `
-    <div class="special-cartouche ${c.color}">
+    <div class="special-cartouche ${c.color}" data-cartouche="${c.key}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label">${t(c.key)}</span>
     </div>
@@ -113,9 +127,64 @@ function renderAchats() {
   $achatsList.innerHTML = achatsHtml;
 }
 
+// --- Ajout de la gestion PUB (reward) sur les cartouches ---
+function setupBoutiqueRewards() {
+  // PUB 1 Jeton (color-green)
+  const pubJeton = document.querySelector('.special-cartouche[data-cartouche="boutique.cartouche.pub1jeton"]');
+  if (pubJeton) {
+    pubJeton.style.cursor = "pointer";
+    pubJeton.onclick = async function handler() {
+      pubJeton.onclick = null; // anti-double clic
+      try {
+        if (window.showRewarded) {
+          showRewarded(async (ok) => {
+            if (ok) {
+              await addJetonsSupabase(1); // fonction sécurisée !
+              alert("+1 jeton ajouté !");
+              renderThemes();
+              setupBoutiqueRewards();
+            } else {
+              pubJeton.onclick = handler;
+            }
+          });
+        }
+      } catch(e) {
+        alert("Erreur JS: " + (e?.message || e));
+        pubJeton.onclick = handler;
+      }
+    };
+  }
+  // PUB 300 VCoins (dernier cartouche color-blue)
+  const pubVCoins = document.querySelector('.special-cartouche[data-cartouche="boutique.cartouche.pub300points"]');
+  if (pubVCoins) {
+    pubVCoins.style.cursor = "pointer";
+    pubVCoins.onclick = async function handler() {
+      pubVCoins.onclick = null;
+      try {
+        if (window.showRewarded) {
+          showRewarded(async (ok) => {
+            if (ok) {
+              await addVCoinsSupabase(300); // fonction sécurisée !
+              alert("+300 VCoins ajoutés !");
+              renderThemes();
+              setupBoutiqueRewards();
+            } else {
+              pubVCoins.onclick = handler;
+            }
+          });
+        }
+      } catch(e) {
+        alert("Erreur JS: " + (e?.message || e));
+        pubVCoins.onclick = handler;
+      }
+    };
+  }
+}
+
 // --- Affichage des thèmes ---
 function renderThemes() {
   renderAchats();
+  setupBoutiqueRewards();
   const list = document.getElementById('themes-list');
   if (!list) return;
   list.innerHTML = "";
