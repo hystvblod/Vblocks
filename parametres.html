@@ -35,6 +35,7 @@
       position: relative;
       z-index: 10;
       background: transparent;
+      
     }
     .top-bar-row {
       display: flex;
@@ -133,9 +134,10 @@
     <div class="top-bar">
       <div class="top-bar-row">
         <!-- BTN RETOUR : bouton et pas lien -->
-        <button class="btn-back" id="btn-back" title="Retour" aria-label="Retour">
-          <img src="assets/icons/arrow_back.svg" alt="Retour">
-        </button>
+      <button type="button" class="btn-back" id="btn-back" title="Retour" aria-label="Retour">
+  <img src="assets/icons/arrow_back.svg" alt="Retour">
+</button>
+
         <span class="main-title" data-i18n="settings.title">Paramètres</span>
         <div class="profile-row">
           <!-- BTN PROFIL : vrai lien -->
