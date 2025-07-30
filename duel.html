@@ -134,7 +134,6 @@
       </div>
       <div id="controls">
         <button id="music-btn" data-i18n="duel.music">Musique</button>
- 
       </div>
     </div>
   </div>
@@ -155,7 +154,6 @@
       return code;
     }
 
-    // Fonction utilitaire pour injecter les textes i18n dans les popups
     function i18nT(key) { return (window.i18n && window.i18n[key]) || key; }
 
     function showDuelPopup(state, data = {}) {
@@ -209,14 +207,11 @@
         `;
       }
       popup.innerHTML = html;
-      // Retraduire le contenu dynamique
       if (window.i18nTranslateAll) window.i18nTranslateAll();
 
-      // Pour les placeholders i18n (input join)
       if (state === 'join') {
         const input = document.getElementById('inputCode');
         if (input && window.i18n) input.placeholder = window.i18n["duel.popup.join.placeholder"] || "Code duel...";
-        // Gestion bouton
         document.getElementById('btnJoinOk').onclick = function() {
           let code = document.getElementById('inputCode').value.trim().toUpperCase();
           if (!code) return;
@@ -232,20 +227,17 @@
     let duelId = null, duelCode = null, playerNum = 1;
 
     async function startDuelFlow() {
-      // Détecte params URL
       const urlParams = new URLSearchParams(window.location.search);
       duelCode = urlParams.get('duel');
       playerNum = parseInt(urlParams.get('player')) || 1;
 
       if (!duelCode) {
-        // Pas de code => propose choix créer/rejoindre
         showDuelPopup('choice');
         document.getElementById('btnNewDuel').onclick = createNewDuel;
         document.getElementById('btnJoinDuel').onclick = function() {
           showDuelPopup('join');
         };
       } else {
-        // On a un code => check/join room
         let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
         duelId = data?.id;
         if (!data) {
@@ -258,11 +250,29 @@
         } else if (playerNum === 2) {
           await window.sb.from('duels').update({ player2: window.getUserId(), status: "pending" }).eq('id', duelId);
           showDuelPopup('confirm');
-    document.getElementById('btnAcceptDuel').onclick = async () => {
-  await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
-  showDuelPopup('countdown'); // ← ajoute cette ligne
-};
-
+          document.getElementById('btnAcceptDuel').onclick = async () => {
+            // LE J2 GÈRE LE PASSAGE EN "started" + séquence, pour fiabiliser le flux !
+            await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
+            let { data } = await window.sb.from('duels').select('*').eq('id', duelId).single();
+            if (data && !data.pieces_seq) {
+              const seq = Array.from({ length: 60 }, () => Math.floor(Math.random() * 7)).join(',');
+              await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', duelId);
+            } else {
+              await window.sb.from('duels').update({ status: "started" }).eq('id', duelId);
+            }
+            showDuelPopup('countdown');
+            let n = 3;
+            const ctd = setInterval(() => {
+              document.getElementById('countdown').textContent = n;
+              n--;
+              if (n < 0) {
+                clearInterval(ctd);
+                document.getElementById('duelPopup').style.display = 'none';
+                document.getElementById('gameZone').style.display = '';
+                VBlocksGame.initGame({ mode: 'duel', duelId: duelId, duelPlayerNum: playerNum });
+              }
+            }, 1000);
+          };
           document.getElementById('btnRefuseDuel').onclick = () => { window.location = "index.html"; };
         }
         pollDuelStatus();
@@ -287,56 +297,36 @@
       pollDuelStatus();
     }
 
- async function pollDuelStatus() {
-  let tries = 0;
-  while (tries++ < 80) {
-    let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
-    if (!data) break;
-    if (data.status === "waiting") {
-      showDuelPopup('wait', { code: duelCode });
-    }
-    if (playerNum === 2 && data.status === "pending") {
-      showDuelPopup('confirm');
-    }
-    // Joueur 1 détecte "ready" => génère la séquence et démarre
-    if (playerNum === 1 && data.status === "ready") {
-      if (!data.pieces_seq) {
-        const seq = Array.from({ length: 60 }, () => Math.floor(Math.random() * 7)).join(',');
-        await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', data.id);
+    async function pollDuelStatus() {
+      let tries = 0;
+      while (tries++ < 80) {
+        let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
+        if (!data) break;
+        if (data.status === "waiting") {
+          showDuelPopup('wait', { code: duelCode });
+        }
+        if (playerNum === 2 && data.status === "pending") {
+          showDuelPopup('confirm');
+        }
+        // Joueur 1 ou 2 détecte "started" => démarre la partie avec la séquence
+        if ((playerNum === 1 || playerNum === 2) && data.status === "started" && data.pieces_seq) {
+          showDuelPopup('countdown');
+          let n = 3;
+          const ctd = setInterval(() => {
+            document.getElementById('countdown').textContent = n;
+            n--;
+            if (n < 0) {
+              clearInterval(ctd);
+              document.getElementById('duelPopup').style.display = 'none';
+              document.getElementById('gameZone').style.display = '';
+              VBlocksGame.initGame({ mode: 'duel', duelId: data.id, duelPlayerNum: playerNum });
+            }
+          }, 1000);
+          break;
+        }
+        await new Promise(r => setTimeout(r, 1000));
       }
-      showDuelPopup('countdown');
-      let n = 3;
-      const ctd = setInterval(() => {
-        document.getElementById('countdown').textContent = n;
-        n--;
-        if (n < 0) {
-          clearInterval(ctd);
-          document.getElementById('duelPopup').style.display = 'none';
-          document.getElementById('gameZone').style.display = '';
-          VBlocksGame.initGame({ mode: 'duel', duelId: data.id, duelPlayerNum: playerNum });
-        }
-      }, 1000);
-      break;
     }
-    // Joueur 2 détecte "started" => démarre la partie avec la séquence
-    if (playerNum === 2 && data.status === "started" && data.pieces_seq) {
-      showDuelPopup('countdown');
-      let n = 3;
-      const ctd = setInterval(() => {
-        document.getElementById('countdown').textContent = n;
-        n--;
-        if (n < 0) {
-          clearInterval(ctd);
-          document.getElementById('duelPopup').style.display = 'none';
-          document.getElementById('gameZone').style.display = '';
-          VBlocksGame.initGame({ mode: 'duel', duelId: data.id, duelPlayerNum: playerNum });
-        }
-      }, 1000);
-      break;
-    }
-    await new Promise(r => setTimeout(r, 1000));
-  }
-}
 
     window.addEventListener("DOMContentLoaded", startDuelFlow);
 
