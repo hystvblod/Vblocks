@@ -505,42 +505,42 @@ function t(key, params) {
       clearLines();
     }
 
-    function clearLines(){
-      let lines = 0;
-      board = board.filter(row => {
-        if(row.every(cell => cell !== '')){ lines++; return false; }
-        return true;
-      });
-      while(board.length < ROWS) board.unshift(Array(COLS).fill(''));
-      if(lines > 0){
-        if(window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
-        combo++;
-        linesCleared += lines;
-        let pts = computeScore(lines, combo);
-        score += pts;
-        if(scoreEl) scoreEl.textContent = score;
+ function clearLines() {
+  let lines = 0;
+  board = board.filter(row => {
+    if(row.every(cell => cell !== '')){ lines++; return false; }
+    return true;
+  });
+  while(board.length < ROWS) board.unshift(Array(COLS).fill(''));
+  if(lines > 0){
+    if(window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
+    combo++;
+    linesCleared += lines;
+    let pts = computeScore(lines, combo);
+    score += pts;
+    if(scoreEl) scoreEl.textContent = score;
 
-        // Record cloud
-        if (score > highscoreCloud) {
-          highscoreCloud = score;
-          if (highEl) highEl.textContent = highscoreCloud;
-          if (userData.setHighScore) {
-            userData.setHighScore(score).then(() => {
-              if (window.updateHighScoreDisplay) window.updateHighScoreDisplay();
-            });
-          }
-        }
-
-        // --- Gestion des vitesses ---
-        if(mode === 'classic' || mode === 'duel') {
-          let level = Math.floor(linesCleared / 10);
-          if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
-          if (mode === 'classic') dropInterval = SPEED_TABLE[level];
-        }
-      }else{
-        combo = 0;
+    // Record cloud
+    if (score > highscoreCloud) {
+      highscoreCloud = score;
+      if (highEl) highEl.textContent = highscoreCloud;
+      if (userData.setHighScore) {
+        userData.setHighScore(score).then(() => {
+          if (window.updateHighScoreDisplay) window.updateHighScoreDisplay();
+        });
       }
     }
+
+    // --- Gestion des vitesses ---
+    if (mode === 'classic' || mode === 'duel') {
+      let level = Math.floor(linesCleared / 8);
+      if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
+      dropInterval = SPEED_TABLE[level];
+    }
+  } else {
+    combo = 0;
+  }
+}
 
     function move(offset){
       currentPiece.x += offset;
