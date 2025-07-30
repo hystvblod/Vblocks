@@ -189,28 +189,26 @@
       </button>
     </div>
   </div>
-  <script src="i18n.js"></script>
   <script>
-    // Utilitaire ready (compatible i18n async ou synchrone)
-    function ready(fn) {
-      if (window.i18nReady && typeof window.i18nReady.then === "function") {
-        window.i18nReady.then(fn);
-      } else {
-        setTimeout(fn, 0);
-      }
-    }
-
-    // Injection des textes i18n partout
-    function applyI18nTexts() {
-      document.querySelectorAll("[data-i18n]").forEach(el => {
-        const key = el.getAttribute("data-i18n");
-        if (window.i18n && window.i18n[key]) el.textContent = window.i18n[key];
+    // CHARGE le JSON de traduction AVANT d’injecter les textes
+    fetch("data/FR.json")
+      .then(r => r.json())
+      .then(obj => {
+        window.i18n = obj;
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+          const key = el.getAttribute("data-i18n");
+          if (window.i18n && window.i18n[key]) el.textContent = window.i18n[key];
+        });
+        // Met à jour le titre de l’onglet
+        if (window.i18n && window.i18n["apps.title"]) document.title = window.i18n["apps.title"];
+      })
+      .catch(e => {
+        // Affiche les clés en cas de problème (debug visuel)
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+          el.textContent = el.getAttribute("data-i18n");
+        });
+        document.title = "Nos applis";
       });
-      if (window.i18n && window.i18n["apps.title"]) document.title = window.i18n["apps.title"];
-    }
-
-    // Lance le rendu des textes dès que la trad est prête
-    ready(applyI18nTexts);
   </script>
 </body>
 </html>
