@@ -61,19 +61,25 @@ async function setUnlockedThemesCloud(newThemes) {
 
 // --- Achat sécurisé (débloque dans Supabase)
 async function acheterTheme(themeKey, prix) {
-  let { data: user, error } = await sb.from('users').select('vcoins, themes_possedes').eq('id', getUserId()).single();
-  if (error) { alert("Erreur: " + error.message); return false; }
-  let coins = user?.vcoins ?? 0;
-  let themes = Array.isArray(user?.themes_possedes) ? user.themes_possedes : [];
-  if (themes.includes(themeKey)) { alert(t("theme.deja_possede")); return false; }
-  if (coins < prix) { alert(t("boutique.alert.pasassez")); return false; }
-  await addVCoinsSupabase(-prix); // Dépense coins cloud
-  themes.push(themeKey);
-  await setUnlockedThemesCloud(themes);
-  alert(t("theme.debloque"));
-  renderThemes();
-  return true;
+  try {
+    const { error } = await sb.rpc('purchase_theme', {
+      user_id: getUserId(),
+      theme_key: themeKey,
+      price: prix
+    });
+    if (error) {
+      alert("Erreur: " + error.message);
+      return false;
+    }
+    alert(t("theme.debloque"));
+    await renderThemes();
+    return true;
+  } catch (e) {
+    alert("Erreur: " + (e.message || e));
+    return false;
+  }
 }
+
 
 // --- Activation (tu peux aussi le stocker cloud si tu veux)
 function getCurrentTheme() {
