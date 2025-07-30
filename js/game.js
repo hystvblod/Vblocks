@@ -84,28 +84,23 @@
   let highscoreCloud = 0; // Record cloud global
 
   // Fonction i18n de traduction (remplace par ta fonction si besoin)
-function t(key, params) {
-  // Prend d'abord i18nGet si dispo (donc la map async !)
-  if (window.i18nGet) {
-    let str = window.i18nGet(key);
-    if(params) Object.keys(params).forEach(k => {
-      str = str.replace(`{${k}}`, params[k]);
-    });
-    return str;
+  function t(key, params) {
+    if (window.i18nGet) {
+      let str = window.i18nGet(key);
+      if(params) Object.keys(params).forEach(k => {
+        str = str.replace(`{${k}}`, params[k]);
+      });
+      return str;
+    }
+    if (window.I18N_MAP && window.I18N_MAP[key]) {
+      let str = window.I18N_MAP[key];
+      if(params) Object.keys(params).forEach(k => {
+        str = str.replace(`{${k}}`, params[k]);
+      });
+      return str;
+    }
+    return key;
   }
-  // Sinon fallback sur la map statique (pour sécurité)
-  if (window.I18N_MAP && window.I18N_MAP[key]) {
-    let str = window.I18N_MAP[key];
-    if(params) Object.keys(params).forEach(k => {
-      str = str.replace(`{${k}}`, params[k]);
-    });
-    return str;
-  }
-  // Sinon dernier recours
-  return key;
-}
-
-
 
   function initGame(opts){
     const mode = (opts && opts.mode) || 'classic';
@@ -133,32 +128,41 @@ function t(key, params) {
     canvas.width = COLS * BLOCK_SIZE;
     canvas.height = ROWS * BLOCK_SIZE;
 
-    const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space'];
+    const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space', 'vitraux'];
     let currentTheme = localStorage.getItem('themeVBlocks') || 'neon';
     let currentThemeIndex = THEMES.indexOf(currentTheme);
     const blockImages = {};
+
+    // === MODIF SPÉCIALE SPACE & VITRAUX (6 PNG random par bloc) ===
     function loadBlockImages(themeName){
       const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "candy"];
-      let imagesToLoad = 0, imagesLoaded = 0;
-      ['I','J','L','O','S','T','Z'].forEach(l => {
-        if(themesWithPNG.includes(themeName)){
-          imagesToLoad++;
+      if(themeName === 'space' || themeName === 'vitraux') {
+        blockImages[themeName] = [];
+        let imagesToLoad = 6, imagesLoaded = 0;
+        for (let i=1; i<=6; i++) {
           const img = new Image();
           img.onload = () => {
             imagesLoaded++;
-            if(imagesLoaded === imagesToLoad) {
-              if(typeof drawMiniPiece === "function") {
-                drawMiniPiece(nextCtx, nextPiece);
-              }
-            }
-            drawBoard();
+            if(imagesLoaded === imagesToLoad) drawBoard();
           };
-          img.src = `themes/${themeName}/${l}.png`;
-          blockImages[l] = img;
-        }else{
-          blockImages[l] = null;
+          img.src = `themes/${themeName}/${i}.png`;
+          blockImages[themeName].push(img);
         }
-      });
+        ['I','J','L','O','S','T','Z'].forEach(l => {
+          blockImages[l] = null;
+        });
+      } else {
+        ['I','J','L','O','S','T','Z'].forEach(l => {
+          if(themesWithPNG.includes(themeName)){
+            const img = new Image();
+            img.onload = () => { drawBoard(); };
+            img.src = `themes/${themeName}/${l}.png`;
+            blockImages[l] = img;
+          }else{
+            blockImages[l] = null;
+          }
+        });
+      }
       currentTheme = themeName;
       if(themeName === 'retro'){
         global.currentColors = {I:'#00f0ff',J:'#0044ff',L:'#ff6600',O:'#ffff33',S:'#00ff44',T:'#ff00cc',Z:'#ff0033'};
@@ -349,7 +353,6 @@ function t(key, params) {
             rewind();
           });
         } else {
-          // fallback si pub.js pas chargé
           showFakeAd().then(()=>{
             removePopup();
             rewind();
@@ -419,13 +422,11 @@ function t(key, params) {
     }
     global.togglePause = togglePause;
 
-    // Ecoute le bouton pause
     setTimeout(()=>{
       let btn = document.getElementById('pause-btn');
       if(btn) btn.onclick = (e)=>{ e.preventDefault(); togglePause(); };
     }, 200);
 
-    // ---- TABLE NES ----
     const SPEED_TABLE = [
       800, 720, 630, 550, 470, 380, 300, 220, 130, 100,
        83,  83,  83,  67,  67,  67,  50,  50,  50,  33,
@@ -437,7 +438,6 @@ function t(key, params) {
     if(scoreEl) scoreEl.textContent = '0';
     if(highEl) highEl.textContent = '0';
 
-    // Affiche le record dynamique en temps réel (cloud)
     async function updateHighscoreDisplay(){
       highscoreCloud = await userData.getHighScore?.() ?? 0;
       if(highEl) highEl.textContent = highscoreCloud;
@@ -462,7 +462,7 @@ function t(key, params) {
       nextPiece = newPiece();
       reset();
       saveHistory();
-      window.startMusicForGame(); // ← relance la musique au début de la partie
+      window.startMusicForGame();
       requestAnimationFrame(update);
     }
 
@@ -505,42 +505,39 @@ function t(key, params) {
       clearLines();
     }
 
- function clearLines() {
-  let lines = 0;
-  board = board.filter(row => {
-    if(row.every(cell => cell !== '')){ lines++; return false; }
-    return true;
-  });
-  while(board.length < ROWS) board.unshift(Array(COLS).fill(''));
-  if(lines > 0){
-    if(window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
-    combo++;
-    linesCleared += lines;
-    let pts = computeScore(lines, combo);
-    score += pts;
-    if(scoreEl) scoreEl.textContent = score;
+    function clearLines() {
+      let lines = 0;
+      board = board.filter(row => {
+        if(row.every(cell => cell !== '')){ lines++; return false; }
+        return true;
+      });
+      while(board.length < ROWS) board.unshift(Array(COLS).fill(''));
+      if(lines > 0){
+        if(window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
+        combo++;
+        linesCleared += lines;
+        let pts = computeScore(lines, combo);
+        score += pts;
+        if(scoreEl) scoreEl.textContent = score;
 
-    // Record cloud
-    if (score > highscoreCloud) {
-      highscoreCloud = score;
-      if (highEl) highEl.textContent = highscoreCloud;
-      if (userData.setHighScore) {
-        userData.setHighScore(score).then(() => {
-          if (window.updateHighScoreDisplay) window.updateHighScoreDisplay();
-        });
+        if (score > highscoreCloud) {
+          highscoreCloud = score;
+          if (highEl) highEl.textContent = highscoreCloud;
+          if (userData.setHighScore) {
+            userData.setHighScore(score).then(() => {
+              if (window.updateHighScoreDisplay) window.updateHighScoreDisplay();
+            });
+          }
+        }
+        if (mode === 'classic' || mode === 'duel') {
+          let level = Math.floor(linesCleared / 8);
+          if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
+          dropInterval = SPEED_TABLE[level];
+        }
+      } else {
+        combo = 0;
       }
     }
-
-    // --- Gestion des vitesses ---
-    if (mode === 'classic' || mode === 'duel') {
-      let level = Math.floor(linesCleared / 8);
-      if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
-      dropInterval = SPEED_TABLE[level];
-    }
-  } else {
-    combo = 0;
-  }
-}
 
     function move(offset){
       currentPiece.x += offset;
@@ -587,11 +584,16 @@ function t(key, params) {
       return ghost;
     }
 
+    // === MODIF SPÉCIALE : RANDOM PNG PAR CASE POUR SPACE & VITRAUX ===
     function drawBlockCustom(c, x, y, letter, size=BLOCK_SIZE, ghost=false){
-      const img = blockImages[letter];
+      let img = blockImages[letter];
       const px = x*size, py = y*size;
       if(ghost){
         c.globalAlpha = 0.33;
+      }
+      if((currentTheme === 'space' || currentTheme === 'vitraux') && blockImages[currentTheme]) {
+        const arr = blockImages[currentTheme];
+        img = arr[Math.floor(Math.random()*arr.length)];
       }
       if(img && img.complete && img.naturalWidth > 0){
         c.drawImage(img, px, py, size, size);
@@ -628,22 +630,20 @@ function t(key, params) {
         c.globalAlpha = 1.0;
       }
     }
+    // === FIN MODIF ===
 
     function drawBoard(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
 
-      // --- GHOST PIECE
       const ghost = getGhostPiece();
       if(ghost){
         ghost.shape.forEach((row,dy)=>
           row.forEach((val,dx)=>{ if(val) drawBlockCustom(ctx,ghost.x+dx,ghost.y+dy,ghost.letter,BLOCK_SIZE,true); })
         );
       }
-      // --- Board
       board.forEach((row,y)=>
         row.forEach((letter,x)=>{ if(letter) drawBlockCustom(ctx,x,y,letter); })
       );
-      // --- Current piece
       currentPiece.shape.forEach((row,dy)=>
         row.forEach((val,dx)=>{ if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter); })
       );
@@ -794,7 +794,6 @@ function t(key, params) {
       return data?.highscore || 0;
     }
 
-    // Lancement auto
     startGame();
   }
 
