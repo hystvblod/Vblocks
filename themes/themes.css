@@ -362,31 +362,32 @@ body[data-theme="space"] {
 }
 /* ---- CYBER ---- */
 body[data-theme="cyber"] {
-  --body-bg: linear-gradient(135deg, #1e003c 0%, #271d49 60%, #12002a 100%);
-  --body-color: #ff32f9;
-  --title-color: #ff32f9;
-  --title-shadow: 0 0 16px #ff32f9;
-  --canvas-bg: #12002a;
-  --canvas-border: #ff32f9;
-  --canvas-shadow: #ff32f9;
-  --panel-bg: #12002a;
-  --panel-border: #ff32f9;
-  --panel-shadow: #ff32f9;
-  --panel-text: #ff32f9;
-  --canvas-panel-bg: #1e003c;
-  --canvas-panel-border: #ff32f9;
-  --box-bg: rgba(30,0,80,0.7);
-  --box-border: #ff32f9;
-  --score-color: #ff32f9;
-  --score-shadow: 0 0 8px #ff32f9;
-  --btn-bg: #ff32f9;
-  --btn-color: #12002a;
-  --btn-border: #ff32f9;
-  --btn-hover-bg: #12002a;
-  --btn-hover-color: #ff32f9;
-  --btn-hover-border: #ff32f9;
-  --btn-shadow: 0 0 10px #ff32f9;
-  background-image: url('cyber/grid.png');
+  background: url('cyber/grid.png') center center / cover no-repeat !important;
+  --body-bg: linear-gradient(135deg, #0d1b1e 0%, #16282a 60%, #132323 100%);
+  --body-color: #7fff8c;         /* Vert clair, lisible, pas fluo */
+  --title-color: #7fff8c;
+  --title-shadow: 0 0 14px #3fc86a;
+  --canvas-bg: #132323;
+  --canvas-border: #7fff8c;
+  --canvas-shadow: #124527;
+  --panel-bg: #101e16;
+  --panel-border: #4ed17c;
+  --panel-shadow: #16282a;
+  --panel-text: #7fff8c;
+  --canvas-panel-bg: #172a19;
+  --canvas-panel-border: #4ed17c;
+  --box-bg: rgba(20, 40, 30, 0.65);
+  --box-border: #4ed17c;
+  --score-color: #7fff8c;
+  --score-shadow: 0 0 8px #7fff8c;
+  --btn-bg: #1f3422;
+  --btn-color: #7fff8c;
+  --btn-border: #4ed17c;
+  --btn-hover-bg: #243929;
+  --btn-hover-color: #7fff8c;
+  --btn-hover-border: #b3ffc1;
+  --btn-shadow: 0 0 8px #4ed17c;
+
 }
 
 /* ============ AJOUTE D'AUTRES THEMES ICI SI NÉCESSAIRE ============ */

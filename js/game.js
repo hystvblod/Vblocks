@@ -136,7 +136,7 @@
 
     // === Load all images ===
     function loadBlockImages(themeName){
-      const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "angelique"];
+      const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "angelique", "cyber"];
       if(themeName === 'space' || themeName === 'vitraux') {
         blockImages[themeName] = [];
         let imagesToLoad = 6, imagesLoaded = 0;
