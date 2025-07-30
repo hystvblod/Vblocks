@@ -93,13 +93,11 @@ async function acheterTheme(themeKey, prix) {
   }
 }
 
-// --- Achats EUR (API Vercel, à ADAPTER avec ton vrai endpoint !)
-const API_URL = 'https://vfindez-api.vercel.app/api/purchasevblock'; // <-- adapte ce lien si besoin
-
+// --- Achats EUR (API Vercel) ---
 async function acheterProduitVercel(type) {
   const userId = getUserId();
   try {
-    const response = await fetch(API_URL, {
+    const response = await fetch('https://<TON-ENDPOINT-VERCEL>/api/achat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, achat: type })
@@ -183,17 +181,43 @@ function setupBoutiqueAchats() {
     const key = label.dataset.i18n || label.textContent;
 
     // --- PAIEMENTS EN EUROS VIA API VERCEL ---
-    if (
-      key === 'boutique.cartouche.points3000' ||
-      key === 'boutique.cartouche.points10000' ||
-      key === 'boutique.cartouche.jetons12' ||
-      key === 'boutique.cartouche.jetons50' ||
-      key === 'boutique.cartouche.nopub'
-    ) {
+    if (key === 'boutique.cartouche.points3000') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (await lancerPaiement(key.replace('boutique.cartouche.', ''))) {
-          await acheterProduitVercel(key.replace('boutique.cartouche.', ''));
+        if (await lancerPaiement("points3000")) {
+          await acheterProduitVercel("points3000");
+        }
+      };
+    }
+    if (key === 'boutique.cartouche.points10000') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("points10000")) {
+          await acheterProduitVercel("points10000");
+        }
+      };
+    }
+    if (key === 'boutique.cartouche.jetons12') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("jetons12")) {
+          await acheterProduitVercel("jetons12");
+        }
+      };
+    }
+    if (key === 'boutique.cartouche.jetons50') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("jetons50")) {
+          await acheterProduitVercel("jetons50");
+        }
+      };
+    }
+    if (key === 'boutique.cartouche.nopub') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await lancerPaiement("nopub")) {
+          await acheterProduitVercel("nopub");
         }
       };
     }
