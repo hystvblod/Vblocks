@@ -81,6 +81,7 @@
   });
   // ==== FIN MUSIQUE ====
 
+
   let highscoreCloud = 0; // Record cloud global
 
   // Fonction i18n de traduction (remplace par ta fonction si besoin)
@@ -194,7 +195,9 @@
     ];
     const LETTERS = ['I','J','L','O','S','T','Z'];
 
+    // PATCH BOARD : chaque case peut être soit lettre soit {letter, variant}
     let board = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+
     let currentPiece = null;
     let nextPiece = null;
     let heldPiece = null;
@@ -209,7 +212,7 @@
     let history = [];
     function saveHistory() {
       history.push({
-        board: board.map(row => row.slice()),
+        board: board.map(row => row.map(cell => cell && typeof cell === "object" ? {...cell} : cell)),
         currentPiece: JSON.parse(JSON.stringify(currentPiece)),
         nextPiece: JSON.parse(JSON.stringify(nextPiece)),
         heldPiece: heldPiece ? JSON.parse(JSON.stringify(heldPiece)) : null,
@@ -260,12 +263,9 @@
       if (piecesUsed >= piecesSequence.length) return Math.floor(Math.random()*PIECES.length);
       return piecesSequence[piecesUsed++];
     }
-
-    // FIN JEU DUEL
     async function handleDuelEnd(myScore) {
       let field = (duelPlayerNum === 1) ? "score1" : "score2";
       await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
-      // Attend le score adverse
       let tries = 0, otherScore = null;
       while(tries++ < 40) {
         let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
@@ -312,7 +312,7 @@
 
       if (mode === 'duel') {
         handleDuelEnd(points);
-        return; // empêche tout bouton Rejouer
+        return;
       }
 
       const popup = document.createElement('div');
@@ -429,7 +429,7 @@
 
     const SPEED_TABLE = [
       800, 720, 630, 550, 470, 380, 300, 220, 130, 100,
-       83,  83,  83,  67,  67,  67,  50,  50,  50,  33,
+       83,  83,  83,  67,  67,  67,  50,   50,  50,  33,
        33,  33,  33,  33,  33,  33,  33,  33,  17
     ];
 
@@ -473,12 +473,17 @@
       } else {
         typeId = Math.floor(Math.random()*PIECES.length);
       }
-      return {
+      // PATCH random variant pour space/vitraux
+      let piece = {
         shape: PIECES[typeId],
         letter: LETTERS[typeId],
         x: Math.floor((COLS - PIECES[typeId][0].length)/2),
         y: 0
       };
+      if(currentTheme === 'space' || currentTheme === 'vitraux'){
+        piece.variant = Math.floor(Math.random() * 6); // [0,5]
+      }
+      return piece;
     }
 
     function collision(p = currentPiece){
@@ -498,7 +503,14 @@
           if(val){
             const x = currentPiece.x + dx;
             const y = currentPiece.y + dy;
-            if(y >= 0) board[y][x] = currentPiece.letter;
+            if(y >= 0){
+              // PATCH stocker variant pour space/vitraux
+              if(currentTheme === 'space' || currentTheme === 'vitraux'){
+                board[y][x] = { letter: currentPiece.letter, variant: currentPiece.variant ?? 0 };
+              } else {
+                board[y][x] = currentPiece.letter;
+              }
+            }
           }
         })
       );
@@ -584,16 +596,23 @@
       return ghost;
     }
 
-    // === MODIF SPÉCIALE : RANDOM PNG PAR CASE POUR SPACE & VITRAUX ===
-    function drawBlockCustom(c, x, y, letter, size=BLOCK_SIZE, ghost=false){
+    // === MODIF SPÉCIALE : RANDOM PNG FIXÉ PAR PIECE POUR SPACE & VITRAUX ===
+    function drawBlockCustom(c, x, y, letter, size=BLOCK_SIZE, ghost=false, variant=0){
       let img = blockImages[letter];
       const px = x*size, py = y*size;
       if(ghost){
         c.globalAlpha = 0.33;
       }
       if((currentTheme === 'space' || currentTheme === 'vitraux') && blockImages[currentTheme]) {
+        // PATCH : utiliser variant si fourni, sinon 0
+        let v = variant ?? 0;
+        if (typeof letter === "object" && letter.letter) {
+          // Board cell
+          v = letter.variant ?? 0;
+          letter = letter.letter;
+        }
         const arr = blockImages[currentTheme];
-        img = arr[Math.floor(Math.random()*arr.length)];
+        img = arr[v % arr.length];
       }
       if(img && img.complete && img.naturalWidth > 0){
         c.drawImage(img, px, py, size, size);
@@ -630,7 +649,7 @@
         c.globalAlpha = 1.0;
       }
     }
-    // === FIN MODIF ===
+    // === FIN PATCH ===
 
     function drawBoard(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -638,14 +657,27 @@
       const ghost = getGhostPiece();
       if(ghost){
         ghost.shape.forEach((row,dy)=>
-          row.forEach((val,dx)=>{ if(val) drawBlockCustom(ctx,ghost.x+dx,ghost.y+dy,ghost.letter,BLOCK_SIZE,true); })
+          row.forEach((val,dx)=>{
+            if(val) drawBlockCustom(ctx,ghost.x+dx,ghost.y+dy,ghost.letter,BLOCK_SIZE,true,ghost.variant);
+          })
         );
       }
       board.forEach((row,y)=>
-        row.forEach((letter,x)=>{ if(letter) drawBlockCustom(ctx,x,y,letter); })
+        row.forEach((cell,x)=>{
+          if(cell) {
+            if(currentTheme === 'space' || currentTheme === 'vitraux'){
+              drawBlockCustom(ctx,x,y,cell.letter||cell, BLOCK_SIZE, false, cell.variant||0);
+            } else {
+              drawBlockCustom(ctx,x,y,cell);
+            }
+          }
+        })
       );
+      // Courant
       currentPiece.shape.forEach((row,dy)=>
-        row.forEach((val,dx)=>{ if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter); })
+        row.forEach((val,dx)=>{
+          if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter,BLOCK_SIZE,false,currentPiece.variant);
+        })
       );
     }
     function drawMiniPiece(c, piece) {
@@ -682,7 +714,9 @@
               x,
               y,
               piece.letter,
-              cellSize
+              cellSize,
+              false,
+              piece.variant || 0
             );
             c.restore();
           }
