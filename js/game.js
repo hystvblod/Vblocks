@@ -136,7 +136,7 @@
 
     // === Load all images ===
     function loadBlockImages(themeName){
-      const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "candy"];
+      const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "angelique"];
       if(themeName === 'space' || themeName === 'vitraux') {
         blockImages[themeName] = [];
         let imagesToLoad = 6, imagesLoaded = 0;
@@ -483,7 +483,6 @@
       // PATCH : tableau variants par carré (pour SPACE & VITRAUX)
       if(currentTheme === 'space' || currentTheme === 'vitraux'){
        obj.variants = shape.map(row => row.map(val => val ? (1 + Math.floor(Math.random()*6)) : null));
-
       }
       return obj;
     }

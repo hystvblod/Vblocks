@@ -14,7 +14,7 @@ const sb = window.sb;
 const ALL_THEMES = [
   "neon",   // par défaut, toujours débloqué
   "nuit", "nature", "bubble", "retro",
-  "vitraux", "candy", "luxury", "space", "cyber"
+  "vitraux", "angelique", "luxury", "space", "cyber"
 ];
 window.getAllThemes = function() {
   return ALL_THEMES;

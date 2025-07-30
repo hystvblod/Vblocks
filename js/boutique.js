@@ -7,7 +7,7 @@ function t(key) {
 // --- Liste des thèmes/cadres possibles
 const THEMES = [
   { key: "bubble" }, { key: "nature" }, { key: "nuit" }, { key: "luxury" },
-  { key: "space" }, { key: "candy" }, { key: "cyber" }, { key: "vitraux" },
+  { key: "space" }, { key: "angelique" }, { key: "cyber" }, { key: "vitraux" },
   { key: "pixel" }, { key: "halloween" }
 ];
 

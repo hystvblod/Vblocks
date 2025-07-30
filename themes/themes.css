@@ -277,7 +277,7 @@ body[data-theme="vitraux"] {
   background-image: url('vitraux/vitrail.png');
 }
 /* ---- CANDY ---- */
-body[data-theme="candy"] {
+body[data-theme="angelique"] {
   --body-bg: linear-gradient(135deg, #fff0fa 0%, #ffe6fa 50%, #ffe6ff 100%);
   --body-color: #c62b80;
   --title-color: #fd62a1;
