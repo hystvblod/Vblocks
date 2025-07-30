@@ -31,7 +31,10 @@ const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.jetons50", icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple', prix: "2,99€", amount: 50 },
   { key: "boutique.cartouche.nopub", icon: '<img src="assets/images/ads.png" alt="No Ads">', color: 'color-yellow', prix: "3,49€" },
   { key: "boutique.cartouche.pub1jeton", icon: '<img src="assets/images/jeton.webp" alt="Pub">', color: 'color-green' },
-  { key: "boutique.cartouche.pub300points", icon: '<img src="assets/images/vcoin.webp" alt="Pub">', color: 'color-blue' }
+  { key: "boutique.cartouche.pub300points", icon: '<img src="assets/images/vcoin.webp" alt="Pub">', color: 'color-blue' },
+  { key: "boutique.cartouche.points3000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "0,99€", amount: 3000 },
+{ key: "boutique.cartouche.points10000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-purple', prix: "1,99€", amount: 10000 }
+
 ];
 const THEME_PRICE = 3000;
 
