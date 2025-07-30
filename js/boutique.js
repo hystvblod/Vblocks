@@ -27,9 +27,9 @@ const SPECIAL_CARTOUCHES = [
     prix: "1,99€",
     amount: 10000
   },
-  { key: "boutique.cartouche.jetons12", icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue' },
-  { key: "boutique.cartouche.jetons50", icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple' },
-  { key: "boutique.cartouche.nopub", icon: '<img src="assets/images/ads.png" alt="No Ads">', color: 'color-yellow' },
+  { key: "boutique.cartouche.jetons12", icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue', prix: "0,99€", amount: 12 },
+  { key: "boutique.cartouche.jetons50", icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple', prix: "2,99€", amount: 50 },
+  { key: "boutique.cartouche.nopub", icon: '<img src="assets/images/ads.png" alt="No Ads">', color: 'color-yellow', prix: "3,49€" },
   { key: "boutique.cartouche.pub1jeton", icon: '<img src="assets/images/jeton.webp" alt="Pub">', color: 'color-green' },
   { key: "boutique.cartouche.pub300points", icon: '<img src="assets/images/vcoin.webp" alt="Pub">', color: 'color-blue' }
 ];
@@ -40,7 +40,7 @@ function getUserId() {
   return localStorage.getItem('user_id') || "";
 }
 
-// --- VCoins & Jetons 100% Supabase ---
+// --- VCoins & Jetons 100% Supabase (gains gratuits only)
 async function getVCoinsSupabase() {
   const { data, error } = await sb.from('users').select('vcoins').eq('id', getUserId()).single();
   if (error) return 0;
@@ -90,6 +90,31 @@ async function acheterTheme(themeKey, prix) {
   } catch (e) {
     alert("Erreur: " + (e.message || e));
     return false;
+  }
+}
+
+// --- Achats EUR (API Vercel, à ADAPTER avec ton vrai endpoint !)
+const API_URL = 'https://vfindez-api.vercel.app/api/purchasevblock'; // <-- adapte ce lien si besoin
+
+async function acheterProduitVercel(type) {
+  const userId = getUserId();
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, achat: type })
+    });
+    const data = await response.json();
+    if (data.success) {
+      alert("Achat réussi !");
+      await renderThemes();
+      setupPubCartouches();
+      setupBoutiqueAchats();
+    } else {
+      alert("Erreur achat : " + (data.error || "inconnu"));
+    }
+  } catch (e) {
+    alert("Erreur réseau: " + (e.message || e));
   }
 }
 
@@ -157,41 +182,23 @@ function setupBoutiqueAchats() {
     if (!label) return;
     const key = label.dataset.i18n || label.textContent;
 
-    // POINTS 3000 / 10 000 (paiement)
-    if (key === 'boutique.cartouche.points3000') {
+    // --- PAIEMENTS EN EUROS VIA API VERCEL ---
+    if (
+      key === 'boutique.cartouche.points3000' ||
+      key === 'boutique.cartouche.points10000' ||
+      key === 'boutique.cartouche.jetons12' ||
+      key === 'boutique.cartouche.jetons50' ||
+      key === 'boutique.cartouche.nopub'
+    ) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        // Remplace par ta logique réelle de paiement
-        if (await lancerPaiement("points3000")) {
-          await addVCoinsSupabase(3000);
-          alert("+3000 points ajoutés !");
-          await renderThemes();
+        if (await lancerPaiement(key.replace('boutique.cartouche.', ''))) {
+          await acheterProduitVercel(key.replace('boutique.cartouche.', ''));
         }
       };
     }
-    if (key === 'boutique.cartouche.points10000') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement("points10000")) {
-          await addVCoinsSupabase(10000);
-          alert("+10 000 points ajoutés !");
-          await renderThemes();
-        }
-      };
-    }
-    // AUTRES ACHATS / PUBS / JETONS
-    if (key === 'boutique.cartouche.jetons12') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => { /* paiement 12 jetons */ };
-    }
-    if (key === 'boutique.cartouche.jetons50') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => { /* paiement 50 jetons */ };
-    }
-    if (key === 'boutique.cartouche.nopub') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => { /* paiement nopub */ };
-    }
+
+    // --- PUB REWARD/GAINS GRATUITS (Supabase direct)
     if (key === 'boutique.cartouche.pub1jeton') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
@@ -209,4 +216,15 @@ function setupBoutiqueAchats() {
       };
     }
   });
+}
+
+// --- Confirmation d'achat (à personnaliser)
+async function lancerPaiement(type) {
+  let texte = "";
+  if (type === "jetons12") texte = "12 jetons pour 0,99 € ?";
+  else if (type === "jetons50") texte = "50 jetons pour 2,99 € ?";
+  else if (type === "nopub") texte = "Supprimer les pubs pour 3,49 € ?";
+  else if (type === "points3000") texte = "3000 points pour 0,99 € ?";
+  else if (type === "points10000") texte = "10 000 points pour 1,99 € ?";
+  return confirm("Valider l'achat : " + texte);
 }
