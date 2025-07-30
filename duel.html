@@ -144,77 +144,73 @@
   <script src="js/userData.js"></script>
   <script src="js/game.js"></script>
   <script>
-    // Utilise window.sb partout, ne redeclare jamais sb !
-    // Utilise aussi window.getUserId (exposé par userData.js)
-
+    // --- Utils ---
     function genDuelCode(len = 6) {
       const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
       let code = '';
       for (let i = 0; i < len; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
       return code;
     }
-
     function i18nT(key) { return (window.i18n && window.i18n[key]) || key; }
 
+    // --- Popup (SÛR/RESET handlers) ---
     function showDuelPopup(state, data = {}) {
       console.log("[DUEL] showDuelPopup", state, data);
       const popup = document.getElementById('duelPopup');
       popup.style.display = 'flex';
       let html = '';
       if (state === 'choice') {
-        html = `
-          <div>
-            <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
-            <button class="duel-btn" id="btnNewDuel" data-i18n="duel.popup.choice.new">${i18nT("duel.popup.choice.new")}</button>
-            <br>
-            <button class="duel-btn" id="btnJoinDuel" data-i18n="duel.popup.choice.join">${i18nT("duel.popup.choice.join")}</button>
-          </div>
-        `;
+        html = `<div>
+          <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
+          <button class="duel-btn" id="btnNewDuel">${i18nT("duel.popup.choice.new")}</button>
+          <br>
+          <button class="duel-btn" id="btnJoinDuel">${i18nT("duel.popup.choice.join")}</button>
+        </div>`;
       }
       if (state === 'wait') {
-        html = `
-          <div>
-            <h2 data-i18n="duel.popup.wait.title">${i18nT("duel.popup.wait.title")}</h2>
-            <div data-i18n="duel.popup.wait.code">${i18nT("duel.popup.wait.code")}</div>
-            <div class="duel-code">${data.code}</div>
-            <div class="duel-link">
-              <input style="width:99%;font-size:1em;" value="${location.origin}${location.pathname}?duel=${data.code}&player=2" readonly onclick="this.select()">
-            </div>
-            <div style="margin-top:1em;" data-i18n="duel.popup.wait.text">${i18nT("duel.popup.wait.text")}</div>
+        html = `<div>
+          <h2 data-i18n="duel.popup.wait.title">${i18nT("duel.popup.wait.title")}</h2>
+          <div data-i18n="duel.popup.wait.code">${i18nT("duel.popup.wait.code")}</div>
+          <div class="duel-code">${data.code}</div>
+          <div class="duel-link">
+            <input style="width:99%;font-size:1em;" value="${location.origin}${location.pathname}?duel=${data.code}&player=2" readonly onclick="this.select()">
           </div>
-        `;
+          <div style="margin-top:1em;" data-i18n="duel.popup.wait.text">${i18nT("duel.popup.wait.text")}</div>
+        </div>`;
       }
       if (state === 'confirm') {
-        html = `
-          <div>
-            <h2 data-i18n="duel.popup.confirm.title">${i18nT("duel.popup.confirm.title")}</h2>
-            <div data-i18n="duel.popup.confirm.text">${i18nT("duel.popup.confirm.text")}</div>
-            <button class="duel-btn" id="btnAcceptDuel" data-i18n="duel.popup.confirm.accept">${i18nT("duel.popup.confirm.accept")}</button>
-            <button class="duel-btn" id="btnRefuseDuel" data-i18n="duel.popup.confirm.refuse">${i18nT("duel.popup.confirm.refuse")}</button>
-          </div>
-        `;
+        html = `<div>
+          <h2 data-i18n="duel.popup.confirm.title">${i18nT("duel.popup.confirm.title")}</h2>
+          <div data-i18n="duel.popup.confirm.text">${i18nT("duel.popup.confirm.text")}</div>
+          <button class="duel-btn" id="btnAcceptDuel">${i18nT("duel.popup.confirm.accept")}</button>
+          <button class="duel-btn" id="btnRefuseDuel">${i18nT("duel.popup.confirm.refuse")}</button>
+        </div>`;
       }
       if (state === 'countdown') {
-        html = `<div><h2 data-i18n="duel.popup.countdown.title">${i18nT("duel.popup.countdown.title")}</h2><div id="countdown" style="font-size:2.5em">3</div></div>`;
+        html = `<div><h2 data-i18n="duel.popup.countdown.title">${i18nT("duel.popup.countdown.title")}</h2>
+          <div id="countdown" style="font-size:2.5em">3</div></div>`;
       }
       if (state === 'join') {
-        html = `
-          <div>
-            <h2 data-i18n="duel.popup.join.title">${i18nT("duel.popup.join.title")}</h2>
-            <input id="inputCode" maxlength="8" style="font-size:1.2em;letter-spacing:2px;text-align:center">
-            <button class="duel-btn" id="btnJoinOk" data-i18n="duel.popup.join.ok">${i18nT("duel.popup.join.ok")}</button>
-            <button class="duel-btn" id="btnJoinCancel" data-i18n="duel.popup.join.cancel">${i18nT("duel.popup.join.cancel")}</button>
-          </div>
-        `;
+        html = `<div>
+          <h2 data-i18n="duel.popup.join.title">${i18nT("duel.popup.join.title")}</h2>
+          <input id="inputCode" maxlength="8" style="font-size:1.2em;letter-spacing:2px;text-align:center">
+          <button class="duel-btn" id="btnJoinOk">${i18nT("duel.popup.join.ok")}</button>
+          <button class="duel-btn" id="btnJoinCancel">${i18nT("duel.popup.join.cancel")}</button>
+        </div>`;
       }
       popup.innerHTML = html;
       if (window.i18nTranslateAll) window.i18nTranslateAll();
 
+      // Handlers RESET à chaque popup
+      if (state === 'choice') {
+        document.getElementById('btnNewDuel').onclick = createNewDuel;
+        document.getElementById('btnJoinDuel').onclick = () => showDuelPopup('join');
+      }
       if (state === 'join') {
         const input = document.getElementById('inputCode');
         if (input && window.i18n) input.placeholder = window.i18n["duel.popup.join.placeholder"] || "Code duel...";
         document.getElementById('btnJoinOk').onclick = function() {
-          let code = document.getElementById('inputCode').value.trim().toUpperCase();
+          let code = input.value.trim().toUpperCase();
           if (!code) return;
           window.location.href = `${location.pathname}?duel=${code}&player=2`;
         };
@@ -222,9 +218,13 @@
           location.reload();
         };
       }
+      if (state === 'confirm') {
+        document.getElementById('btnAcceptDuel').onclick = onAcceptDuel;
+        document.getElementById('btnRefuseDuel').onclick = () => window.location = "index.html";
+      }
     }
 
-    // === FLOW LOGIQUE DUEL ===
+    // --- Flow DUEL ---
     let duelId = null, duelCode = null, playerNum = 1;
 
     async function startDuelFlow() {
@@ -235,10 +235,6 @@
 
       if (!duelCode) {
         showDuelPopup('choice');
-        document.getElementById('btnNewDuel').onclick = createNewDuel;
-        document.getElementById('btnJoinDuel').onclick = function() {
-          showDuelPopup('join');
-        };
       } else {
         let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
         duelId = data?.id;
@@ -254,32 +250,6 @@
           console.log("[DUEL] J2 rejoint la room, update player2/status pending");
           await window.sb.from('duels').update({ player2: window.getUserId(), status: "pending" }).eq('id', duelId);
           showDuelPopup('confirm');
-          document.getElementById('btnAcceptDuel').onclick = async () => {
-            console.log("[DUEL] J2 clique Accept Duel");
-            await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
-            let { data } = await window.sb.from('duels').select('*').eq('id', duelId).single();
-            if (data && !data.pieces_seq) {
-              console.log("[DUEL] J2 va générer la séquence et passer en started");
-              const seq = Array.from({ length: 60 }, () => Math.floor(Math.random() * 7)).join(',');
-              await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', duelId);
-            } else {
-              console.log("[DUEL] J2 passe en started (sequence déjà là)");
-              await window.sb.from('duels').update({ status: "started" }).eq('id', duelId);
-            }
-            showDuelPopup('countdown');
-            let n = 3;
-            const ctd = setInterval(() => {
-              document.getElementById('countdown').textContent = n;
-              n--;
-              if (n < 0) {
-                clearInterval(ctd);
-                document.getElementById('duelPopup').style.display = 'none';
-                document.getElementById('gameZone').style.display = '';
-                VBlocksGame.initGame({ mode: 'duel', duelId: duelId, duelPlayerNum: playerNum });
-              }
-            }, 1000);
-          };
-          document.getElementById('btnRefuseDuel').onclick = () => { window.location = "index.html"; };
         }
         pollDuelStatus();
       }
@@ -305,37 +275,55 @@
       pollDuelStatus();
     }
 
+    async function onAcceptDuel() {
+      // J2 accepte le duel !
+      console.log("[DUEL] J2 clique Accept Duel");
+      await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
+      let { data } = await window.sb.from('duels').select('*').eq('id', duelId).single();
+      if (data && !data.pieces_seq) {
+        console.log("[DUEL] J2 va générer la séquence et passer en started");
+        const seq = Array.from({ length: 60 }, () => Math.floor(Math.random() * 7)).join(',');
+        await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', duelId);
+      } else {
+        console.log("[DUEL] J2 passe en started (sequence déjà là)");
+        await window.sb.from('duels').update({ status: "started" }).eq('id', duelId);
+      }
+      showDuelPopup('countdown');
+      startCountdown();
+    }
+
     async function pollDuelStatus() {
       let tries = 0;
       while (tries++ < 80) {
         let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
         console.log(`[DUEL] poll #${tries}, status=`, data?.status, data);
         if (!data) break;
-        if (data.status === "waiting") {
-          showDuelPopup('wait', { code: duelCode });
-        }
-        if (playerNum === 2 && data.status === "pending") {
-          showDuelPopup('confirm');
-        }
-        // Joueur 1 ou 2 détecte "started" => démarre la partie avec la séquence
+        if (data.status === "waiting") showDuelPopup('wait', { code: duelCode });
+        if (playerNum === 2 && data.status === "pending") showDuelPopup('confirm');
         if ((playerNum === 1 || playerNum === 2) && data.status === "started" && data.pieces_seq) {
           console.log("[DUEL] La partie commence, status=started, pieces_seq OK !");
           showDuelPopup('countdown');
-          let n = 3;
-          const ctd = setInterval(() => {
-            document.getElementById('countdown').textContent = n;
-            n--;
-            if (n < 0) {
-              clearInterval(ctd);
-              document.getElementById('duelPopup').style.display = 'none';
-              document.getElementById('gameZone').style.display = '';
-              VBlocksGame.initGame({ mode: 'duel', duelId: data.id, duelPlayerNum: playerNum });
-            }
-          }, 1000);
+          startCountdown();
           break;
         }
         await new Promise(r => setTimeout(r, 1000));
       }
+    }
+
+    function startCountdown() {
+      let n = 3;
+      const ctd = setInterval(() => {
+        const el = document.getElementById('countdown');
+        if (el) el.textContent = n;
+        n--;
+        if (n < 0) {
+          clearInterval(ctd);
+          document.getElementById('duelPopup').style.display = 'none';
+          document.getElementById('gameZone').style.display = '';
+          if (typeof VBlocksGame !== "undefined" && VBlocksGame.initGame)
+            VBlocksGame.initGame({ mode: 'duel', duelId: duelId, duelPlayerNum: playerNum });
+        }
+      }, 1000);
     }
 
     window.addEventListener("DOMContentLoaded", startDuelFlow);
