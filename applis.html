@@ -190,16 +190,27 @@
     </div>
   </div>
   <script src="i18n.js"></script>
-    // Moteur i18n simple pour test
-    // Supposons window.i18n déjà chargé par un <script src="i18n/fr.json"></script>
-    document.addEventListener("DOMContentLoaded", function() {
+  <script>
+    // Utilitaire ready (compatible i18n async ou synchrone)
+    function ready(fn) {
+      if (window.i18nReady && typeof window.i18nReady.then === "function") {
+        window.i18nReady.then(fn);
+      } else {
+        setTimeout(fn, 0);
+      }
+    }
+
+    // Injection des textes i18n partout
+    function applyI18nTexts() {
       document.querySelectorAll("[data-i18n]").forEach(el => {
         const key = el.getAttribute("data-i18n");
         if (window.i18n && window.i18n[key]) el.textContent = window.i18n[key];
       });
-      // Et titre dynamique (si jamais)
       if (window.i18n && window.i18n["apps.title"]) document.title = window.i18n["apps.title"];
-    });
+    }
+
+    // Lance le rendu des textes dès que la trad est prête
+    ready(applyI18nTexts);
   </script>
 </body>
 </html>

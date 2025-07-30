@@ -65,28 +65,31 @@ async function addVCoinsSupabase(amount) {
   return newBalance;
 }
 
-// --- Achat sécurisé d’un thème ---
+/// --- Achat sécurisé d’un thème ---
 async function acheterTheme(themeKey, prix) {
   const userId = getUserId();
-  let { data: user, error } = await sb.from('users').select('vcoins,themes_possedes').eq('id', userId).single();
-  let coins = user?.vcoins ?? 0;
-  let themes = Array.isArray(user?.themes_possedes) ? user.themes_possedes : [];
-  if (themes.includes(themeKey)) {
-    alert(t("theme.deja_possede"));
+  // Appel direct à la fonction d'achat sécurisée côté Supabase
+  const { error } = await sb.rpc('purchase_theme', {
+    user_id: userId,
+    theme_key: themeKey,
+    price: prix
+  });
+
+  if (error) {
+    alert(error.message || "Erreur lors de l'achat");
     return false;
   }
-  if (coins < prix) {
-    alert(t("boutique.alert.pasassez"));
-    return false;
-  }
-  // Déduit les coins (RPC sécurisé)
-  const newBalance = await addVCoinsSupabase(-prix);
-  // Ajoute le thème côté cloud
-  themes.push(themeKey);
-  await sb.from('users').update({ themes_possedes: themes }).eq('id', userId);
-  // Synchro localStorage pour l'UI
-  setUnlockedThemes(themes);
-  localStorage.setItem('vblocks_vcoins', newBalance);
+
+  // Rafraîchit le solde et les thèmes débloqués depuis Supabase
+  let { data: user } = await sb
+    .from('users')
+    .select('themes_possedes,vcoins')
+    .eq('id', userId)
+    .single();
+
+  setUnlockedThemes(user?.themes_possedes || []);
+  localStorage.setItem('vblocks_vcoins', user?.vcoins ?? "--");
+
   alert(t("theme.debloque"));
   renderThemes();
   return true;
@@ -98,7 +101,7 @@ async function activerTheme(themeKey) {
   const userId = getUserId();
   await sb.from('users').update({ theme_actif: themeKey }).eq('id', userId);
   renderThemes();
-  alert(t("theme.activated").replace("{THEME}", t("theme."+themeKey)));
+  alert(t("theme.activated").replace("{THEME}", t("theme." + themeKey)));
 }
 
 // --- Affichage des cartouches d’achats ---
