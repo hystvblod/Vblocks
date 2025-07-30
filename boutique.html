@@ -9,38 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style/main.css">
   <style>
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: relative;
-      height: 65px;
-      z-index: 30;
-      padding: 0 12px;
-      box-sizing: border-box;
-      background: none;
-    }
-    .top-left, .top-right {
-      display: flex;
-      align-items: center;
-      min-width: 55px;
-    }
-    .top-center {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      pointer-events: none;
-    }
-    .shop-title {
-      font-size: 1.5em;
-      font-weight: bold;
-      color: #fff;
-      letter-spacing: 0.01em;
-      text-shadow: 0 2px 12px #0004;
-      pointer-events: none;
-    }
-    /* Tu peux remettre ton CSS custom ici si besoin */
+    /* Ajoute ton CSS ici si besoin */
   </style>
 </head>
 <body>
@@ -52,9 +21,6 @@
         </svg>
       </a>
     </div>
-    <div class="top-center">
-      <div class="shop-title" data-i18n="boutique.titre">Boutique</div>
-    </div>
     <div class="top-right">
       <a href="profil.html" class="btn-icon" >
         <img src="assets/icons/user.svg" alt="Profil" />
@@ -65,6 +31,7 @@
     </div>
   </div>
   <div class="container-boutique">
+    <div class="shop-title" data-i18n="boutique.titre"></div>
     <div id="soldeVCoins" class="vcoins-bar">
       <img src="assets/images/vcoin.webp" alt="VCoins" class="vcoin-ico">
       <span class="vcoins-solde">--</span>
@@ -94,22 +61,8 @@ const THEMES = [
   { key: "cyber",  name: "Cyber"  }
 ];
 
-// Cartouches d’achats spéciaux (AJOUT points 3000 et 10000 tout en haut)
+// Cartouches d’achats spéciaux
 const SPECIAL_CARTOUCHES = [
-  {
-    key: 'boutique.cartouche.points10000',
-    icon: '<img src="assets/images/vcoin.webp" alt="Points">',
-    color: 'color-purple',
-    prix: "1,99€",
-    amount: 10000
-  },
-  {
-    key: 'boutique.cartouche.points3000',
-    icon: '<img src="assets/images/vcoin.webp" alt="Points">',
-    color: 'color-yellow',
-    prix: "0,99€",
-    amount: 3000
-  },
   {
     key: 'boutique.cartouche.jetons12',
     icon: '<img src="assets/images/jeton.webp" alt="jeton">',
@@ -163,7 +116,6 @@ async function renderThemes() {
     <div class="special-cartouche ${c.color}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      ${c.prix ? `<span class="prix-label">${c.prix}</span>` : ""}
     </div>
   `).join('');
   $achatsList.innerHTML = achatsHtml;
@@ -268,22 +220,6 @@ function setupBoutiqueAchats() {
     if (!label) return;
     const key = label.dataset.i18n;
 
-    if (key === 'boutique.cartouche.points3000') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement("points3000")) {
-          accordeAchat("points3000");
-        }
-      };
-    }
-    if (key === 'boutique.cartouche.points10000') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement("points10000")) {
-          accordeAchat("points10000");
-        }
-      };
-    }
     if (key === 'boutique.cartouche.jetons12') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
@@ -313,10 +249,12 @@ function setupBoutiqueAchats() {
 }
 
 // --- INITIALISATION ---
+// Rend tout compatible (avec ou sans i18nReady Promise)
 function ready(fn) {
   if (window.i18nReady && typeof window.i18nReady.then === "function") {
     window.i18nReady.then(fn);
   } else {
+    // Soit la i18n n’est pas async, soit pas de promesse : exécute direct
     setTimeout(fn, 0);
   }
 }
@@ -324,7 +262,9 @@ ready(async () => {
   await renderThemes();
   setupPubCartouches();
   setupBoutiqueAchats();
+  // Passe i18n sur tout le DOM après le render dynamique
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+  // Met à jour aussi le titre de la page (onglet navigateur)
   if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
 });
 </script>
