@@ -157,6 +157,7 @@
     function i18nT(key) { return (window.i18n && window.i18n[key]) || key; }
 
     function showDuelPopup(state, data = {}) {
+      console.log("[DUEL] showDuelPopup", state, data);
       const popup = document.getElementById('duelPopup');
       popup.style.display = 'flex';
       let html = '';
@@ -230,6 +231,7 @@
       const urlParams = new URLSearchParams(window.location.search);
       duelCode = urlParams.get('duel');
       playerNum = parseInt(urlParams.get('player')) || 1;
+      console.log("[DUEL] startDuelFlow, code=", duelCode, "playerNum=", playerNum);
 
       if (!duelCode) {
         showDuelPopup('choice');
@@ -240,6 +242,7 @@
       } else {
         let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
         duelId = data?.id;
+        console.log("[DUEL] Room fetch:", data);
         if (!data) {
           showDuelPopup('choice');
           alert("Ce duel n'existe pas ou a expiré.");
@@ -248,16 +251,19 @@
         if (playerNum === 1) {
           showDuelPopup('wait', { code: duelCode });
         } else if (playerNum === 2) {
+          console.log("[DUEL] J2 rejoint la room, update player2/status pending");
           await window.sb.from('duels').update({ player2: window.getUserId(), status: "pending" }).eq('id', duelId);
           showDuelPopup('confirm');
           document.getElementById('btnAcceptDuel').onclick = async () => {
-            // LE J2 GÈRE LE PASSAGE EN "started" + séquence, pour fiabiliser le flux !
+            console.log("[DUEL] J2 clique Accept Duel");
             await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
             let { data } = await window.sb.from('duels').select('*').eq('id', duelId).single();
             if (data && !data.pieces_seq) {
+              console.log("[DUEL] J2 va générer la séquence et passer en started");
               const seq = Array.from({ length: 60 }, () => Math.floor(Math.random() * 7)).join(',');
               await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', duelId);
             } else {
+              console.log("[DUEL] J2 passe en started (sequence déjà là)");
               await window.sb.from('duels').update({ status: "started" }).eq('id', duelId);
             }
             showDuelPopup('countdown');
@@ -282,6 +288,7 @@
     async function createNewDuel() {
       duelCode = genDuelCode();
       playerNum = 1;
+      console.log("[DUEL] Création nouvelle room avec code:", duelCode);
       let { data, error } = await window.sb.from('duels').insert([{
         code: duelCode,
         player1: window.getUserId(),
@@ -289,6 +296,7 @@
       }]).select().single();
       duelId = data?.id;
       if (error || !duelId) {
+        console.log("[DUEL] ERREUR création:", error, data);
         alert("Erreur lors de la création du duel.");
         showDuelPopup('choice');
         return;
@@ -301,6 +309,7 @@
       let tries = 0;
       while (tries++ < 80) {
         let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
+        console.log(`[DUEL] poll #${tries}, status=`, data?.status, data);
         if (!data) break;
         if (data.status === "waiting") {
           showDuelPopup('wait', { code: duelCode });
@@ -310,6 +319,7 @@
         }
         // Joueur 1 ou 2 détecte "started" => démarre la partie avec la séquence
         if ((playerNum === 1 || playerNum === 2) && data.status === "started" && data.pieces_seq) {
+          console.log("[DUEL] La partie commence, status=started, pieces_seq OK !");
           showDuelPopup('countdown');
           let n = 3;
           const ctd = setInterval(() => {
