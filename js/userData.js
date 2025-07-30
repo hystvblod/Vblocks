@@ -2,11 +2,9 @@
 // INIT SUPABASE (création unique, mode Capacitor)
 // =============================
 
-// Variables d'accès
 const SUPABASE_URL = 'https://youhealyblgbwjhsskca.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
 
-// Ne crée le client qu'une seule fois, même si plusieurs inclusions
 if (!window.sb) {
   window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
@@ -18,12 +16,11 @@ const ALL_THEMES = [
   "nuit", "nature", "bubble", "retro",
   "vitraux", "candy", "luxury", "space", "cyber"
 ];
-
 window.getAllThemes = function() {
   return ALL_THEMES;
 };
 
-// Thème courant (toujours lu/écrit en local, c’est visuel)
+// Thème courant (peut rester local, purement visuel)
 function getCurrentTheme() {
   return localStorage.getItem("themeVBlocks") || "neon";
 }
@@ -128,7 +125,7 @@ function setupPseudoPopup() {
   };
 }
 
-// 8️⃣ Highscore local + cloud (inchangé, c’est juste du score, à adapter si besoin)
+// 8️⃣ Highscore local + cloud (inchangé, c’est juste du score)
 function getLocalHighScore() {
   return parseInt(localStorage.getItem('highscore') || '0', 10);
 }
@@ -156,9 +153,9 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 window.updatePseudo = updatePseudo;
 
-// ===== VCOINS & JETONS : SUPABASE SEULEMENT ! =====
+// ===== VCOINS, JETONS, THEMES : SUPABASE SEULEMENT ! =====
 
-// ➡️ Ajoute/retire des VCoins (RPC Supabase, pas localStorage)
+// ➡️ Ajoute/retire des VCoins (RPC Supabase)
 async function addVCoinsSupabase(amount) {
   const userId = getUserId();
   const { data, error } = await sb.rpc('add_vcoins', {
@@ -177,7 +174,7 @@ async function getVCoinsSupabase() {
   return data.vcoins;
 }
 
-// ➡️ Ajoute/retire des Jetons (RPC Supabase, pas localStorage)
+// ➡️ Ajoute/retire des Jetons (RPC Supabase)
 async function addJetonsSupabase(amount) {
   const userId = getUserId();
   const { data, error } = await sb.rpc('add_jetons', {
@@ -204,10 +201,22 @@ async function getJetonsSupabase() {
   return data.jetons;
 }
 
+// --- THEMES VBLOCKS ---
+// 100% CLOUD pour débloqués !
+async function getUnlockedThemesCloud() {
+  const userId = getUserId();
+  const { data, error } = await sb.from('users').select('themes_possedes').eq('id', userId).single();
+  if (error) return ["neon"]; // fallback minimal
+  return Array.isArray(data?.themes_possedes) ? data.themes_possedes : ["neon"];
+}
+async function setUnlockedThemesCloud(themes) {
+  const userId = getUserId();
+  await sb.from('users').update({ themes_possedes: themes }).eq('id', userId);
+}
+
 // Ajoute un score au cloud (dernier score joué)
 async function setLastScoreSupabase(score) {
   const userId = getUserId();
-  // Écrase juste le score actuel (ou ajoute la colonne si pas présente)
   await sb.from('users').update({ score }).eq('id', userId);
 }
 
@@ -225,14 +234,7 @@ async function setHighScoreSupabase(score) {
   await sb.from('users').update({ highscore: score }).eq('id', userId);
 }
 
-function getUnlockedThemes() {
-  return JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '["neon","nuit","nature"]');
-}
-function setUnlockedThemes(themes) {
-  localStorage.setItem('unlockedVBlocksThemes', JSON.stringify(themes));
-}
-
-// Pour affichage rapide cloud
+// --- USERDATA pour tout brancher ---
 window.userData = window.userData || {};
 userData.getVCoins = getVCoinsSupabase;
 userData.addVCoins = addVCoinsSupabase;
@@ -241,8 +243,8 @@ userData.addJetons = addJetonsSupabase;
 userData.setJetons = setJetonsSupabase;
 userData.getHighScore = getHighScoreSupabase;
 userData.setHighScore = setHighScoreSupabase;
-userData.getUnlockedThemes = getUnlockedThemes;
-userData.setUnlockedThemes = setUnlockedThemes;
+userData.getUnlockedThemes = getUnlockedThemesCloud;
+userData.setUnlockedThemes = setUnlockedThemesCloud;
 
 // (Optionnel) expose les fonctions utiles si besoin :
 window.getUserId = getUserId;

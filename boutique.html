@@ -4,7 +4,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
   <script src="js/userData.js"></script>
   <script src="js/i18n.js"></script>
-
   <meta charset="UTF-8">
   <title data-i18n="boutique.titre"></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -93,9 +92,22 @@ const SPECIAL_CARTOUCHES = [
 
 const THEME_PRICE = 3000;
 
+// --- Ajout thème cloud uniquement Supabase ---
+async function unlockThemeCloud(themeKey) {
+  const userId = window.getUserId();
+  let { data, error } = await window.sb.from('users').select('themes_possedes').eq('id', userId).single();
+  if (error) return false;
+  let themes = Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
+  if (!themes.includes(themeKey)) {
+    themes.push(themeKey);
+    await window.sb.from('users').update({ themes_possedes: themes }).eq('id', userId);
+  }
+  return true;
+}
+
 // Rendu principal
 async function renderThemes() {
-  await userData.syncUnlockedThemes?.();
+  // Récupère la liste cloud (Supabase only)
   const unlocked = await userData.getUnlockedThemes?.() || [];
 
   // Cartouches du haut

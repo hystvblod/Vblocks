@@ -1,110 +1,90 @@
-// === Boutique VBlocks : JS complet, compatible Capacitor, Synchro Supabase+LocalStorage ===
-
-// Helper i18n universel (compatible avec window.i18n ou autre système)
+// --- Helper i18n universel
 function t(key) {
   if (window.i18n && window.i18n[key]) return window.i18n[key];
   return key;
 }
 
-// Liste des thèmes
+// --- Liste des thèmes/cadres possibles
 const THEMES = [
-  { key: "bubble",     locked: false },
-  { key: "nature",     locked: false },
-  { key: "nuit",       locked: false },
-  { key: "luxury",     locked: true  },
-  { key: "space",      locked: true  },
-  { key: "candy",      locked: true  },
-  { key: "cyber",      locked: true  },
-  { key: "vitraux",    locked: true  },
-  { key: "pixel",      locked: true  },
-  { key: "halloween",  locked: true  }
+  { key: "bubble" }, { key: "nature" }, { key: "nuit" }, { key: "luxury" },
+  { key: "space" }, { key: "candy" }, { key: "cyber" }, { key: "vitraux" },
+  { key: "pixel" }, { key: "halloween" }
 ];
 
-// Cartouches d’achats supplémentaires (full i18n)
+// --- Cartouches d’achats spéciaux
 const SPECIAL_CARTOUCHES = [
-  { key: "boutique.cartouche.jetons12",  icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue' },
-  { key: "boutique.cartouche.jetons50",  icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple' },
-  { key: "boutique.cartouche.nopub",     icon: '<img src="assets/images/ads.png" alt="No Ads">',   color: 'color-yellow' },
-  { key: "boutique.cartouche.pub1jeton", icon: '<img src="assets/images/jeton.webp" alt="Pub">',   color: 'color-green' },
+  { key: "boutique.cartouche.jetons12", icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue' },
+  { key: "boutique.cartouche.jetons50", icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple' },
+  { key: "boutique.cartouche.nopub", icon: '<img src="assets/images/ads.png" alt="No Ads">', color: 'color-yellow' },
+  { key: "boutique.cartouche.pub1jeton", icon: '<img src="assets/images/jeton.webp" alt="Pub">', color: 'color-green' },
   { key: "boutique.cartouche.pub300points", icon: '<img src="assets/images/vcoin.webp" alt="Pub">', color: 'color-blue' }
 ];
-
 const THEME_PRICE = 200;
 
-// --- Helpers localStorage ---
-function getUnlockedThemes() {
-  return JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '["bubble","nature","nuit"]');
-}
-function setUnlockedThemes(themes) {
-  localStorage.setItem('unlockedVBlocksThemes', JSON.stringify(themes));
-}
-function getCurrentTheme() {
-  return localStorage.getItem('themeVBlocks') || "bubble";
-}
-function setCurrentTheme(theme) {
-  localStorage.setItem('themeVBlocks', theme);
-}
+// --- Utilitaires cloud (userId etc)
 function getUserId() {
-  // À adapter selon ton système d'authentification
+  // doit être stocké dans le cloud, récupéré ici (ex: localStorage temporaire possible)
   return localStorage.getItem('user_id') || "";
 }
 
-// --- RPC Supabase pour modifier le solde ---
+// --- VCoins & Jetons 100% Supabase ---
+async function getVCoinsSupabase() {
+  const { data, error } = await sb.from('users').select('vcoins').eq('id', getUserId()).single();
+  if (error) return 0;
+  return data.vcoins;
+}
 async function addVCoinsSupabase(amount) {
-  const userId = getUserId();
-  const { data, error } = await sb.rpc('add_vcoins', {
-    user_id: userId,
-    delta: amount
-  });
-  if (error) {
-    alert(t("boutique.alert.vcoins_update_error"));
-    throw error;
-  }
-  let newBalance = data?.[0]?.new_balance ?? 0;
-  localStorage.setItem('vblocks_vcoins', newBalance);
-  return newBalance;
+  const { error } = await sb.rpc('add_vcoins', { user_id: getUserId(), delta: amount });
+  if (error) throw error;
+  return await getVCoinsSupabase();
+}
+async function getJetonsSupabase() {
+  const { data, error } = await sb.from('users').select('jetons').eq('id', getUserId()).single();
+  if (error) return 0;
+  return data.jetons;
+}
+async function addJetonsSupabase(amount) {
+  const { error } = await sb.rpc('add_jetons', { user_id: getUserId(), delta: amount });
+  if (error) throw error;
+  return await getJetonsSupabase();
 }
 
-/// --- Achat sécurisé d’un thème ---
+// --- Themes/cadres POSSEDES : cloud ONLY
+async function getUnlockedThemesCloud() {
+  const { data, error } = await sb.from('users').select('themes_possedes').eq('id', getUserId()).single();
+  if (error) return [];
+  return Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
+}
+async function setUnlockedThemesCloud(newThemes) {
+  await sb.from('users').update({ themes_possedes: newThemes }).eq('id', getUserId());
+}
+
+// --- Achat sécurisé (débloque dans Supabase)
 async function acheterTheme(themeKey, prix) {
-  const userId = getUserId();
-  // Appel direct à la fonction d'achat sécurisée côté Supabase
-  const { error } = await sb.rpc('purchase_theme', {
-    user_id: userId,
-    theme_key: themeKey,
-    price: prix
-  });
-
-  if (error) {
-    alert(error.message || "Erreur lors de l'achat");
-    return false;
-  }
-
-  // Rafraîchit le solde et les thèmes débloqués depuis Supabase
-  let { data: user } = await sb
-    .from('users')
-    .select('themes_possedes,vcoins')
-    .eq('id', userId)
-    .single();
-
-  setUnlockedThemes(user?.themes_possedes || []);
-  localStorage.setItem('vblocks_vcoins', user?.vcoins ?? "--");
-
+  let { data: user, error } = await sb.from('users').select('vcoins, themes_possedes').eq('id', getUserId()).single();
+  if (error) { alert("Erreur: " + error.message); return false; }
+  let coins = user?.vcoins ?? 0;
+  let themes = Array.isArray(user?.themes_possedes) ? user.themes_possedes : [];
+  if (themes.includes(themeKey)) { alert(t("theme.deja_possede")); return false; }
+  if (coins < prix) { alert(t("boutique.alert.pasassez")); return false; }
+  await addVCoinsSupabase(-prix); // Dépense coins cloud
+  themes.push(themeKey);
+  await setUnlockedThemesCloud(themes);
   alert(t("theme.debloque"));
   renderThemes();
   return true;
 }
 
-// --- Activation d’un thème (cloud + local) ---
-async function activerTheme(themeKey) {
-  setCurrentTheme(themeKey);
-  const userId = getUserId();
-  await sb.from('users').update({ theme_actif: themeKey }).eq('id', userId);
-  renderThemes();
-  alert(t("theme.activated").replace("{THEME}", t("theme." + themeKey)));
+// --- Activation (tu peux aussi le stocker cloud si tu veux)
+function getCurrentTheme() {
+  // Optionnel : tu peux aussi le stocker dans le cloud si tu veux.
+  return localStorage.getItem('themeVBlocks') || "bubble";
+}
+function setCurrentTheme(theme) {
+  localStorage.setItem('themeVBlocks', theme);
 }
 
-// --- Affichage des cartouches d’achats ---
+// --- UI : Cartouches achats
 function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
   let achatsHtml = SPECIAL_CARTOUCHES.map(c => `
@@ -116,76 +96,75 @@ function renderAchats() {
   $achatsList.innerHTML = achatsHtml;
 }
 
-// --- Affichage des thèmes ---
-function renderThemes() {
+// --- UI : Thèmes/cadres cloud only
+async function renderThemes() {
   renderAchats();
   const list = document.getElementById('themes-list');
   if (!list) return;
   list.innerHTML = "";
-  const unlocked = getUnlockedThemes();
+  const unlocked = await getUnlockedThemesCloud();
   const current = getCurrentTheme();
   THEMES.forEach(theme => {
     const isUnlocked = unlocked.includes(theme.key);
     const card = document.createElement('div');
     card.className = 'theme-card' + (current === theme.key ? " selected" : "") + (isUnlocked ? "" : " locked");
     card.innerHTML = `
-      <div class="theme-name">${t("theme."+theme.key)}</div>
+      <div class="theme-name">${t("theme." + theme.key)}</div>
       <img class="theme-img" src="img/theme_${theme.key}.png" alt="" loading="lazy">
     `;
     if (isUnlocked) {
       card.innerHTML += (current === theme.key)
         ? `<button class="theme-btn selected" disabled>${t("boutique.btn.selectionne")}</button>`
-        : `<button class="theme-btn" onclick="activerTheme('${theme.key}')">${t("boutique.btn.utiliser")}</button>`;
+        : `<button class="theme-btn" onclick="setCurrentTheme('${theme.key}');renderThemes();">${t("boutique.btn.utiliser")}</button>`;
     } else {
       card.innerHTML += `<button class="theme-btn locked" onclick="acheterTheme('${theme.key}', ${THEME_PRICE})">${t("boutique.btn.debloquer").replace("{PRICE}", THEME_PRICE)}</button>`;
     }
     list.appendChild(card);
   });
-  // Met à jour le solde des VCoins (si tu stockes côté local)
-  const solde = localStorage.getItem('vblocks_vcoins') || "--";
-  document.querySelector('.vcoins-solde').textContent = solde;
+  // Solde à jour
+  document.querySelector('.vcoins-solde').textContent = await getVCoinsSupabase();
+  document.querySelectorAll('.vcoins-solde')[1].textContent = await getJetonsSupabase();
 }
 
-// --- Initialisation au chargement ---
+// --- Initialisation
 document.addEventListener("DOMContentLoaded", function() {
   renderThemes();
   setupBoutiqueAchats();
 });
 
-
-// === Brancher les achats monétaires à la logique achat.js ===
-
-// Cette fonction va relier les boutons d'achat aux flux de paiement
+// --- Branche les achats monétaires et pub reward
 function setupBoutiqueAchats() {
   document.querySelectorAll('.special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
     if (!label) return;
-    const key = label.dataset.i18n;
-
-    if (key === 'boutique.cartouche.jetons12') {
+    const key = label.textContent; // Prends le texte, car il n'y a pas data-i18n
+    if (key.includes('12')) {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => { /* paiement 12 jetons */ };
+    }
+    if (key.includes('50')) {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => { /* paiement 50 jetons */ };
+    }
+    if (key.includes('No Ads')) {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => { /* paiement nopub */ };
+    }
+    if (key.includes('Pub') && key.includes('jeton')) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (await lancerPaiement("jetons12")) {
-          accordeAchat("jetons12");
-        }
+        await addJetonsSupabase(1);
+        alert("+1 jeton ajouté !");
+        renderThemes();
       };
     }
-    if (key === 'boutique.cartouche.jetons50') {
+    if (key.includes('Pub') && key.includes('VCoins')) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (await lancerPaiement("jetons50")) {
-          accordeAchat("jetons50");
-        }
+        await addVCoinsSupabase(300);
+        alert("+300 VCoins ajoutés !");
+        renderThemes();
       };
     }
-    if (key === 'boutique.cartouche.nopub') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement("nopub")) {
-          accordeAchat("nopub");
-        }
-      };
-    }
-    // Les cartouches PUB sont déjà gérées ailleurs
   });
 }
