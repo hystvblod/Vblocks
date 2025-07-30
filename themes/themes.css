@@ -342,7 +342,7 @@ body[data-theme="space"] {
   --canvas-border: #00e6ff;
   --canvas-shadow: #362e60;
   --panel-bg: #181e2b;
-  --panel-border: #00e6ff;
+  --panel-border: none;
   --panel-shadow: #362e60;
   --panel-text: #13eaff;
   --canvas-panel-bg: #181e2b;
