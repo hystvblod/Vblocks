@@ -81,8 +81,10 @@
   "menu.parametres": "Paramètres",
   "vfindz.title": "VFindz",
   "vfindz.desc": "Le jeu photo viral : relève des défis, poste ta photo, participe à des concours et gagne des lots !",
-  "vzone.title": "VZone",
-  "vzone.desc": "Évite les balles ennemies ! Jeu d’adresse simple et addictif à partager.", 
+"vone.title": "VOne",
+"vone.desc": "Trouve l'intrus dans la grille le plus vite possible.",
+"vmemory.title": "VMemory",
+"vmemory.desc": "Jeu de mémoire : retrouve les paires le plus vite possible.",
   
   "game.title": "V-Blocks - Classique",
   "game.main_title": "V-Blocks-Classique",
@@ -242,14 +244,9 @@
 "theme.activated": "Nouveau style activé : {THEME}",
 "boutique.btn.selectionne": "Sélectionné",
 "boutique.btn.utiliser": "Utiliser",
-"boutique.btn.debloquer": "Débloquer ({PRICE})",
+"boutique.btn.debloquer": "Débloquer ({PRICE})"
 
-"vfindz.title": "VFindz",
-"vfindz.desc": "Le jeu photo viral : relève des défis, poste ta photo, participe à des concours et gagne des lots !",
-"vone.title": "VOne",
-"vone.desc": "Trouve l'intrus dans la grille le plus vite possible.",
-"vmemory.title": "VMemory",
-"vmemory.desc": "Jeu de mémoire : retrouve les paires le plus vite possible."
+
 
 
 }
