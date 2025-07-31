@@ -324,6 +324,7 @@
           clearInterval(ctd);
           document.getElementById('duelPopup').style.display = 'none';
           document.getElementById('gameZone').style.display = '';
+          document.querySelectorAll('.pieces-row, .vcoins, .score-row, #controls').forEach(el => el.style.display = '');
           if (typeof VBlocksGame !== "undefined" && VBlocksGame.initGame)
             VBlocksGame.initGame({ mode: 'duel', duelId: duelId, duelPlayerNum: playerNum });
         }
