@@ -362,7 +362,9 @@
       return obj;
     }
 
+    // ==== SEULE MODIF, SÉCURISATION ==== //
     function collision(p = currentPiece){
+      if (!p) return false;
       return p.shape.some((row, dy) =>
         row.some((val, dx) => {
           if(!val) return false;
@@ -541,13 +543,16 @@
           }
         })
       );
-      currentPiece.shape.forEach((row,dy)=>
-        row.forEach((val,dx)=>{
-          if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter,BLOCK_SIZE,false,
-            (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
-          );
-        })
-      );
+      // ==== SECONDE MODIF, SÉCURISATION ==== //
+      if(currentPiece && currentPiece.shape){
+        currentPiece.shape.forEach((row,dy)=>
+          row.forEach((val,dx)=>{
+            if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter,BLOCK_SIZE,false,
+              (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
+            );
+          })
+        );
+      }
     }
 
     function drawMiniPiece(c, piece) {
