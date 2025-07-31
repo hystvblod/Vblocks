@@ -300,7 +300,9 @@
           }
           await userData.addVCoins?.(points);
           updateBalancesHeader();
-        } catch (err) {}
+        } catch (err) {
+   
+        }
       })(points);
 
       const old = document.getElementById('gameover-popup');
@@ -484,9 +486,7 @@
       return obj;
     }
 
-    // PATCH : Jamais de crash si p ou p.shape null
     function collision(p = currentPiece){
-      if (!p || !p.shape) return false;
       return p.shape.some((row, dy) =>
         row.some((val, dx) => {
           if(!val) return false;
@@ -498,7 +498,6 @@
     }
 
     function merge(){
-      if (!currentPiece) return;
       currentPiece.shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
           if(val){
@@ -552,13 +551,11 @@
     }
 
     function move(offset){
-      if (!currentPiece) return;
       currentPiece.x += offset;
       if(collision()) currentPiece.x -= offset;
     }
 
     function dropPiece(){
-      if (!currentPiece) return;
       currentPiece.y++;
       if(collision()){
         currentPiece.y--;
@@ -573,7 +570,6 @@
     }
 
     function rotatePiece(){
-      if (!currentPiece) return;
       const shape = currentPiece.shape;
       currentPiece.shape = shape[0].map((_,i)=>shape.map(r=>r[i])).reverse();
       if(currentTheme === 'space' || currentTheme === 'vitraux'){
@@ -590,7 +586,7 @@
     }
 
     function holdPiece() {
-      if (holdUsed || !currentPiece) return;
+      if (holdUsed) return;
       if (!heldPiece) {
         heldPiece = {...currentPiece};
         reset();
@@ -602,13 +598,14 @@
     }
 
     function getGhostPiece(){
-      if(!ghostPieceEnabled || !currentPiece) return null;
+      if(!ghostPieceEnabled) return null;
       let ghost = JSON.parse(JSON.stringify(currentPiece));
       while(!collision(ghost)){ ghost.y++; }
       ghost.y--;
       return ghost;
     }
 
+    // RANDOM PNG PAR CARRÉ, FIXÉ À LA CRÉATION DE LA PIÈCE (SPACE/VITRAUX)
     function drawBlockCustom(c, x, y, letter, size=BLOCK_SIZE, ghost=false, variant=0){
       let img = blockImages[letter];
       const px = x*size, py = y*size;
@@ -662,7 +659,6 @@
 
     function drawBoard(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      if(!currentPiece) return; // PATCH Anti crash
       const ghost = getGhostPiece();
       if(ghost){
         ghost.shape.forEach((row,dy)=>
@@ -827,6 +823,7 @@
 
     // === SUPABASE Fonctions ===
     function getUserId() {
+      // Adapter selon ta logique
       if (typeof userData !== 'undefined' && userData.getUserId) return userData.getUserId();
       return (window.sbUser && window.sbUser.id) || null;
     }
