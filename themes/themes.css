@@ -302,7 +302,7 @@ body[data-theme="angelique"] {
   --btn-hover-color: #fff;
   --btn-hover-border: #fd62a1;
   --btn-shadow: 0 0 10px #fd62a1;
-  background-image: url('candy/fond_candy.png');
+  background-image: url('angelique/fond_candy.png');
 }
 /* ---- LUXURY ---- */
 body[data-theme="luxury"] {
