@@ -1,6 +1,8 @@
 (function(global){
   'use strict';
 
+const userData = window.userData;
+
   // ==== GESTION MUSIQUE UNIFIÉE ==== //
   const music = document.getElementById('music');
   if (music) music.volume = 0.45;
