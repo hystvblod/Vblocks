@@ -97,7 +97,7 @@ async function acheterTheme(themeKey, prix) {
 async function acheterProduitVercel(type) {
   const userId = getUserId();
   try {
-    const response = await fetch('https://vblockshop-api.vercel.app/api/achat', {
+    const response = await fetch('https://vfindez-api.vercel.app/api/purchasevblock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, achat: type })
