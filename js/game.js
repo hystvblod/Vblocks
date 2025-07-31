@@ -487,6 +487,7 @@
     }
 
     function collision(p = currentPiece){
+      if (!p) return false;
       return p.shape.some((row, dy) =>
         row.some((val, dx) => {
           if(!val) return false;
@@ -498,6 +499,7 @@
     }
 
     function merge(){
+      if (!currentPiece) return;
       currentPiece.shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
           if(val){
@@ -551,11 +553,13 @@
     }
 
     function move(offset){
+      if (!currentPiece) return;
       currentPiece.x += offset;
       if(collision()) currentPiece.x -= offset;
     }
 
     function dropPiece(){
+      if (!currentPiece) return;
       currentPiece.y++;
       if(collision()){
         currentPiece.y--;
@@ -570,6 +574,7 @@
     }
 
     function rotatePiece(){
+      if (!currentPiece) return;
       const shape = currentPiece.shape;
       currentPiece.shape = shape[0].map((_,i)=>shape.map(r=>r[i])).reverse();
       if(currentTheme === 'space' || currentTheme === 'vitraux'){
@@ -586,7 +591,7 @@
     }
 
     function holdPiece() {
-      if (holdUsed) return;
+      if (holdUsed || !currentPiece) return;
       if (!heldPiece) {
         heldPiece = {...currentPiece};
         reset();
@@ -598,7 +603,7 @@
     }
 
     function getGhostPiece(){
-      if(!ghostPieceEnabled) return null;
+      if(!ghostPieceEnabled || !currentPiece) return null;
       let ghost = JSON.parse(JSON.stringify(currentPiece));
       while(!collision(ghost)){ ghost.y++; }
       ghost.y--;
@@ -659,6 +664,7 @@
 
     function drawBoard(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(!currentPiece) return; // PATCH DE SECURITE ! (évite le crash)
       const ghost = getGhostPiece();
       if(ghost){
         ghost.shape.forEach((row,dy)=>

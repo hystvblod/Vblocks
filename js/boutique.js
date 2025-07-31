@@ -33,7 +33,7 @@ const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.pub1jeton", icon: '<img src="assets/images/jeton.webp" alt="Pub">', color: 'color-green' },
   { key: "boutique.cartouche.pub300points", icon: '<img src="assets/images/vcoin.webp" alt="Pub">', color: 'color-blue' }
 ];
-const THEME_PRICE = 3000;
+const THEME_PRICE = 5000;
 
 // --- Utilitaires cloud (userId etc)
 function getUserId() {
