@@ -1,8 +1,6 @@
 (function(global){
   'use strict';
 
-const userData = window.userData;
-
   // ==== GESTION MUSIQUE UNIFIÉE ==== //
   const music = document.getElementById('music');
   if (music) music.volume = 0.45;
@@ -83,27 +81,31 @@ const userData = window.userData;
   });
   // ==== FIN MUSIQUE ====
 
-
   let highscoreCloud = 0; // Record cloud global
 
-  // Fonction i18n de traduction
-  function t(key, params) {
-    if (window.i18nGet) {
-      let str = window.i18nGet(key);
-      if(params) Object.keys(params).forEach(k => {
-        str = str.replace(`{${k}}`, params[k]);
-      });
-      return str;
-    }
-    if (window.I18N_MAP && window.I18N_MAP[key]) {
-      let str = window.I18N_MAP[key];
-      if(params) Object.keys(params).forEach(k => {
-        str = str.replace(`{${k}}`, params[k]);
-      });
-      return str;
-    }
-    return key;
+  // Fonction i18n de traduction (remplace par ta fonction si besoin)
+function t(key, params) {
+  // Prend d'abord i18nGet si dispo (donc la map async !)
+  if (window.i18nGet) {
+    let str = window.i18nGet(key);
+    if(params) Object.keys(params).forEach(k => {
+      str = str.replace(`{${k}}`, params[k]);
+    });
+    return str;
   }
+  // Sinon fallback sur la map statique (pour sécurité)
+  if (window.I18N_MAP && window.I18N_MAP[key]) {
+    let str = window.I18N_MAP[key];
+    if(params) Object.keys(params).forEach(k => {
+      str = str.replace(`{${k}}`, params[k]);
+    });
+    return str;
+  }
+  // Sinon dernier recours
+  return key;
+}
+
+
 
   function initGame(opts){
     const mode = (opts && opts.mode) || 'classic';
@@ -131,41 +133,32 @@ const userData = window.userData;
     canvas.width = COLS * BLOCK_SIZE;
     canvas.height = ROWS * BLOCK_SIZE;
 
-    const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space', 'vitraux'];
+    const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space'];
     let currentTheme = localStorage.getItem('themeVBlocks') || 'neon';
     let currentThemeIndex = THEMES.indexOf(currentTheme);
     const blockImages = {};
-
-    // === Load all images ===
     function loadBlockImages(themeName){
-      const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "angelique", "cyber"];
-      if(themeName === 'space' || themeName === 'vitraux') {
-        blockImages[themeName] = [];
-        let imagesToLoad = 6, imagesLoaded = 0;
-        for (let i=1; i<=6; i++) {
+      const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "candy"];
+      let imagesToLoad = 0, imagesLoaded = 0;
+      ['I','J','L','O','S','T','Z'].forEach(l => {
+        if(themesWithPNG.includes(themeName)){
+          imagesToLoad++;
           const img = new Image();
           img.onload = () => {
             imagesLoaded++;
-            if(imagesLoaded === imagesToLoad) drawBoard();
+            if(imagesLoaded === imagesToLoad) {
+              if(typeof drawMiniPiece === "function") {
+                drawMiniPiece(nextCtx, nextPiece);
+              }
+            }
+            drawBoard();
           };
-          img.src = `themes/${themeName}/${i}.png`;
-          blockImages[themeName].push(img);
-        }
-        ['I','J','L','O','S','T','Z'].forEach(l => {
+          img.src = `themes/${themeName}/${l}.png`;
+          blockImages[l] = img;
+        }else{
           blockImages[l] = null;
-        });
-      } else {
-        ['I','J','L','O','S','T','Z'].forEach(l => {
-          if(themesWithPNG.includes(themeName)){
-            const img = new Image();
-            img.onload = () => { drawBoard(); };
-            img.src = `themes/${themeName}/${l}.png`;
-            blockImages[l] = img;
-          }else{
-            blockImages[l] = null;
-          }
-        });
-      }
+        }
+      });
       currentTheme = themeName;
       if(themeName === 'retro'){
         global.currentColors = {I:'#00f0ff',J:'#0044ff',L:'#ff6600',O:'#ffff33',S:'#00ff44',T:'#ff00cc',Z:'#ff0033'};
@@ -198,7 +191,6 @@ const userData = window.userData;
     const LETTERS = ['I','J','L','O','S','T','Z'];
 
     let board = Array.from({length: ROWS}, () => Array(COLS).fill(''));
-
     let currentPiece = null;
     let nextPiece = null;
     let heldPiece = null;
@@ -213,7 +205,7 @@ const userData = window.userData;
     let history = [];
     function saveHistory() {
       history.push({
-        board: board.map(row => row.map(cell => cell && typeof cell === "object" ? {...cell} : cell)),
+        board: board.map(row => row.slice()),
         currentPiece: JSON.parse(JSON.stringify(currentPiece)),
         nextPiece: JSON.parse(JSON.stringify(nextPiece)),
         heldPiece: heldPiece ? JSON.parse(JSON.stringify(heldPiece)) : null,
@@ -264,9 +256,12 @@ const userData = window.userData;
       if (piecesUsed >= piecesSequence.length) return Math.floor(Math.random()*PIECES.length);
       return piecesSequence[piecesUsed++];
     }
+
+    // FIN JEU DUEL
     async function handleDuelEnd(myScore) {
       let field = (duelPlayerNum === 1) ? "score1" : "score2";
       await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
+      // Attend le score adverse
       let tries = 0, otherScore = null;
       while(tries++ < 40) {
         let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
@@ -303,7 +298,8 @@ const userData = window.userData;
           await userData.addVCoins?.(points);
           updateBalancesHeader();
         } catch (err) {
-   
+          alert(t("error.save_score"));
+          console.error(err);
         }
       })(points);
 
@@ -312,7 +308,7 @@ const userData = window.userData;
 
       if (mode === 'duel') {
         handleDuelEnd(points);
-        return;
+        return; // empêche tout bouton Rejouer
       }
 
       const popup = document.createElement('div');
@@ -353,6 +349,7 @@ const userData = window.userData;
             rewind();
           });
         } else {
+          // fallback si pub.js pas chargé
           showFakeAd().then(()=>{
             removePopup();
             rewind();
@@ -412,6 +409,7 @@ const userData = window.userData;
       },1000);
     }
 
+    // Pause (SVG bouton et touche P)
     function togglePause() {
       paused = !paused;
       drawBoard();
@@ -421,14 +419,16 @@ const userData = window.userData;
     }
     global.togglePause = togglePause;
 
+    // Ecoute le bouton pause
     setTimeout(()=>{
       let btn = document.getElementById('pause-btn');
       if(btn) btn.onclick = (e)=>{ e.preventDefault(); togglePause(); };
     }, 200);
 
+    // ---- TABLE NES ----
     const SPEED_TABLE = [
       800, 720, 630, 550, 470, 380, 300, 220, 130, 100,
-       83,  83,  83,  67,  67,  67,  50,   50,  50,  33,
+       83,  83,  83,  67,  67,  67,  50,  50,  50,  33,
        33,  33,  33,  33,  33,  33,  33,  33,  17
     ];
 
@@ -437,6 +437,7 @@ const userData = window.userData;
     if(scoreEl) scoreEl.textContent = '0';
     if(highEl) highEl.textContent = '0';
 
+    // Affiche le record dynamique en temps réel (cloud)
     async function updateHighscoreDisplay(){
       highscoreCloud = await userData.getHighScore?.() ?? 0;
       if(highEl) highEl.textContent = highscoreCloud;
@@ -461,11 +462,10 @@ const userData = window.userData;
       nextPiece = newPiece();
       reset();
       saveHistory();
-      window.startMusicForGame();
+      window.startMusicForGame(); // ← relance la musique au début de la partie
       requestAnimationFrame(update);
     }
 
-    // NOUVELLE LOGIQUE : random PAR CARRÉ, FIXÉ À LA CRÉATION DE LA PIÈCE
     function newPiece(){
       let typeId;
       if(mode === 'duel') {
@@ -473,19 +473,12 @@ const userData = window.userData;
       } else {
         typeId = Math.floor(Math.random()*PIECES.length);
       }
-      let shape = PIECES[typeId];
-      let letter = LETTERS[typeId];
-      let obj = {
-        shape: shape,
-        letter: letter,
-        x: Math.floor((COLS - shape[0].length)/2),
+      return {
+        shape: PIECES[typeId],
+        letter: LETTERS[typeId],
+        x: Math.floor((COLS - PIECES[typeId][0].length)/2),
         y: 0
       };
-      // PATCH : tableau variants par carré (pour SPACE & VITRAUX)
-      if(currentTheme === 'space' || currentTheme === 'vitraux'){
-       obj.variants = shape.map(row => row.map(val => val ? (1 + Math.floor(Math.random()*6)) : null));
-      }
-      return obj;
     }
 
     function collision(p = currentPiece){
@@ -505,20 +498,14 @@ const userData = window.userData;
           if(val){
             const x = currentPiece.x + dx;
             const y = currentPiece.y + dy;
-            if(y >= 0){
-              if(currentTheme === 'space' || currentTheme === 'vitraux'){
-                board[y][x] = { letter: currentPiece.letter, variant: currentPiece.variants?.[dy]?.[dx] ?? 0 };
-              } else {
-                board[y][x] = currentPiece.letter;
-              }
-            }
+            if(y >= 0) board[y][x] = currentPiece.letter;
           }
         })
       );
       clearLines();
     }
 
-    function clearLines() {
+    function clearLines(){
       let lines = 0;
       board = board.filter(row => {
         if(row.every(cell => cell !== '')){ lines++; return false; }
@@ -533,6 +520,7 @@ const userData = window.userData;
         score += pts;
         if(scoreEl) scoreEl.textContent = score;
 
+        // Record cloud
         if (score > highscoreCloud) {
           highscoreCloud = score;
           if (highEl) highEl.textContent = highscoreCloud;
@@ -542,12 +530,14 @@ const userData = window.userData;
             });
           }
         }
-        if (mode === 'classic' || mode === 'duel') {
-          let level = Math.floor(linesCleared / 8);
+
+        // --- Gestion des vitesses ---
+        if(mode === 'classic' || mode === 'duel') {
+          let level = Math.floor(linesCleared / 10);
           if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
-          dropInterval = SPEED_TABLE[level];
+          if (mode === 'classic') dropInterval = SPEED_TABLE[level];
         }
-      } else {
+      }else{
         combo = 0;
       }
     }
@@ -574,17 +564,7 @@ const userData = window.userData;
     function rotatePiece(){
       const shape = currentPiece.shape;
       currentPiece.shape = shape[0].map((_,i)=>shape.map(r=>r[i])).reverse();
-      if(currentTheme === 'space' || currentTheme === 'vitraux'){
-        // faire tourner aussi les variants
-        const old = currentPiece.variants;
-        currentPiece.variants = old[0].map((_,i)=>old.map(r=>r[i])).reverse();
-      }
-      if(collision()) {
-        currentPiece.shape = shape;
-        if(currentTheme === 'space' || currentTheme === 'vitraux'){
-          currentPiece.variants = old;
-        }
-      }
+      if(collision()) currentPiece.shape = shape;
     }
 
     function holdPiece() {
@@ -607,21 +587,11 @@ const userData = window.userData;
       return ghost;
     }
 
-    // RANDOM PNG PAR CARRÉ, FIXÉ À LA CRÉATION DE LA PIÈCE (SPACE/VITRAUX)
-    function drawBlockCustom(c, x, y, letter, size=BLOCK_SIZE, ghost=false, variant=0){
-      let img = blockImages[letter];
+    function drawBlockCustom(c, x, y, letter, size=BLOCK_SIZE, ghost=false){
+      const img = blockImages[letter];
       const px = x*size, py = y*size;
       if(ghost){
         c.globalAlpha = 0.33;
-      }
-      if((currentTheme === 'space' || currentTheme === 'vitraux') && blockImages[currentTheme]) {
-        let v = variant ?? 0;
-        if (typeof letter === "object" && letter.letter) {
-          v = letter.variant ?? 0;
-          letter = letter.letter;
-        }
-        const arr = blockImages[currentTheme];
-        img = arr[v % arr.length];
       }
       if(img && img.complete && img.naturalWidth > 0){
         c.drawImage(img, px, py, size, size);
@@ -661,36 +631,23 @@ const userData = window.userData;
 
     function drawBoard(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // --- GHOST PIECE
       const ghost = getGhostPiece();
       if(ghost){
         ghost.shape.forEach((row,dy)=>
-          row.forEach((val,dx)=>{
-            if(val) drawBlockCustom(ctx,ghost.x+dx,ghost.y+dy,ghost.letter,BLOCK_SIZE,true,
-              (currentTheme === 'space' || currentTheme === 'vitraux') ? ghost.variants?.[dy]?.[dx] : 0
-            );
-          })
+          row.forEach((val,dx)=>{ if(val) drawBlockCustom(ctx,ghost.x+dx,ghost.y+dy,ghost.letter,BLOCK_SIZE,true); })
         );
       }
+      // --- Board
       board.forEach((row,y)=>
-        row.forEach((cell,x)=>{
-          if(cell) {
-            if(currentTheme === 'space' || currentTheme === 'vitraux'){
-              drawBlockCustom(ctx,x,y,cell.letter||cell, BLOCK_SIZE, false, cell.variant||0);
-            } else {
-              drawBlockCustom(ctx,x,y,cell);
-            }
-          }
-        })
+        row.forEach((letter,x)=>{ if(letter) drawBlockCustom(ctx,x,y,letter); })
       );
+      // --- Current piece
       currentPiece.shape.forEach((row,dy)=>
-        row.forEach((val,dx)=>{
-          if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter,BLOCK_SIZE,false,
-            (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
-          );
-        })
+        row.forEach((val,dx)=>{ if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter); })
       );
     }
-
     function drawMiniPiece(c, piece) {
       c.clearRect(0, 0, c.canvas.width, c.canvas.height);
       if (!piece) return;
@@ -725,9 +682,7 @@ const userData = window.userData;
               x,
               y,
               piece.letter,
-              cellSize,
-              false,
-              (currentTheme === 'space' || currentTheme === 'vitraux') ? piece.variants?.[y]?.[x] : 0
+              cellSize
             );
             c.restore();
           }
@@ -823,12 +778,7 @@ const userData = window.userData;
       }
     });
 
-    // === SUPABASE Fonctions ===
-    function getUserId() {
-      // Adapter selon ta logique
-      if (typeof userData !== 'undefined' && userData.getUserId) return userData.getUserId();
-      return (window.sbUser && window.sbUser.id) || null;
-    }
+    // Fonctions SUPABASE
     async function setLastScoreSupabase(score) {
       const userId = getUserId();
       await sb.from('users').update({ score }).eq('id', userId);
@@ -844,6 +794,7 @@ const userData = window.userData;
       return data?.highscore || 0;
     }
 
+    // Lancement auto
     startGame();
   }
 
