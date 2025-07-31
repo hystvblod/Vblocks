@@ -1,7 +1,7 @@
 // Handler central pour tous les achats de la boutique
 window.accordeAchat = async function(type) {
   // --- Achats EN ARGENT RÉEL : passent par l'API Vercel ---
-  if (
+if (
     type === "jetons12" ||
     type === "jetons50" ||
     type === "points3000" ||
@@ -9,9 +9,12 @@ window.accordeAchat = async function(type) {
     type === "nopub"
   ) {
     await acheterProduitVercel(type);
-    // acheterProduitVercel s'occupe de l'UI, pas d'alert ici
+    if (type === "nopub") {
+      await sb.from('users').update({ nopub: true }).eq('id', getUserId());
+    }
     return;
   }
+
 
   // --- Gains gratuits (ex : pubs reward, bonus) ---
   if (type === "pub1jeton") {

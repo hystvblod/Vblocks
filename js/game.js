@@ -175,22 +175,12 @@
         global.currentColors = {I:'#5cb85c',J:'#388e3c',L:'#7bb661',O:'#cddc39',S:'#a2d149',T:'#558b2f',Z:'#9ccc65'};
       }
     }
-function changeTheme(themeName){
-  document.body.setAttribute('data-theme', themeName);
-  const style = document.getElementById('theme-style');
-  if(style) style.href = `themes/${themeName}.css`;
-
-  setTimeout(() => {
-    loadBlockImages(themeName);
-    // Patch : Redessine les canvases next/hold/board à chaud
-    drawBoard();
-    drawMiniPiece(nextCtx, nextPiece);
-    drawMiniPiece(holdCtx, heldPiece);
-  }, 120); // petit délai le temps de charger les images si besoin
-
-  currentThemeIndex = THEMES.indexOf(themeName);
-}
-
+    function changeTheme(themeName){
+      document.body.setAttribute('data-theme', themeName);
+      const style = document.getElementById('theme-style');
+      if(style) style.href = `themes/${themeName}.css`;
+      setTimeout(() => loadBlockImages(themeName), 100);
+      currentThemeIndex = THEMES.indexOf(themeName);
     }
     loadBlockImages(currentTheme);
 
@@ -464,15 +454,14 @@ function changeTheme(themeName){
       return pts;
     }
 
-async function startGame(){
-  if (mode === 'duel') await setupDuelSequence();
-  nextPiece = newPiece();
-  reset(); // le reset inclut drawBoard maintenant
-  saveHistory();
-  window.startMusicForGame();
-  requestAnimationFrame(update);
-}
-
+    async function startGame(){
+      if (mode === 'duel') await setupDuelSequence();
+      nextPiece = newPiece();
+      reset();
+      saveHistory();
+      window.startMusicForGame();
+      requestAnimationFrame(update);
+    }
 
     // NOUVELLE LOGIQUE : random PAR CARRÉ, FIXÉ À LA CRÉATION DE LA PIÈCE
     function newPiece(){
@@ -757,14 +746,12 @@ async function startGame(){
       });
     }
 
-function reset(){
-  currentPiece = nextPiece;
-  nextPiece = newPiece();
-  holdUsed = false;
-  drawMiniPiece(nextCtx, nextPiece);
-  drawMiniPiece(holdCtx, heldPiece);
-  drawBoard(); // <-- ajoute ici aussi !
-
+    function reset(){
+      currentPiece = nextPiece;
+      nextPiece = newPiece();
+      holdUsed = false;
+      drawMiniPiece(nextCtx, nextPiece);
+      drawMiniPiece(holdCtx, heldPiece);
     }
     function update(now) {
       if (paused || gameOver) return;
