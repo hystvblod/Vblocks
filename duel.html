@@ -286,7 +286,7 @@
       let { data } = await window.sb.from('duels').select('*').eq('id', duelId).single();
       if (data && !data.pieces_seq) {
         console.log("[DUEL] J2 va générer la séquence et passer en started");
-        const seq = Array.from({ length: 60 }, () => Math.floor(Math.random() * 7)).join(',');
+        const seq = Array.from({ length: 1000 }, () => Math.floor(Math.random() * 7)).join(',');
         await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', duelId);
       } else {
         console.log("[DUEL] J2 passe en started (sequence déjà là)");

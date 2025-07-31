@@ -464,27 +464,36 @@
     }
 
     // NOUVELLE LOGIQUE : random PAR CARRÉ, FIXÉ À LA CRÉATION DE LA PIÈCE
-    function newPiece(){
-      let typeId;
-      if(mode === 'duel') {
-        typeId = getDuelNextPieceId();
-      } else {
-        typeId = Math.floor(Math.random()*PIECES.length);
-      }
-      let shape = PIECES[typeId];
-      let letter = LETTERS[typeId];
-      let obj = {
-        shape: shape,
-        letter: letter,
-        x: Math.floor((COLS - shape[0].length)/2),
-        y: 0
-      };
-      // PATCH : tableau variants par carré (pour SPACE & VITRAUX)
-      if(currentTheme === 'space' || currentTheme === 'vitraux'){
-       obj.variants = shape.map(row => row.map(val => val ? (1 + Math.floor(Math.random()*6)) : null));
-      }
-      return obj;
+function newPiece(){
+  let typeId;
+  if(mode === 'duel') {
+    typeId = getDuelNextPieceId();
+  } else {
+    typeId = Math.floor(Math.random()*PIECES.length);
+  }
+  let shape = PIECES[typeId];
+  let letter = LETTERS[typeId];
+  let obj = {
+    shape: shape,
+    letter: letter,
+    x: Math.floor((COLS - shape[0].length)/2),
+    y: 0
+  };
+  // PATCH : tableau variants par carré (pour SPACE & VITRAUX)
+  if(currentTheme === 'space' || currentTheme === 'vitraux'){
+    // On crée une liste de 1 à 6, qu’on mélange
+    let numbers = [1,2,3,4,5,6];
+    for(let i = numbers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
     }
+    // On va piocher dedans à chaque case (pas plus de 6 carrés par pièce normalement)
+    let idx = 0;
+    obj.variants = shape.map(row => row.map(val => val ? numbers[idx++] : null));
+  }
+  return obj;
+}
+
 
     function collision(p = currentPiece){
       return p.shape.some((row, dy) =>

@@ -100,6 +100,8 @@
   }
 
   function initGame(opts){
+    console.log("[initGame] opts=", opts);
+
     const mode = 'duel';
     const duelId = opts?.duelId || null;
     const duelPlayerNum = opts?.duelPlayerNum || 1;
@@ -201,6 +203,7 @@
     let combo = 0;
     let linesCleared = 0;
     let history = [];
+
     function saveHistory() {
       history.push({
         board: board.map(row => row.map(cell => cell && typeof cell === "object" ? {...cell} : cell)),
@@ -227,10 +230,20 @@
       if (!data) throw new Error(t("error.duel_not_found"));
       piecesSequence = data.pieces_seq.split(',').map(x=>parseInt(x));
       piecesUsed = 0;
+      console.log("[setupDuelSequence] piecesSequence loaded:", piecesSequence);
     }
     function getDuelNextPieceId() {
-      if (!piecesSequence) return Math.floor(Math.random()*PIECES.length);
-      if (piecesUsed >= piecesSequence.length) return Math.floor(Math.random()*PIECES.length);
+      if (!piecesSequence) {
+        const rnd = Math.floor(Math.random()*PIECES.length);
+        console.log("[getDuelNextPieceId] Fallback rnd:", rnd);
+        return rnd;
+      }
+      if (piecesUsed >= piecesSequence.length) {
+        const rnd = Math.floor(Math.random()*PIECES.length);
+        console.log("[getDuelNextPieceId] End of sequence, fallback:", rnd);
+        return rnd;
+      }
+      console.log("[getDuelNextPieceId] From seq idx", piecesUsed, "->", piecesSequence[piecesUsed]);
       return piecesSequence[piecesUsed++];
     }
     async function handleDuelEnd(myScore) {
@@ -338,9 +351,13 @@
     }
 
     async function startGame(){
+      console.log("[startGame] called");
       await setupDuelSequence();
+      console.log("[startGame] setupDuelSequence ok");
       nextPiece = newPiece();
+      console.log("[startGame] nextPiece:", nextPiece);
       reset();
+      console.log("[startGame] after reset: currentPiece=", currentPiece, "nextPiece=", nextPiece, "board=", board);
       saveHistory();
       window.startMusicForGame();
       requestAnimationFrame(update);
@@ -348,6 +365,10 @@
 
     function newPiece(){
       let typeId = getDuelNextPieceId();
+      if (isNaN(typeId) || typeId < 0 || typeId > 6) {
+        console.warn("[newPiece] typeId invalid, fallback to 3", typeId);
+        typeId = 3;
+      }
       let shape = PIECES[typeId];
       let letter = LETTERS[typeId];
       let obj = {
@@ -356,15 +377,26 @@
         x: Math.floor((COLS - shape[0].length)/2),
         y: 0
       };
-      if(currentTheme === 'space' || currentTheme === 'vitraux'){
-        obj.variants = shape.map(row => row.map(val => val ? (1 + Math.floor(Math.random()*6)) : null));
-      }
+  if(currentTheme === 'space' || currentTheme === 'vitraux'){
+  // Liste 1 à 6 mélangée
+  let numbers = [1,2,3,4,5,6];
+  for(let i = numbers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+  }
+  let idx = 0;
+  obj.variants = shape.map(row => row.map(val => val ? numbers[idx++] : null));
+}
+
+      console.log("[newPiece] created:", obj);
       return obj;
     }
 
-    // ==== SEULE MODIF, SÉCURISATION ==== //
     function collision(p = currentPiece){
-      if (!p) return false;
+      if (!p) {
+        console.warn("[collision] called with null piece!", p);
+        return false;
+      }
       return p.shape.some((row, dy) =>
         row.some((val, dx) => {
           if(!val) return false;
@@ -376,6 +408,7 @@
     }
 
     function merge(){
+      console.log("[merge] currentPiece", currentPiece);
       currentPiece.shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
           if(val){
@@ -410,17 +443,20 @@
         let level = Math.floor(linesCleared / 8);
         if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
         dropInterval = SPEED_TABLE[level];
+        console.log("[clearLines] lines:", lines, "score:", score, "level:", level);
       } else {
         combo = 0;
       }
     }
 
     function move(offset){
+      if (!currentPiece) { console.warn("[move] no currentPiece!"); return; }
       currentPiece.x += offset;
       if(collision()) currentPiece.x -= offset;
     }
 
     function dropPiece(){
+      if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
       currentPiece.y++;
       if(collision()){
         currentPiece.y--;
@@ -435,6 +471,7 @@
     }
 
     function rotatePiece(){
+      if (!currentPiece) { console.warn("[rotatePiece] no currentPiece!"); return; }
       const shape = currentPiece.shape;
       currentPiece.shape = shape[0].map((_,i)=>shape.map(r=>r[i])).reverse();
       if(currentTheme === 'space' || currentTheme === 'vitraux'){
@@ -464,7 +501,8 @@
     function getGhostPiece(){
       if(!ghostPieceEnabled) return null;
       let ghost = JSON.parse(JSON.stringify(currentPiece));
-      while(!collision(ghost)){ ghost.y++; }
+      let ct = 0;
+      while(!collision(ghost) && ct < 30){ ghost.y++; ct++; }
       ghost.y--;
       return ghost;
     }
@@ -522,6 +560,10 @@
 
     function drawBoard(){
       ctx.clearRect(0,0,canvas.width,canvas.height);
+      if (!currentPiece || !currentPiece.shape) {
+        console.warn("[drawBoard] Rien à dessiner !", {currentPiece, board});
+        return;
+      }
       const ghost = getGhostPiece();
       if(ghost){
         ghost.shape.forEach((row,dy)=>
@@ -553,6 +595,7 @@
           })
         );
       }
+      console.log("[drawBoard] OK, currentPiece:", currentPiece, "board:", board);
     }
 
     function drawMiniPiece(c, piece) {
@@ -605,9 +648,13 @@
       holdUsed = false;
       drawMiniPiece(nextCtx, nextPiece);
       drawMiniPiece(holdCtx, heldPiece);
+      console.log("[reset] currentPiece=", currentPiece, "nextPiece=", nextPiece);
     }
     function update(now) {
-      if (paused || gameOver) return;
+      if (paused || gameOver) {
+        //console.log("[update] Paused or game over, skip");
+        return;
+      }
       if (!lastTime) lastTime = now;
       const delta = now - lastTime;
       if (delta > dropInterval) {
