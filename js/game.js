@@ -487,7 +487,6 @@
     }
 
     function collision(p = currentPiece){
-      if (!p) return false;
       return p.shape.some((row, dy) =>
         row.some((val, dx) => {
           if(!val) return false;
@@ -499,7 +498,6 @@
     }
 
     function merge(){
-      if (!currentPiece) return;
       currentPiece.shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
           if(val){
@@ -553,13 +551,11 @@
     }
 
     function move(offset){
-      if (!currentPiece) return;
       currentPiece.x += offset;
       if(collision()) currentPiece.x -= offset;
     }
 
     function dropPiece(){
-      if (!currentPiece) return;
       currentPiece.y++;
       if(collision()){
         currentPiece.y--;
@@ -574,7 +570,6 @@
     }
 
     function rotatePiece(){
-      if (!currentPiece) return;
       const shape = currentPiece.shape;
       currentPiece.shape = shape[0].map((_,i)=>shape.map(r=>r[i])).reverse();
       if(currentTheme === 'space' || currentTheme === 'vitraux'){
@@ -591,7 +586,7 @@
     }
 
     function holdPiece() {
-      if (holdUsed || !currentPiece) return;
+      if (holdUsed) return;
       if (!heldPiece) {
         heldPiece = {...currentPiece};
         reset();
@@ -603,7 +598,7 @@
     }
 
     function getGhostPiece(){
-      if(!ghostPieceEnabled || !currentPiece) return null;
+      if(!ghostPieceEnabled) return null;
       let ghost = JSON.parse(JSON.stringify(currentPiece));
       while(!collision(ghost)){ ghost.y++; }
       ghost.y--;
@@ -662,45 +657,37 @@
       }
     }
 
- function drawBoard() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // 1. Affiche les blocks déjà posés même si currentPiece absent
-  board.forEach((row, y) =>
-    row.forEach((cell, x) => {
-      if (cell) {
-        if (currentTheme === 'space' || currentTheme === 'vitraux') {
-          drawBlockCustom(ctx, x, y, cell.letter || cell, BLOCK_SIZE, false, cell.variant || 0);
-        } else {
-          drawBlockCustom(ctx, x, y, cell);
-        }
+    function drawBoard(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      const ghost = getGhostPiece();
+      if(ghost){
+        ghost.shape.forEach((row,dy)=>
+          row.forEach((val,dx)=>{
+            if(val) drawBlockCustom(ctx,ghost.x+dx,ghost.y+dy,ghost.letter,BLOCK_SIZE,true,
+              (currentTheme === 'space' || currentTheme === 'vitraux') ? ghost.variants?.[dy]?.[dx] : 0
+            );
+          })
+        );
       }
-    })
-  );
-
-  // 2. GhostPiece (seulement si currentPiece OK)
-  if(currentPiece){
-    const ghost = getGhostPiece();
-    if(ghost){
-      ghost.shape.forEach((row, dy) =>
-        row.forEach((val, dx) => {
-          if(val) drawBlockCustom(ctx, ghost.x + dx, ghost.y + dy, ghost.letter, BLOCK_SIZE, true,
-            (currentTheme === 'space' || currentTheme === 'vitraux') ? ghost.variants?.[dy]?.[dx] : 0
+      board.forEach((row,y)=>
+        row.forEach((cell,x)=>{
+          if(cell) {
+            if(currentTheme === 'space' || currentTheme === 'vitraux'){
+              drawBlockCustom(ctx,x,y,cell.letter||cell, BLOCK_SIZE, false, cell.variant||0);
+            } else {
+              drawBlockCustom(ctx,x,y,cell);
+            }
+          }
+        })
+      );
+      currentPiece.shape.forEach((row,dy)=>
+        row.forEach((val,dx)=>{
+          if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter,BLOCK_SIZE,false,
+            (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
           );
         })
       );
     }
-    // 3. currentPiece (actuelle)
-    currentPiece.shape.forEach((row, dy) =>
-      row.forEach((val, dx) => {
-        if(val) drawBlockCustom(ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter, BLOCK_SIZE, false,
-          (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
-        );
-      })
-    );
-  }
-}
-
 
     function drawMiniPiece(c, piece) {
       c.clearRect(0, 0, c.canvas.width, c.canvas.height);
