@@ -135,7 +135,7 @@
     const blockImages = {};
 
     // === Load all images ===
-    function loadBlockImages(themeName, cb){
+    function loadBlockImages(themeName){
       const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "angelique", "cyber"];
       if(themeName === 'space' || themeName === 'vitraux') {
         blockImages[themeName] = [];
@@ -144,10 +144,7 @@
           const img = new Image();
           img.onload = () => {
             imagesLoaded++;
-            if(imagesLoaded === imagesToLoad) {
-              if (typeof cb === "function") cb();
-              drawBoard();
-            }
+            if(imagesLoaded === imagesToLoad) drawBoard();
           };
           img.src = `themes/${themeName}/${i}.png`;
           blockImages[themeName].push(img);
@@ -159,7 +156,7 @@
         ['I','J','L','O','S','T','Z'].forEach(l => {
           if(themesWithPNG.includes(themeName)){
             const img = new Image();
-            img.onload = () => { if (typeof cb === "function") cb(); drawBoard(); };
+            img.onload = () => { drawBoard(); };
             img.src = `themes/${themeName}/${l}.png`;
             blockImages[l] = img;
           }else{
@@ -182,13 +179,8 @@
       document.body.setAttribute('data-theme', themeName);
       const style = document.getElementById('theme-style');
       if(style) style.href = `themes/${themeName}.css`;
-      loadBlockImages(themeName, () => {
-        drawMiniPiece(nextCtx, nextPiece);
-        drawMiniPiece(holdCtx, heldPiece);
-        drawBoard();
-      });
+      setTimeout(() => loadBlockImages(themeName), 100);
       currentThemeIndex = THEMES.indexOf(themeName);
-      localStorage.setItem('themeVBlocks', themeName);
     }
     loadBlockImages(currentTheme);
 
@@ -670,44 +662,44 @@
       }
     }
 
-    function drawBoard() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+ function drawBoard() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-      // 1. Affiche les blocks déjà posés même si currentPiece absent
-      board.forEach((row, y) =>
-        row.forEach((cell, x) => {
-          if (cell) {
-            if (currentTheme === 'space' || currentTheme === 'vitraux') {
-              drawBlockCustom(ctx, x, y, cell.letter || cell, BLOCK_SIZE, false, cell.variant || 0);
-            } else {
-              drawBlockCustom(ctx, x, y, cell);
-            }
-          }
+  // 1. Affiche les blocks déjà posés même si currentPiece absent
+  board.forEach((row, y) =>
+    row.forEach((cell, x) => {
+      if (cell) {
+        if (currentTheme === 'space' || currentTheme === 'vitraux') {
+          drawBlockCustom(ctx, x, y, cell.letter || cell, BLOCK_SIZE, false, cell.variant || 0);
+        } else {
+          drawBlockCustom(ctx, x, y, cell);
+        }
+      }
+    })
+  );
+
+  // 2. GhostPiece (seulement si currentPiece OK)
+  if(currentPiece){
+    const ghost = getGhostPiece();
+    if(ghost){
+      ghost.shape.forEach((row, dy) =>
+        row.forEach((val, dx) => {
+          if(val) drawBlockCustom(ctx, ghost.x + dx, ghost.y + dy, ghost.letter, BLOCK_SIZE, true,
+            (currentTheme === 'space' || currentTheme === 'vitraux') ? ghost.variants?.[dy]?.[dx] : 0
+          );
         })
       );
-
-      // 2. GhostPiece (seulement si currentPiece OK)
-      if(currentPiece){
-        const ghost = getGhostPiece();
-        if(ghost){
-          ghost.shape.forEach((row, dy) =>
-            row.forEach((val, dx) => {
-              if(val) drawBlockCustom(ctx, ghost.x + dx, ghost.y + dy, ghost.letter, BLOCK_SIZE, true,
-                (currentTheme === 'space' || currentTheme === 'vitraux') ? ghost.variants?.[dy]?.[dx] : 0
-              );
-            })
-          );
-        }
-        // 3. currentPiece (actuelle)
-        currentPiece.shape.forEach((row, dy) =>
-          row.forEach((val, dx) => {
-            if(val) drawBlockCustom(ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter, BLOCK_SIZE, false,
-              (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
-            );
-          })
-        );
-      }
     }
+    // 3. currentPiece (actuelle)
+    currentPiece.shape.forEach((row, dy) =>
+      row.forEach((val, dx) => {
+        if(val) drawBlockCustom(ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter, BLOCK_SIZE, false,
+          (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
+        );
+      })
+    );
+  }
+}
 
 
     function drawMiniPiece(c, piece) {
@@ -760,7 +752,6 @@
       holdUsed = false;
       drawMiniPiece(nextCtx, nextPiece);
       drawMiniPiece(holdCtx, heldPiece);
-      drawBoard();
     }
     function update(now) {
       if (paused || gameOver) return;
