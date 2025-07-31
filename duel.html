@@ -151,7 +151,11 @@
       for (let i = 0; i < len; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
       return code;
     }
-    function i18nT(key) { return (window.i18n && window.i18n[key]) || key; }
+   function i18nT(key) {
+  if (window.I18N_MAP && window.I18N_MAP[key]) return window.I18N_MAP[key];
+  return key;
+}
+
 
     // --- Popup (SÛR/RESET handlers) ---
     function showDuelPopup(state, data = {}) {

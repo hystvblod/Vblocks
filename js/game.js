@@ -301,8 +301,7 @@
           await userData.addVCoins?.(points);
           updateBalancesHeader();
         } catch (err) {
-          alert(t("error.save_score"));
-          console.error(err);
+   
         }
       })(points);
 
