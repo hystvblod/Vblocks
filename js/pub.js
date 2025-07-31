@@ -2,13 +2,6 @@
 // INIT SUPABASE (création unique, mode Capacitor)
 // =============================
 
-const SUPABASE_URL = 'https://youhealyblgbwjhsskca.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
-
-if (!window.sb) {
-  window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
-const sb = window.sb;
 
 // === CONFIG PUBS ===
 const INTERSTITIEL_APRES_X_PARTIES = 2; // Nombre de parties avant pub interstitielle
