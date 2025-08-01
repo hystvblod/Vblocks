@@ -455,20 +455,27 @@
       if(collision()) currentPiece.x -= offset;
     }
 
-    function dropPiece(){
-      if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
-      currentPiece.y++;
-      if(collision()){
-        currentPiece.y--;
-        merge();
-        saveHistory();
-        reset();
-        if(collision()){
-          showEndPopup(score);
-          gameOver = true;
-        }
-      }
+function dropPiece(){
+  if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
+  currentPiece.y++;
+  if (collision()) {
+    currentPiece.y--;
+    merge(); // Colle la pièce au board
+    saveHistory();
+    // On prend la pièce suivante
+    currentPiece = nextPiece;
+    nextPiece = newPiece();
+    holdUsed = false;
+    drawMiniPiece(nextCtx, nextPiece);
+    drawMiniPiece(holdCtx, heldPiece);
+    // Si la nouvelle pièce est déjà en collision (bloc au spawn), alors c'est perdu
+    if (collision()) {
+      showEndPopup(score);
+      gameOver = true;
     }
+  }
+}
+
 
     function rotatePiece(){
       if (!currentPiece) { console.warn("[rotatePiece] no currentPiece!"); return; }
