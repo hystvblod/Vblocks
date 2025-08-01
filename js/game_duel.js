@@ -131,6 +131,7 @@
     let currentThemeIndex = THEMES.indexOf(currentTheme);
     const blockImages = {};
     function loadBlockImages(themeName){
+      console.log("[loadBlockImages] themeName=", themeName);
       const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "angelique", "cyber"];
       if(themeName === 'space' || themeName === 'vitraux') {
         blockImages[themeName] = [];
@@ -216,14 +217,16 @@
         dropInterval,
       });
       if (history.length > 7) history.shift();
+      console.log("[saveHistory] history.length=", history.length);
     }
 
     // ==== DUEL ONLY ==== //
     async function setupDuelSequence() {
-      if (!duelId) return;
+      if (!duelId) { console.warn("[setupDuelSequence] PAS de duelId"); return; }
       let tries = 0, data = null;
       while (tries++ < 20) {
         let res = await sb.from('duels').select('*').eq('id', duelId).single();
+        console.log(`[setupDuelSequence] Try ${tries}, got:`, res);
         if (res?.data && res.data.pieces_seq) { data = res.data; break; }
         await new Promise(r=>setTimeout(r,1500));
       }
@@ -247,6 +250,7 @@
       return piecesSequence[piecesUsed++];
     }
     async function handleDuelEnd(myScore) {
+      console.log("[handleDuelEnd] called, myScore=", myScore);
       let field = (duelPlayerNum === 1) ? "score1" : "score2";
       await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
       let tries = 0, otherScore = null;
@@ -272,8 +276,8 @@
     function showEndPopup(points) {
       paused = true;
       drawBoard();
-      // DUEL -> handleDuelEnd SEUL
       handleDuelEnd(points);
+      console.log("[showEndPopup] FIN de partie !");
     }
 
     function rewind() {
@@ -315,6 +319,7 @@
           requestAnimationFrame(update);
         }
       },1000);
+      console.log("[rewind] rewind state=", state);
     }
 
     function togglePause() {
@@ -323,6 +328,7 @@
       if (!paused && !gameOver) {
         requestAnimationFrame(update);
       }
+      console.log("[togglePause]", paused ? "PAUSED" : "UNPAUSED");
     }
     global.togglePause = togglePause;
 
@@ -377,17 +383,15 @@
         x: Math.floor((COLS - shape[0].length)/2),
         y: 0
       };
-  if(currentTheme === 'space' || currentTheme === 'vitraux'){
-  // Liste 1 à 6 mélangée
-  let numbers = [1,2,3,4,5,6];
-  for(let i = numbers.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-  }
-  let idx = 0;
-  obj.variants = shape.map(row => row.map(val => val ? numbers[idx++] : null));
-}
-
+      if(currentTheme === 'space' || currentTheme === 'vitraux'){
+        let numbers = [1,2,3,4,5,6];
+        for(let i = numbers.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+        }
+        let idx = 0;
+        obj.variants = shape.map(row => row.map(val => val ? numbers[idx++] : null));
+      }
       console.log("[newPiece] created:", obj);
       return obj;
     }
@@ -453,29 +457,30 @@
       if (!currentPiece) { console.warn("[move] no currentPiece!"); return; }
       currentPiece.x += offset;
       if(collision()) currentPiece.x -= offset;
+      console.log("[move] moved piece, offset=", offset, "currentPiece=", currentPiece);
     }
 
-function dropPiece(){
-  if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
-  currentPiece.y++;
-  if (collision()) {
-    currentPiece.y--;
-    merge(); // Colle la pièce au board
-    saveHistory();
-    // On prend la pièce suivante
-    currentPiece = nextPiece;
-    nextPiece = newPiece();
-    holdUsed = false;
-    drawMiniPiece(nextCtx, nextPiece);
-    drawMiniPiece(holdCtx, heldPiece);
-    // Si la nouvelle pièce est déjà en collision (bloc au spawn), alors c'est perdu
-    if (collision()) {
-      showEndPopup(score);
-      gameOver = true;
+    function dropPiece(){
+      if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
+      currentPiece.y++;
+      if (collision()) {
+        currentPiece.y--;
+        merge(); // Colle la pièce au board
+        saveHistory();
+        // On prend la pièce suivante
+        currentPiece = nextPiece;
+        nextPiece = newPiece();
+        holdUsed = false;
+        drawMiniPiece(nextCtx, nextPiece);
+        drawMiniPiece(holdCtx, heldPiece);
+        // Si la nouvelle pièce est déjà en collision (bloc au spawn), alors c'est perdu
+        if (collision()) {
+          showEndPopup(score);
+          gameOver = true;
+        }
+      }
+      console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
     }
-  }
-}
-
 
     function rotatePiece(){
       if (!currentPiece) { console.warn("[rotatePiece] no currentPiece!"); return; }
@@ -491,6 +496,7 @@ function dropPiece(){
           currentPiece.variants = old;
         }
       }
+      console.log("[rotatePiece] currentPiece=", currentPiece);
     }
 
     function holdPiece() {
@@ -503,6 +509,7 @@ function dropPiece(){
       }
       holdUsed = true;
       drawMiniPiece(holdCtx, heldPiece);
+      console.log("[holdPiece] heldPiece=", heldPiece, "currentPiece=", currentPiece);
     }
 
     function getGhostPiece(){
@@ -592,7 +599,6 @@ function dropPiece(){
           }
         })
       );
-      // ==== SECONDE MODIF, SÉCURISATION ==== //
       if(currentPiece && currentPiece.shape){
         currentPiece.shape.forEach((row,dy)=>
           row.forEach((val,dx)=>{
@@ -657,6 +663,7 @@ function dropPiece(){
       drawMiniPiece(holdCtx, heldPiece);
       console.log("[reset] currentPiece=", currentPiece, "nextPiece=", nextPiece);
     }
+
     function update(now) {
       if (paused || gameOver) {
         //console.log("[update] Paused or game over, skip");
@@ -693,6 +700,7 @@ function dropPiece(){
       movedX = movedY = 0;
       dragging = true;
       touchStartTime = Date.now();
+      console.log("[touchstart]");
     });
     canvas.addEventListener('touchmove', function(e){
       if(!dragging) return;
@@ -706,18 +714,22 @@ function dropPiece(){
         if(movedY > 28){ dropPiece(); startY = t.clientY; }
         if(movedY < -28){ rotatePiece(); startY = t.clientY; }
       }
+      console.log("[touchmove] movedX:", movedX, "movedY:", movedY);
     });
     canvas.addEventListener('touchend', function(e){
       dragging = false;
       if(Math.abs(movedX) < 10 && Math.abs(movedY) < 10){
         rotatePiece();
       }
+      console.log("[touchend]");
     });
     holdCanvas.addEventListener('touchstart', function(e){
       holdPiece();
+      console.log("[holdCanvas touchstart]");
     });
     holdCanvas.addEventListener('click', function(e){
       holdPiece();
+      console.log("[holdCanvas click]");
     });
     document.addEventListener('keydown', e => {
       if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
@@ -730,6 +742,7 @@ function dropPiece(){
         case 'ArrowUp': rotatePiece(); break;
         case 'c': case 'C': holdPiece(); break;
       }
+      console.log("[keydown]", e.key);
     });
 
     // ==== LANCEMENT ====
