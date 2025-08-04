@@ -473,27 +473,28 @@ async function handleDuelEnd(myScore) {
       console.log("[move] moved piece, offset=", offset, "currentPiece=", currentPiece);
     }
 
-    function dropPiece(){
-      if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
-      currentPiece.y++;
-      if (collision()) {
-        currentPiece.y--;
-        merge(); // Colle la pièce au board
-        saveHistory();
-        // On prend la pièce suivante
-        currentPiece = nextPiece;
-        nextPiece = newPiece();
-        holdUsed = false;
-        drawMiniPiece(nextCtx, nextPiece);
-        drawMiniPiece(holdCtx, heldPiece);
-        // Si la nouvelle pièce est déjà en collision (bloc au spawn), alors c'est perdu
-        if (collision()) {
-          showEndPopup(score);
-          gameOver = true;
-        }
-      }
-      console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
+function dropPiece(){
+  if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
+  currentPiece.y++;
+  if (collision()) {
+    currentPiece.y--;
+    merge(); // Colle la pièce au board
+    saveHistory();
+    // On prend la pièce suivante
+    currentPiece = nextPiece;
+    nextPiece = newPiece();
+    holdUsed = false;
+    drawMiniPiece(nextCtx, nextPiece);
+    drawMiniPiece(holdCtx, heldPiece);
+    // Si la nouvelle pièce est déjà en collision (bloc au spawn), alors c'est perdu
+    if (collision()) {
+      showEndPopup(score);
+      gameOver = true;
     }
+  }
+  console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
+}
+
 
     function rotatePiece(){
       if (!currentPiece) { console.warn("[rotatePiece] no currentPiece!"); return; }
