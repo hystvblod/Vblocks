@@ -476,6 +476,9 @@ async function handleDuelEnd(myScore) {
 function dropPiece(){
   if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
   currentPiece.y++;
+  // PATCH ANTI-BOUCLE
+  const maxY = ROWS - currentPiece.shape.length;
+  if (currentPiece.y > maxY) currentPiece.y = maxY;
   if (collision()) {
     currentPiece.y--;
     merge(); // Colle la pièce au board
@@ -494,6 +497,7 @@ function dropPiece(){
   }
   console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
 }
+
 
 
     function rotatePiece(){
