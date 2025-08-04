@@ -59,8 +59,6 @@
     }
     .btn-back img { width: 28px; height: 28px; }
     .btn-icon img { width: 24px; height: 24px; }
-    .pieces-row, .vcoins, .score-row, #controls { display: none; }
-    #gameZone { display: none; }
     #duelPopup {
       position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 1000;
       background: rgba(12,16,44,0.85); display: flex; align-items: center; justify-content: center;
@@ -314,22 +312,22 @@
       }
     }
 
-    function startCountdown() {
-      let n = 3;
-      const ctd = setInterval(() => {
-        const el = document.getElementById('countdown');
-        if (el) el.textContent = n;
-        n--;
-        if (n < 0) {
-          clearInterval(ctd);
-          document.getElementById('duelPopup').style.display = 'none';
-          document.getElementById('gameZone').style.display = '';
-          document.querySelectorAll('.pieces-row, .vcoins, .score-row, #controls').forEach(el => el.style.display = '');
-          if (typeof VBlocksGame !== "undefined" && VBlocksGame.initGame)
-            VBlocksGame.initGame({ mode: 'duel', duelId: duelId, duelPlayerNum: playerNum });
-        }
-      }, 1000);
+function startCountdown() {
+  let n = 3;
+  const ctd = setInterval(() => {
+    const el = document.getElementById('countdown');
+    if (el) el.textContent = n;
+    n--;
+    if (n < 0) {
+      clearInterval(ctd);
+      document.getElementById('duelPopup').style.display = 'none';
+      // SUPPRIMER les lignes qui masquent ou affichent le gameZone ici
+      if (typeof VBlocksGame !== "undefined" && VBlocksGame.initGame)
+        VBlocksGame.initGame({ mode: 'duel', duelId: duelId, duelPlayerNum: playerNum });
     }
+  }, 1000);
+}
+
 
     window.addEventListener("DOMContentLoaded", startDuelFlow);
 
