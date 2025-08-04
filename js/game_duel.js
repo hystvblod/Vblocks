@@ -220,58 +220,71 @@
       console.log("[saveHistory] history.length=", history.length);
     }
 
-    // ==== DUEL ONLY ==== //
-    async function setupDuelSequence() {
-      if (!duelId) { console.warn("[setupDuelSequence] PAS de duelId"); return; }
-      let tries = 0, data = null;
-      while (tries++ < 20) {
-        let res = await sb.from('duels').select('*').eq('id', duelId).single();
-        console.log(`[setupDuelSequence] Try ${tries}, got:`, res);
-        if (res?.data && res.data.pieces_seq) { data = res.data; break; }
-        await new Promise(r=>setTimeout(r,1500));
-      }
-      if (!data) throw new Error(t("error.duel_not_found"));
-      piecesSequence = data.pieces_seq.split(',').map(x=>parseInt(x));
-      piecesUsed = 0;
-      console.log("[setupDuelSequence] piecesSequence loaded:", piecesSequence);
-    }
-    function getDuelNextPieceId() {
-      if (!piecesSequence) {
-        const rnd = Math.floor(Math.random()*PIECES.length);
-        console.log("[getDuelNextPieceId] Fallback rnd:", rnd);
-        return rnd;
-      }
-      if (piecesUsed >= piecesSequence.length) {
-        const rnd = Math.floor(Math.random()*PIECES.length);
-        console.log("[getDuelNextPieceId] End of sequence, fallback:", rnd);
-        return rnd;
-      }
-      console.log("[getDuelNextPieceId] From seq idx", piecesUsed, "->", piecesSequence[piecesUsed]);
-      return piecesSequence[piecesUsed++];
-    }
-    async function handleDuelEnd(myScore) {
-      console.log("[handleDuelEnd] called, myScore=", myScore);
-      let field = (duelPlayerNum === 1) ? "score1" : "score2";
-      await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
-      let tries = 0, otherScore = null;
-      while(tries++ < 40) {
-        let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
-        if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
-        if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
-        await new Promise(r=>setTimeout(r,1500));
-      }
-      let msg = `
-        <div style="font-weight:bold;">${t("duel.finished")}</div>
-        <div>${t("duel.yourscore")} <b>${myScore}</b></div>
-        <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
-      `;
-      let div = document.createElement("div");
-      div.id = "duel-popup";
-      div.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;";
-      div.innerHTML = `<div style="background:#23294a;padding:2em 2em 1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;">${msg}</div>`;
-      document.body.appendChild(div);
-    }
-    // ==== FIN DUEL ==== //
+   // ==== DUEL ONLY ==== //
+async function setupDuelSequence() {
+  console.log("[setupDuelSequence] called, duelId=", duelId);
+  if (!duelId) { 
+    console.warn("[setupDuelSequence] PAS de duelId, fallback SOLO MODE"); 
+    piecesSequence = Array.from({length: 1000}, () => Math.floor(Math.random() * 7));
+    piecesUsed = 0;
+    return;
+  }
+  let tries = 0, data = null;
+  while (tries++ < 20) {
+    let res = await sb.from('duels').select('*').eq('id', duelId).single();
+    console.log(`[setupDuelSequence] Try ${tries}, res=`, res);
+    if (res?.data && res.data.pieces_seq) { data = res.data; break; }
+    await new Promise(r=>setTimeout(r,1500));
+  }
+  if (!data) {
+    console.error("[setupDuelSequence] ERREUR: aucune data reçue pour ce duelId=", duelId);
+    throw new Error(t("error.duel_not_found"));
+  }
+  console.log("[setupDuelSequence] data from BDD =", data);
+  piecesSequence = data.pieces_seq.split(',').map(x=>parseInt(x));
+  piecesUsed = 0;
+  console.log("[setupDuelSequence] piecesSequence loaded:", piecesSequence);
+}
+
+function getDuelNextPieceId() {
+  if (!piecesSequence) {
+    const rnd = Math.floor(Math.random()*PIECES.length);
+    console.log("[getDuelNextPieceId] Fallback rnd:", rnd);
+    return rnd;
+  }
+  if (piecesUsed >= piecesSequence.length) {
+    const rnd = Math.floor(Math.random()*PIECES.length);
+    console.log("[getDuelNextPieceId] End of sequence, fallback:", rnd);
+    return rnd;
+  }
+  console.log("[getDuelNextPieceId] From seq idx", piecesUsed, "->", piecesSequence[piecesUsed]);
+  return piecesSequence[piecesUsed++];
+}
+
+async function handleDuelEnd(myScore) {
+  console.log("[handleDuelEnd] called, myScore=", myScore);
+  let field = (duelPlayerNum === 1) ? "score1" : "score2";
+  await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
+  let tries = 0, otherScore = null;
+  while(tries++ < 40) {
+    let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
+    if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
+    if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
+    await new Promise(r=>setTimeout(r,1500));
+  }
+  let msg = `
+    <div style="font-weight:bold;">${t("duel.finished")}</div>
+    <div>${t("duel.yourscore")} <b>${myScore}</b></div>
+    <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
+  `;
+  let div = document.createElement("div");
+  div.id = "duel-popup";
+  div.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;";
+  div.innerHTML = `<div style="background:#23294a;padding:2em 2em 1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;">${msg}</div>`;
+  document.body.appendChild(div);
+}
+// ==== FIN DUEL ==== //
+
 
     function showEndPopup(points) {
       paused = true;
