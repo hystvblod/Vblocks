@@ -494,9 +494,14 @@ function dropPiece(){
       showEndPopup(score);
       gameOver = true;
     }
+    // === AJOUT ICI ===
+    if (!gameOver && !paused) {
+      requestAnimationFrame(update);
+    }
   }
   console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
 }
+
 
 
 

@@ -135,19 +135,18 @@
     <div id="duelPopup"></div>
 
     <!-- ZONE DE JEU MASQUÉE AU DÉBUT -->
-   <div id="gameZone" style="display: block;">
-      <div class="pieces-row">
-        <div class="piece-block">
-          <label data-i18n="duel.hold">Réserve</label>
-          <canvas id="holdCanvas" width="44" height="44"></canvas>
-        </div>
-        <div class="piece-block">
-          <div style="color:#39ff14;font-weight:700;font-size:1em;" data-i18n="duel.main_title">DUEL</div>
-        </div>
-        <div class="piece-block">
-          <label data-i18n="duel.next">Suivante</label>
-          <canvas id="nextCanvas" width="44" height="44"></canvas>
-        </div>
+<div class="top-canvas-row">
+  <div class="side-canvas-block">
+    <label data-i18n="duel.hold">Réserve</label>
+    <canvas id="holdCanvas" width="48" height="48"></canvas>
+  </div>
+  <div class="middle-duel-title">
+    <div class="duel-title" data-i18n="duel.main_title">DUEL</div>
+  </div>
+  <div class="side-canvas-block">
+    <label data-i18n="duel.next">Suivante</label>
+    <canvas id="nextCanvas" width="48" height="48"></canvas>
+  </div>
       </div>
       <div class="vcoins">
         <img src="assets/images/vcoin.webp" alt="VCoins" class="vcoin-icon">
