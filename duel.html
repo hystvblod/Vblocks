@@ -64,35 +64,89 @@
       background: rgba(12,16,44,0.85); display: flex; align-items: center; justify-content: center;
     }
     .wallet-block {
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  margin: 0 0 7px 0;
-  min-height: 38px;
-}
-.vcoins, .jetons {
-  display: flex;
-  align-items: center;
-  font-weight: 700;
-  justify-content: center;
-}
-.vcoins {
-  font-size: 1.19em;
-  color: #ffd800;
-}
-.vcoin-icon {
-  width: 27px; height: 27px;
-  vertical-align: middle;
-  margin-right: 6px;
-}
-@media (max-width:480px) {
-  .wallet-block { gap: 8px; margin-bottom: 4px; }
-  .vcoin-icon, .jeton-icon { width: 16px; height: 16px; margin-right: 3px; }
-  .vcoins { font-size: .97em; }
-}
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin: 0 0 7px 0;
+      min-height: 38px;
+    }
+    .vcoins, .jetons {
+      display: flex;
+      align-items: center;
+      font-weight: 700;
+      justify-content: center;
+    }
+    .vcoins {
+      font-size: 1.19em;
+      color: #ffd800;
+    }
+    .vcoin-icon {
+      width: 27px; height: 27px;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* === Ajout Bloc CANVAS Top, même style que classic === */
+    .top-canvas-row {
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin: 0 0 12px 0;
+      gap: 16px;
+    }
+
+    .side-canvas-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 64px;
+      gap: 5px;
+    }
+    .side-canvas-block label {
+      color: var(--body-color, #bbb);
+      font-size: 0.97em;
+      font-weight: 700;
+      margin-bottom: 2px;
+      letter-spacing: .5px;
+      text-align: center;
+    }
+    .side-canvas-block canvas {
+      margin: 0 auto;
+      border-radius: 8px;
+      background: var(--canvas-bg, #18181f);
+      box-shadow: 0 2px 8px #2f2f6a24;
+      display: block;
+    }
+
+    .middle-duel-title {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      flex: 1 0 0;
+      min-width: 68px;
+    }
+    .duel-title {
+      color: #39ff14;
+      font-size: 1.08em;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-align: center;
+      margin-bottom: 3px;
+    }
+    @media (max-width:480px) {
+      .wallet-block { gap: 8px; margin-bottom: 4px; }
+      .vcoin-icon, .jeton-icon { width: 16px; height: 16px; margin-right: 3px; }
+      .vcoins { font-size: .97em; }
+      .top-canvas-row { gap: 6px; }
+      .side-canvas-block { min-width: 40px; }
+      .side-canvas-block canvas { width: 32px !important; height: 32px !important; }
+      .middle-duel-title { min-width: 36px; }
+    }
 
     #duelPopup > div {
       background: #23294a; border-radius: 1em; box-shadow: 0 0 18px #00fff74c;
@@ -110,7 +164,7 @@
     // Force le thème dès le départ pour éviter tout flash
     const theme = localStorage.getItem('themeVBlocks') || 'neon';
     document.body.setAttribute('data-theme', theme); 
-      </script>
+    </script>
   <div class="main-content">
     <div class="header-row">
       <div class="header-side">
@@ -135,19 +189,24 @@
     <div id="duelPopup"></div>
 
     <!-- ZONE DE JEU MASQUÉE AU DÉBUT -->
-<div class="top-canvas-row">
-  <div class="side-canvas-block">
-    <label data-i18n="duel.hold">Réserve</label>
-    <canvas id="holdCanvas" width="48" height="48"></canvas>
-  </div>
-  <div class="middle-duel-title">
-    <div class="duel-title" data-i18n="duel.main_title">DUEL</div>
-  </div>
-  <div class="side-canvas-block">
-    <label data-i18n="duel.next">Suivante</label>
-    <canvas id="nextCanvas" width="48" height="48"></canvas>
-  </div>
+    <div id="gameZone" style="display: block;">
+
+      <!-- === Bloc Réserve | DUEL | Suivante, même look que classic === -->
+      <div class="top-canvas-row">
+        <div class="side-canvas-block">
+          <label data-i18n="duel.hold">Réserve</label>
+          <canvas id="holdCanvas" width="48" height="48"></canvas>
+        </div>
+        <div class="middle-duel-title">
+          <div class="duel-title" data-i18n="duel.main_title">DUEL</div>
+        </div>
+        <div class="side-canvas-block">
+          <label data-i18n="duel.next">Suivante</label>
+          <canvas id="nextCanvas" width="48" height="48"></canvas>
+        </div>
       </div>
+      <!-- === Fin Bloc top === -->
+
       <div class="vcoins">
         <img src="assets/images/vcoin.webp" alt="VCoins" class="vcoin-icon">
         <span id="vcoin-amount">0</span>
@@ -184,11 +243,10 @@
       for (let i = 0; i < len; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
       return code;
     }
-   function i18nT(key) {
-  if (window.I18N_MAP && window.I18N_MAP[key]) return window.I18N_MAP[key];
-  return key;
-}
-
+    function i18nT(key) {
+      if (window.I18N_MAP && window.I18N_MAP[key]) return window.I18N_MAP[key];
+      return key;
+    }
 
     // --- Popup (SÛR/RESET handlers) ---
     function showDuelPopup(state, data = {}) {
@@ -199,8 +257,7 @@
       if (state === 'choice') {
         html = `<div>
           <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
-          <button class="duel-btn" id="btnNewDuel" data-i18n="duel.popup.choice.new"></button>
-
+          <button class="duel-btn" id="btnNewDuel">${i18nT("duel.popup.choice.new")}</button>
           <br>
           <button class="duel-btn" id="btnJoinDuel">${i18nT("duel.popup.choice.join")}</button>
         </div>`;
@@ -348,22 +405,21 @@
       }
     }
 
-function startCountdown() {
-  let n = 3;
-  const ctd = setInterval(() => {
-    const el = document.getElementById('countdown');
-    if (el) el.textContent = n;
-    n--;
-    if (n < 0) {
-      clearInterval(ctd);
-      document.getElementById('duelPopup').style.display = 'none';
-      // SUPPRIMER les lignes qui masquent ou affichent le gameZone ici
-      if (typeof VBlocksGame !== "undefined" && VBlocksGame.initGame)
-        VBlocksGame.initGame({ mode: 'duel', duelId: duelId, duelPlayerNum: playerNum });
+    function startCountdown() {
+      let n = 3;
+      const ctd = setInterval(() => {
+        const el = document.getElementById('countdown');
+        if (el) el.textContent = n;
+        n--;
+        if (n < 0) {
+          clearInterval(ctd);
+          document.getElementById('duelPopup').style.display = 'none';
+          // SUPPRIMER les lignes qui masquent ou affichent le gameZone ici
+          if (typeof VBlocksGame !== "undefined" && VBlocksGame.initGame)
+            VBlocksGame.initGame({ mode: 'duel', duelId: duelId, duelPlayerNum: playerNum });
+        }
+      }, 1000);
     }
-  }, 1000);
-}
-
 
     window.addEventListener("DOMContentLoaded", startDuelFlow);
 
