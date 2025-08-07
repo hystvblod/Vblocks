@@ -106,6 +106,11 @@
   </style>
 </head>
 <body>
+    <script>
+    // Force le thème dès le départ pour éviter tout flash
+    const theme = localStorage.getItem('themeVBlocks') || 'neon';
+    document.body.setAttribute('data-theme', theme); 
+      </script>
   <div class="main-content">
     <div class="header-row">
       <div class="header-side">
