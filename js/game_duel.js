@@ -484,11 +484,7 @@ function dropPiece(){
     merge(); // Colle la pièce au board
     saveHistory();
     // On prend la pièce suivante
-    currentPiece = nextPiece;
-    nextPiece = newPiece();
-    holdUsed = false;
-    drawMiniPiece(nextCtx, nextPiece);
-    drawMiniPiece(holdCtx, heldPiece);
+reset();
     // Si la nouvelle pièce est déjà en collision (bloc au spawn), alors c'est perdu
     if (collision()) {
       showEndPopup(score);
