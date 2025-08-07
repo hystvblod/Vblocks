@@ -253,12 +253,13 @@
       popup.style.display = 'flex';
       let html = '';
       if (state === 'choice') {
-        html = `<div>
-          <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
-          <button class="duel-btn" id="btnNewDuel">${i18nT("duel.popup.choice.new")}</button>
-          <br>
-          <button class="duel-btn" id="btnJoinDuel">${i18nT("duel.popup.choice.join")}</button>
-        </div>`;
+ div.innerHTML = `
+  <h2>${t("duel.popup.choice.title")}</h2>
+  <button class="duel-btn" id="btnNewDuel">${t("duel.popup.choice.new")}</button>
+  <br>
+  <button class="duel-btn" id="btnJoinDuel">${t("duel.popup.choice.join")}</button>
+`;
+
       }
       if (state === 'wait') {
         html = `<div>
