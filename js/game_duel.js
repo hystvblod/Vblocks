@@ -80,6 +80,7 @@
   });
   // ==== FIN MUSIQUE ====
 
+
   // Fonction i18n de traduction
   function t(key, params) {
     if (window.i18nGet) {
@@ -473,31 +474,34 @@ async function handleDuelEnd(myScore) {
       console.log("[move] moved piece, offset=", offset, "currentPiece=", currentPiece);
     }
 
-function dropPiece(){
+function dropPiece() {
   if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
+
+  // Descend d'une ligne
   currentPiece.y++;
-  // PATCH ANTI-BOUCLE
-  const maxY = ROWS - currentPiece.shape.length;
-  if (currentPiece.y > maxY) currentPiece.y = maxY;
+
+  // Si on heurte le bas ou une brique, on verrouille immédiatement
   if (collision()) {
-    currentPiece.y--;
-    merge(); // Colle la pièce au board
+    currentPiece.y--;          // revient à la dernière position valide
+    merge();                    // colle la pièce au board
     saveHistory();
-    // On prend la pièce suivante
-reset();
-    // Si la nouvelle pièce est déjà en collision (bloc au spawn), alors c'est perdu
+    reset();                    // spawn de la suivante
+    lastTime = performance.now(); // <-- reset du timer pour la 2e pièce
+
+    // Si la nouvelle pièce est bloquée au spawn → fin
     if (collision()) {
       showEndPopup(score);
       gameOver = true;
     }
-    // === AJOUT ICI ===
+
+    // Relance propre de la boucle si on continue
     if (!gameOver && !paused) {
       requestAnimationFrame(update);
     }
   }
+
   console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
 }
-
 
 
 
@@ -520,11 +524,14 @@ reset();
 
     function holdPiece() {
       if (holdUsed) return;
+      const deep = o => JSON.parse(JSON.stringify(o)); // deep copy pour éviter les alias
       if (!heldPiece) {
-        heldPiece = {...currentPiece};
+        heldPiece = deep(currentPiece);
         reset();
       } else {
-        [heldPiece, currentPiece] = [{...currentPiece}, {...heldPiece}];
+        const tmp = deep(currentPiece);
+        currentPiece = deep(heldPiece);
+        heldPiece = tmp;
       }
       holdUsed = true;
       drawMiniPiece(holdCtx, heldPiece);
