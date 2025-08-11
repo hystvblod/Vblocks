@@ -34,24 +34,13 @@
     }
     .theme-card.special-cartouche:hover { transform: translateY(-1px); }
 
-    /* Icône/image dans cartouche */
-    .theme-card .theme-ico{
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 56px;
-      border-radius: 12px;
-      overflow: hidden;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.08);
-    }
-    .theme-card .theme-ico img{
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+    /* Icône/image dans cartouche — MASQUÉ pour les thèmes */
+    .theme-card .theme-ico{ display: none !important; }
+
+    /* Styles texte en BLANC pour les thèmes */
+    .theme-card .theme-label,
+    .theme-card .prix-label { color: #fff !important; }
+
     .theme-card .theme-label{ font-weight: 700; letter-spacing: .2px; }
 
     .theme-card.unlocked { opacity: 1; }
@@ -228,7 +217,7 @@ function renderAchats() {
   $achatsList.innerHTML = html;
 }
 
-/* Liste thèmes: WEBP uniquement (PAS de fallback PNG ici) */
+/* Liste thèmes: SANS photo (pas d'icône), texte blanc, WEBP only en popup */
 async function renderThemes() {
   renderAchats();
 
@@ -238,14 +227,10 @@ async function renderThemes() {
   const html = THEMES.map(theme => {
     const isUnlocked = unlocked.includes(theme.key);
     const color = THEME_COLOR[theme.key] || 'color-blue';
-    const webp = `assets/modes/${theme.key}.webp`;
     return `
       <div class="special-cartouche theme-card ${color} ${isUnlocked ? "unlocked" : "locked"}"
            role="button" tabindex="0"
            data-theme="${theme.key}">
-        <span class="theme-ico">
-          <img src="${webp}" alt="${theme.name}" />
-        </span>
         <span class="theme-label">${theme.name}</span>
         <span class="prix-label">${isUnlocked ? (t('boutique.modal.possede') || 'Possédé') : (THEME_PRICE + ' VCoins')}</span>
       </div>
