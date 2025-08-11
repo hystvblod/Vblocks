@@ -35,6 +35,15 @@ const SPECIAL_CARTOUCHES = [
 ];
 const THEME_PRICE = 5000;
 
+// --- IDs des produits (Google Play / iOS)
+const PRODUCT_IDS = {
+  points3000: 'points3000_id',     // Remplace par ton ID
+  points10000: 'points10000_id',   // Remplace par ton ID
+  jetons12: 'jetons12_id',         // Remplace par ton ID
+  jetons50: 'jetons50_id',         // Remplace par ton ID
+  nopub: 'nopub_id'                // Remplace par ton ID
+};
+
 // --- Utilitaires cloud (userId etc)
 function getUserId() {
   return localStorage.getItem('user_id') || "";
@@ -93,7 +102,7 @@ async function acheterTheme(themeKey, prix) {
   }
 }
 
-// --- Achats EUR (API Vercel) ---
+// --- Achats EUR (API Vercel)
 async function acheterProduitVercel(type) {
   const userId = getUserId();
   try {
@@ -116,7 +125,7 @@ async function acheterProduitVercel(type) {
   }
 }
 
-// --- Activation (tu peux aussi le stocker cloud si tu veux)
+// --- Activation (localStorage)
 function getCurrentTheme() {
   return localStorage.getItem('themeVBlocks') || "bubble";
 }
@@ -124,7 +133,7 @@ function setCurrentTheme(theme) {
   localStorage.setItem('themeVBlocks', theme);
 }
 
-// --- UI : Cartouches achats (AFFICHAGE PRIX SI PRÉSENT)
+// --- UI : Cartouches achats
 function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
   let achatsHtml = SPECIAL_CARTOUCHES.map(c => `
@@ -137,7 +146,7 @@ function renderAchats() {
   $achatsList.innerHTML = achatsHtml;
 }
 
-// --- UI : Thèmes/cadres cloud only
+// --- UI : Thèmes/cadres
 async function renderThemes() {
   renderAchats();
   const list = document.getElementById('themes-list');
@@ -162,7 +171,6 @@ async function renderThemes() {
     }
     list.appendChild(card);
   });
-  // Solde à jour
   document.querySelector('.vcoins-solde').textContent = await getVCoinsSupabase();
   document.querySelectorAll('.vcoins-solde')[1].textContent = await getJetonsSupabase();
 }
@@ -180,49 +188,15 @@ function setupBoutiqueAchats() {
     if (!label) return;
     const key = label.dataset.i18n || label.textContent;
 
-    // --- PAIEMENTS EN EUROS VIA API VERCEL ---
-    if (key === 'boutique.cartouche.points3000') {
+    // --- Achats via Store
+    if (PRODUCT_IDS[key?.split('.').pop()]) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (await lancerPaiement("points3000")) {
-          await acheterProduitVercel("points3000");
-        }
-      };
-    }
-    if (key === 'boutique.cartouche.points10000') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement("points10000")) {
-          await acheterProduitVercel("points10000");
-        }
-      };
-    }
-    if (key === 'boutique.cartouche.jetons12') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement("jetons12")) {
-          await acheterProduitVercel("jetons12");
-        }
-      };
-    }
-    if (key === 'boutique.cartouche.jetons50') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement("jetons50")) {
-          await acheterProduitVercel("jetons50");
-        }
-      };
-    }
-    if (key === 'boutique.cartouche.nopub') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement("nopub")) {
-          await acheterProduitVercel("nopub");
-        }
+        store.order(PRODUCT_IDS[key.split('.').pop()]);
       };
     }
 
-    // --- PUB REWARD/GAINS GRATUITS (Supabase direct)
+    // --- PUB REWARD
     if (key === 'boutique.cartouche.pub1jeton') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
@@ -242,13 +216,31 @@ function setupBoutiqueAchats() {
   });
 }
 
-// --- Confirmation d'achat (à personnaliser)
-async function lancerPaiement(type) {
-  let texte = "";
-  if (type === "jetons12") texte = "12 jetons pour 0,99 € ?";
-  else if (type === "jetons50") texte = "50 jetons pour 2,99 € ?";
-  else if (type === "nopub") texte = "Supprimer les pubs pour 3,49 € ?";
-  else if (type === "points3000") texte = "3000 points pour 0,99 € ?";
-  else if (type === "points10000") texte = "10 000 points pour 1,99 € ?";
-  return confirm("Valider l'achat : " + texte);
-}
+// --- Store initialisation (Cordova Purchase)
+document.addEventListener('deviceready', function() {
+  if (!window.store) {
+    console.warn("Plugin purchase non dispo");
+    return;
+  }
+  Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
+    store.register({
+      id: id,
+      alias: alias,
+      type: store.CONSUMABLE
+    });
+  });
+
+  store.ready(function() {
+    console.log("Produits dispo:", store.products);
+    SPECIAL_CARTOUCHES.forEach(c => {
+      const pid = PRODUCT_IDS[c.key?.split('.').pop()];
+      if (pid) {
+        const p = store.get(pid);
+        if (p && p.price) c.prix = p.price;
+      }
+    });
+    renderAchats();
+  });
+
+  store.refresh();
+});

@@ -37,7 +37,7 @@
     /* Icône/image dans cartouche — MASQUÉ pour les thèmes */
     .theme-card .theme-ico{ display: none !important; }
 
-    /* Styles texte en BLANC pour les thèmes */
+    /* Texte en BLANC pour les thèmes */
     .theme-card .theme-label,
     .theme-card .prix-label { color: #fff !important; }
 
@@ -45,6 +45,9 @@
 
     .theme-card.unlocked { opacity: 1; }
     .theme-card.locked   { opacity: .95; }
+
+    /* Prix en blanc pour toutes les cartouches d'achats (hors thèmes) */
+    .achats-list .prix-label { color:#fff; font-weight:700; }
 
     /* Modal */
     .modal-backdrop {
@@ -160,21 +163,22 @@ const THEMES = [
   { key: "cyber",  name: "Cyber"  }
 ];
 
+/* Chaque cartouche a maintenant un productId (même ID que sur Google/Apple) */
 const SPECIAL_CARTOUCHES = [
-  { key: "boutique.cartouche.points3000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "0,99€", amount: 3000 },
-  { key: "boutique.cartouche.points10000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-purple', prix: "1,99€", amount: 10000 },
-  { key: 'boutique.cartouche.jetons12', icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue' },
-  { key: 'boutique.cartouche.jetons50', icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple' },
-  { key: 'boutique.cartouche.nopub', icon: '<img src="assets/images/ads.png" alt="No Ads">', color: 'color-yellow' },
-  { key: 'boutique.cartouche.pub1jeton', icon: '<img src="assets/images/jeton.webp" alt="Pub">', color: 'color-green' },
-  { key: 'boutique.cartouche.pub300points', icon: '<img src="assets/images/vcoin.webp" alt="Pub">', color: 'color-blue' }
+  { key: "boutique.cartouche.points3000",  productId:"points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow', prix:null, amount:3000 },
+  { key: "boutique.cartouche.points10000", productId:"points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple', prix:null, amount:10000 },
+  { key: "boutique.cartouche.jetons12",    productId:"jetons12",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-blue',   prix:null, amount:12 },
+  { key: "boutique.cartouche.jetons50",    productId:"jetons50",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-purple', prix:null, amount:50 },
+  { key: "boutique.cartouche.nopub",       productId:"nopub",       icon:'<img src="assets/images/ads.png" alt="No Ads">',   color:'color-yellow', prix:null },
+  { key: "boutique.cartouche.pub1jeton",   productId:null,          icon:'<img src="assets/images/jeton.webp" alt="Pub">',   color:'color-green' },
+  { key: "boutique.cartouche.pub300points",productId:null,          icon:'<img src="assets/images/vcoin.webp" alt="Pub">',   color:'color-blue' }
 ];
 
 const THEME_PRICE = 5000;
 /* Valeur par défaut si non définie ailleurs */
 const REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
 
-/* Couleurs cartouches */
+/* Couleurs cartouches (thèmes) */
 const THEME_COLOR = {
   neon: 'color-purple',
   bubble: 'color-blue',
@@ -191,8 +195,8 @@ const THEME_COLOR = {
 /* ===== Cloud unlock (optionnel) ===== */
 async function unlockThemeCloud(themeKey) {
   const userId = window.getUserId ? window.getUserId() : (window.userData?.getUserId?.() || "");
-  const sb = window.sb || window.supabaseClient || window.userData?.sb || window.supabase; // essaie de récupérer un client
-  if (!sb || !userId) return true; // si pas de client ici, on considère OK localement
+  const sb = window.sb || window.supabaseClient || window.userData?.sb || window.supabase;
+  if (!sb || !userId) return true;
 
   const { data, error } = await sb.from('users').select('themes_possedes').eq('id', userId).single();
   if (error) return false;
@@ -204,22 +208,50 @@ async function unlockThemeCloud(themeKey) {
   return true;
 }
 
+/* ========= Store Bridge (fallback web) =========
+   ➜ Sur Capacitor, on remplacera getStoreProducts() pour renvoyer les prix du store */
+async function getStoreProducts(productIds){
+  // Fallback DEV (web). On branchera Capacitor après.
+  const fallback = {
+    points3000:  "€0,99",
+    points10000: "€1,99",
+    jetons12:    "€0,99",
+    jetons50:    "€2,99",
+    nopub:       "€3,49",
+  };
+  return productIds.reduce((acc,id)=>{ if(id) acc[id]={id, price: fallback[id]||"—"}; return acc; },{});
+}
+
 /* ===== Rendus ===== */
-function renderAchats() {
+async function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
-  const html = SPECIAL_CARTOUCHES.map(c => `
-    <div class="special-cartouche ${c.color}">
+
+  // 1) construire le DOM
+  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => `
+    <div class="special-cartouche ${c.color}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      ${c.prix ? `<span class="prix-label">${c.prix}</span>` : ""}
+      <span class="prix-label">${c.prix ?? "…"}</span>
     </div>
   `).join('');
-  $achatsList.innerHTML = html;
+
+  // 2) récupérer les prix locaux depuis le store (ou fallback)
+  const ids = SPECIAL_CARTOUCHES.map(c => c.productId).filter(Boolean);
+  const products = await getStoreProducts(ids); // {points3000:{price:"$0.99"}, ...}
+
+  // 3) injecter les prix (en blanc via CSS)
+  document.querySelectorAll('#achats-list .special-cartouche').forEach(node=>{
+    const id = node.getAttribute('data-product-id');
+    const priceNode = node.querySelector('.prix-label');
+    if (id && products[id]?.price && priceNode) {
+      priceNode.textContent = products[id].price; // ex: "$0.99", "1,99 €"
+    }
+  });
 }
 
 /* Liste thèmes: SANS photo (pas d'icône), texte blanc, WEBP only en popup */
 async function renderThemes() {
-  renderAchats();
+  await renderAchats();
 
   const unlocked = await (window.userData?.getUnlockedThemes?.() || []);
   const $themesList = document.getElementById('themes-list');
@@ -237,6 +269,10 @@ async function renderThemes() {
     `;
   }).join('');
   $themesList.innerHTML = html;
+
+  // Rebranche les clics à chaque rendu
+  setupBoutiqueAchats();
+  setupPubCartouches();
 
   // Ouvrir popup
   $themesList.querySelectorAll('.theme-card').forEach(card => {
@@ -266,20 +302,13 @@ function setupPubCartouches() {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
         cartouche.onclick = null;
-        window.showRewarded?.(async (ok) => {
-          if (ok && window.userData?.addJetons) {
-            try {
-              await window.userData.addJetons(REWARD_JETONS);
-              alert("+1 jeton ajouté !");
-              await renderThemes();
-              setupPubCartouches();
-              setupBoutiqueAchats();
-              if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
-            } catch(e) {
-              alert("Erreur : " + (e?.message || e));
-            }
-          }
-        });
+        try {
+          await window.userData?.addJetons?.(REWARD_JETONS);
+          alert("+1 jeton ajouté !");
+          await renderThemes();
+        } catch(e) {
+          alert("Erreur : " + (e?.message || e));
+        }
       };
     }
 
@@ -287,20 +316,13 @@ function setupPubCartouches() {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
         cartouche.onclick = null;
-        window.showRewarded?.(async (ok) => {
-          if (ok && window.userData?.addVCoins) {
-            try {
-              await window.userData.addVCoins(300);
-              alert("+300 VCoins ajoutés !");
-              await renderThemes();
-              setupPubCartouches();
-              setupBoutiqueAchats();
-              if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
-            } catch(e) {
-              alert("Erreur : " + (e?.message || e));
-            }
-          }
-        });
+        try {
+          await window.userData?.addVCoins?.(300);
+          alert("+300 VCoins ajoutés !");
+          await renderThemes();
+        } catch(e) {
+          alert("Erreur : " + (e?.message || e));
+        }
       };
     }
   });
@@ -313,6 +335,21 @@ function setupBoutiqueAchats() {
     if (!label) return;
     const key = label.dataset.i18n;
 
+    // ➜ NOUVEAU : rendre cliquables points3000 / points10000
+    if (key === 'boutique.cartouche.points3000') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("points3000")) window.accordeAchat?.("points3000");
+      };
+    }
+    if (key === 'boutique.cartouche.points10000') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("points10000")) window.accordeAchat?.("points10000");
+      };
+    }
+
+    // déjà présents
     if (key === 'boutique.cartouche.jetons12') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
@@ -414,10 +451,8 @@ function ready(fn) {
   else setTimeout(fn, 0);
 }
 ready(async () => {
-  await renderThemes();
-  setupPubCartouches();
-  setupBoutiqueAchats();
-
+  await renderThemes();           // => renderAchats() inclus
+  // i18n global après génération dynamique
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
   if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
 });

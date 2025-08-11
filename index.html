@@ -16,6 +16,12 @@
       color: #fff !important;
       box-shadow: 0 3px 15px #2fd7b144;
     }
+    .prix-blanc {
+      color: white;
+      font-size: 0.9em;
+      display: block;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -30,6 +36,7 @@
       <span data-i18n="menu.parametres" style="display:none;">Paramètres</span>
     </a>
   </div>
+
   <!-- -------- POPUP RGPD/CONSENT PUBS -------- -->
   <div id="popup-consent" class="popup-consent-bg" style="display:none;">
     <div class="popup-consent-box">
@@ -46,6 +53,7 @@
     </div>
   </div>
   <!-- -------- FIN POPUP RGPD/CONSENT -------- -->
+
   <div class="container">
     <img class="vblocks-logo" src="assets/images/vblocks-logo.png" alt="VBlocks Logo" draggable="false" />
     <div class="menu-list">
@@ -70,7 +78,9 @@
       </button>
     </div>
   </div>
+
   <div class="tooltip-box" id="tooltip"></div>
+
   <script>
     // Tooltip i18n clean
     const tooltip = document.getElementById('tooltip');
@@ -78,7 +88,6 @@
       el.addEventListener('click', function (e) {
         e.stopPropagation();
         let text = el.getAttribute('data-tip');
-        // i18n dynamic
         if (window.i18nGet) text = window.i18nGet(el.getAttribute('data-i18n')) || text;
         const parentBtn = el.closest('.menu-btn');
         const rect = parentBtn.getBoundingClientRect();
@@ -92,12 +101,8 @@
         tooltip.classList.add('visible');
       });
     });
-    document.addEventListener('click', () => {
-      tooltip.classList.remove('visible');
-    });
-    window.addEventListener('resize', () => {
-      tooltip.classList.remove('visible');
-    });
+    document.addEventListener('click', () => tooltip.classList.remove('visible'));
+    window.addEventListener('resize', () => tooltip.classList.remove('visible'));
 
     // Popup RGPD consent au démarrage
     window.addEventListener("DOMContentLoaded", function() {
@@ -108,33 +113,22 @@
       document.getElementById("consent-accept").onclick = function() {
         localStorage.setItem("rgpdConsent", "accept");
         document.getElementById("popup-consent").style.display = "none";
-        // TODO : Initialiser le SDK pub SEULEMENT si accept
       };
       document.getElementById("consent-refuse").onclick = function() {
         localStorage.setItem("rgpdConsent", "refuse");
         document.getElementById("popup-consent").style.display = "none";
       };
     });
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="js/userData.js"></script>
-  <script src="js/pub.js"></script>
-  <script>
+
+    // Vérification concours
     async function checkConcoursStatus() {
       const { data, error } = await sb
         .from('config')
         .select('concours_enabled')
         .eq('id', 'global')
         .single();
-
-      if (error) {
-        console.error("Erreur config :", error);
-        return;
-      }
-      if (data?.concours_enabled) {
-        document.getElementById("btnConcours").style.display = "block";
-      } else {
-        document.getElementById("btnConcours").style.display = "none";
+      if (!error) {
+        document.getElementById("btnConcours").style.display = data?.concours_enabled ? "block" : "none";
       }
     }
 
@@ -142,6 +136,39 @@
       checkConcoursStatus();
       if (window.i18nTranslateAll) window.i18nTranslateAll();
     });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/userData.js"></script>
+  <script src="js/pub.js"></script>
+
+  <!-- Gestion des prix Google Play / App Store -->
+  <script>
+    document.addEventListener('deviceready', function () {
+      if (!window.store) {
+        console.error("Store non disponible");
+        return;
+      }
+
+      store.verbosity = store.DEBUG;
+
+      // Produits
+      store.register({ id: "points3000", alias: "3000 VCoins", type: store.CONSUMABLE });
+      store.register({ id: "points10000", alias: "10000 VCoins", type: store.CONSUMABLE });
+
+      store.ready(function () {
+        store.products.forEach(p => {
+          const el = document.querySelector(`[data-product-id="${p.id}"] .prix-blanc`);
+          if (el) el.textContent = p.price;
+        });
+      });
+
+      store.refresh();
+    }, false);
+
+    function acheterProduit(id) {
+      if (window.store) store.order(id);
+    }
   </script>
 </body>
 </html>
