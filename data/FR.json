@@ -244,10 +244,35 @@
 "theme.activated": "Nouveau style activé : {THEME}",
 "boutique.btn.selectionne": "Sélectionné",
 "boutique.btn.utiliser": "Utiliser",
-"boutique.btn.debloquer": "Débloquer ({PRICE})"
+"boutique.btn.debloquer": "Débloquer ({PRICE})",
 
-
-
-
+  "boutique.titre": "Boutique",
+  "boutique.section.vcoins": "Acheter des VCoins et Jetons",
+  "boutique.section.themes": "Thèmes disponibles",
+  "boutique.cartouche.points3000": "3000 VCoins",
+  "boutique.cartouche.points10000": "10 000 VCoins",
+  "boutique.cartouche.jetons12": "12 Jetons",
+  "boutique.cartouche.jetons50": "50 Jetons",
+  "boutique.cartouche.nopub": "Supprimer les publicités",
+  "boutique.cartouche.pub1jeton": "Regarder une pub - 1 Jeton",
+  "boutique.cartouche.pub300points": "Regarder une pub - 300 VCoins",
+  "boutique.modal.possede": "Possédé",
+  "boutique.modal.titre": "Aperçu du thème",
+  "boutique.modal.titre.neon": "Thème Néon",
+  "boutique.modal.titre.bubble": "Thème Bulles",
+  "boutique.modal.titre.nature": "Thème Nature",
+  "boutique.modal.titre.nuit": "Thème Nuit",
+  "boutique.modal.titre.retro": "Thème Rétro",
+  "boutique.modal.titre.vitraux": "Thème Vitraux",
+  "boutique.modal.titre.angelique": "Thème Angélique",
+  "boutique.modal.titre.luxury": "Thème Luxe",
+  "boutique.modal.titre.space": "Thème Espace",
+  "boutique.modal.titre.cyber": "Thème Cyber",
+  "boutique.modal.acheter": "Acheter",
+  "boutique.modal.fermer": "Fermer",
+  "boutique.alert.pasassez": "Vous n'avez pas assez de VCoins."
 }
+
+
+
 

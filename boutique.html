@@ -14,37 +14,62 @@
     html, body { height:auto; min-height:100%; overflow:auto; }
     body { overscroll-behavior-y:auto; }
 
-    /* Conteneur boutique scrollable si besoin */
+    /* Conteneur boutique */
     .container-boutique {
       padding-bottom: 80px;
     }
 
-    /* Cartes thèmes (réutilise ton markup existant) */
-    .themes-list {
+    /* === LISTES === */
+    .achats-list {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(2, minmax(0,1fr)); /* 2 par ligne */
+      gap: 14px;
+    }
+
+    .themes-list{
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr)); /* 2 par ligne */
       gap: 14px;
       margin-top: .5rem;
     }
-    .theme-btn-style {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 14px 16px;
-      border-radius: 14px;
-      background: var(--card-bg, rgba(255,255,255,0.05));
-      border: 1px solid rgba(255,255,255,0.08);
+
+    /* Utilise EXACTEMENT les cartouches du haut */
+    .theme-card.special-cartouche {
       cursor: pointer;
       transition: transform .06s ease, box-shadow .2s ease;
       user-select: none;
+      align-items: center;
+      justify-content: space-between;
     }
-    .theme-btn-style:hover { transform: translateY(-1px); }
-    .theme-btn-style .theme-label { font-weight: 600; }
+    .theme-card.special-cartouche:hover{ transform: translateY(-1px); }
 
-    /* Suppression visuelle des anciens badges/boutons (on ne les génère plus) */
-    .theme-action { display:none !important; }
+    /* Icône/image dans la cartouche thème */
+    .theme-card .theme-ico{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .theme-card .theme-ico img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .theme-card .theme-label{
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+
+    /* État possédé / verrouillé (facultatif) */
+    .theme-card.unlocked { opacity: 1; }
+    .theme-card.locked   { opacity: .95; }
 
     /* --- Modal --- */
     .modal-backdrop {
@@ -148,9 +173,7 @@
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="themeModalTitle">
       <div class="modal-header">
         <div id="themeModalTitle"></div>
-        <button class="modal-close" id="themeModalClose" aria-label="Fermer">
-          ✕
-        </button>
+        <button class="modal-close" id="themeModalClose" aria-label="Fermer">✕</button>
       </div>
       <div class="modal-body">
         <img id="themeModalImage" src="" alt="" />
@@ -165,7 +188,7 @@
 /** i18n helper */
 function t(key) { return window.i18nGet ? window.i18nGet(key) : key; }
 
-/** Thèmes disponibles (mêmes clés que ton fichier actuel) */
+/** Thèmes disponibles */
 const THEMES = [
   { key: "neon",   name: "Neon"   },
   { key: "bubble", name: "Bubble" },
@@ -179,7 +202,7 @@ const THEMES = [
   { key: "cyber",  name: "Cyber"  }
 ];
 
-/** Cartouches existantes (inchangé) */
+/** Cartouches existantes (haut de page) */
 const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.points3000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "0,99€", amount: 3000 },
   { key: "boutique.cartouche.points10000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-purple', prix: "1,99€", amount: 10000 },
@@ -191,24 +214,43 @@ const SPECIAL_CARTOUCHES = [
 ];
 
 const THEME_PRICE = 5000;
+/* Valeur par défaut si non défini ailleurs */
+const REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
 
-/** Débloque côté cloud (Supabase) – même logique que ton fichier actuel */
+/* Map des couleurs de cartouche pour chaque thème (réutilise tes classes color-*) */
+const THEME_COLOR = {
+  neon: 'color-purple',
+  bubble: 'color-blue',
+  nature: 'color-green',
+  nuit: 'color-yellow',
+  retro: 'color-purple',
+  vitraux: 'color-yellow',
+  angelique: 'color-blue',
+  luxury: 'color-purple',
+  space: 'color-blue',
+  cyber: 'color-green'
+};
+
+/** Débloque côté cloud (Supabase) – s'appuie sur ton client global si dispo */
 async function unlockThemeCloud(themeKey) {
   const userId = window.getUserId ? window.getUserId() : (window.userData?.getUserId?.() || "");
-  let { data, error } = await window.sb.from('users').select('themes_possedes').eq('id', userId).single();
+  const sb = window.sb || window.supabaseClient || window.userData?.sb;
+  if (!sb) return true; // si pas de client ici, on considère OK côté local
+
+  let { data, error } = await sb.from('users').select('themes_possedes').eq('id', userId).single();
   if (error) return false;
   let themes = Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
   if (!themes.includes(themeKey)) {
     themes.push(themeKey);
-    await window.sb.from('users').update({ themes_possedes: themes }).eq('id', userId);
+    await sb.from('users').update({ themes_possedes: themes }).eq('id', userId);
   }
   return true;
 }
 
-/** Rendu des cartouches */
+/** Rendu des cartouches achats */
 function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
-  let achatsHtml = SPECIAL_CARTOUCHES.map(c => `
+  const achatsHtml = SPECIAL_CARTOUCHES.map(c => `
     <div class="special-cartouche ${c.color}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
@@ -218,47 +260,58 @@ function renderAchats() {
   $achatsList.innerHTML = achatsHtml;
 }
 
-/** Rendu des thèmes (sans bouton – clic ouvre modal) */
+/** Rendu des thèmes avec LES MÊMES CARTOUCHES QUE EN HAUT (2 par ligne) */
 async function renderThemes() {
   renderAchats();
 
   const unlocked = await userData.getUnlockedThemes?.() || [];
   const $themesList = document.getElementById('themes-list');
-  $themesList.innerHTML = THEMES.map(theme => {
+
+  const html = THEMES.map(theme => {
     const isUnlocked = unlocked.includes(theme.key);
+    const color = THEME_COLOR[theme.key] || 'color-blue';
+    const webp = `assets/modes/${theme.key}.webp`;
+    const png  = `assets/modes/${theme.key}.png`;
+
     return `
-      <div class="theme-btn-style theme-${theme.key} ${isUnlocked ? "unlocked" : "locked"}"
+      <div class="special-cartouche theme-card ${color} ${isUnlocked ? "unlocked" : "locked"}"
            role="button" tabindex="0"
            data-theme="${theme.key}">
+        <span class="theme-ico">
+          <img src="${webp}" alt="${theme.name}" onerror="this.onerror=null;this.src='${png}'" />
+        </span>
         <span class="theme-label">${theme.name}</span>
+        <span class="prix-label">${isUnlocked ? (t('boutique.modal.possede')||'Possédé') : (THEME_PRICE + ' VCoins')}</span>
       </div>
     `;
   }).join('');
 
-  // Binding: ouvrir la modal
-  $themesList.querySelectorAll('.theme-btn-style').forEach(card => {
-    card.addEventListener('click', () => {
-      const key = card.dataset.theme;
-      openThemeModal(key);
-    });
+  $themesList.innerHTML = html;
+
+  // Ouverture de la modale (clic/Enter/Espace)
+  $themesList.querySelectorAll('.theme-card').forEach(card => {
+    const open = () => openThemeModal(card.dataset.theme);
+    card.addEventListener('click', open);
     card.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        openThemeModal(card.dataset.theme);
+        e.preventDefault(); open();
       }
     });
   });
 
   // Soldes
   const solde = await userData.getVCoins?.();
-  document.querySelector('.vcoins-solde').textContent = (typeof solde === "number" ? solde : "--");
+  const $soldeCoins = document.querySelector('.vcoins-solde');
+  if ($soldeCoins) $soldeCoins.textContent = (typeof solde === "number" ? solde : "--");
+
   const soldeJetons = await userData.getJetons?.();
-  document.querySelectorAll('.vcoins-solde')[1].textContent = (typeof soldeJetons === "number" ? soldeJetons : "--");
+  const $soldeJetons = document.querySelectorAll('.vcoins-solde')[1];
+  if ($soldeJetons) $soldeJetons.textContent = (typeof soldeJetons === "number" ? soldeJetons : "--");
 }
 
-/** Cartouches pub/paiements (reprend ta logique) */
+/** Cartouches pub (scope uniquement achats) */
 function setupPubCartouches() {
-  document.querySelectorAll('.special-cartouche').forEach(cartouche => {
+  document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
     if (!label) return;
     const key = label.dataset.i18n;
@@ -267,7 +320,7 @@ function setupPubCartouches() {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
         cartouche.onclick = null;
-        showRewarded(async (ok) => {
+        showRewarded?.(async (ok) => {
           if (ok && window.userData?.addJetons) {
             try {
               await userData.addJetons(REWARD_JETONS);
@@ -277,22 +330,29 @@ function setupPubCartouches() {
               setupBoutiqueAchats();
               if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
             } catch(e) { alert("Erreur : " + (e?.message || e)); }
+          } else {
+            cartouche.onclick = null; // laisse neutre si refus
           }
         });
       };
     }
+
     if (key === 'boutique.cartouche.pub300points') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
         cartouche.onclick = null;
-        showRewarded(async (ok) => {
+        showRewarded?.(async (ok) => {
           if (ok && window.userData?.addVCoins) {
             try {
               await userData.addVCoins(300);
               alert("+300 VCoins ajoutés !");
-              await renderThemes(); setupPubCartouches(); setupBoutiqueAchats();
+              await renderThemes();
+              setupPubCartouches();
+              setupBoutiqueAchats();
               if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
             } catch(e) { alert("Erreur : " + (e?.message || e)); }
+          } else {
+            cartouche.onclick = null;
           }
         });
       };
@@ -300,9 +360,9 @@ function setupPubCartouches() {
   });
 }
 
-/** Branche achats € (inchangé) */
+/** Achats € (scope uniquement achats) */
 function setupBoutiqueAchats() {
-  document.querySelectorAll('.special-cartouche').forEach(cartouche => {
+  document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
     if (!label) return;
     const key = label.dataset.i18n;
@@ -310,19 +370,19 @@ function setupBoutiqueAchats() {
     if (key === 'boutique.cartouche.jetons12') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (await lancerPaiement("jetons12")) accordeAchat("jetons12");
+        if (await lancerPaiement?.("jetons12")) accordeAchat?.("jetons12");
       };
     }
     if (key === 'boutique.cartouche.jetons50') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (await lancerPaiement("jetons50")) accordeAchat("jetons50");
+        if (await lancerPaiement?.("jetons50")) accordeAchat?.("jetons50");
       };
     }
     if (key === 'boutique.cartouche.nopub') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (await lancerPaiement("nopub")) accordeAchat("nopub");
+        if (await lancerPaiement?.("nopub")) accordeAchat?.("nopub");
       };
     }
   });
@@ -340,8 +400,11 @@ $backdrop.addEventListener('click', (e) => { if (e.target === $backdrop) closeTh
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeThemeModal(); });
 
 function openThemeModal(themeKey) {
-  // Titre i18n configurable
-  $title.textContent = t("boutique.modal.titre." + themeKey) || (t("boutique.modal.titre") + " " + themeKey);
+  // Titre i18n configurable (avec vrai fallback)
+  const specificKey = "boutique.modal.titre." + themeKey;
+  const specific = t(specificKey);
+  const base = t("boutique.modal.titre");
+  $title.textContent = (specific !== specificKey ? specific : `${base} ${themeKey}`);
 
   // Image principale dans /assets/modes/
   const webp = `assets/modes/${themeKey}.webp`;

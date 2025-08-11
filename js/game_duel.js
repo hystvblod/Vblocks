@@ -122,6 +122,7 @@
     const holdCtx = holdCanvas.getContext('2d');
     const nextCanvas = document.getElementById('nextCanvas');
     const nextCtx = nextCanvas.getContext('2d');
+    const scoreEl = document.getElementById('score'); // <-- UI score
     const COLS = 10, ROWS = 20;
     let BLOCK_SIZE = 30;
     canvas.width = COLS * BLOCK_SIZE;
@@ -205,6 +206,11 @@
     let combo = 0;
     let linesCleared = 0;
     let history = [];
+
+    // --- UI SCORE ---
+    function updateScoreUI(){
+      if (scoreEl) scoreEl.textContent = String(score);
+    }
 
     function saveHistory() {
       history.push({
@@ -379,6 +385,7 @@ async function handleDuelEnd(myScore) {
       reset();
       console.log("[startGame] after reset: currentPiece=", currentPiece, "nextPiece=", nextPiece, "board=", board);
       saveHistory();
+      updateScoreUI(); // <-- init affichage score
       window.startMusicForGame();
       requestAnimationFrame(update);
     }
@@ -461,6 +468,7 @@ async function handleDuelEnd(myScore) {
         let level = Math.floor(linesCleared / 8);
         if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
         dropInterval = SPEED_TABLE[level];
+        updateScoreUI(); // <-- MAJ LIVE du score
         console.log("[clearLines] lines:", lines, "score:", score, "level:", level);
       } else {
         combo = 0;
