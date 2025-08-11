@@ -223,30 +223,36 @@ body[data-theme="neon"] {
 }
 /* ---- RETRO ---- */
 body[data-theme="retro"] {
-  --body-bg: linear-gradient(135deg, #f5ecd7 0%, #c2b280 100%);
-  --body-color: #4b3f13;
-  --title-color: #eec643;
-  --title-shadow: 0 0 6px #fffbe8;
-  --canvas-bg: #eec643;
-  --canvas-border: #9e7b16;
-  --canvas-shadow: #fffbe8;
-  --panel-bg: #c2b280;
-  --panel-border: #9e7b16;
-  --panel-shadow: #eec643;
-  --panel-text: #4b3f13;
-  --canvas-panel-bg: #f5ecd7;
-  --canvas-panel-border: #9e7b16;
-  --box-bg: rgba(250,238,200,0.65);
-  --box-border: #9e7b16;
-  --score-color: #eec643;
-  --score-shadow: 0 0 2px #fffbe8;
-  --btn-bg: #eec643;
-  --btn-color: #4b3f13;
-  --btn-border: #9e7b16;
-  --btn-hover-bg: #fffbe8;
-  --btn-hover-color: #4b3f13;
-  --btn-hover-border: #eec643;
-  --btn-shadow: 0 0 10px #eec643;
+ --body-bg: radial-gradient(circle at top left, #f2d9b1 0%, #e1b382 40%, #7f5539 100%);
+  --body-color: #2d1b0f;
+  --title-color: #ffb347;
+  --title-shadow: 0 0 8px rgba(255, 179, 71, 0.6);
+  
+  --canvas-bg: linear-gradient(135deg, #ffe0b2, #ffcc80);
+  --canvas-border: #cc7a29;
+  --canvas-shadow: rgba(204, 122, 41, 0.4);
+  
+  --panel-bg: linear-gradient(180deg, rgba(255, 248, 220, 0.95), rgba(255, 235, 205, 0.95));
+  --panel-border: #b5651d;
+  --panel-shadow: rgba(181, 101, 29, 0.3);
+  --panel-text: #2d1b0f;
+  
+  --canvas-panel-bg: linear-gradient(180deg, #ffe4b5, #ffdead);
+  --canvas-panel-border: #cc7a29;
+  
+  --box-bg: rgba(255, 239, 213, 0.8);
+  --box-border: #cc7a29;
+  
+  --score-color: #ff8c42;
+  --score-shadow: 0 0 4px rgba(255, 140, 66, 0.6);
+  
+  --btn-bg: linear-gradient(180deg, #ffb347, #ff914d);
+  --btn-color: #2d1b0f;
+  --btn-border: #cc7a29;
+  --btn-hover-bg: linear-gradient(180deg, #ffc76d, #ff9f5f);
+  --btn-hover-color: #2d1b0f;
+  --btn-hover-border: #ff8c42;
+  --btn-shadow: 0 0 10px rgba(255, 179, 71, 0.5);
 }
 /* ---- GOTHIC ---- */
 body[data-theme="vitraux"] {
