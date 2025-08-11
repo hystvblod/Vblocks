@@ -252,20 +252,6 @@
       const popup = document.getElementById('duelPopup');
       popup.style.display = 'flex';
       let html = '';
-<<<<<<< HEAD
-=======
-if (state === 'choice') {
-  html = `
-    <div>
-      <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
-      <button class="duel-btn" id="btnNewDuel">${i18nT("duel.popup.choice.new")}</button>
-      <br>
-      <button class="duel-btn" id="btnJoinDuel">${i18nT("duel.popup.choice.join")}</button>
-    </div>
-  `;
-}
-
->>>>>>> 5d43355c55bdace79c116ad147cd149a8e9bc651
 
       if (state === 'choice') {
         html = `
@@ -339,11 +325,7 @@ if (state === 'choice') {
         document.getElementById('btnAcceptDuel').onclick = onAcceptDuel;
         document.getElementById('btnRefuseDuel').onclick = () => window.location = "index.html";
       }
-<<<<<<< HEAD
     } // ← fermeture correcte de showDuelPopup (déplacée ici)
-=======
-    
->>>>>>> 5d43355c55bdace79c116ad147cd149a8e9bc651
 
     // --- Flow DUEL ---
     let duelId = null, duelCode = null, playerNum = 1;
@@ -482,12 +464,3 @@ if (state === 'choice') {
   </script>
 </body>
 </html>
-<<<<<<< HEAD
-  
-=======
-
-
->>>>>>> 5d43355c55bdace79c116ad147cd149a8e9bc651
-
-
-
