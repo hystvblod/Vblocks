@@ -10,30 +10,15 @@
 
   <link rel="stylesheet" href="style/main.css">
   <style>
-    /* === Overrides: activer le scroll global === */
     html, body { height:auto; min-height:100%; overflow:auto; }
     body { overscroll-behavior-y:auto; }
-
-    /* Conteneur boutique */
-    .container-boutique {
-      padding-bottom: 80px;
-    }
-
-    /* === LISTES === */
-    .achats-list {
+    .container-boutique { padding-bottom: 80px; }
+    .achats-list, .themes-list {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0,1fr)); /* 2 par ligne */
+      grid-template-columns: repeat(2, minmax(0,1fr));
       gap: 14px;
     }
-
-    .themes-list{
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0,1fr)); /* 2 par ligne */
-      gap: 14px;
-      margin-top: .5rem;
-    }
-
-    /* Utilise EXACTEMENT les cartouches du haut */
+    .themes-list { margin-top: .5rem; }
     .theme-card.special-cartouche {
       cursor: pointer;
       transition: transform .06s ease, box-shadow .2s ease;
@@ -42,8 +27,6 @@
       justify-content: space-between;
     }
     .theme-card.special-cartouche:hover{ transform: translateY(-1px); }
-
-    /* Icône/image dans la cartouche thème */
     .theme-card .theme-ico{
       display: inline-flex;
       align-items: center;
@@ -61,21 +44,16 @@
       object-fit: cover;
       display: block;
     }
-
     .theme-card .theme-label{
       font-weight: 700;
       letter-spacing: .2px;
     }
-
-    /* État possédé / verrouillé (facultatif) */
     .theme-card.unlocked { opacity: 1; }
     .theme-card.locked   { opacity: .95; }
-
-    /* --- Modal --- */
     .modal-backdrop {
       position: fixed; inset: 0;
       background: rgba(0,0,0,.58);
-      display: none; /* toggled */
+      display: none;
       align-items: center; justify-content: center;
       z-index: 9999;
       backdrop-filter: blur(2px);
@@ -95,10 +73,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.08);
       font-weight: 700;
     }
-    .modal-body {
-      padding: 14px 16px 4px 16px;
-      text-align: center;
-    }
+    .modal-body { padding: 14px 16px 4px 16px; text-align: center; }
     .modal-body img {
       width: 100%; height: auto; border-radius: 12px;
       background: rgba(255,255,255,0.03);
@@ -142,10 +117,10 @@
       </a>
     </div>
     <div class="top-right">
-      <a href="profil.html" class="btn-icon" >
+      <a href="profil.html" class="btn-icon">
         <img src="assets/icons/user.svg" alt="Profil" />
       </a>
-      <a href="parametres.html" class="btn-icon" title="" >
+      <a href="parametres.html" class="btn-icon">
         <img src="assets/icons/settings.svg" alt="Paramètres" />
       </a>
     </div>
@@ -153,22 +128,19 @@
 
   <div class="container-boutique">
     <div class="shop-title" data-i18n="boutique.titre"></div>
-
     <div id="soldeVCoins" class="vcoins-bar">
       <img src="assets/images/vcoin.webp" alt="VCoins" class="vcoin-ico">
       <span class="vcoins-solde">--</span>
       <img src="assets/images/jeton.webp" alt="Jetons" class="vcoin-ico" style="margin-left:18px;">
       <span class="vcoins-solde">--</span>
     </div>
-
     <div class="section-label" data-i18n="boutique.section.vcoins"></div>
     <div class="achats-list" id="achats-list"></div>
-
     <div class="section-label" style="margin-top:1.5em;" data-i18n="boutique.section.themes"></div>
     <div class="themes-list" id="themes-list"></div>
   </div>
 
-  <!-- === MODAL === -->
+  <!-- MODAL -->
   <div class="modal-backdrop" id="themeModalBackdrop" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="themeModalTitle">
       <div class="modal-header">
@@ -178,17 +150,13 @@
       <div class="modal-body">
         <img id="themeModalImage" src="" alt="" />
       </div>
-      <div class="modal-actions" id="themeModalActions">
-        <!-- Boutons injectés dynamiquement -->
-      </div>
+      <div class="modal-actions" id="themeModalActions"></div>
     </div>
   </div>
 
 <script>
-/** i18n helper */
 function t(key) { return window.i18nGet ? window.i18nGet(key) : key; }
 
-/** Thèmes disponibles */
 const THEMES = [
   { key: "neon",   name: "Neon"   },
   { key: "bubble", name: "Bubble" },
@@ -202,7 +170,6 @@ const THEMES = [
   { key: "cyber",  name: "Cyber"  }
 ];
 
-/** Cartouches existantes (haut de page) */
 const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.points3000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "0,99€", amount: 3000 },
   { key: "boutique.cartouche.points10000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-purple', prix: "1,99€", amount: 10000 },
@@ -214,223 +181,85 @@ const SPECIAL_CARTOUCHES = [
 ];
 
 const THEME_PRICE = 5000;
-/* Valeur par défaut si non défini ailleurs */
-const REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
-
-/* Map des couleurs de cartouche pour chaque thème (réutilise tes classes color-*) */
 const THEME_COLOR = {
-  neon: 'color-purple',
-  bubble: 'color-blue',
-  nature: 'color-green',
-  nuit: 'color-yellow',
-  retro: 'color-purple',
-  vitraux: 'color-yellow',
-  angelique: 'color-blue',
-  luxury: 'color-purple',
-  space: 'color-blue',
-  cyber: 'color-green'
+  neon: 'color-purple', bubble: 'color-blue', nature: 'color-green', nuit: 'color-yellow',
+  retro: 'color-purple', vitraux: 'color-yellow', angelique: 'color-blue',
+  luxury: 'color-purple', space: 'color-blue', cyber: 'color-green'
 };
 
-/** Débloque côté cloud (Supabase) – s'appuie sur ton client global si dispo */
-async function unlockThemeCloud(themeKey) {
-  const userId = window.getUserId ? window.getUserId() : (window.userData?.getUserId?.() || "");
-  const sb = window.sb || window.supabaseClient || window.userData?.sb;
-  if (!sb) return true; // si pas de client ici, on considère OK côté local
-
-  let { data, error } = await sb.from('users').select('themes_possedes').eq('id', userId).single();
-  if (error) return false;
-  let themes = Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
-  if (!themes.includes(themeKey)) {
-    themes.push(themeKey);
-    await sb.from('users').update({ themes_possedes: themes }).eq('id', userId);
-  }
-  return true;
-}
-
-/** Rendu des cartouches achats */
 function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
-  const achatsHtml = SPECIAL_CARTOUCHES.map(c => `
+  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => `
     <div class="special-cartouche ${c.color}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
       ${c.prix ? `<span class="prix-label">${c.prix}</span>` : ""}
     </div>
   `).join('');
-  $achatsList.innerHTML = achatsHtml;
 }
 
-/** Rendu des thèmes avec LES MÊMES CARTOUCHES QUE EN HAUT (2 par ligne) */
 async function renderThemes() {
   renderAchats();
-
   const unlocked = await userData.getUnlockedThemes?.() || [];
   const $themesList = document.getElementById('themes-list');
-
-  const html = THEMES.map(theme => {
+  $themesList.innerHTML = THEMES.map(theme => {
     const isUnlocked = unlocked.includes(theme.key);
     const color = THEME_COLOR[theme.key] || 'color-blue';
     const webp = `assets/modes/${theme.key}.webp`;
-    const png  = `assets/modes/${theme.key}.png`;
-
     return `
       <div class="special-cartouche theme-card ${color} ${isUnlocked ? "unlocked" : "locked"}"
            role="button" tabindex="0"
            data-theme="${theme.key}">
         <span class="theme-ico">
-          <img src="${webp}" alt="${theme.name}" onerror="this.onerror=null;this.src='${png}'" />
+          <img src="${webp}" alt="${theme.name}" />
         </span>
         <span class="theme-label">${theme.name}</span>
         <span class="prix-label">${isUnlocked ? (t('boutique.modal.possede')||'Possédé') : (THEME_PRICE + ' VCoins')}</span>
       </div>
     `;
   }).join('');
-
-  $themesList.innerHTML = html;
-
-  // Ouverture de la modale (clic/Enter/Espace)
   $themesList.querySelectorAll('.theme-card').forEach(card => {
     const open = () => openThemeModal(card.dataset.theme);
     card.addEventListener('click', open);
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault(); open();
-      }
-    });
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
   });
-
-  // Soldes
   const solde = await userData.getVCoins?.();
-  const $soldeCoins = document.querySelector('.vcoins-solde');
-  if ($soldeCoins) $soldeCoins.textContent = (typeof solde === "number" ? solde : "--");
-
+  document.querySelector('.vcoins-solde').textContent = typeof solde === "number" ? solde : "--";
   const soldeJetons = await userData.getJetons?.();
-  const $soldeJetons = document.querySelectorAll('.vcoins-solde')[1];
-  if ($soldeJetons) $soldeJetons.textContent = (typeof soldeJetons === "number" ? soldeJetons : "--");
+  document.querySelectorAll('.vcoins-solde')[1].textContent = typeof soldeJetons === "number" ? soldeJetons : "--";
 }
 
-/** Cartouches pub (scope uniquement achats) */
-function setupPubCartouches() {
-  document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
-    const label = cartouche.querySelector('.theme-label');
-    if (!label) return;
-    const key = label.dataset.i18n;
-
-    if (key === 'boutique.cartouche.pub1jeton') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        cartouche.onclick = null;
-        showRewarded?.(async (ok) => {
-          if (ok && window.userData?.addJetons) {
-            try {
-              await userData.addJetons(REWARD_JETONS);
-              alert("+1 jeton ajouté !");
-              await renderThemes();
-              setupPubCartouches();
-              setupBoutiqueAchats();
-              if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
-            } catch(e) { alert("Erreur : " + (e?.message || e)); }
-          } else {
-            cartouche.onclick = null; // laisse neutre si refus
-          }
-        });
-      };
-    }
-
-    if (key === 'boutique.cartouche.pub300points') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        cartouche.onclick = null;
-        showRewarded?.(async (ok) => {
-          if (ok && window.userData?.addVCoins) {
-            try {
-              await userData.addVCoins(300);
-              alert("+300 VCoins ajoutés !");
-              await renderThemes();
-              setupPubCartouches();
-              setupBoutiqueAchats();
-              if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
-            } catch(e) { alert("Erreur : " + (e?.message || e)); }
-          } else {
-            cartouche.onclick = null;
-          }
-        });
-      };
-    }
-  });
-}
-
-/** Achats € (scope uniquement achats) */
-function setupBoutiqueAchats() {
-  document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
-    const label = cartouche.querySelector('.theme-label');
-    if (!label) return;
-    const key = label.dataset.i18n;
-
-    if (key === 'boutique.cartouche.jetons12') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement?.("jetons12")) accordeAchat?.("jetons12");
-      };
-    }
-    if (key === 'boutique.cartouche.jetons50') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement?.("jetons50")) accordeAchat?.("jetons50");
-      };
-    }
-    if (key === 'boutique.cartouche.nopub') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await lancerPaiement?.("nopub")) accordeAchat?.("nopub");
-      };
-    }
-  });
-}
-
-/** === MODAL LOGIC === */
 const $backdrop = document.getElementById('themeModalBackdrop');
 const $title    = document.getElementById('themeModalTitle');
 const $img      = document.getElementById('themeModalImage');
 const $actions  = document.getElementById('themeModalActions');
 const $close    = document.getElementById('themeModalClose');
 
-$close.addEventListener('click', closeThemeModal);
-$backdrop.addEventListener('click', (e) => { if (e.target === $backdrop) closeThemeModal(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeThemeModal(); });
-
 function openThemeModal(themeKey) {
-  // Titre i18n configurable (avec vrai fallback)
   const specificKey = "boutique.modal.titre." + themeKey;
   const specific = t(specificKey);
   const base = t("boutique.modal.titre");
   $title.textContent = (specific !== specificKey ? specific : `${base} ${themeKey}`);
-
-  // Image principale dans /assets/modes/
   const webp = `assets/modes/${themeKey}.webp`;
   const png  = `assets/modes/${themeKey}.png`;
   $img.src = webp;
   $img.alt = themeKey;
   $img.onerror = () => { if ($img.src.endsWith('.webp')) $img.src = png; };
-
-  // Actions dynamiques
   renderModalActions(themeKey);
-
   $backdrop.style.display = 'flex';
   $backdrop.setAttribute('aria-hidden', 'false');
-
-  // i18n sur éléments injectés
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
 }
+
 function closeThemeModal() {
   $backdrop.style.display = 'none';
   $backdrop.setAttribute('aria-hidden', 'true');
 }
+
 async function renderModalActions(themeKey) {
   $actions.innerHTML = '';
   const unlocked = await userData.getUnlockedThemes?.() || [];
   const isUnlocked = unlocked.includes(themeKey);
-
   if (isUnlocked) {
     const badge = document.createElement('div');
     badge.className = 'badge';
@@ -444,19 +273,15 @@ async function renderModalActions(themeKey) {
     buy.textContent = (t('boutique.modal.acheter') || 'Acheter') + ` (${THEME_PRICE} VCoins)`;
     buy.onclick = async () => {
       const coins = await userData.getVCoins();
-      if (coins < THEME_PRICE) {
-        alert(t("boutique.alert.pasassez"));
-        return;
-      }
+      if (coins < THEME_PRICE) { alert(t("boutique.alert.pasassez")); return; }
       await userData.addVCoins(-THEME_PRICE);
       await unlockThemeCloud(themeKey);
-      await renderThemes(); // refresh listes/solde
-      renderModalActions(themeKey); // convertir le bouton en “Possédé”
+      await renderThemes();
+      renderModalActions(themeKey);
       if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
     };
     $actions.appendChild(buy);
   }
-
   const closeBtn = document.createElement('button');
   closeBtn.className = 'btn btn-ghost';
   closeBtn.setAttribute('data-i18n', 'boutique.modal.fermer');
@@ -465,20 +290,16 @@ async function renderModalActions(themeKey) {
   $actions.appendChild(closeBtn);
 }
 
-/** INIT */
+$close?.addEventListener('click', closeThemeModal);
+$backdrop.addEventListener('click', e => { if (e.target === $backdrop) closeThemeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeThemeModal(); });
+
 function ready(fn) {
-  if (window.i18nReady && typeof window.i18nReady.then === "function") {
-    window.i18nReady.then(fn);
-  } else {
-    setTimeout(fn, 0);
-  }
+  if (window.i18nReady && typeof window.i18nReady.then === "function") window.i18nReady.then(fn);
+  else setTimeout(fn, 0);
 }
 ready(async () => {
   await renderThemes();
-  setupPubCartouches();
-  setupBoutiqueAchats();
-
-  // i18n global après génération dynamique
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
   if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
 });

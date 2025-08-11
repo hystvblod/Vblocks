@@ -189,7 +189,7 @@
     <!-- ZONE DE JEU MASQUÉE AU DÉBUT -->
     <div id="gameZone" style="display: block;">
 
-      <!-- === Bloc Réserve | DUEL | Suivante, même look que classic === -->
+      <!-- === Bloc Réserve | DUEL | Suivante === -->
       <div class="top-canvas-row">
         <div class="side-canvas-block">
           <label data-i18n="duel.hold">Réserve</label>
@@ -257,9 +257,9 @@
         html = `
           <div>
             <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
-            <button class="duel-btn" id="btnNewDuel">${i18nT("duel.popup.choice.new")}</button>
+            <button class="duel-btn" id="btnNewDuel" data-i18n="duel.popup.choice.new"></button>
             <br>
-            <button class="duel-btn" id="btnJoinDuel">${i18nT("duel.popup.choice.join")}</button>
+            <button class="duel-btn" id="btnJoinDuel" data-i18n="duel.popup.choice.join"></button>
           </div>
         `;
       }
@@ -280,8 +280,8 @@
         html = `<div>
           <h2 data-i18n="duel.popup.confirm.title">${i18nT("duel.popup.confirm.title")}</h2>
           <div data-i18n="duel.popup.confirm.text">${i18nT("duel.popup.confirm.text")}</div>
-          <button class="duel-btn" id="btnAcceptDuel">${i18nT("duel.popup.confirm.accept")}</button>
-          <button class="duel-btn" id="btnRefuseDuel">${i18nT("duel.popup.confirm.refuse")}</button>
+          <button class="duel-btn" id="btnAcceptDuel" data-i18n="duel.popup.confirm.accept"></button>
+          <button class="duel-btn" id="btnRefuseDuel" data-i18n="duel.popup.confirm.refuse"></button>
         </div>`;
       }
 
@@ -296,8 +296,8 @@
         html = `<div>
           <h2 data-i18n="duel.popup.join.title">${i18nT("duel.popup.join.title")}</h2>
           <input id="inputCode" maxlength="8" style="font-size:1.2em;letter-spacing:2px;text-align:center">
-          <button class="duel-btn" id="btnJoinOk">${i18nT("duel.popup.join.ok")}</button>
-          <button class="duel-btn" id="btnJoinCancel">${i18nT("duel.popup.join.cancel")}</button>
+          <button class="duel-btn" id="btnJoinOk" data-i18n="duel.popup.join.ok"></button>
+          <button class="duel-btn" id="btnJoinCancel" data-i18n="duel.popup.join.cancel"></button>
         </div>`;
       }
 
@@ -325,7 +325,7 @@
         document.getElementById('btnAcceptDuel').onclick = onAcceptDuel;
         document.getElementById('btnRefuseDuel').onclick = () => window.location = "index.html";
       }
-    } // ← fermeture correcte de showDuelPopup (déplacée ici)
+    } // ← fermeture correcte de showDuelPopup
 
     // --- Flow DUEL ---
     let duelId = null, duelCode = null, playerNum = 1;
@@ -422,14 +422,17 @@
         if (n < 0) {
           clearInterval(ctd);
           document.getElementById('duelPopup').style.display = 'none';
-          // SUPPRIMER les lignes qui masquent ou affichent le gameZone ici
           if (typeof VBlocksGame !== "undefined" && VBlocksGame.initGame)
             VBlocksGame.initGame({ mode: 'duel', duelId: duelId, duelPlayerNum: playerNum });
         }
       }, 1000);
     }
 
-    window.addEventListener("DOMContentLoaded", startDuelFlow);
+    // ✅ Attendre i18n avant de démarrer (sinon les boutons restent en clés)
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (window.i18nReady) { try { await window.i18nReady; } catch(e){} }
+      startDuelFlow();
+    });
 
     setTimeout(()=>{
       const music = document.getElementById("music");
