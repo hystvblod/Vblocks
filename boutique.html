@@ -10,15 +10,21 @@
 
   <link rel="stylesheet" href="style/main.css">
   <style>
+    /* Scroll autorisé */
     html, body { height:auto; min-height:100%; overflow:auto; }
     body { overscroll-behavior-y:auto; }
+
     .container-boutique { padding-bottom: 80px; }
+
+    /* Grilles: 2 par ligne */
     .achats-list, .themes-list {
       display: grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
       gap: 14px;
     }
     .themes-list { margin-top: .5rem; }
+
+    /* Cartouches de thèmes (même style que haut) */
     .theme-card.special-cartouche {
       cursor: pointer;
       transition: transform .06s ease, box-shadow .2s ease;
@@ -26,7 +32,9 @@
       align-items: center;
       justify-content: space-between;
     }
-    .theme-card.special-cartouche:hover{ transform: translateY(-1px); }
+    .theme-card.special-cartouche:hover { transform: translateY(-1px); }
+
+    /* Icône/image dans cartouche */
     .theme-card .theme-ico{
       display: inline-flex;
       align-items: center;
@@ -44,12 +52,12 @@
       object-fit: cover;
       display: block;
     }
-    .theme-card .theme-label{
-      font-weight: 700;
-      letter-spacing: .2px;
-    }
+    .theme-card .theme-label{ font-weight: 700; letter-spacing: .2px; }
+
     .theme-card.unlocked { opacity: 1; }
     .theme-card.locked   { opacity: .95; }
+
+    /* Modal */
     .modal-backdrop {
       position: fixed; inset: 0;
       background: rgba(0,0,0,.58);
@@ -82,35 +90,23 @@
       display: flex; gap: 10px; justify-content: center; align-items: center;
       padding: 16px;
     }
-    .btn {
-      appearance: none; border: 0; border-radius: 12px;
-      padding: 12px 16px; font-weight: 700; cursor: pointer;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #5c8df7, #7a5cf7);
-      color: #fff;
-    }
-    .btn-ghost {
-      background: transparent; color: #ddd;
-      border: 1px solid rgba(255,255,255,.15);
-    }
+    .btn { appearance: none; border: 0; border-radius: 12px; padding: 12px 16px; font-weight: 700; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg, #5c8df7, #7a5cf7); color: #fff; }
+    .btn-ghost { background: transparent; color: #ddd; border: 1px solid rgba(255,255,255,.15); }
     .badge {
       display: inline-flex; align-items: center; justify-content: center;
       padding: 10px 14px; border-radius: 999px;
       background: rgba(255,255,255,.08); color: #ddd; font-weight: 700;
       border: 1px solid rgba(255,255,255,.12);
     }
-    .modal-close {
-      background: transparent; border: 0; color: #bbb; cursor: pointer;
-      padding: 8px; border-radius: 10px;
-    }
+    .modal-close { background: transparent; border: 0; color: #bbb; cursor: pointer; padding: 8px; border-radius: 10px; }
     .modal-close:hover { background: rgba(255,255,255,.06); }
   </style>
 </head>
 <body>
   <div class="top-bar">
     <div class="top-left">
-      <a href="index.html" class="btn-back" title="" tabindex="0" >
+      <a href="index.html" class="btn-back" title="" tabindex="0">
         <svg viewBox="0 0 36 36" fill="none">
           <path d="M23.5 28L15 19.5L23.5 11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -128,14 +124,17 @@
 
   <div class="container-boutique">
     <div class="shop-title" data-i18n="boutique.titre"></div>
+
     <div id="soldeVCoins" class="vcoins-bar">
       <img src="assets/images/vcoin.webp" alt="VCoins" class="vcoin-ico">
       <span class="vcoins-solde">--</span>
       <img src="assets/images/jeton.webp" alt="Jetons" class="vcoin-ico" style="margin-left:18px;">
       <span class="vcoins-solde">--</span>
     </div>
+
     <div class="section-label" data-i18n="boutique.section.vcoins"></div>
     <div class="achats-list" id="achats-list"></div>
+
     <div class="section-label" style="margin-top:1.5em;" data-i18n="boutique.section.themes"></div>
     <div class="themes-list" id="themes-list"></div>
   </div>
@@ -155,8 +154,10 @@
   </div>
 
 <script>
+/* ===== Helpers i18n ===== */
 function t(key) { return window.i18nGet ? window.i18nGet(key) : key; }
 
+/* ===== Données ===== */
 const THEMES = [
   { key: "neon",   name: "Neon"   },
   { key: "bubble", name: "Bubble" },
@@ -181,28 +182,60 @@ const SPECIAL_CARTOUCHES = [
 ];
 
 const THEME_PRICE = 5000;
+/* Valeur par défaut si non définie ailleurs */
+const REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
+
+/* Couleurs cartouches */
 const THEME_COLOR = {
-  neon: 'color-purple', bubble: 'color-blue', nature: 'color-green', nuit: 'color-yellow',
-  retro: 'color-purple', vitraux: 'color-yellow', angelique: 'color-blue',
-  luxury: 'color-purple', space: 'color-blue', cyber: 'color-green'
+  neon: 'color-purple',
+  bubble: 'color-blue',
+  nature: 'color-green',
+  nuit: 'color-yellow',
+  retro: 'color-purple',
+  vitraux: 'color-yellow',
+  angelique: 'color-blue',
+  luxury: 'color-purple',
+  space: 'color-blue',
+  cyber: 'color-green'
 };
 
+/* ===== Cloud unlock (optionnel) ===== */
+async function unlockThemeCloud(themeKey) {
+  const userId = window.getUserId ? window.getUserId() : (window.userData?.getUserId?.() || "");
+  const sb = window.sb || window.supabaseClient || window.userData?.sb || window.supabase; // essaie de récupérer un client
+  if (!sb || !userId) return true; // si pas de client ici, on considère OK localement
+
+  const { data, error } = await sb.from('users').select('themes_possedes').eq('id', userId).single();
+  if (error) return false;
+  let themes = Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
+  if (!themes.includes(themeKey)) {
+    themes.push(themeKey);
+    await sb.from('users').update({ themes_possedes: themes }).eq('id', userId);
+  }
+  return true;
+}
+
+/* ===== Rendus ===== */
 function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
-  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => `
+  const html = SPECIAL_CARTOUCHES.map(c => `
     <div class="special-cartouche ${c.color}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
       ${c.prix ? `<span class="prix-label">${c.prix}</span>` : ""}
     </div>
   `).join('');
+  $achatsList.innerHTML = html;
 }
 
+/* Liste thèmes: WEBP uniquement (PAS de fallback PNG ici) */
 async function renderThemes() {
   renderAchats();
-  const unlocked = await userData.getUnlockedThemes?.() || [];
+
+  const unlocked = await (window.userData?.getUnlockedThemes?.() || []);
   const $themesList = document.getElementById('themes-list');
-  $themesList.innerHTML = THEMES.map(theme => {
+
+  const html = THEMES.map(theme => {
     const isUnlocked = unlocked.includes(theme.key);
     const color = THEME_COLOR[theme.key] || 'color-blue';
     const webp = `assets/modes/${theme.key}.webp`;
@@ -214,21 +247,109 @@ async function renderThemes() {
           <img src="${webp}" alt="${theme.name}" />
         </span>
         <span class="theme-label">${theme.name}</span>
-        <span class="prix-label">${isUnlocked ? (t('boutique.modal.possede')||'Possédé') : (THEME_PRICE + ' VCoins')}</span>
+        <span class="prix-label">${isUnlocked ? (t('boutique.modal.possede') || 'Possédé') : (THEME_PRICE + ' VCoins')}</span>
       </div>
     `;
   }).join('');
+  $themesList.innerHTML = html;
+
+  // Ouvrir popup
   $themesList.querySelectorAll('.theme-card').forEach(card => {
     const open = () => openThemeModal(card.dataset.theme);
     card.addEventListener('click', open);
-    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
   });
-  const solde = await userData.getVCoins?.();
-  document.querySelector('.vcoins-solde').textContent = typeof solde === "number" ? solde : "--";
-  const soldeJetons = await userData.getJetons?.();
-  document.querySelectorAll('.vcoins-solde')[1].textContent = typeof soldeJetons === "number" ? soldeJetons : "--";
+
+  // Soldes
+  const coins = await window.userData?.getVCoins?.();
+  const $soldeCoins = document.querySelector('.vcoins-solde');
+  if ($soldeCoins) $soldeCoins.textContent = (typeof coins === "number" ? coins : "--");
+
+  const jetons = await window.userData?.getJetons?.();
+  const $soldeJetons = document.querySelectorAll('.vcoins-solde')[1];
+  if ($soldeJetons) $soldeJetons.textContent = (typeof jetons === "number" ? jetons : "--");
 }
 
+/* Pub (récompenses) — on ne cible que la liste achats */
+function setupPubCartouches() {
+  document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
+    const label = cartouche.querySelector('.theme-label');
+    if (!label) return;
+    const key = label.dataset.i18n;
+
+    if (key === 'boutique.cartouche.pub1jeton') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        cartouche.onclick = null;
+        window.showRewarded?.(async (ok) => {
+          if (ok && window.userData?.addJetons) {
+            try {
+              await window.userData.addJetons(REWARD_JETONS);
+              alert("+1 jeton ajouté !");
+              await renderThemes();
+              setupPubCartouches();
+              setupBoutiqueAchats();
+              if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+            } catch(e) {
+              alert("Erreur : " + (e?.message || e));
+            }
+          }
+        });
+      };
+    }
+
+    if (key === 'boutique.cartouche.pub300points') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        cartouche.onclick = null;
+        window.showRewarded?.(async (ok) => {
+          if (ok && window.userData?.addVCoins) {
+            try {
+              await window.userData.addVCoins(300);
+              alert("+300 VCoins ajoutés !");
+              await renderThemes();
+              setupPubCartouches();
+              setupBoutiqueAchats();
+              if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+            } catch(e) {
+              alert("Erreur : " + (e?.message || e));
+            }
+          }
+        });
+      };
+    }
+  });
+}
+
+/* Achats € — on ne cible que la liste achats */
+function setupBoutiqueAchats() {
+  document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
+    const label = cartouche.querySelector('.theme-label');
+    if (!label) return;
+    const key = label.dataset.i18n;
+
+    if (key === 'boutique.cartouche.jetons12') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("jetons12")) window.accordeAchat?.("jetons12");
+      };
+    }
+    if (key === 'boutique.cartouche.jetons50') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("jetons50")) window.accordeAchat?.("jetons50");
+      };
+    }
+    if (key === 'boutique.cartouche.nopub') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("nopub")) window.accordeAchat?.("nopub");
+      };
+    }
+  });
+}
+
+/* ===== Popup thème ===== */
 const $backdrop = document.getElementById('themeModalBackdrop');
 const $title    = document.getElementById('themeModalTitle');
 const $img      = document.getElementById('themeModalImage');
@@ -236,18 +357,24 @@ const $actions  = document.getElementById('themeModalActions');
 const $close    = document.getElementById('themeModalClose');
 
 function openThemeModal(themeKey) {
+  // Titre i18n (spécifique -> sinon "Aperçu du thème <key>")
   const specificKey = "boutique.modal.titre." + themeKey;
   const specific = t(specificKey);
   const base = t("boutique.modal.titre");
   $title.textContent = (specific !== specificKey ? specific : `${base} ${themeKey}`);
+
+  // Image avec fallback PNG UNIQUEMENT dans la popup
   const webp = `assets/modes/${themeKey}.webp`;
   const png  = `assets/modes/${themeKey}.png`;
   $img.src = webp;
   $img.alt = themeKey;
   $img.onerror = () => { if ($img.src.endsWith('.webp')) $img.src = png; };
+
   renderModalActions(themeKey);
+
   $backdrop.style.display = 'flex';
   $backdrop.setAttribute('aria-hidden', 'false');
+
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
 }
 
@@ -258,8 +385,9 @@ function closeThemeModal() {
 
 async function renderModalActions(themeKey) {
   $actions.innerHTML = '';
-  const unlocked = await userData.getUnlockedThemes?.() || [];
+  const unlocked = await (window.userData?.getUnlockedThemes?.() || []);
   const isUnlocked = unlocked.includes(themeKey);
+
   if (isUnlocked) {
     const badge = document.createElement('div');
     badge.className = 'badge';
@@ -272,16 +400,17 @@ async function renderModalActions(themeKey) {
     buy.setAttribute('data-i18n', 'boutique.modal.acheter');
     buy.textContent = (t('boutique.modal.acheter') || 'Acheter') + ` (${THEME_PRICE} VCoins)`;
     buy.onclick = async () => {
-      const coins = await userData.getVCoins();
+      const coins = await window.userData?.getVCoins?.();
       if (coins < THEME_PRICE) { alert(t("boutique.alert.pasassez")); return; }
-      await userData.addVCoins(-THEME_PRICE);
+      await window.userData.addVCoins(-THEME_PRICE);
       await unlockThemeCloud(themeKey);
-      await renderThemes();
-      renderModalActions(themeKey);
+      await renderThemes();      // refresh listes + soldes
+      renderModalActions(themeKey); // transforme en "Possédé"
       if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
     };
     $actions.appendChild(buy);
   }
+
   const closeBtn = document.createElement('button');
   closeBtn.className = 'btn btn-ghost';
   closeBtn.setAttribute('data-i18n', 'boutique.modal.fermer');
@@ -290,9 +419,10 @@ async function renderModalActions(themeKey) {
   $actions.appendChild(closeBtn);
 }
 
+/* ===== Init ===== */
 $close?.addEventListener('click', closeThemeModal);
-$backdrop.addEventListener('click', e => { if (e.target === $backdrop) closeThemeModal(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeThemeModal(); });
+$backdrop.addEventListener('click', (e) => { if (e.target === $backdrop) closeThemeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeThemeModal(); });
 
 function ready(fn) {
   if (window.i18nReady && typeof window.i18nReady.then === "function") window.i18nReady.then(fn);
@@ -300,6 +430,9 @@ function ready(fn) {
 }
 ready(async () => {
   await renderThemes();
+  setupPubCartouches();
+  setupBoutiqueAchats();
+
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
   if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
 });
