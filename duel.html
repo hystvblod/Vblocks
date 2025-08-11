@@ -252,15 +252,18 @@
       const popup = document.getElementById('duelPopup');
       popup.style.display = 'flex';
       let html = '';
-      if (state === 'choice') {
- div.innerHTML = `
-  <h2>${t("duel.popup.choice.title")}</h2>
-  <button class="duel-btn" id="btnNewDuel">${t("duel.popup.choice.new")}</button>
-  <br>
-  <button class="duel-btn" id="btnJoinDuel">${t("duel.popup.choice.join")}</button>
-`;
 
+      if (state === 'choice') {
+        html = `
+          <div>
+            <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
+            <button class="duel-btn" id="btnNewDuel">${i18nT("duel.popup.choice.new")}</button>
+            <br>
+            <button class="duel-btn" id="btnJoinDuel">${i18nT("duel.popup.choice.join")}</button>
+          </div>
+        `;
       }
+
       if (state === 'wait') {
         html = `<div>
           <h2 data-i18n="duel.popup.wait.title">${i18nT("duel.popup.wait.title")}</h2>
@@ -272,6 +275,7 @@
           <div style="margin-top:1em;" data-i18n="duel.popup.wait.text">${i18nT("duel.popup.wait.text")}</div>
         </div>`;
       }
+
       if (state === 'confirm') {
         html = `<div>
           <h2 data-i18n="duel.popup.confirm.title">${i18nT("duel.popup.confirm.title")}</h2>
@@ -280,10 +284,14 @@
           <button class="duel-btn" id="btnRefuseDuel">${i18nT("duel.popup.confirm.refuse")}</button>
         </div>`;
       }
+
       if (state === 'countdown') {
-        html = `<div><h2 data-i18n="duel.popup.countdown.title">${i18nT("duel.popup.countdown.title")}</h2>
-          <div id="countdown" style="font-size:2.5em">3</div></div>`;
+        html = `<div>
+          <h2 data-i18n="duel.popup.countdown.title">${i18nT("duel.popup.countdown.title")}</h2>
+          <div id="countdown" style="font-size:2.5em">3</div>
+        </div>`;
       }
+
       if (state === 'join') {
         html = `<div>
           <h2 data-i18n="duel.popup.join.title">${i18nT("duel.popup.join.title")}</h2>
@@ -292,6 +300,7 @@
           <button class="duel-btn" id="btnJoinCancel">${i18nT("duel.popup.join.cancel")}</button>
         </div>`;
       }
+
       popup.innerHTML = html;
       if (window.i18nTranslateAll) window.i18nTranslateAll();
 
@@ -316,7 +325,7 @@
         document.getElementById('btnAcceptDuel').onclick = onAcceptDuel;
         document.getElementById('btnRefuseDuel').onclick = () => window.location = "index.html";
       }
-    }
+    } // ← fermeture correcte de showDuelPopup (déplacée ici)
 
     // --- Flow DUEL ---
     let duelId = null, duelCode = null, playerNum = 1;
@@ -455,3 +464,7 @@
   </script>
 </body>
 </html>
+  
+
+
+
