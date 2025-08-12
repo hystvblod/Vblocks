@@ -81,7 +81,7 @@
   // ==== FIN MUSIQUE ====
 
 
-  // ==== SUPABASE (safe) ====
+  // ==== SUPABASE (safe) ==== //
   const sb = global.sb || global.supabase || null;
 
   let highscoreCloud = 0; // Record cloud global
@@ -115,7 +115,7 @@
       drawBoard();
     };
 
-    // ==== CANVAS & DPR ====
+    // ==== CANVAS & DPR ==== //
     const canvas = document.getElementById('gameCanvas');
     if (!canvas) { console.error('[VBlocks] gameCanvas introuvable'); return; }
     const ctx = canvas.getContext('2d');
@@ -127,8 +127,13 @@
     const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
 
     const COLS = 10, ROWS = 20;
-    let BLOCK_SIZE = 30;
+    let BLOCK_SIZE = 30; // en px CSS (pas device)
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+
+    // Améliore le rendu d'images pixelisées
+    ctx.imageSmoothingEnabled = false;
+    if (holdCtx) holdCtx.imageSmoothingEnabled = false;
+    if (nextCtx) nextCtx.imageSmoothingEnabled = false;
 
     // clear “safe” (ignore transform)
     function clearCanvas(c2d, cnv) {
@@ -140,19 +145,22 @@
 
     function fitCanvasToCSS() {
       const rect = canvas.getBoundingClientRect();
-      const cssW = Math.round(rect.width) || COLS * BLOCK_SIZE;
-      const cssH = Math.round(rect.height) || ROWS * BLOCK_SIZE;
+      const cssW = rect.width || COLS * BLOCK_SIZE;
+      const cssH = rect.height || ROWS * BLOCK_SIZE;
 
       // dimensions réelles en pixels device
-      canvas.width  = Math.floor(cssW * DPR);
-      canvas.height = Math.floor(cssH * DPR);
+      canvas.width  = Math.round(cssW * DPR);
+      canvas.height = Math.round(cssH * DPR);
 
       // on dessine ensuite en unités CSS
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-      // taille de cellule en CSS px, arrondie pour éviter les demi-pixels
+      // taille de cellule EXACTE en CSS px (pas de floor → pas de “colonnes mortes”)
       const raw = Math.min(cssW / COLS, cssH / ROWS);
-      BLOCK_SIZE = Math.max(1, Math.floor(raw));
+      BLOCK_SIZE = raw; // <= pas de Math.floor
+
+      // sécurité contre valeurs pathologiques
+      if (!isFinite(BLOCK_SIZE) || BLOCK_SIZE <= 0) BLOCK_SIZE = 30;
     }
 
     // offsets pour centrer le plateau logique dans le canvas
@@ -162,8 +170,8 @@
       const usedW = BLOCK_SIZE * COLS;
       const usedH = BLOCK_SIZE * ROWS;
       return {
-        x: Math.floor((cssW - usedW) / 2),
-        y: Math.floor((cssH - usedH) / 2),
+        x: (cssW - usedW) / 2,
+        y: (cssH - usedH) / 2,
       };
     }
 
@@ -172,9 +180,10 @@
       if (!cnv || !c2d) return;
       cnv.style.width  = target + 'px';
       cnv.style.height = target + 'px';
-      cnv.width  = Math.floor(target * DPR);
-      cnv.height = Math.floor(target * DPR);
+      cnv.width  = Math.round(target * DPR);
+      cnv.height = Math.round(target * DPR);
       c2d.setTransform(DPR, 0, 0, DPR, 0, 0);
+      c2d.imageSmoothingEnabled = false;
     }
 
     fitCanvasToCSS();
@@ -745,7 +754,7 @@
 
       // // Debug: encadrer la zone logique
       // ctx.strokeStyle = 'rgba(0,255,255,.35)';
-      // ctx.strokeRect(0.5, 0.5, BLOCK_SIZE*COLS-1, BLOCK_SIZE*ROWS-1);
+      // ctx.strokeRect(0, 0, BLOCK_SIZE*COLS, BLOCK_SIZE*ROWS);
 
       ctx.restore();
     }
