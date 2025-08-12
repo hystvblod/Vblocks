@@ -143,35 +143,26 @@
       c2d.restore();
     }
 
-function fitCanvasToCSS() {
-  const rect = canvas.getBoundingClientRect();
-  const cssW = Math.round(rect.width);
+    function fitCanvasToCSS() {
+      const rect = canvas.getBoundingClientRect();
+      const cssW = Math.round(rect.width);
 
-  // On remplit toute la largeur (10 colonnes)
-  BLOCK_SIZE = cssW / COLS;
+      // On remplit toute la largeur (10 colonnes)
+      BLOCK_SIZE = cssW / COLS;
 
-  // Hauteur exacte pour 20 lignes
-  const usedW = BLOCK_SIZE * COLS;   // = cssW
-  const usedH = BLOCK_SIZE * ROWS;   // 20 lignes
+      // Hauteur exacte pour 20 lignes
+      const usedW = BLOCK_SIZE * COLS;   // = cssW
+      const usedH = BLOCK_SIZE * ROWS;   // 20 lignes
 
-  // On impose la hauteur CSS du canvas
-  canvas.style.height = usedH + 'px';
+      // On impose la hauteur CSS du canvas
+      canvas.style.height = usedH + 'px';
 
-  // Dimensions réelles en pixels device
-  canvas.width  = Math.round(usedW * DPR);
-  canvas.height = Math.round(usedH * DPR);
+      // Dimensions réelles en pixels device
+      canvas.width  = Math.round(usedW * DPR);
+      canvas.height = Math.round(usedH * DPR);
 
-  // Dessin en unités CSS
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-}
-
-
-      // taille de cellule EXACTE en CSS px (pas de floor → pas de “colonnes mortes”)
-      const raw = Math.min(cssW / COLS, cssH / ROWS);
-      BLOCK_SIZE = raw; // <= pas de Math.floor
-
-      // sécurité contre valeurs pathologiques
-      if (!isFinite(BLOCK_SIZE) || BLOCK_SIZE <= 0) BLOCK_SIZE = 30;
+      // Dessin en unités CSS
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
 
     // offsets pour centrer le plateau logique dans le canvas
@@ -763,7 +754,7 @@ function fitCanvasToCSS() {
         })
       );
 
-      // // Debug: encadrer la zone logique
+      // Debug
       // ctx.strokeStyle = 'rgba(0,255,255,.35)';
       // ctx.strokeRect(0, 0, BLOCK_SIZE*COLS, BLOCK_SIZE*ROWS);
 
