@@ -14,41 +14,22 @@
     }
     .top-bar {
       width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 65px;
-      z-index: 30;
-      padding: 0 12px;
-      box-sizing: border-box;
+      display: flex; justify-content: space-between; align-items: center;
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 65px; z-index: 30; padding: 0 12px; box-sizing: border-box;
       pointer-events: none;
     }
-    .top-left, .top-right {
-      display: flex; align-items: center;
-      pointer-events: all;
-    }
+    .top-left, .top-right { display: flex; align-items: center; pointer-events: all; }
     .top-left { flex: 1; }
     .top-right { gap: 20px; }
-    .btn-back {
-      display: flex; align-items: center; justify-content: center;
-      width: 48px; height: 48px;
-      border-radius: 50%;
-      background: none; border: none;
-      transition: background 0.14s;
-      margin-left: -8px;
-      cursor: pointer;
-      padding: 0;
-    }
+    .btn-back { display: flex; align-items: center; justify-content: center;
+      width: 48px; height: 48px; border-radius: 50%;
+      background: none; border: none; transition: background 0.14s;
+      margin-left: -8px; cursor: pointer; padding: 0; }
     .btn-back svg { width: 32px; height: 32px; display: block; }
     .btn-back:hover { background: #23236028; }
-    .btn-icon {
-      background: none; border: none;
-      display: flex; align-items: center; justify-content: center;
-      padding: 6px; cursor: pointer; border-radius: 50%;
-      transition: background 0.15s; width: 44px; height: 44px;
-    }
+    .btn-icon { background: none; border: none; display: flex; align-items: center; justify-content: center;
+      padding: 6px; cursor: pointer; border-radius: 50%; transition: background 0.15s; width: 44px; height: 44px; }
     .btn-icon img { width: 26px; height: 26px; display: block; filter: drop-shadow(0 1px 2px #2228); }
     .btn-icon:hover { background: #23236022; }
 
@@ -100,54 +81,48 @@
       .top-bar { padding-left: 2px; padding-right: 2px; }
     }
 
-    .popup-bg {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      display: none; justify-content: center; align-items: center; z-index: 5000;
-    }
+    .popup-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: none; justify-content: center; align-items: center; z-index: 5000; }
     .popup-bg.active { display: flex; }
-    .popup-box {
-      background: #fff; border-radius: 16px; padding: 2em 1.4em;
-      width: 90%; max-width: 350px; text-align: center; box-shadow: 0 8px 36px #0003;
-    }
-    .popup-box input {
-      width: 90%; padding: 0.7em; font-size: 1.05em;
-      border: 1px solid #ccc; border-radius: 8px; margin-top: 1em;
-    }
-    .popup-box button {
-      margin-top: 1.2em; margin-right: 0.4em; padding: 0.6em 1.4em;
+    .popup-box { background: #fff; border-radius: 16px; padding: 2em 1.4em;
+      width: 90%; max-width: 350px; text-align: center; box-shadow: 0 8px 36px #0003; }
+    .popup-box input { width: 90%; padding: 0.7em; font-size: 1.05em;
+      border: 1px solid #ccc; border-radius: 8px; margin-top: 1em; }
+    .popup-box button { margin-top: 1.2em; margin-right: 0.4em; padding: 0.6em 1.4em;
       border-radius: 8px; font-weight: 700; border: none; cursor: pointer;
-      background: #38a75f; color: #fff;
-    }
+      background: #38a75f; color: #fff; }
     .popup-box button:last-child { background: #eee; color: #333; }
     #pseudoError { color: #d33; font-size: 0.95em; margin-top: 0.5em; min-height: 1.1em; }
 
-    .theme-choice-vb.locked { filter: grayscale(1); opacity: 0.6; cursor: not-allowed; }
-    .popup-theme-bg {
-      position: fixed; inset: 0; z-index: 1000; background: rgba(24,44,26,0.68);
-      display: none; align-items: center; justify-content: center;
-    }
+    /* ===== POPUP THÈMES façon Boutique ===== */
+    .popup-theme-bg { position: fixed; inset: 0; z-index: 1000; background: rgba(24,44,26,0.68);
+      display: none; align-items: center; justify-content: center; }
     .popup-theme-bg.active { display: flex; }
-    .popup-theme-vb {
-      background: #fff; border-radius: 2em; padding: 2em 1.1em 2em 1.1em;
-      box-shadow: 0 8px 38px #82e7bc22; text-align: center; max-width: 370px; width: 93vw;
-      animation: popupfade 0.18s;
-    }
-    .theme-list-vb { display: flex; flex-wrap: wrap; gap: 1.2em; justify-content: center; margin-bottom: 0.5em;}
-    .theme-choice-vb {
-      border: none; border-radius: 1em; padding: 0.67em 1.3em; font-size: 1.05em; font-weight: 800;
-      background: #e6f6ea; color: #156c31; cursor: pointer; box-shadow: 0 2px 10px #a2dcd220;
-      transition: background 0.13s, color 0.13s, transform 0.13s; margin: 0; outline: none;
-    }
-    .theme-choice-vb.active, .theme-choice-vb:active { background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%); color: #0e4b26; transform: scale(1.05); }
-    .popup-actions { margin-top: 1.7em; }
-    .vb-btn-validate, .vb-btn-cancel {
-      padding: 0.67em 1.7em; border-radius: 1em; font-weight: 800; border: none;
-      font-size: 1.03em; cursor: pointer; margin: 0 0.7em;
-    }
-    .vb-btn-validate { background: #59e7aa; color: #093c1c; }
-    .vb-btn-validate:active { background: #2ad680; }
-    .vb-btn-cancel { background: #eee; color: #6d787a;}
-    .vb-btn-cancel:active { background: #c7c7c7;}
+    .theme-shop-card { background:#fff; border-radius:20px; box-shadow:0 16px 48px #0006; width:min(96vw,920px); padding:16px; }
+    .theme-shop-header { display:flex; align-items:center; justify-content:center; position:relative; margin-bottom:8px; }
+    .theme-close { position:absolute; right:6px; top:6px; border:none; background:transparent; font-size:18px; padding:6px 10px; border-radius:10px; cursor:pointer; }
+    .theme-close:hover { background:#0000000f; }
+    .theme-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; margin-top:10px; }
+    .theme-card { border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; background:#f8fafc; cursor:pointer; transition:transform .12s, box-shadow .12s; }
+    .theme-card:hover { transform:translateY(-2px); box-shadow:0 10px 28px #0001; }
+    .theme-thumb { width:100%; height:120px; object-fit:cover; display:block; background:#ddd; }
+    .theme-meta { padding:10px; display:flex; align-items:center; justify-content:space-between; }
+    .theme-name { font-weight:800; }
+    .theme-lock { font-size:12px; opacity:.7; }
+    .theme-card.locked { filter:grayscale(1); opacity:.6; cursor:not-allowed; }
+    .theme-card.active { outline:3px solid #22c55e; }
+    .theme-preview { display:grid; grid-template-columns:280px 1fr; gap:16px; align-items:center; }
+    @media (max-width:760px){ .theme-preview{ grid-template-columns:1fr; } }
+    .preview-frame { border:1px solid #e5e7eb; border-radius:16px; padding:10px; background:#f8fafc; }
+    .preview-ui { height:180px; border-radius:12px; display:grid; place-items:center; gap:8px; }
+    .preview-logo { font-weight:900; }
+    .preview-chip { padding:6px 10px; border-radius:999px; background:#e2e8f0; }
+    .preview-btn { padding:8px 14px; border-radius:10px; background:#111; color:#fff; font-weight:800; }
+    .preview-caption { text-align:center; margin-top:6px; color:#666; font-weight:700; }
+    .theme-actions { display:flex; gap:10px; justify-content:center; align-items:center; padding:14px 0; }
+    .vb-btn-validate, .vb-btn-cancel { padding:.67em 1.7em; border-radius:1em; font-weight:800; border:none; font-size:1.03em; cursor:pointer; margin:0 .7em; }
+    .vb-btn-validate { background:#59e7aa; color:#093c1c; } .vb-btn-validate:active{ background:#2ad680; }
+    .vb-btn-cancel { background:#eee; color:#6d787a; } .vb-btn-cancel:active{ background:#c7c7c7; }
 
     @keyframes popupfade { from { opacity:0; transform: translateY(38px) scale(.96);} to { opacity:1; transform:none; } }
   </style>
@@ -198,6 +173,7 @@
     </div>
   </div>
 
+  <!-- Popup Pseudo -->
   <div class="popup-bg" id="popupPseudo">
     <div class="popup-box">
       <h2 data-i18n="profil.popup.pseudoTitle">Ton nouveau pseudo</h2>
@@ -208,13 +184,41 @@
     </div>
   </div>
 
-  <div id="theme-selector-popup" class="popup-theme-bg">
-    <div class="popup-theme-vb">
-      <h2 data-i18n="theme.popup.title">Choisis ton thème VBlocks</h2>
-      <div class="theme-list-vb" id="themeListVB"></div>
-      <div class="popup-actions">
-        <button class="vb-btn-validate" id="btnValiderTheme"><span data-i18n="theme.popup.validate">Valider</span></button>
-        <button class="vb-btn-cancel" id="btnCancelTheme"><span data-i18n="theme.popup.cancel">Annuler</span></button>
+  <!-- ===== POPUP THÈMES (style Boutique) ===== -->
+  <div id="themeModal" class="popup-theme-bg">
+    <div class="theme-shop-card">
+      <div class="theme-shop-header">
+        <h2 data-i18n="theme.popup.title">Choisis ton thème VBlocks</h2>
+        <button id="themeModalClose" class="theme-close" aria-label="Fermer">✕</button>
+      </div>
+
+      <!-- Aperçu live -->
+      <div class="theme-preview">
+        <div class="preview-frame">
+          <div id="themePreview" class="preview-ui">
+            <div class="preview-logo">VBlocks</div>
+            <div class="preview-chip">Cartes / Badges</div>
+            <div class="preview-btn">Bouton</div>
+          </div>
+        </div>
+        <div class="preview-caption" data-i18n="theme.preview.legend">Aperçu en direct</div>
+      </div>
+
+      <!-- Grille des thèmes -->
+      <div id="themeGrid" class="theme-grid"></div>
+
+      <!-- Grande image (comme Boutique) -->
+      <div class="modal-body" style="padding:14px 0 0">
+        <img id="themeModalImage" src="" alt="" />
+      </div>
+
+      <div class="theme-actions">
+        <button id="themeUse" class="vb-btn-validate">
+          <span data-i18n="theme.popup.use">Utiliser ce thème</span>
+        </button>
+        <button id="themeCancel" class="vb-btn-cancel">
+          <span data-i18n="theme.popup.cancel">Annuler</span>
+        </button>
       </div>
     </div>
   </div>
@@ -225,75 +229,149 @@
   <script src="js/userData.js"></script>
   <script src="js/pub.js"></script>
   <script>
+    // ---------- i18n safe ----------
+    function i18nSafe(key, fb){ try{ return (window.i18nGet?.(key)) || fb }catch{ return fb } }
+
+    // ---------- Apps partenaires (détection + crédit) ----------
     const APPS_TO_CHECK = [
       { appId: 'vblocks', packageName: 'com.vboldstudio.VBlocks' },
       { appId: 'vfindz',  packageName: 'com.vboldstudio.VFindz' },
       { appId: 'vzone',   packageName: 'com.vboldstudio.VZone' }
     ];
-
-    async function isAppInstalledAndroid(pkg) {
-      try {
-        const AppChecker = (window.Capacitor?.Plugins || {}).AppChecker;
-        if (!AppChecker?.isInstalled) return false;
-        const res = await AppChecker.isInstalled({ package: pkg });
+    async function isAppInstalledAndroid(pkg){
+      try{
+        const AppChecker=(window.Capacitor?.Plugins||{}).AppChecker;
+        if(!AppChecker?.isInstalled) return false;
+        const res=await AppChecker.isInstalled({package:pkg});
         return !!res?.installed;
-      } catch { return false; }
+      }catch{return false;}
     }
-
-    async function creditIfEligible(appId) {
-      const user = (window.supabase?.auth?.user && supabase.auth.user());
-      if (!user) return { ok:false, reason:'no-user' };
-      const { error } = await supabase.rpc('grant_app_download_reward', { user_id: user.id, app_id: appId });
-      if (error) {
-        if ((error.message || '').toLowerCase().includes('unique')) return { ok:false, reason:'already-credited' };
-        return { ok:false, reason:'rpc-error', details:error.message };
+    async function creditIfEligible(appId){
+      const user=(window.supabase?.auth?.user && supabase.auth.user());
+      if(!user) return {ok:false,reason:'no-user'};
+      const {error}=await supabase.rpc('grant_app_download_reward',{user_id:user.id, app_id:appId});
+      if(error){
+        if((error.message||'').toLowerCase().includes('unique')) return {ok:false,reason:'already-credited'};
+        return {ok:false,reason:'rpc-error',details:error.message};
       }
-      return { ok:true };
+      return {ok:true};
     }
-
-    function showToast(msg) {
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.style.display = 'block';
-      setTimeout(()=> el.style.display='none', 2600);
-    }
-
-    async function checkInstalledAppsAndGrant() {
-      if (!/Android/i.test(navigator.userAgent)) return;
-
-      let installsDetected = 0, creditsDone = 0;
-      for (const app of APPS_TO_CHECK) {
-        if (await isAppInstalledAndroid(app.packageName)) {
-          installsDetected++;
-          const res = await creditIfEligible(app.appId);
-          if (res.ok) creditsDone++;
+    function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.display='block'; setTimeout(()=>el.style.display='none',2600); }
+    async function checkInstalledAppsAndGrant(showNone=false){
+      if(!/Android/i.test(navigator.userAgent)) return;
+      let found=0, credited=0;
+      for(const app of APPS_TO_CHECK){
+        if(await isAppInstalledAndroid(app.packageName)){
+          found++; const r=await creditIfEligible(app.appId); if(r.ok) credited++;
         }
       }
-
-      const t = window.i18nGet || (()=>null);
-      if (installsDetected > 0) {
-        const msg = (t('profil.applis.check.toastDetected') || '{count} appli(s) détectée(s), crédits effectués: {credited}')
-          .replace('{count}', installsDetected).replace('{credited}', creditsDone);
-        showToast(msg);
-      } else {
-        showToast(t('profil.applis.check.toastNone') || 'Aucune application partenaire détectée');
+      if(found>0){
+        const m=i18nSafe('profil.applis.check.toastDetected','{count} appli(s) détectée(s), crédits: {credited}')
+                    .replace('{count}',found).replace('{credited}',credited);
+        toast(m);
+      } else if (showNone) {
+        toast(i18nSafe('profil.applis.check.toastNone','Aucune application partenaire détectée'));
       }
     }
 
+    // ---------- THEMES (grille + image + preview + utiliser) ----------
+    const THEMES_SHOP=[
+      {key:'neon',name:'Neon'},{key:'bubble',name:'Bubble'},{key:'nature',name:'Nature'},
+      {key:'nuit',name:'Nuit'},{key:'retro',name:'Retro'},{key:'vitraux',name:'Vitraux'},
+      {key:'angelique',name:'Angelique'},{key:'luxury',name:'Luxury'},{key:'space',name:'Space'},{key:'cyber',name:'Cyber'}
+    ];
+
+    async function getUnlockedThemes(){
+      const userId=localStorage.getItem('user_id');
+      try{
+        const sb=(window.sb||window.supabase); if(!sb||!userId) throw 0;
+        const {data,error}=await sb.from('users').select('themes_possedes').eq('id',userId).single();
+        if(!error && Array.isArray(data?.themes_possedes)) return data.themes_possedes;
+      }catch{}
+      try{ const local=JSON.parse(localStorage.getItem('unlockedVBlocksThemes')||'[]'); if(Array.isArray(local)&&local.length) return local;}catch{}
+      return ['neon'];
+    }
+    async function setUnlockedThemes(list){
+      localStorage.setItem('unlockedVBlocksThemes',JSON.stringify(list));
+      const user=(window.supabase?.auth?.user && supabase.auth.user());
+      try{ if(user) await supabase.from('users').update({themes_possedes:list}).eq('id',user.id);}catch{}
+    }
+
+    function setPreviewTheme(themeKey){
+      // Aperçu live minimal (tu peux brancher ton système de variables CSS si tu en as un)
+      const prev=document.getElementById('themePreview');
+      prev.style.background = (themeKey==='nuit' || themeKey==='luxury') ? '#111' : '#f8fafc';
+      prev.querySelector('.preview-btn').style.background = (themeKey==='nuit' || themeKey==='luxury') ? '#22c55e' : '#111';
+    }
+
+    async function openThemeModal(){
+      const modal=document.getElementById('themeModal');
+      const grid=document.getElementById('themeGrid');
+      const img=document.getElementById('themeModalImage');
+      const btnUse=document.getElementById('themeUse');
+      const btnCancel=document.getElementById('themeCancel');
+      const btnClose=document.getElementById('themeModalClose');
+
+      const unlocked=await getUnlockedThemes();
+      const current=localStorage.getItem('themeVBlocks')||'neon';
+      let selected=current;
+
+      grid.innerHTML = THEMES_SHOP.map(t=>{
+        const locked = !unlocked.includes(t.key);
+        const webp = `assets/modes/${t.key}.webp`;
+        const png  = `assets/modes/${t.key}.png`;
+        return `
+          <div class="theme-card ${locked?'locked':''}" data-theme="${t.key}" tabindex="0">
+            <img class="theme-thumb" src="${webp}" onerror="this.onerror=null;this.src='${png}'" alt="${t.name}">
+            <div class="theme-meta">
+              <div class="theme-name">${t.name}</div>
+              <div class="theme-lock">${locked ? (i18nSafe('theme.item.lockedSuffix','🔒')) : i18nSafe('theme.item.unlocked','OK')}</div>
+            </div>
+          </div>`;
+      }).join('');
+
+      grid.querySelectorAll('.theme-card').forEach(card=>{
+        if(card.classList.contains('locked')) return;
+        if(card.dataset.theme===selected) card.classList.add('active');
+        card.addEventListener('click',()=>{
+          grid.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('active'));
+          card.classList.add('active');
+          selected=card.dataset.theme;
+          setPreviewTheme(selected);
+          const webp=`assets/modes/${selected}.webp`; const png=`assets/modes/${selected}.png`;
+          img.src=webp; img.onerror=()=>{ if(img.src.endsWith('.webp')) img.src=png; };
+        });
+      });
+
+      // init preview + image
+      setPreviewTheme(selected);
+      img.src=`assets/modes/${selected}.webp`;
+      img.onerror=()=>{ if(img.src.endsWith('.webp')) img.src=`assets/modes/${selected}.png`; };
+
+      btnUse.onclick = async ()=>{
+        if(!selected) return;
+        localStorage.setItem('themeVBlocks',selected);
+        document.body.setAttribute('data-theme',selected);
+        try{ const user=(window.supabase?.auth?.user && supabase.auth.user()); if(user){ await supabase.from('users').update({theme_vblocks:selected}).eq('id',user.id);} }catch{}
+        modal.classList.remove('active');
+        location.reload(); // retire si tu préfères sans reload
+      };
+      btnCancel.onclick = ()=> modal.classList.remove('active');
+      btnClose.onclick  = ()=> modal.classList.remove('active');
+
+      modal.classList.add('active');
+    }
+
+    // ---------- Page wiring ----------
     window.addEventListener("DOMContentLoaded", async () => {
-      let user = null;
-      if (window.supabase && supabase.auth && typeof supabase.auth.user === "function") {
-        user = supabase.auth.user();
-      }
+      // Thème initial
+      let user=null;
+      if (window.supabase?.auth && typeof supabase.auth.user === "function") user=supabase.auth.user();
       if (user) {
         const { data, error } = await supabase.from('users').select('theme_vblocks').eq('id', user.id).single();
-        if (!error && data && data.theme_vblocks) {
-          localStorage.setItem('themeVBlocks', data.theme_vblocks);
-          document.body.setAttribute('data-theme', data.theme_vblocks);
-        } else {
-          const theme = localStorage.getItem('themeVBlocks') || 'neon';
-          document.body.setAttribute('data-theme', theme);
-        }
+        const theme = (!error && data && data.theme_vblocks) ? data.theme_vblocks : (localStorage.getItem('themeVBlocks') || 'neon');
+        localStorage.setItem('themeVBlocks', theme);
+        document.body.setAttribute('data-theme', theme);
       } else {
         const theme = localStorage.getItem('themeVBlocks') || 'neon';
         document.body.setAttribute('data-theme', theme);
@@ -305,129 +383,62 @@
       setupPseudoPopup();
       updatePseudoUI();
 
-      document.getElementById("changeThemeBtn").onclick = openThemePopup;
+      // Bouton Thèmes → ouvre la popup façon Boutique
+      document.getElementById("changeThemeBtn").onclick = openThemeModal;
 
       if (window.i18nGet) {
         const ph = window.i18nGet('profil.popup.placeholder');
         if (ph) document.getElementById('newPseudo').setAttribute('placeholder', ph);
       }
 
-      checkInstalledAppsAndGrant();
+      // Détection applis partenaires (silencieux)
+      checkInstalledAppsAndGrant(false);
 
+      // Autres boutons
       document.getElementById("amisBtn").onclick = () => { window.location.href = "amis.html"; };
       document.getElementById("applisBtn").onclick = async () => {
-        await checkInstalledAppsAndGrant();
-        window.location.href = "applis.html";
+        await checkInstalledAppsAndGrant(true);
+        // si tu ne veux plus de redirection : commente la ligne ci-dessous
+        // window.location.href = "applis.html";
       };
-
-      async function openThemePopup() {
-        const ALL_THEMES = (window.getAllThemes ? window.getAllThemes() : ["neon","nature","pixel","dark","bubble","retro","cyber"]);
-        const popup = document.getElementById('theme-selector-popup');
-        const themeList = document.getElementById('themeListVB');
-
-        const userId = localStorage.getItem('user_id');
-        let unlocked = ["neon"];
-        try {
-          const sb = (window.sb || window.supabase);
-          if (sb) {
-            const { data, error } = await sb.from('users').select('themes_possedes').eq('id', userId).single();
-            if (!error && data && Array.isArray(data.themes_possedes)) {
-              unlocked = data.themes_possedes;
-              localStorage.setItem("unlockedVBlocksThemes", JSON.stringify(unlocked));
-            }
-          }
-        } catch (e) {}
-
-        const lockSuffix = (window.i18nGet && window.i18nGet('theme.item.lockedSuffix')) || ' 🔒';
-
-        let html = '';
-        ALL_THEMES.forEach(theme => {
-          const locked = !unlocked.includes(theme);
-          const label = (window.i18nGet && window.i18nGet('theme.name.' + theme)) 
-                        || (theme.charAt(0).toUpperCase() + theme.slice(1));
-          html += `<button class="theme-choice-vb${locked ? ' locked' : ''}" data-theme="${theme}" ${locked ? 'disabled' : ''}>
-            ${label}${locked ? lockSuffix : ''}
-          </button>`;
-        });
-        themeList.innerHTML = html;
-
-        popup.classList.add("active");
-
-        let selectedTheme = localStorage.getItem("themeVBlocks") || "neon";
-        document.querySelectorAll('.theme-choice-vb').forEach(btn => {
-          if (btn.dataset.theme === selectedTheme) btn.classList.add('active');
-        });
-
-        document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn => {
-          btn.onclick = function() {
-            document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
-            btn.classList.add('active');
-            selectedTheme = btn.dataset.theme;
-          }
-        });
-
-        document.getElementById('btnValiderTheme').onclick = async () => {
-          if (selectedTheme) {
-            localStorage.setItem("themeVBlocks", selectedTheme);
-            document.body.setAttribute('data-theme', selectedTheme);
-            try {
-              const user = (supabase.auth.user && supabase.auth.user());
-              if (user) {
-                await supabase.from('users').update({ theme_vblocks: selectedTheme }).eq('id', user.id);
-              }
-            } catch (e) {}
-            location.reload();
-          }
-        };
-        document.getElementById('btnCancelTheme').onclick = () => {
-          popup.classList.remove("active");
-        };
-      }
-
-      function setupPseudoPopup() {
-        const popup = document.getElementById('popupPseudo');
-        const btnOpen = document.getElementById('btnChangePseudo');
-        const btnSave = document.getElementById('btnSavePseudo');
-        const btnCancel = document.getElementById('btnCancelPseudo');
-        const input = document.getElementById('newPseudo');
-        const err = document.getElementById('pseudoError');
-
-        btnOpen.onclick = () => {
-          err.textContent = '';
-          input.value = localStorage.getItem("pseudo") || '';
-          popup.classList.add('active');
-          setTimeout(()=>input.focus(), 50);
-        };
-        btnCancel.onclick = () => popup.classList.remove('active');
-
-        btnSave.onclick = async () => {
-          const v = (input.value || '').trim();
-          if (!v) {
-            err.textContent = (window.i18nGet && window.i18nGet('profil.popup.error.empty')) || 'Entre un pseudo.';
-            return;
-          }
-          if (v.length > 20) {
-            err.textContent = (window.i18nGet && window.i18nGet('profil.popup.error.length')) || '20 caractères max.';
-            return;
-          }
-          try {
-            localStorage.setItem("pseudo", v);
-            const user = (window.supabase && supabase.auth.user && supabase.auth.user());
-            if (user) {
-              await supabase.from('users').update({ pseudo: v }).eq('id', user.id);
-            }
-            document.getElementById("profilPseudo").textContent = v;
-            err.textContent = (window.i18nGet && window.i18nGet('profil.popup.success')) || 'Pseudo mis à jour.';
-            setTimeout(()=> popup.classList.remove('active'), 500);
-          } catch(e) {}
-        };
-      }
-
-      function updatePseudoUI() {
-        const current = localStorage.getItem("pseudo");
-        if (current) document.getElementById("profilPseudo").textContent = current;
-      }
     });
+
+    // ---- popup pseudo ----
+    function setupPseudoPopup() {
+      const popup = document.getElementById('popupPseudo');
+      const btnOpen = document.getElementById('btnChangePseudo');
+      const btnSave = document.getElementById('btnSavePseudo');
+      const btnCancel = document.getElementById('btnCancelPseudo');
+      const input = document.getElementById('newPseudo');
+      const err = document.getElementById('pseudoError');
+
+      btnOpen.onclick = () => {
+        err.textContent = '';
+        input.value = localStorage.getItem("pseudo") || '';
+        popup.classList.add('active');
+        setTimeout(()=>input.focus(), 50);
+      };
+      btnCancel.onclick = () => popup.classList.remove('active');
+
+      btnSave.onclick = async () => {
+        const v = (input.value || '').trim();
+        if (!v) { err.textContent = i18nSafe('profil.popup.error.empty','Entre un pseudo.'); return; }
+        if (v.length > 20) { err.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
+        try {
+          localStorage.setItem("pseudo", v);
+          const user = (window.supabase?.auth?.user && supabase.auth.user());
+          if (user) { await supabase.from('users').update({ pseudo: v }).eq('id', user.id); }
+          document.getElementById("profilPseudo").textContent = v;
+          err.textContent = i18nSafe('profil.popup.success','Pseudo mis à jour.');
+          setTimeout(() => popup.classList.remove('active'), 500);
+
+        } catch(e) {}
+      };
+    }
+    function updatePseudoUI() {
+      const current = localStorage.getItem("pseudo");
+      if (current) document.getElementById("profilPseudo").textContent = current;
+    }
   </script>
 </body>
 </html>
