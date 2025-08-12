@@ -55,16 +55,12 @@
   if (window.Capacitor || window.cordova) {
     setTimeout(playMusicAuto, 350);
   } else {
-    window.addEventListener(
-      'pointerdown',
-      function autoStartMusic() {
-        if (!window.musicStarted && !isMusicAlwaysMuted()) {
-          playMusicAuto();
-          window.musicStarted = true;
-        }
-      },
-      { once: true }
-    );
+    window.addEventListener('pointerdown', function autoStartMusic() {
+      if (!window.musicStarted && !isMusicAlwaysMuted()) {
+        playMusicAuto();
+        window.musicStarted = true;
+      }
+    }, { once: true });
   }
   setTimeout(refreshMusicBtn, 200);
   document.addEventListener('DOMContentLoaded', () => {
@@ -73,9 +69,7 @@
       btnMusic.onclick = function () {
         if (isMusicAlwaysMuted()) return;
         if (music.paused) {
-          music.play().then(() => {
-            btnMusic.textContent = '🎵 Musique';
-          }).catch(()=>{});
+          music.play().then(() => { btnMusic.textContent = '🎵 Musique'; }).catch(()=>{});
         } else {
           music.pause();
           btnMusic.textContent = '🔇 Muet';
@@ -92,10 +86,10 @@
 
   let highscoreCloud = 0; // Record cloud global
 
-  // Fonction i18n de traduction
+  // i18n
   function t(key, params) {
     if (global.i18nGet) {
-      let str = global.i18nGet(key);
+      let str = global.i18nGet(key) ?? key;
       if (params) Object.keys(params).forEach(k => { str = str.replace(`{${k}}`, params[k]); });
       return str;
     }
@@ -159,6 +153,18 @@
       // taille de cellule en CSS px, arrondie pour éviter les demi-pixels
       const raw = Math.min(cssW / COLS, cssH / ROWS);
       BLOCK_SIZE = Math.max(1, Math.floor(raw));
+    }
+
+    // offsets pour centrer le plateau logique dans le canvas
+    function boardOffsets() {
+      const cssW = canvas.width  / DPR;
+      const cssH = canvas.height / DPR;
+      const usedW = BLOCK_SIZE * COLS;
+      const usedH = BLOCK_SIZE * ROWS;
+      return {
+        x: Math.floor((cssW - usedW) / 2),
+        y: Math.floor((cssH - usedH) / 2),
+      };
     }
 
     // par défaut 48px (match le HTML width/height=48)
@@ -467,7 +473,7 @@
     ];
 
     const scoreEl = document.getElementById('score');
-    const highEl  = document.getElementById('highscore');
+    const highEl  = document.getElementById('highscore') || document.getElementById('highscore-global');
     if (scoreEl) scoreEl.textContent = '0';
     if (highEl)  highEl.textContent  = '0';
 
@@ -699,6 +705,11 @@
     function drawBoard() {
       clearCanvas(ctx, canvas);
 
+      // centre le plateau logique dans le canvas
+      const { x: OX, y: OY } = boardOffsets();
+      ctx.save();
+      ctx.translate(OX, OY);
+
       const ghost = getGhostPiece();
       if (ghost) {
         ghost.shape.forEach((row, dy) =>
@@ -713,24 +724,30 @@
 
       board.forEach((row, y) =>
         row.forEach((cell, x) => {
-          if (cell) {
-            if (currentTheme === 'space' || currentTheme === 'vitraux') {
-              drawBlockCustom(ctx, x, y, cell.letter || cell, BLOCK_SIZE, false, cell.variant || 0);
-            } else {
-              drawBlockCustom(ctx, x, y, cell);
-            }
+          if (!cell) return;
+          if (currentTheme === 'space' || currentTheme === 'vitraux') {
+            drawBlockCustom(ctx, x, y, cell.letter || cell, BLOCK_SIZE, false, cell.variant || 0);
+          } else {
+            drawBlockCustom(ctx, x, y, cell);
           }
         })
       );
 
       currentPiece.shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
-          if (val) drawBlockCustom(
+          if (!val) return;
+          drawBlockCustom(
             ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter, BLOCK_SIZE, false,
             (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
           );
         })
       );
+
+      // // Debug: encadrer la zone logique
+      // ctx.strokeStyle = 'rgba(0,255,255,.35)';
+      // ctx.strokeRect(0.5, 0.5, BLOCK_SIZE*COLS-1, BLOCK_SIZE*ROWS-1);
+
+      ctx.restore();
     }
 
     // Mini (Réserve/Suivante) — centrage DPR-aware
