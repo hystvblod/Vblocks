@@ -1,4 +1,4 @@
-(function(global){
+(function (global) {
   'use strict';
 
   // ==== GESTION MUSIQUE UNIFIÉE ==== //
@@ -14,7 +14,7 @@
       music.play().then(() => {
         window.musicStarted = true;
         refreshMusicBtn();
-      }).catch(()=>{});
+      }).catch(() => {});
     }
   }
   function pauseMusic() {
@@ -24,19 +24,19 @@
   }
   function refreshMusicBtn() {
     const btn = document.getElementById('music-btn');
-    if (!btn) return;
+    if (!btn || !music) return;
     if (isMusicAlwaysMuted() || music.paused) {
       btn.textContent = '🔇 Muet';
     } else {
       btn.textContent = '🎵 Musique';
     }
   }
-  window.setMusicAlwaysMuted = function(val) {
+  window.setMusicAlwaysMuted = function (val) {
     localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
     if (val) pauseMusic();
     refreshMusicBtn();
-  }
-  window.startMusicForGame = function() {
+  };
+  window.startMusicForGame = function () {
     if (!music) return;
     if (isMusicAlwaysMuted()) {
       pauseMusic();
@@ -44,9 +44,9 @@
     }
     music.currentTime = 0;
     playMusicAuto();
-  }
-  window.addEventListener("storage", (e) => {
-    if (e.key === "alwaysMuteMusic") {
+  };
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'alwaysMuteMusic') {
       refreshMusicBtn();
       if (isMusicAlwaysMuted()) pauseMusic();
       else playMusicAuto();
@@ -55,22 +55,27 @@
   if (window.Capacitor || window.cordova) {
     setTimeout(playMusicAuto, 350);
   } else {
-    window.addEventListener('pointerdown', function autoStartMusic() {
-      if (!window.musicStarted && !isMusicAlwaysMuted()) {
-        playMusicAuto();
-        window.musicStarted = true;
-      }
-    }, { once: true });
+    window.addEventListener(
+      'pointerdown',
+      function autoStartMusic() {
+        if (!window.musicStarted && !isMusicAlwaysMuted()) {
+          playMusicAuto();
+          window.musicStarted = true;
+        }
+      },
+      { once: true }
+    );
   }
   setTimeout(refreshMusicBtn, 200);
   document.addEventListener('DOMContentLoaded', () => {
     const btnMusic = document.getElementById('music-btn');
-    if (btnMusic) {
-      btnMusic.onclick = function() {
+    if (btnMusic && music) {
+      btnMusic.onclick = function () {
         if (isMusicAlwaysMuted()) return;
         if (music.paused) {
-          music.play();
-          btnMusic.textContent = '🎵 Musique';
+          music.play().then(() => {
+            btnMusic.textContent = '🎵 Musique';
+          }).catch(()=>{});
         } else {
           music.pause();
           btnMusic.textContent = '🔇 Muet';
@@ -82,28 +87,27 @@
   // ==== FIN MUSIQUE ====
 
 
+  // ==== SUPABASE (safe) ====
+  const sb = global.sb || global.supabase || null;
+
   let highscoreCloud = 0; // Record cloud global
 
   // Fonction i18n de traduction
   function t(key, params) {
-    if (window.i18nGet) {
-      let str = window.i18nGet(key);
-      if(params) Object.keys(params).forEach(k => {
-        str = str.replace(`{${k}}`, params[k]);
-      });
+    if (global.i18nGet) {
+      let str = global.i18nGet(key);
+      if (params) Object.keys(params).forEach(k => { str = str.replace(`{${k}}`, params[k]); });
       return str;
     }
-    if (window.I18N_MAP && window.I18N_MAP[key]) {
-      let str = window.I18N_MAP[key];
-      if(params) Object.keys(params).forEach(k => {
-        str = str.replace(`{${k}}`, params[k]);
-      });
+    if (global.I18N_MAP && global.I18N_MAP[key]) {
+      let str = global.I18N_MAP[key];
+      if (params) Object.keys(params).forEach(k => { str = str.replace(`{${k}}`, params[k]); });
       return str;
     }
     return key;
   }
 
-  function initGame(opts){
+  function initGame(opts) {
     const mode = (opts && opts.mode) || 'classic';
     const duelId = opts?.duelId || null;
     const duelPlayerNum = opts?.duelPlayerNum || 1;
@@ -111,106 +115,122 @@
     let piecesUsed = 0;
 
     let ghostPieceEnabled = localStorage.getItem('ghostPiece') !== 'false';
-    global.toggleGhostPiece = function(enabled) {
+    global.toggleGhostPiece = function (enabled) {
       ghostPieceEnabled = !!enabled;
       localStorage.setItem('ghostPiece', ghostPieceEnabled ? 'true' : 'false');
       drawBoard();
     };
 
-  const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const holdCanvas = document.getElementById('holdCanvas');
-const holdCtx = holdCanvas.getContext('2d');
-const nextCanvas = document.getElementById('nextCanvas');
-const nextCtx = nextCanvas.getContext('2d');
+    // ==== CANVAS & DPR ====
+    const canvas = document.getElementById('gameCanvas');
+    if (!canvas) { console.error('[VBlocks] gameCanvas introuvable'); return; }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) { console.error('[VBlocks] Contexte 2D indisponible'); return; }
 
-const COLS = 10, ROWS = 20;
-let BLOCK_SIZE = 30;
-const DPR = window.devicePixelRatio || 1;
+    const holdCanvas = document.getElementById('holdCanvas');
+    const holdCtx = holdCanvas ? holdCanvas.getContext('2d') : null;
+    const nextCanvas = document.getElementById('nextCanvas');
+    const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
 
-function fitCanvasToCSS() {
-  const rect = canvas.getBoundingClientRect();
-  const cssW = Math.round(rect.width) || COLS * BLOCK_SIZE;
-  const cssH = Math.round(rect.height) || ROWS * BLOCK_SIZE;
+    const COLS = 10, ROWS = 20;
+    let BLOCK_SIZE = 30;
+    const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
 
-  canvas.width  = Math.floor(cssW * DPR);
-  canvas.height = Math.floor(cssH * DPR);
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    // clear “safe” (ignore transform)
+    function clearCanvas(c2d, cnv) {
+      c2d.save();
+      c2d.setTransform(1, 0, 0, 1, 0, 0);
+      c2d.clearRect(0, 0, cnv.width, cnv.height);
+      c2d.restore();
+    }
 
-  BLOCK_SIZE = Math.min(cssW / COLS, cssH / ROWS);
-}
+    function fitCanvasToCSS() {
+      const rect = canvas.getBoundingClientRect();
+      const cssW = Math.round(rect.width) || COLS * BLOCK_SIZE;
+      const cssH = Math.round(rect.height) || ROWS * BLOCK_SIZE;
 
-function sizeMiniCanvas(cnv, ctx, target = 72) {
-  cnv.style.width  = target + 'px';
-  cnv.style.height = target + 'px';
-  cnv.width  = Math.floor(target * DPR);
-  cnv.height = Math.floor(target * DPR);
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-}
+      // dimensions réelles en pixels device
+      canvas.width  = Math.floor(cssW * DPR);
+      canvas.height = Math.floor(cssH * DPR);
 
-fitCanvasToCSS();
-sizeMiniCanvas(holdCanvas, holdCtx, 72);
-sizeMiniCanvas(nextCanvas, nextCtx, 72);
-window.addEventListener('resize', () => {
-  fitCanvasToCSS();
-  sizeMiniCanvas(holdCanvas, holdCtx, 72);
-  sizeMiniCanvas(nextCanvas, nextCtx, 72);
-});
+      // on dessine ensuite en unités CSS
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
+      // taille de cellule en CSS px, arrondie pour éviter les demi-pixels
+      const raw = Math.min(cssW / COLS, cssH / ROWS);
+      BLOCK_SIZE = Math.max(1, Math.floor(raw));
+    }
 
+    // par défaut 48px (match le HTML width/height=48)
+    function sizeMiniCanvas(cnv, c2d, target = 48) {
+      if (!cnv || !c2d) return;
+      cnv.style.width  = target + 'px';
+      cnv.style.height = target + 'px';
+      cnv.width  = Math.floor(target * DPR);
+      cnv.height = Math.floor(target * DPR);
+      c2d.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+
+    fitCanvasToCSS();
+    sizeMiniCanvas(holdCanvas, holdCtx, 48);
+    sizeMiniCanvas(nextCanvas, nextCtx, 48);
+
+    window.addEventListener('resize', () => {
+      fitCanvasToCSS();
+      sizeMiniCanvas(holdCanvas, holdCtx, 48);
+      sizeMiniCanvas(nextCanvas, nextCtx, 48);
+      drawBoard();
+    });
 
     const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space', 'vitraux'];
     let currentTheme = localStorage.getItem('themeVBlocks') || 'neon';
-    let currentThemeIndex = THEMES.indexOf(currentTheme);
+    let currentThemeIndex = Math.max(0, THEMES.indexOf(currentTheme));
     const blockImages = {};
 
     // === Load all images ===
-    function loadBlockImages(themeName){
-      const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "angelique", "cyber"];
-      if(themeName === 'space' || themeName === 'vitraux') {
+    function loadBlockImages(themeName) {
+      const themesWithPNG = ['bubble', 'nature', 'vitraux', 'luxury', 'space', 'angelique', 'cyber'];
+      if (themeName === 'space' || themeName === 'vitraux') {
         blockImages[themeName] = [];
         let imagesToLoad = 6, imagesLoaded = 0;
-        for (let i=1; i<=6; i++) {
+        for (let i = 1; i <= 6; i++) {
           const img = new Image();
-          img.onload = () => {
-            imagesLoaded++;
-            if(imagesLoaded === imagesToLoad) drawBoard();
-          };
+          img.onload = () => { imagesLoaded++; if (imagesLoaded === imagesToLoad) drawBoard(); };
+          img.onerror = () => { imagesLoaded++; if (imagesLoaded === imagesToLoad) drawBoard(); };
           img.src = `themes/${themeName}/${i}.png`;
           blockImages[themeName].push(img);
         }
-        ['I','J','L','O','S','T','Z'].forEach(l => {
-          blockImages[l] = null;
-        });
+        ['I', 'J', 'L', 'O', 'S', 'T', 'Z'].forEach(l => { blockImages[l] = null; });
       } else {
-        ['I','J','L','O','S','T','Z'].forEach(l => {
-          if(themesWithPNG.includes(themeName)){
+        ['I', 'J', 'L', 'O', 'S', 'T', 'Z'].forEach(l => {
+          if (themesWithPNG.includes(themeName)) {
             const img = new Image();
             img.onload = () => { drawBoard(); };
+            img.onerror = () => {};
             img.src = `themes/${themeName}/${l}.png`;
             blockImages[l] = img;
-          }else{
+          } else {
             blockImages[l] = null;
           }
         });
       }
       currentTheme = themeName;
-      if(themeName === 'retro'){
-        global.currentColors = {I:'#00f0ff',J:'#0044ff',L:'#ff6600',O:'#ffff33',S:'#00ff44',T:'#ff00cc',Z:'#ff0033'};
-      }else if(themeName === 'neon'){
-        global.currentColors = {I:'#00ffff',J:'#007bff',L:'#ff8800',O:'#ffff00',S:'#00ff00',T:'#ff00ff',Z:'#ff0033'};
-      }else if(themeName === 'nuit'){
-        global.currentColors = {I:'#ccc',J:'#ccc',L:'#ccc',O:'#ccc',S:'#ccc',T:'#ccc',Z:'#ccc'};
-      }else{
-        global.currentColors = {I:'#5cb85c',J:'#388e3c',L:'#7bb661',O:'#cddc39',S:'#a2d149',T:'#558b2f',Z:'#9ccc65'};
+      if (themeName === 'retro') {
+        global.currentColors = { I: '#00f0ff', J: '#0044ff', L: '#ff6600', O: '#ffff33', S: '#00ff44', T: '#ff00cc', Z: '#ff0033' };
+      } else if (themeName === 'neon') {
+        global.currentColors = { I: '#00ffff', J: '#007bff', L: '#ff8800', O: '#ffff00', S: '#00ff00', T: '#ff00ff', Z: '#ff0033' };
+      } else if (themeName === 'nuit') {
+        global.currentColors = { I: '#ccc', J: '#ccc', L: '#ccc', O: '#ccc', S: '#ccc', T: '#ccc', Z: '#ccc' };
+      } else {
+        global.currentColors = { I: '#5cb85c', J: '#388e3c', L: '#7bb661', O: '#cddc39', S: '#a2d149', T: '#558b2f', Z: '#9ccc65' };
       }
     }
-    function changeTheme(themeName){
+    function changeTheme(themeName) {
       document.body.setAttribute('data-theme', themeName);
       const style = document.getElementById('theme-style');
-      if(style) style.href = `themes/${themeName}.css`;
+      if (style) style.href = `themes/${themeName}.css`;
       setTimeout(() => loadBlockImages(themeName), 100);
-      currentThemeIndex = THEMES.indexOf(themeName);
+      currentThemeIndex = Math.max(0, THEMES.indexOf(themeName));
     }
     loadBlockImages(currentTheme);
 
@@ -225,7 +245,7 @@ window.addEventListener('resize', () => {
     ];
     const LETTERS = ['I','J','L','O','S','T','Z'];
 
-    let board = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+    let board = Array.from({ length: ROWS }, () => Array(COLS).fill(''));
 
     let currentPiece = null;
     let nextPiece = null;
@@ -241,14 +261,11 @@ window.addEventListener('resize', () => {
     let history = [];
     function saveHistory() {
       history.push({
-        board: board.map(row => row.map(cell => cell && typeof cell === "object" ? {...cell} : cell)),
+        board: board.map(row => row.map(cell => cell && typeof cell === 'object' ? { ...cell } : cell)),
         currentPiece: JSON.parse(JSON.stringify(currentPiece)),
         nextPiece: JSON.parse(JSON.stringify(nextPiece)),
         heldPiece: heldPiece ? JSON.parse(JSON.stringify(heldPiece)) : null,
-        score,
-        combo,
-        linesCleared,
-        dropInterval,
+        score, combo, linesCleared, dropInterval,
       });
       if (history.length > 7) history.shift();
     }
@@ -266,50 +283,50 @@ window.addEventListener('resize', () => {
     function showFakeAd() {
       return new Promise(resolve => {
         const ad = document.createElement('div');
-        ad.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:2em;";
-        ad.innerHTML = `<div>${t("ad.fake")}<br>${t("ad.wait")}</div>`;
+        ad.style = 'position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:2em;';
+        ad.innerHTML = `<div>${t('ad.fake')}<br>${t('ad.wait')}</div>`;
         document.body.appendChild(ad);
-        setTimeout(()=>{ad.remove();resolve();},3000);
+        setTimeout(() => { ad.remove(); resolve(); }, 3000);
       });
     }
 
     // ----- DUEL --------
     async function setupDuelSequence() {
-      if (!duelId) return;
+      if (!duelId || !sb) return;
       let tries = 0, data = null;
       while (tries++ < 20) {
         let res = await sb.from('duels').select('*').eq('id', duelId).single();
         if (res?.data && res.data.pieces_seq) { data = res.data; break; }
-        await new Promise(r=>setTimeout(r,1500));
+        await new Promise(r => setTimeout(r, 1500));
       }
-      if (!data) throw new Error(t("error.duel_not_found"));
-      piecesSequence = data.pieces_seq.split(',').map(x=>parseInt(x));
+      if (!data) throw new Error(t('error.duel_not_found'));
+      piecesSequence = data.pieces_seq.split(',').map(x => parseInt(x, 10));
       piecesUsed = 0;
     }
-
     function getDuelNextPieceId() {
-      if (!piecesSequence) return Math.floor(Math.random()*PIECES.length);
-      if (piecesUsed >= piecesSequence.length) return Math.floor(Math.random()*PIECES.length);
+      if (!piecesSequence) return Math.floor(Math.random() * PIECES.length);
+      if (piecesUsed >= piecesSequence.length) return Math.floor(Math.random() * PIECES.length);
       return piecesSequence[piecesUsed++];
     }
     async function handleDuelEnd(myScore) {
-      let field = (duelPlayerNum === 1) ? "score1" : "score2";
+      if (!sb) return;
+      let field = (duelPlayerNum === 1) ? 'score1' : 'score2';
       await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
       let tries = 0, otherScore = null;
-      while(tries++ < 40) {
+      while (tries++ < 40) {
         let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
         if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
         if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
-        await new Promise(r=>setTimeout(r,1500));
+        await new Promise(r => setTimeout(r, 1500));
       }
       let msg = `
-        <div style="font-weight:bold;">${t("duel.finished")}</div>
-        <div>${t("duel.yourscore")} <b>${myScore}</b></div>
-        <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
+        <div style="font-weight:bold;">${t('duel.finished')}</div>
+        <div>${t('duel.yourscore')} <b>${myScore}</b></div>
+        <div>${t('duel.opponentscore')} <b>${otherScore != null ? otherScore : t('duel.waiting')}</b></div>
       `;
-      let div = document.createElement("div");
-      div.id = "duel-popup";
-      div.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;";
+      let div = document.createElement('div');
+      div.id = 'duel-popup';
+      div.style = 'position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;';
       div.innerHTML = `<div style="background:#23294a;padding:2em 2em 1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;">${msg}</div>`;
       document.body.appendChild(div);
     }
@@ -330,9 +347,7 @@ window.addEventListener('resize', () => {
           }
           await userData.addVCoins?.(points);
           updateBalancesHeader();
-        } catch (err) {
-   
-        }
+        } catch (err) {}
       })(points);
 
       const old = document.getElementById('gameover-popup');
@@ -352,43 +367,36 @@ window.addEventListener('resize', () => {
       popup.innerHTML = `
         <div style="background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:220px">
           <div style="font-size:1.2em;font-weight:bold;margin-bottom:10px;">
-            <span>${t("gameover.title")}</span><br>
-            <span>+${points} ${t("gameover.points")}</span>
+            <span>${t('gameover.title')}</span><br>
+            <span>+${points} ${t('gameover.points')}</span>
           </div>
           <div style="margin-bottom:10px">
-            <span>${t("gameover.tokens")} <b id="solde-jetons-popup">…</b></span>
+            <span>${t('gameover.tokens')} <b id="solde-jetons-popup">…</b></span>
           </div>
-          <button id="popup-jeton">${t("gameover.revive_token")}</button><br>
-          <button id="popup-pub" style="margin-top:8px">${t("gameover.revive_ad")}</button><br>
-          <button id="popup-stop" style="margin-top:16px">${t("gameover.quit")}</button>
+          <button id="popup-jeton">${t('gameover.revive_token')}</button><br>
+          <button id="popup-pub" style="margin-top:8px">${t('gameover.revive_ad')}</button><br>
+          <button id="popup-stop" style="margin-top:16px">${t('gameover.quit')}</button>
         </div>
       `;
       document.body.appendChild(popup);
-      getJetons().then(solde=>{
-        document.getElementById("solde-jetons-popup").textContent = solde;
-        document.getElementById("popup-jeton").disabled = (solde<=0);
+      getJetons().then(solde => {
+        document.getElementById('solde-jetons-popup').textContent = solde;
+        document.getElementById('popup-jeton').disabled = (solde <= 0);
       });
 
-      document.getElementById('popup-jeton').onclick = async function() {
+      document.getElementById('popup-jeton').onclick = async function () {
         await useJeton();
         removePopup();
         rewind();
       };
-      document.getElementById('popup-pub').onclick = function() {
+      document.getElementById('popup-pub').onclick = function () {
         if (window.showRewardRevive) {
-          showRewardRevive(() => {
-            removePopup();
-            rewind();
-          });
+          showRewardRevive(() => { removePopup(); rewind(); });
         } else {
-          showFakeAd().then(()=>{
-            removePopup();
-            rewind();
-          });
+          showFakeAd().then(() => { removePopup(); rewind(); });
         }
       };
-
-      document.getElementById('popup-stop').onclick = function() {
+      document.getElementById('popup-stop').onclick = function () {
         removePopup();
         window.location.reload();
       };
@@ -419,14 +427,14 @@ window.addEventListener('resize', () => {
 
       let countdown = 5;
       const overlay = document.createElement('div');
-      overlay.id = "countdown-overlay";
+      overlay.id = 'countdown-overlay';
       overlay.style = `
         position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);
         color:#fff;display:flex;align-items:center;justify-content:center;font-size:4em;z-index:99998;
       `;
       overlay.textContent = countdown;
       document.body.appendChild(overlay);
-      let tmr = setInterval(()=>{
+      let tmr = setInterval(() => {
         countdown--;
         overlay.textContent = countdown;
         if (countdown <= 0) {
@@ -437,21 +445,19 @@ window.addEventListener('resize', () => {
           lastTime = performance.now();
           requestAnimationFrame(update);
         }
-      },1000);
+      }, 1000);
     }
 
     function togglePause() {
       paused = !paused;
       drawBoard();
-      if (!paused && !gameOver) {
-        requestAnimationFrame(update);
-      }
+      if (!paused && !gameOver) requestAnimationFrame(update);
     }
     global.togglePause = togglePause;
 
-    setTimeout(()=>{
+    setTimeout(() => {
       let btn = document.getElementById('pause-btn');
-      if(btn) btn.onclick = (e)=>{ e.preventDefault(); togglePause(); };
+      if (btn) btn.onclick = (e) => { e.preventDefault(); togglePause(); };
     }, 200);
 
     const SPEED_TABLE = [
@@ -461,30 +467,30 @@ window.addEventListener('resize', () => {
     ];
 
     const scoreEl = document.getElementById('score');
-    const highEl = document.getElementById('highscore');
-    if(scoreEl) scoreEl.textContent = '0';
-    if(highEl) highEl.textContent = '0';
+    const highEl  = document.getElementById('highscore');
+    if (scoreEl) scoreEl.textContent = '0';
+    if (highEl)  highEl.textContent  = '0';
 
-    async function updateHighscoreDisplay(){
+    async function updateHighscoreDisplay() {
       highscoreCloud = await userData.getHighScore?.() ?? 0;
-      if(highEl) highEl.textContent = highscoreCloud;
+      if (highEl) highEl.textContent = highscoreCloud;
     }
     document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
 
-    function computeScore(lines){
+    function computeScore(lines) {
       let pts = 0;
-      switch(lines){
+      switch (lines) {
         case 1: pts = 10; break;
         case 2: pts = 30; break;
         case 3: pts = 50; break;
         case 4: pts = 80; break;
         default: pts = 0;
       }
-      if(combo > 1 && lines > 0) pts += (combo-1)*5;
+      if (combo > 1 && lines > 0) pts += (combo - 1) * 5;
       return pts;
     }
 
-    async function startGame(){
+    async function startGame() {
       if (mode === 'duel') await setupDuelSequence();
       nextPiece = newPiece();
       reset();
@@ -494,41 +500,37 @@ window.addEventListener('resize', () => {
     }
 
     // NOUVELLE LOGIQUE : random PAR CARRÉ, FIXÉ À LA CRÉATION DE LA PIÈCE
-    function newPiece(){
+    function newPiece() {
       let typeId;
-      if(mode === 'duel') {
-        typeId = getDuelNextPieceId();
-      } else {
-        typeId = Math.floor(Math.random()*PIECES.length);
-      }
+      if (mode === 'duel') typeId = getDuelNextPieceId();
+      else typeId = Math.floor(Math.random() * PIECES.length);
+
       let shape = PIECES[typeId];
       let letter = LETTERS[typeId];
       let obj = {
-        shape: shape,
-        letter: letter,
-        x: Math.floor((COLS - shape[0].length)/2),
+        shape,
+        letter,
+        x: Math.floor((COLS - shape[0].length) / 2),
         y: 0
       };
-      // PATCH : tableau variants par carré (pour SPACE & VITRAUX)
-      if(currentTheme === 'space' || currentTheme === 'vitraux'){
-        // On crée une liste de 1 à 6, qu’on mélange
+
+      // variants pour SPACE & VITRAUX
+      if (currentTheme === 'space' || currentTheme === 'vitraux') {
         let numbers = [1,2,3,4,5,6];
-        for(let i = numbers.length - 1; i > 0; i--) {
+        for (let i = numbers.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
         }
-        // On va piocher dedans à chaque case (pas plus de 6 carrés par pièce normalement)
         let idx = 0;
-        obj.variants = shape.map(row => row.map(val => val ? numbers[idx++] : null));
+        obj.variants = shape.map(row => row.map(val => (val ? numbers[idx++] : null)));
       }
       return obj;
     }
 
-
-    function collision(p = currentPiece){
+    function collision(p = currentPiece) {
       return p.shape.some((row, dy) =>
         row.some((val, dx) => {
-          if(!val) return false;
+          if (!val) return false;
           const x = p.x + dx;
           const y = p.y + dy;
           return x < 0 || x >= COLS || y >= ROWS || (y >= 0 && board[y][x]);
@@ -536,14 +538,14 @@ window.addEventListener('resize', () => {
       );
     }
 
-    function merge(){
+    function merge() {
       currentPiece.shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
-          if(val){
+          if (val) {
             const x = currentPiece.x + dx;
             const y = currentPiece.y + dy;
-            if(y >= 0){
-              if(currentTheme === 'space' || currentTheme === 'vitraux'){
+            if (y >= 0) {
+              if (currentTheme === 'space' || currentTheme === 'vitraux') {
                 board[y][x] = { letter: currentPiece.letter, variant: currentPiece.variants?.[dy]?.[dx] ?? 0 };
               } else {
                 board[y][x] = currentPiece.letter;
@@ -558,17 +560,17 @@ window.addEventListener('resize', () => {
     function clearLines() {
       let lines = 0;
       board = board.filter(row => {
-        if(row.every(cell => cell !== '')){ lines++; return false; }
+        if (row.every(cell => cell !== '')) { lines++; return false; }
         return true;
       });
-      while(board.length < ROWS) board.unshift(Array(COLS).fill(''));
-      if(lines > 0){
-        if(window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
+      while (board.length < ROWS) board.unshift(Array(COLS).fill(''));
+      if (lines > 0) {
+        if (window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
         combo++;
         linesCleared += lines;
         let pts = computeScore(lines, combo);
         score += pts;
-        if(scoreEl) scoreEl.textContent = score;
+        if (scoreEl) scoreEl.textContent = score;
 
         if (score > highscoreCloud) {
           highscoreCloud = score;
@@ -589,19 +591,19 @@ window.addEventListener('resize', () => {
       }
     }
 
-    function move(offset){
+    function move(offset) {
       currentPiece.x += offset;
-      if(collision()) currentPiece.x -= offset;
+      if (collision()) currentPiece.x -= offset;
     }
 
-    function dropPiece(){
+    function dropPiece() {
       currentPiece.y++;
-      if(collision()){
+      if (collision()) {
         currentPiece.y--;
         merge();
         saveHistory();
         reset();
-        if(collision()){
+        if (collision()) {
           showEndPopup(score);
           gameOver = true;
         }
@@ -611,11 +613,8 @@ window.addEventListener('resize', () => {
     function rotatePiece() {
       const shape = currentPiece.shape;
       let oldVariants = null;
-      if (currentTheme === 'space' || currentTheme === 'vitraux') {
-        oldVariants = currentPiece.variants;
-      }
+      if (currentTheme === 'space' || currentTheme === 'vitraux') oldVariants = currentPiece.variants;
 
-      // Tourner la pièce
       currentPiece.shape = shape[0].map((_, i) => shape.map(r => r[i])).reverse();
       if (currentTheme === 'space' || currentTheme === 'vitraux') {
         currentPiece.variants = oldVariants[0].map((_, i) => oldVariants.map(r => r[i])).reverse();
@@ -623,72 +622,70 @@ window.addEventListener('resize', () => {
 
       if (collision()) {
         currentPiece.shape = shape;
-        if (currentTheme === 'space' || currentTheme === 'vitraux') {
-          currentPiece.variants = oldVariants;
-        }
+        if (currentTheme === 'space' || currentTheme === 'vitraux') currentPiece.variants = oldVariants;
       }
     }
 
     function holdPiece() {
       if (holdUsed) return;
       if (!heldPiece) {
-        heldPiece = {...currentPiece};
+        heldPiece = { ...currentPiece };
         reset();
       } else {
-        [heldPiece, currentPiece] = [{...currentPiece}, {...heldPiece}];
+        [heldPiece, currentPiece] = [{ ...currentPiece }, { ...heldPiece }];
       }
       holdUsed = true;
       drawMiniPiece(holdCtx, heldPiece);
     }
 
-    function getGhostPiece(){
-      if(!ghostPieceEnabled) return null;
+    function getGhostPiece() {
+      if (!ghostPieceEnabled) return null;
       let ghost = JSON.parse(JSON.stringify(currentPiece));
-      while(!collision(ghost)){ ghost.y++; }
+      while (!collision(ghost)) { ghost.y++; }
       ghost.y--;
       return ghost;
     }
 
-    // RANDOM PNG PAR CARRÉ, FIXÉ À LA CRÉATION DE LA PIÈCE (SPACE/VITRAUX)
-    function drawBlockCustom(c, x, y, letter, size=BLOCK_SIZE, ghost=false, variant=0){
+    // Draw d'un bloc
+    function drawBlockCustom(c, x, y, letter, size = BLOCK_SIZE, ghost = false, variant = 0) {
       let img = blockImages[letter];
-      const px = x*size, py = y*size;
-      if(ghost){
-        c.globalAlpha = 0.33;
-      }
-      if((currentTheme === 'space' || currentTheme === 'vitraux') && blockImages[currentTheme]) {
+      const px = x * size, py = y * size;
+      if (ghost) c.globalAlpha = 0.33;
+
+      if ((currentTheme === 'space' || currentTheme === 'vitraux') && blockImages[currentTheme]) {
         let v = variant ?? 0;
-        if (typeof letter === "object" && letter.letter) {
+        if (typeof letter === 'object' && letter.letter) {
           v = letter.variant ?? 0;
           letter = letter.letter;
         }
         const arr = blockImages[currentTheme];
         img = arr[v % arr.length];
       }
-      if(img && img.complete && img.naturalWidth > 0){
+
+      if (img && img.complete && img.naturalWidth > 0) {
         c.drawImage(img, px, py, size, size);
-      }else{
-        if(currentTheme === 'nuit'){
+      } else {
+        if (currentTheme === 'nuit') {
           c.fillStyle = '#ccc';
           c.fillRect(px, py, size, size);
-        }else if(currentTheme === 'neon'){
+        } else if (currentTheme === 'neon') {
           const color = global.currentColors?.[letter] || '#fff';
-          c.fillStyle = ghost ? '#111' : '#111';
+          c.fillStyle = '#111';
           c.fillRect(px, py, size, size);
           c.shadowColor = color;
           c.shadowBlur = ghost ? 3 : 15;
           c.strokeStyle = color;
           c.lineWidth = 2;
-          c.strokeRect(px+1, py+1, size-2, size-2);
+          c.strokeRect(px + 1, py + 1, size - 2, size - 2);
           c.shadowBlur = 0;
-        }else if(currentTheme === 'retro'){
+        } else if (currentTheme === 'retro') {
           const color = global.currentColors?.[letter] || '#fff';
           c.fillStyle = color;
           c.fillRect(px, py, size, size);
           c.strokeStyle = '#000';
           c.lineWidth = 1;
           c.strokeRect(px, py, size, size);
-        }else{
+        } else {
           const fb = global.currentColors?.[letter] || '#999';
           c.fillStyle = fb;
           c.fillRect(px, py, size, size);
@@ -696,48 +693,58 @@ window.addEventListener('resize', () => {
           c.strokeRect(px, py, size, size);
         }
       }
-      if(ghost){
-        c.globalAlpha = 1.0;
-      }
+      if (ghost) c.globalAlpha = 1.0;
     }
 
-    function drawBoard(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+    function drawBoard() {
+      clearCanvas(ctx, canvas);
+
       const ghost = getGhostPiece();
-      if(ghost){
-        ghost.shape.forEach((row,dy)=>
-          row.forEach((val,dx)=>{
-            if(val) drawBlockCustom(ctx,ghost.x+dx,ghost.y+dy,ghost.letter,BLOCK_SIZE,true,
+      if (ghost) {
+        ghost.shape.forEach((row, dy) =>
+          row.forEach((val, dx) => {
+            if (val) drawBlockCustom(
+              ctx, ghost.x + dx, ghost.y + dy, ghost.letter, BLOCK_SIZE, true,
               (currentTheme === 'space' || currentTheme === 'vitraux') ? ghost.variants?.[dy]?.[dx] : 0
             );
           })
         );
       }
-      board.forEach((row,y)=>
-        row.forEach((cell,x)=>{
-          if(cell) {
-            if(currentTheme === 'space' || currentTheme === 'vitraux'){
-              drawBlockCustom(ctx,x,y,cell.letter||cell, BLOCK_SIZE, false, cell.variant||0);
+
+      board.forEach((row, y) =>
+        row.forEach((cell, x) => {
+          if (cell) {
+            if (currentTheme === 'space' || currentTheme === 'vitraux') {
+              drawBlockCustom(ctx, x, y, cell.letter || cell, BLOCK_SIZE, false, cell.variant || 0);
             } else {
-              drawBlockCustom(ctx,x,y,cell);
+              drawBlockCustom(ctx, x, y, cell);
             }
           }
         })
       );
-      currentPiece.shape.forEach((row,dy)=>
-        row.forEach((val,dx)=>{
-          if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter,BLOCK_SIZE,false,
+
+      currentPiece.shape.forEach((row, dy) =>
+        row.forEach((val, dx) => {
+          if (val) drawBlockCustom(
+            ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter, BLOCK_SIZE, false,
             (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
           );
         })
       );
     }
 
+    // Mini (Réserve/Suivante) — centrage DPR-aware
     function drawMiniPiece(c, piece) {
-      c.clearRect(0, 0, c.canvas.width, c.canvas.height);
+      if (!c) return;
+      clearCanvas(c, c.canvas);
       if (!piece) return;
+
+      // dimensions CSS (car setTransform(DPR,...))
+      const cssW = c.canvas.width  / DPR;
+      const cssH = c.canvas.height / DPR;
+
       const shape = piece.shape;
-      let minX = 10, minY = 10, maxX = -10, maxY = -10;
+      let minX =  99, minY =  99, maxX = -99, maxY = -99;
       shape.forEach((row, y) => {
         row.forEach((val, x) => {
           if (val) {
@@ -750,40 +757,43 @@ window.addEventListener('resize', () => {
       });
       const w = maxX - minX + 1;
       const h = maxY - minY + 1;
-      const PAD = 6;
+
+      const PAD = 6; // CSS px
       const cellSize = Math.min(
-        (c.canvas.width - 2 * PAD) / w,
-        (c.canvas.height - 2 * PAD) / h
+        (cssW - 2 * PAD) / w,
+        (cssH - 2 * PAD) / h
       );
-      const offsetX = (c.canvas.width - (w * cellSize)) / 2 - minX * cellSize;
-      const offsetY = (c.canvas.height - (h * cellSize)) / 2 - minY * cellSize;
+
+      const offsetX = (cssW - (w * cellSize)) / 2 - minX * cellSize;
+      const offsetY = (cssH - (h * cellSize)) / 2 - minY * cellSize;
+
+      c.save();
+      c.translate(offsetX, offsetY);
       shape.forEach((row, y) => {
         row.forEach((val, x) => {
-          if (val) {
-            c.save();
-            c.translate(offsetX, offsetY);
-            drawBlockCustom(
-              c,
-              x,
-              y,
-              piece.letter,
-              cellSize,
-              false,
-              (currentTheme === 'space' || currentTheme === 'vitraux') ? piece.variants?.[y]?.[x] : 0
-            );
-            c.restore();
-          }
+          if (!val) return;
+          drawBlockCustom(
+            c,
+            x,
+            y,
+            piece.letter,
+            cellSize,
+            false,
+            (currentTheme === 'space' || currentTheme === 'vitraux') ? piece.variants?.[y]?.[x] : 0
+          );
         });
       });
+      c.restore();
     }
 
-    function reset(){
+    function reset() {
       currentPiece = nextPiece;
       nextPiece = newPiece();
       holdUsed = false;
       drawMiniPiece(nextCtx, nextPiece);
       drawMiniPiece(holdCtx, heldPiece);
     }
+
     function update(now) {
       if (paused || gameOver) return;
       if (!lastTime) lastTime = now;
@@ -795,19 +805,19 @@ window.addEventListener('resize', () => {
       drawBoard();
       requestAnimationFrame(update);
     }
-    async function updateBalancesHeader(){
+
+    async function updateBalancesHeader() {
       const vcoins = await userData.getVCoins?.();
       const jetons = await userData.getJetons?.();
-      if(document.getElementById('vcoin-amount')) document.getElementById('vcoin-amount').textContent = (vcoins ?? '--');
-      if(document.getElementById('jeton-amount')) document.getElementById('jeton-amount').textContent = (jetons ?? '--');
+      if (document.getElementById('vcoin-amount')) document.getElementById('vcoin-amount').textContent = (vcoins ?? '--');
+      if (document.getElementById('jeton-amount')) document.getElementById('jeton-amount').textContent = (jetons ?? '--');
     }
 
-    document.addEventListener('DOMContentLoaded', ()=>{
+    document.addEventListener('DOMContentLoaded', () => {
       const btnTheme = document.getElementById('theme-btn');
-      const btnMusic = document.getElementById('music-btn');
-      if(btnTheme){
-        btnTheme.addEventListener('click', ()=>{
-          currentThemeIndex = (currentThemeIndex+1)%THEMES.length;
+      if (btnTheme) {
+        btnTheme.addEventListener('click', () => {
+          currentThemeIndex = (currentThemeIndex + 1) % THEMES.length;
           changeTheme(THEMES[currentThemeIndex]);
         });
       }
@@ -815,11 +825,11 @@ window.addEventListener('resize', () => {
       updateHighscoreDisplay();
     });
 
-    // --- TOUCH CONTROLS & CLAVIER
+    // --- TOUCH & CLAVIER
     let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
-    canvas.addEventListener('touchstart', function(e){
-      if(gameOver) return;
-      if(e.touches.length !== 1) return;
+    canvas.addEventListener('touchstart', function (e) {
+      if (gameOver) return;
+      if (e.touches.length !== 1) return;
       const t = e.touches[0];
       startX = t.clientX;
       startY = t.clientY;
@@ -827,65 +837,62 @@ window.addEventListener('resize', () => {
       dragging = true;
       touchStartTime = Date.now();
     });
-    canvas.addEventListener('touchmove', function(e){
-      if(!dragging) return;
+    canvas.addEventListener('touchmove', function (e) {
+      if (!dragging) return;
       const t = e.touches[0];
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
-      if(Math.abs(movedX) > Math.abs(movedY)){
-        if(movedX > 24){ move(1); startX = t.clientX; }
-        if(movedX < -24){ move(-1); startX = t.clientX; }
-      }else{
-        if(movedY > 28){ dropPiece(); startY = t.clientY; }
-        if(movedY < -28){ rotatePiece(); startY = t.clientY; }
+      if (Math.abs(movedX) > Math.abs(movedY)) {
+        if (movedX > 24) { move(1);  startX = t.clientX; }
+        if (movedX < -24){ move(-1); startX = t.clientX; }
+      } else {
+        if (movedY > 28) { dropPiece();  startY = t.clientY; }
+        if (movedY < -28){ rotatePiece(); startY = t.clientY; }
       }
     });
-canvas.addEventListener('touchend', function(e){
-  dragging = false;
-  const pressDuration = Date.now() - touchStartTime;
+    canvas.addEventListener('touchend', function () {
+      dragging = false;
+      const pressDuration = Date.now() - touchStartTime;
+      const isShortPress = pressDuration < 200;
+      const hasDropped = Math.abs(movedY) > 20;
+      if (isShortPress && !hasDropped && Math.abs(movedX) < 10) rotatePiece();
+    });
 
-  // Seulement rotation si appui court (< 200 ms) ET pas de descente pendant l'appui
-  const isShortPress = pressDuration < 200;
-  const hasDropped = Math.abs(movedY) > 20; // seuil pour considérer qu'on a descendu
+    if (holdCanvas) {
+      holdCanvas.addEventListener('touchstart', function(){ holdPiece(); });
+      holdCanvas.addEventListener('click', function(){ holdPiece(); });
+    }
 
-  if (isShortPress && !hasDropped && Math.abs(movedX) < 10) {
-    rotatePiece();
-  }
-    });
-    holdCanvas.addEventListener('touchstart', function(e){
-      holdPiece();
-    });
-    holdCanvas.addEventListener('click', function(e){
-      holdPiece();
-    });
     document.addEventListener('keydown', e => {
-      if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
-      if(e.key==='p' || e.key==='P'){ togglePause(); return; }
-      if(gameOver || paused) return;
-      switch(e.key){
-        case 'ArrowLeft': move(-1); break;
-        case 'ArrowRight': move(1); break;
-        case 'ArrowDown': dropPiece(); break;
-        case 'ArrowUp': rotatePiece(); break;
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+      if (e.key === 'p' || e.key === 'P') { togglePause(); return; }
+      if (gameOver || paused) return;
+      switch (e.key) {
+        case 'ArrowLeft':  move(-1);   break;
+        case 'ArrowRight': move(1);    break;
+        case 'ArrowDown':  dropPiece();break;
+        case 'ArrowUp':    rotatePiece(); break;
         case 'c': case 'C': holdPiece(); break;
       }
     });
 
     // === SUPABASE Fonctions ===
     function getUserId() {
-      // Adapter selon ta logique
       if (typeof userData !== 'undefined' && userData.getUserId) return userData.getUserId();
       return (window.sbUser && window.sbUser.id) || null;
     }
     async function setLastScoreSupabase(score) {
+      if (!sb) return;
       const userId = getUserId();
       await sb.from('users').update({ score }).eq('id', userId);
     }
     async function setHighScoreSupabase(score) {
+      if (!sb) return;
       const userId = getUserId();
       await sb.from('users').update({ highscore: score }).eq('id', userId);
     }
     async function getHighScoreSupabase() {
+      if (!sb) return 0;
       const userId = getUserId();
       const { data, error } = await sb.from('users').select('highscore').eq('id', userId).single();
       if (error) return 0;
