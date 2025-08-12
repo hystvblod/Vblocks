@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title data-i18n="home.title">VBlocks - Accueil</title>
+  <title>VBlocks - Accueil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style/main.css" />
   <style>
@@ -27,13 +27,13 @@
 <body>
   <!-- Boutons top-bar (profil, paramètres uniquement) -->
   <div class="top-buttons top-buttons-home">
-    <a href="profil.html" class="btn-icon" title="Profil" data-i18n="menu.profil">
-      <img src="assets/icons/user.svg" alt="Profil" data-i18n="menu.profil" />
-      <span data-i18n="menu.profil" style="display:none;">Profil</span>
+    <a href="profil.html" class="btn-icon" title="Profil">
+      <img src="assets/icons/user.svg" alt="Profil" />
+      <span style="display:none;">Profil</span>
     </a>
-    <a href="parametres.html" class="btn-icon" title="Paramètres" data-i18n="menu.parametres">
-      <img src="assets/icons/settings.svg" alt="Paramètres" data-i18n="menu.parametres" />
-      <span data-i18n="menu.parametres" style="display:none;">Paramètres</span>
+    <a href="parametres.html" class="btn-icon" title="Paramètres">
+      <img src="assets/icons/settings.svg" alt="Paramètres" />
+      <span style="display:none;">Paramètres</span>
     </a>
   </div>
 
@@ -50,6 +50,9 @@
         <button id="consent-accept" class="btn-accept" data-i18n="index.rgpd.accept">Accepter</button>
         <button id="consent-refuse" class="btn-refuse" data-i18n="index.rgpd.refuse">Refuser</button>
       </div>
+      <div style="margin-top:0.75rem;text-align:center;">
+        <a href="publicite_accords.html" class="link-accords" data-i18n="index.rgpd.manage">Gérer les accords publicitaires</a>
+      </div>
     </div>
   </div>
   <!-- -------- FIN POPUP RGPD/CONSENT -------- -->
@@ -59,22 +62,29 @@
     <div class="menu-list">
       <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="location.href='concours.html'">
         <span class="btn-label" data-i18n="menu.concours">Concours</span>
+        <span class="info-btn" tabindex="0" data-i18n="tip.concours" data-tip="Participe et vote dans les concours photo">?</span>
       </button>
+
       <button class="menu-btn blue" onclick="location.href='classic.html'">
         <span class="btn-label" data-i18n="menu.classic">Classic</span>
         <span class="info-btn" tabindex="0" data-i18n="tip.classic" data-tip="Mode classique avec montée de vitesse progressive">?</span>
       </button>
+
       <button class="menu-btn purple" onclick="location.href='infini.html'">
         <span class="btn-label" data-i18n="menu.infini">Infini</span>
         <span class="info-btn" tabindex="0" data-i18n="tip.infini" data-tip="Mode relax sans fin, sans accélération">?</span>
       </button>
+
       <button class="menu-btn yellow" onclick="location.href='duel.html'">
         <span class="btn-label" data-i18n="menu.duel">Duel</span>
-        <span class="info-btn" tabindex="0" data-i18n="tip.duel" data-tip="Défi tes amis">?</span>
+        <span class="info-btn" tabindex="0" data-i18n="tip.duel" data-tip="Défie des amis en face à face">?</span>
       </button>
+
       <button class="menu-btn green" onclick="location.href='boutique.html'">
         <span class="btn-label" data-i18n="menu.boutique">Boutique</span>
         <span class="info-btn" tabindex="0" data-i18n="tip.boutique" data-tip="Personnalise ton jeu">?</span>
+        <span class="prix-blanc" data-product-id="points3000">—</span>
+        <span class="prix-blanc" data-product-id="points10000">—</span>
       </button>
     </div>
   </div>
@@ -82,13 +92,16 @@
   <div class="tooltip-box" id="tooltip"></div>
 
   <script>
-    // Tooltip i18n clean
     const tooltip = document.getElementById('tooltip');
     document.querySelectorAll('.info-btn').forEach(el => {
       el.addEventListener('click', function (e) {
         e.stopPropagation();
         let text = el.getAttribute('data-tip');
-        if (window.i18nGet) text = window.i18nGet(el.getAttribute('data-i18n')) || text;
+        if (window.i18nGet) {
+          const key = el.getAttribute('data-i18n');
+          const translated = window.i18nGet(key);
+          if (translated) text = translated;
+        }
         const parentBtn = el.closest('.menu-btn');
         const rect = parentBtn.getBoundingClientRect();
         tooltip.innerHTML = text;
@@ -104,7 +117,6 @@
     document.addEventListener('click', () => tooltip.classList.remove('visible'));
     window.addEventListener('resize', () => tooltip.classList.remove('visible'));
 
-    // Popup RGPD consent au démarrage
     window.addEventListener("DOMContentLoaded", function() {
       const consent = localStorage.getItem("rgpdConsent");
       if (!consent) {
@@ -120,16 +132,19 @@
       };
     });
 
-    // Vérification concours
     async function checkConcoursStatus() {
-      const { data, error } = await sb
-        .from('config')
-        .select('concours_enabled')
-        .eq('id', 'global')
-        .single();
-      if (!error) {
-        document.getElementById("btnConcours").style.display = data?.concours_enabled ? "block" : "none";
-      }
+      try {
+        const sb = (window.supabase || window.sb);
+        if (!sb) return;
+        const { data, error } = await sb
+          .from('config')
+          .select('concours_enabled')
+          .eq('id', 'global')
+          .single();
+        if (!error) {
+          document.getElementById("btnConcours").style.display = data?.concours_enabled ? "block" : "none";
+        }
+      } catch(e) {}
     }
 
     window.addEventListener("DOMContentLoaded", () => {
@@ -142,7 +157,6 @@
   <script src="js/userData.js"></script>
   <script src="js/pub.js"></script>
 
-  <!-- Gestion des prix Google Play / App Store -->
   <script>
     document.addEventListener('deviceready', function () {
       if (!window.store) {
@@ -152,14 +166,13 @@
 
       store.verbosity = store.DEBUG;
 
-      // Produits
       store.register({ id: "points3000", alias: "3000 VCoins", type: store.CONSUMABLE });
       store.register({ id: "points10000", alias: "10000 VCoins", type: store.CONSUMABLE });
 
       store.ready(function () {
         store.products.forEach(p => {
-          const el = document.querySelector(`[data-product-id="${p.id}"] .prix-blanc`);
-          if (el) el.textContent = p.price;
+          const el = document.querySelector(`[data-product-id="${p.id}"]`);
+          if (el && p.price) el.textContent = p.price;
         });
       });
 

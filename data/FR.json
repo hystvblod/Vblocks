@@ -270,8 +270,26 @@
   "boutique.modal.titre.cyber": "Thème Cyber",
   "boutique.modal.acheter": "Acheter",
   "boutique.modal.fermer": "Fermer",
-  "boutique.alert.pasassez": "Vous n'avez pas assez de VCoins."
+  "boutique.alert.pasassez": "Vous n'avez pas assez de VCoins.",
+  
+  "menu.concours": "Concours",
+  "menu.classic": "Classic",
+  "menu.infini": "Infini",
+  "menu.duel": "Duel",
+  "menu.boutique": "Boutique",
+  "tip.concours": "Participe et vote dans les concours photo",
+  "tip.classic": "Mode classique avec montée de vitesse progressive",
+  "tip.infini": "Mode relax sans fin, sans accélération",
+  "tip.duel": "Défie des amis en face à face",
+  "tip.boutique": "Personnalise ton jeu",
+  "index.rgpd.title": "Confidentialité & Publicités",
+  "index.rgpd.body1": "VBlocks utilise des identifiants publicitaires pour diffuser des pubs personnalisées. Tu peux refuser ou accepter la personnalisation.",
+  "index.rgpd.body2": "(Tu peux changer d'avis plus tard dans les paramètres)",
+  "index.rgpd.accept": "Accepter",
+  "index.rgpd.refuse": "Refuser",
+  "index.rgpd.manage": "Gérer les accords publicitaires"
 }
+
 
 
 
