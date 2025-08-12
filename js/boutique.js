@@ -17,22 +17,23 @@ const SPECIAL_CARTOUCHES = [
     key: "boutique.cartouche.points3000",
     icon: '<img src="assets/images/vcoin.webp" alt="Points">',
     color: 'color-yellow',
-    prix: "0,99€",
+    prix: "",               // <-- plus de prix en dur
     amount: 3000
   },
   {
     key: "boutique.cartouche.points10000",
     icon: '<img src="assets/images/vcoin.webp" alt="Points">',
     color: 'color-purple',
-    prix: "1,99€",
+    prix: "",
     amount: 10000
   },
-  { key: "boutique.cartouche.jetons12", icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue', prix: "0,99€", amount: 12 },
-  { key: "boutique.cartouche.jetons50", icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple', prix: "2,99€", amount: 50 },
-  { key: "boutique.cartouche.nopub", icon: '<img src="assets/images/ads.png" alt="No Ads">', color: 'color-yellow', prix: "3,49€" },
-  { key: "boutique.cartouche.pub1jeton", icon: '<img src="assets/images/jeton.webp" alt="Pub">', color: 'color-green' },
-  { key: "boutique.cartouche.pub300points", icon: '<img src="assets/images/vcoin.webp" alt="Pub">', color: 'color-blue' }
+  { key: "boutique.cartouche.jetons12",  icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-blue',   prix:"", amount:12 },
+  { key: "boutique.cartouche.jetons50",  icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-purple', prix:"", amount:50 },
+  { key: "boutique.cartouche.nopub",     icon:'<img src="assets/images/ads.png" alt="No Ads">',   color:'color-yellow', prix:"" },
+  { key: "boutique.cartouche.pub1jeton", icon:'<img src="assets/images/jeton.webp" alt="Pub">',   color:'color-green' },
+  { key: "boutique.cartouche.pub300points", icon:'<img src="assets/images/vcoin.webp" alt="Pub">', color:'color-blue' }
 ];
+
 const THEME_PRICE = 5000;
 
 // --- IDs des produits (Google Play / iOS)
@@ -140,10 +141,11 @@ function renderAchats() {
     <div class="special-cartouche ${c.color}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      ${c.prix ? `<span class="prix-label">${c.prix}</span>` : ""}
+      <span class="prix-label">${c.prix || "…"}</span>  <!-- placeholder -->
     </div>
   `).join('');
   $achatsList.innerHTML = achatsHtml;
+
 }
 
 // --- UI : Thèmes/cadres

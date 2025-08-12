@@ -168,6 +168,10 @@
 
       store.register({ id: "points3000", alias: "3000 VCoins", type: store.CONSUMABLE });
       store.register({ id: "points10000", alias: "10000 VCoins", type: store.CONSUMABLE });
+      store.register({ id: "jetons12", alias: "12 Jetons", type: store.CONSUMABLE });
+store.register({ id: "jetons50", alias: "50 Jetons", type: store.CONSUMABLE });
+store.register({ id: "nopub", alias: "Suppression pubs", type: store.NON_CONSUMABLE });
+
 
       store.ready(function () {
         store.products.forEach(p => {

@@ -287,7 +287,37 @@
   "index.rgpd.body2": "(Tu peux changer d'avis plus tard dans les paramètres)",
   "index.rgpd.accept": "Accepter",
   "index.rgpd.refuse": "Refuser",
-  "index.rgpd.manage": "Gérer les accords publicitaires"
+  "index.rgpd.manage": "Gérer les accords publicitaires",
+
+
+  "profil.title": "Mon Profil",
+  "profil.btn.changePseudo": "Modifier mon pseudo",
+  "profil.btn.theme": "Thèmes",
+  "profil.btn.amis": "Amis",
+  "profil.btn.applis": "Nos applis",
+
+  "profil.popup.pseudoTitle": "Ton nouveau pseudo",
+  "profil.popup.placeholder": "Nouveau pseudo",
+  "profil.popup.validate": "Valider",
+  "profil.popup.cancel": "Annuler",
+  "profil.popup.error.empty": "Entre un pseudo.",
+  "profil.popup.error.length": "20 caractères max.",
+  "profil.popup.success": "Pseudo mis à jour.",
+
+  "theme.popup.title": "Choisis ton thème VBlocks",
+  "theme.popup.validate": "Valider",
+  "theme.popup.cancel": "Annuler",
+
+  "theme.item.lockedSuffix": " 🔒",
+
+  "theme.name.neon": "Neon",
+  "theme.name.nature": "Nature",
+  "theme.name.pixel": "Pixel",
+  "theme.name.dark": "Dark",
+  "theme.name.bubble": "Bubble",
+  "theme.name.retro": "Retro",
+  "theme.name.cyber": "Cyber"
+
 }
 
 

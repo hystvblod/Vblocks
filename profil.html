@@ -41,13 +41,8 @@
       cursor: pointer;
       padding: 0;
     }
-    .btn-back svg {
-      width: 32px; height: 32px;
-      display: block;
-    }
-    .btn-back:hover {
-      background: #23236028;
-    }
+    .btn-back svg { width: 32px; height: 32px; display: block; }
+    .btn-back:hover { background: #23236028; }
     .btn-icon {
       background: none; border: none;
       display: flex; align-items: center; justify-content: center;
@@ -59,89 +54,51 @@
       filter: drop-shadow(0 1px 2px #2228);
     }
     .btn-icon:hover { background: #23236022; }
+
     .profil-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding-top: 6.2em;
-      gap: 1.8em;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      min-height: 100vh; padding-top: 6.2em; gap: 1.8em;
     }
     .profil-logo {
       width: 94px; margin-bottom: 0.3em; margin-top: -1.1em;
       filter: drop-shadow(0 5px 18px #a3c8fd44);
-      border-radius: 1.1em;
-      user-select: none;
-      pointer-events: none;
+      border-radius: 1.1em; user-select: none; pointer-events: none;
     }
     .profil-title {
-      font-size: 2em;
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: 0.03em;
-      text-align: center;
-      margin-bottom: 0.3em;
+      font-size: 2em; font-weight: 900; color: #fff; letter-spacing: 0.03em;
+      text-align: center; margin-bottom: 0.3em;
       text-shadow: 0 3px 16px #2e6ead44, 0 1px 1px #fff7;
     }
     .profil-id {
-      font-size: 1.13em;
-      color: #d6ffe6;
-      font-weight: 800;
-      letter-spacing: 0.09em;
+      font-size: 1.13em; color: #d6ffe6; font-weight: 800; letter-spacing: 0.09em;
       background: rgba(55,192,120,0.17);
-      padding: 0.36em 1.1em;
-      border-radius: 1.3em;
-      box-shadow: 0 2px 12px #0ae58c20;
-      text-shadow: 0 1px 2px #2223;
+      padding: 0.36em 1.1em; border-radius: 1.3em;
+      box-shadow: 0 2px 12px #0ae58c20; text-shadow: 0 1px 2px #2223;
     }
     .profil-change-pseudo {
-      background: none;
-      border: 2px dashed #b8ffdb88;
-      color: #ffffffee;
-      border-radius: 1.3em;
-      padding: 0.4em 1em;
-      font-size: 0.95em;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 2px 8px #0ae58c33;
-      transition: background 0.15s, transform 0.13s;
+      background: none; border: 2px dashed #b8ffdb88; color: #ffffffee; border-radius: 1.3em;
+      padding: 0.4em 1em; font-size: 0.95em; font-weight: 700; cursor: pointer;
+      box-shadow: 0 2px 8px #0ae58c33; transition: background 0.15s, transform 0.13s;
     }
-    .profil-change-pseudo:hover {
-      background: rgba(255, 255, 255, 0.1);
-      transform: scale(1.03);
-    }
+    .profil-change-pseudo:hover { background: rgba(255,255,255,0.1); transform: scale(1.03); }
+
     .theme-btn-vb, .applis-btn-vb {
-      width: 98%;
-      margin: 0.5em auto 0 auto;
-      background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%);
-      color: #246133;
-      border: none;
-      border-radius: 1.2em;
-      font-size: 1.13em;
-      font-weight: 900;
-      padding: 0.94em 0;
-      cursor: pointer;
-      box-shadow: 0 2px 16px #b7ffe644;
-      transition: background 0.15s, color 0.13s, transform 0.14s;
-      outline: none;
-      letter-spacing: 0.04em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.67em;
-      text-align: center;
+      width: 98%; margin: 0.5em auto 0 auto;
+      background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%); color: #246133;
+      border: none; border-radius: 1.2em; font-size: 1.13em; font-weight: 900; padding: 0.94em 0;
+      cursor: pointer; box-shadow: 0 2px 16px #b7ffe644; transition: background 0.15s, color 0.13s, transform 0.14s;
+      outline: none; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: center; gap: 0.67em; text-align: center;
     }
-    .theme-btn-vb:active, .applis-btn-vb:active {
-      background: linear-gradient(90deg,#47bcd3 0%,#a6f382 100%);
-      color: #143e1a;
-    }
+    .theme-btn-vb:active, .applis-btn-vb:active { background: linear-gradient(90deg,#47bcd3 0%,#a6f382 100%); color: #143e1a; }
+
     @media (max-width: 520px) {
       .profil-title { font-size: 1.18em;}
       .profil-logo { width: 68px; margin-top: 0.1em;}
       .profil-content { padding-top: 3.7em; }
       .top-bar { padding-left: 2px; padding-right: 2px; }
     }
+
+    /* Popups */
     .popup-bg {
       position: fixed; inset: 0; background: rgba(0,0,0,0.5);
       display: none; justify-content: center; align-items: center; z-index: 5000;
@@ -149,8 +106,7 @@
     .popup-bg.active { display: flex; }
     .popup-box {
       background: #fff; border-radius: 16px; padding: 2em 1.4em;
-      width: 90%; max-width: 350px; text-align: center;
-      box-shadow: 0 8px 36px #0003;
+      width: 90%; max-width: 350px; text-align: center; box-shadow: 0 8px 36px #0003;
     }
     .popup-box input {
       width: 90%; padding: 0.7em; font-size: 1.05em;
@@ -158,17 +114,14 @@
     }
     .popup-box button {
       margin-top: 1.2em; margin-right: 0.4em; padding: 0.6em 1.4em;
-      border-radius: 8px; font-weight: 700; border: none;
-      cursor: pointer; background: #38a75f; color: #fff;
+      border-radius: 8px; font-weight: 700; border: none; cursor: pointer;
+      background: #38a75f; color: #fff;
     }
     .popup-box button:last-child { background: #eee; color: #333; }
     #pseudoError { color: #d33; font-size: 0.95em; margin-top: 0.5em; min-height: 1.1em; }
 
-    .theme-choice-vb.locked {
-      filter: grayscale(1);
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    /* Theme selector */
+    .theme-choice-vb.locked { filter: grayscale(1); opacity: 0.6; cursor: not-allowed; }
     .popup-theme-bg {
       position: fixed; inset: 0; z-index: 1000; background: rgba(24,44,26,0.68);
       display: none; align-items: center; justify-content: center;
@@ -185,10 +138,7 @@
       background: #e6f6ea; color: #156c31; cursor: pointer; box-shadow: 0 2px 10px #a2dcd220;
       transition: background 0.13s, color 0.13s, transform 0.13s; margin: 0; outline: none;
     }
-    .theme-choice-vb.active, .theme-choice-vb:active {
-      background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%);
-      color: #0e4b26; transform: scale(1.05);
-    }
+    .theme-choice-vb.active, .theme-choice-vb:active { background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%); color: #0e4b26; transform: scale(1.05); }
     .popup-actions { margin-top: 1.7em; }
     .vb-btn-validate, .vb-btn-cancel {
       padding: 0.67em 1.7em; border-radius: 1em; font-weight: 800; border: none;
@@ -198,6 +148,7 @@
     .vb-btn-validate:active { background: #2ad680; }
     .vb-btn-cancel { background: #eee; color: #6d787a;}
     .vb-btn-cancel:active { background: #c7c7c7;}
+
     @keyframes popupfade { from { opacity:0; transform: translateY(38px) scale(.96);} to { opacity:1; transform:none; } }
   </style>
 </head>
@@ -223,13 +174,17 @@
   <div class="profil-content">
     <img class="profil-logo" src="assets/images/vblocks-logo.png" alt="VBlocks" draggable="false"/>
     <div class="profil-title" data-i18n="profil.title">Mon Profil</div>
+
     <div class="profil-id" id="profilPseudo">MonPseudo</div>
+
     <button class="profil-change-pseudo" id="btnChangePseudo">
       <span data-i18n="profil.btn.changePseudo">Modifier mon pseudo</span>
     </button>
+
     <button class="theme-btn-vb" id="changeThemeBtn">
       <span data-i18n="profil.btn.theme">Thèmes</span>
     </button>
+
     <button class="applis-btn-vb" id="amisBtn">
       <span data-i18n="profil.btn.amis">Amis</span>
     </button>
@@ -244,19 +199,19 @@
       <h2 data-i18n="profil.popup.pseudoTitle">Ton nouveau pseudo</h2>
       <input type="text" id="newPseudo" maxlength="20" placeholder="Nouveau pseudo"/>
       <div id="pseudoError"></div>
-      <button id="btnSavePseudo" data-i18n="profil.popup.validate">Valider</button>
-      <button id="btnCancelPseudo" data-i18n="profil.popup.cancel">Annuler</button>
+      <button id="btnSavePseudo"><span data-i18n="profil.popup.validate">Valider</span></button>
+      <button id="btnCancelPseudo"><span data-i18n="profil.popup.cancel">Annuler</span></button>
     </div>
   </div>
 
   <!-- === POPUP SÉLECTEUR DE THÈME === -->
   <div id="theme-selector-popup" class="popup-theme-bg">
     <div class="popup-theme-vb">
-      <h2>Choisis ton thème VBlocks</h2>
+      <h2 data-i18n="theme.popup.title">Choisis ton thème VBlocks</h2>
       <div class="theme-list-vb" id="themeListVB"></div>
       <div class="popup-actions">
-        <button class="vb-btn-validate" id="btnValiderTheme">Valider</button>
-        <button class="vb-btn-cancel" id="btnCancelTheme">Annuler</button>
+        <button class="vb-btn-validate" id="btnValiderTheme"><span data-i18n="theme.popup.validate">Valider</span></button>
+        <button class="vb-btn-cancel" id="btnCancelTheme"><span data-i18n="theme.popup.cancel">Annuler</span></button>
       </div>
     </div>
   </div>
@@ -266,6 +221,7 @@
   <script src="js/pub.js"></script>
   <script>
     window.addEventListener("DOMContentLoaded", async () => {
+      // Thème initial
       let user = null;
       if (window.supabase && supabase.auth && typeof supabase.auth.user === "function") {
         user = supabase.auth.user();
@@ -287,55 +243,68 @@
         const theme = localStorage.getItem('themeVBlocks') || 'neon';
         document.body.setAttribute('data-theme', theme);
       }
+
       // Pseudo
       const p = localStorage.getItem("pseudo") || "MonPseudo";
       document.getElementById("profilPseudo").textContent = p;
 
-      // Popup pseudo
       setupPseudoPopup();
       updatePseudoUI();
 
-      // Sélecteur de thème
+      // Bouton Thèmes
       document.getElementById("changeThemeBtn").onclick = openThemePopup;
 
-      // Correction cloud : utilise toujours la liste des thèmes depuis Supabase pour l'affichage popup !
+      // --- i18n placeholder pour l'input pseudo (si dispo) ---
+      if (window.i18nGet) {
+        const ph = window.i18nGet('profil.popup.placeholder');
+        if (ph) document.getElementById('newPseudo').setAttribute('placeholder', ph);
+      }
+
+      // Sélecteur de thème
       async function openThemePopup() {
-        const ALL_THEMES = window.getAllThemes();
+        const ALL_THEMES = (window.getAllThemes ? window.getAllThemes() : ["neon","nature","pixel","dark","bubble","retro","cyber"]);
         const popup = document.getElementById('theme-selector-popup');
         const themeList = document.getElementById('themeListVB');
-        // Utilise toujours le cloud pour les thèmes débloqués !
+
         const userId = localStorage.getItem('user_id');
         let unlocked = ["neon"];
         try {
-          const { data, error } = await window.sb
-            .from('users')
-            .select('themes_possedes')
-            .eq('id', userId)
-            .single();
-          if (!error && data && Array.isArray(data.themes_possedes)) {
-            unlocked = data.themes_possedes;
-            // Mets à jour le localStorage aussi pour l'UI si tu veux garder la cohérence
-            localStorage.setItem("unlockedVBlocksThemes", JSON.stringify(unlocked));
+          const sb = (window.sb || window.supabase);
+          if (sb) {
+            const { data, error } = await sb
+              .from('users')
+              .select('themes_possedes')
+              .eq('id', userId)
+              .single();
+            if (!error && data && Array.isArray(data.themes_possedes)) {
+              unlocked = data.themes_possedes;
+              localStorage.setItem("unlockedVBlocksThemes", JSON.stringify(unlocked));
+            }
           }
-        } catch (e) {
-          // fallback, rien à faire, on garde neon
-        }
+        } catch (e) { /* fallback */ }
+
+        // i18n pour noms de thèmes & suffixe cadenas
+        const lockSuffix = (window.i18nGet && window.i18nGet('theme.item.lockedSuffix')) || ' 🔒';
 
         let html = '';
         ALL_THEMES.forEach(theme => {
           const locked = !unlocked.includes(theme);
+          const label = (window.i18nGet && window.i18nGet('theme.name.' + theme)) 
+                        || (theme.charAt(0).toUpperCase() + theme.slice(1));
           html += `<button class="theme-choice-vb${locked ? ' locked' : ''}" data-theme="${theme}" ${locked ? 'disabled' : ''}>
-            ${theme.charAt(0).toUpperCase() + theme.slice(1)}${locked ? ' 🔒' : ''}
+            ${label}${locked ? lockSuffix : ''}
           </button>`;
         });
         themeList.innerHTML = html;
+
         popup.classList.add("active");
+
         // Sélection courante
         let selectedTheme = localStorage.getItem("themeVBlocks") || "neon";
-        // Ajoute la classe active sur le thème courant
         document.querySelectorAll('.theme-choice-vb').forEach(btn => {
-          if(btn.dataset.theme === selectedTheme) btn.classList.add('active');
+          if (btn.dataset.theme === selectedTheme) btn.classList.add('active');
         });
+
         document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn => {
           btn.onclick = function() {
             document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
@@ -343,6 +312,7 @@
             selectedTheme = btn.dataset.theme;
           }
         });
+
         document.getElementById('btnValiderTheme').onclick = async () => {
           if (selectedTheme) {
             localStorage.setItem("themeVBlocks", selectedTheme);
@@ -355,7 +325,7 @@
                   .update({ theme_vblocks: selectedTheme })
                   .eq('id', user.id);
               }
-            } catch (e) { /* offline, pas grave */ }
+            } catch (e) { /* offline ok */ }
             location.reload();
           }
         };
@@ -364,15 +334,57 @@
         };
       }
 
-      // Redirection Amis et Applis
-      document.getElementById("amisBtn").onclick = () => {
-        window.location.href = "amis.html";
-      };
-      document.getElementById("applisBtn").onclick = () => {
-        window.location.href = "applis.html";
-      };
+      // Redirections
+      document.getElementById("amisBtn").onclick = () => { window.location.href = "amis.html"; };
+      document.getElementById("applisBtn").onclick = () => { window.location.href = "applis.html"; };
+
+      // --- Popup Pseudo: wiring + mini validation i18n ---
+      function setupPseudoPopup() {
+        const popup = document.getElementById('popupPseudo');
+        const btnOpen = document.getElementById('btnChangePseudo');
+        const btnSave = document.getElementById('btnSavePseudo');
+        const btnCancel = document.getElementById('btnCancelPseudo');
+        const input = document.getElementById('newPseudo');
+        const err = document.getElementById('pseudoError');
+
+        btnOpen.onclick = () => {
+          err.textContent = '';
+          input.value = localStorage.getItem("pseudo") || '';
+          popup.classList.add('active');
+          setTimeout(()=>input.focus(), 50);
+        };
+        btnCancel.onclick = () => popup.classList.remove('active');
+
+        btnSave.onclick = async () => {
+          const v = (input.value || '').trim();
+          if (!v) {
+            err.textContent = (window.i18nGet && window.i18nGet('profil.popup.error.empty')) || 'Entre un pseudo.';
+            return;
+          }
+          if (v.length > 20) {
+            err.textContent = (window.i18nGet && window.i18nGet('profil.popup.error.length')) || '20 caractères max.';
+            return;
+          }
+          try {
+            localStorage.setItem("pseudo", v);
+            const user = (window.supabase && supabase.auth.user && supabase.auth.user());
+            if (user) {
+              await supabase.from('users').update({ pseudo: v }).eq('id', user.id);
+            }
+            document.getElementById("profilPseudo").textContent = v;
+            err.textContent = (window.i18nGet && window.i18nGet('profil.popup.success')) || 'Pseudo mis à jour.';
+            setTimeout(()=> popup.classList.remove('active'), 500);
+          } catch(e) {
+            // silencieux
+          }
+        };
+      }
+
+      function updatePseudoUI() {
+        const current = localStorage.getItem("pseudo");
+        if (current) document.getElementById("profilPseudo").textContent = current;
+      }
     });
   </script>
-
 </body>
 </html>

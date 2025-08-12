@@ -211,7 +211,17 @@ async function unlockThemeCloud(themeKey) {
 /* ========= Store Bridge (fallback web) =========
    ➜ Sur Capacitor, on remplacera getStoreProducts() pour renvoyer les prix du store */
 async function getStoreProducts(productIds){
-  // Fallback DEV (web). On branchera Capacitor après.
+  // Si le store est prêt → on prend les vrais prix
+  if (window.store && Array.isArray(store.products) && store.products.length) {
+    const out = {};
+    productIds.forEach(id => {
+      const p = store.get(id);
+      out[id] = { id, price: (p && p.price) ? p.price : "—" };
+    });
+    return out;
+  }
+
+  // Sinon, prix par défaut (mode test navigateur)
   const fallback = {
     points3000:  "€0,99",
     points10000: "€1,99",
@@ -219,8 +229,12 @@ async function getStoreProducts(productIds){
     jetons50:    "€2,99",
     nopub:       "€3,49",
   };
-  return productIds.reduce((acc,id)=>{ if(id) acc[id]={id, price: fallback[id]||"—"}; return acc; },{});
+  return productIds.reduce((acc,id)=>{
+    if (id) acc[id] = { id, price: fallback[id] || "—" };
+    return acc;
+  }, {});
 }
+
 
 /* ===== Rendus ===== */
 async function renderAchats() {
