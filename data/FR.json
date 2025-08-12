@@ -317,7 +317,10 @@
   "theme.name.bubble": "Bubble",
   "theme.name.retro": "Retro",
   "theme.name.cyber": "Cyber", 
-    "profil.applis.rewardNote": "Reçois 2 jetons et 800 pièces par téléchargement"
+    "profil.applis.rewardNote": "Reçois 2 jetons et 800 pièces par téléchargement",
+        "toastDetected": "{count} appli(s) détectée(s), crédits effectués: {credited}",
+        "toastNone": "Aucune application partenaire détectée",
+        "toastError": "Vérification des applis impossible pour le moment"
 
 }
 
