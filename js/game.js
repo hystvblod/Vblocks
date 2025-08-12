@@ -117,17 +117,47 @@
       drawBoard();
     };
 
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const holdCanvas = document.getElementById('holdCanvas');
-    const holdCtx = holdCanvas.getContext('2d');
-    const nextCanvas = document.getElementById('nextCanvas');
-    const nextCtx = nextCanvas.getContext('2d');
-    
-    const COLS = 10, ROWS = 20;
-    let BLOCK_SIZE = 30;
-    canvas.width = COLS * BLOCK_SIZE;
-    canvas.height = ROWS * BLOCK_SIZE;
+  const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const holdCanvas = document.getElementById('holdCanvas');
+const holdCtx = holdCanvas.getContext('2d');
+const nextCanvas = document.getElementById('nextCanvas');
+const nextCtx = nextCanvas.getContext('2d');
+
+const COLS = 10, ROWS = 20;
+let BLOCK_SIZE = 30;
+const DPR = window.devicePixelRatio || 1;
+
+function fitCanvasToCSS() {
+  const rect = canvas.getBoundingClientRect();
+  const cssW = Math.round(rect.width) || COLS * BLOCK_SIZE;
+  const cssH = Math.round(rect.height) || ROWS * BLOCK_SIZE;
+
+  canvas.width  = Math.floor(cssW * DPR);
+  canvas.height = Math.floor(cssH * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  BLOCK_SIZE = Math.min(cssW / COLS, cssH / ROWS);
+}
+
+function sizeMiniCanvas(cnv, ctx, target = 72) {
+  cnv.style.width  = target + 'px';
+  cnv.style.height = target + 'px';
+  cnv.width  = Math.floor(target * DPR);
+  cnv.height = Math.floor(target * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+fitCanvasToCSS();
+sizeMiniCanvas(holdCanvas, holdCtx, 72);
+sizeMiniCanvas(nextCanvas, nextCtx, 72);
+window.addEventListener('resize', () => {
+  fitCanvasToCSS();
+  sizeMiniCanvas(holdCanvas, holdCtx, 72);
+  sizeMiniCanvas(nextCanvas, nextCtx, 72);
+});
+
+
 
     const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space', 'vitraux'];
     let currentTheme = localStorage.getItem('themeVBlocks') || 'neon';
@@ -810,11 +840,17 @@
         if(movedY < -28){ rotatePiece(); startY = t.clientY; }
       }
     });
-    canvas.addEventListener('touchend', function(e){
-      dragging = false;
-      if(Math.abs(movedX) < 10 && Math.abs(movedY) < 10){
-        rotatePiece();
-      }
+canvas.addEventListener('touchend', function(e){
+  dragging = false;
+  const pressDuration = Date.now() - touchStartTime;
+
+  // Seulement rotation si appui court (< 200 ms) ET pas de descente pendant l'appui
+  const isShortPress = pressDuration < 200;
+  const hasDropped = Math.abs(movedY) > 20; // seuil pour considérer qu'on a descendu
+
+  if (isShortPress && !hasDropped && Math.abs(movedX) < 10) {
+    rotatePiece();
+  }
     });
     holdCanvas.addEventListener('touchstart', function(e){
       holdPiece();

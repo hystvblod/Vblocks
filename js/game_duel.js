@@ -750,11 +750,18 @@ function dropPiece() {
       }
       console.log("[touchmove] movedX:", movedX, "movedY:", movedY);
     });
-    canvas.addEventListener('touchend', function(e){
-      dragging = false;
-      if(Math.abs(movedX) < 10 && Math.abs(movedY) < 10){
-        rotatePiece();
-      }
+canvas.addEventListener('touchend', function(e){
+  dragging = false;
+  const pressDuration = Date.now() - touchStartTime;
+
+  // Seulement rotation si appui court (< 200 ms) ET pas de descente pendant l'appui
+  const isShortPress = pressDuration < 200;
+  const hasDropped = Math.abs(movedY) > 20; // seuil pour considérer qu'on a descendu
+
+  if (isShortPress && !hasDropped && Math.abs(movedX) < 10) {
+    rotatePiece();
+  }
+
       console.log("[touchend]");
     });
     holdCanvas.addEventListener('touchstart', function(e){
