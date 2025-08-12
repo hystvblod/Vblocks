@@ -143,17 +143,28 @@
       c2d.restore();
     }
 
-    function fitCanvasToCSS() {
-      const rect = canvas.getBoundingClientRect();
-      const cssW = rect.width || COLS * BLOCK_SIZE;
-      const cssH = rect.height || ROWS * BLOCK_SIZE;
+function fitCanvasToCSS() {
+  const rect = canvas.getBoundingClientRect();
+  const cssW = Math.round(rect.width);
 
-      // dimensions réelles en pixels device
-      canvas.width  = Math.round(cssW * DPR);
-      canvas.height = Math.round(cssH * DPR);
+  // On remplit toute la largeur (10 colonnes)
+  BLOCK_SIZE = cssW / COLS;
 
-      // on dessine ensuite en unités CSS
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // Hauteur exacte pour 20 lignes
+  const usedW = BLOCK_SIZE * COLS;   // = cssW
+  const usedH = BLOCK_SIZE * ROWS;   // 20 lignes
+
+  // On impose la hauteur CSS du canvas
+  canvas.style.height = usedH + 'px';
+
+  // Dimensions réelles en pixels device
+  canvas.width  = Math.round(usedW * DPR);
+  canvas.height = Math.round(usedH * DPR);
+
+  // Dessin en unités CSS
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
 
       // taille de cellule EXACTE en CSS px (pas de floor → pas de “colonnes mortes”)
       const raw = Math.min(cssW / COLS, cssH / ROWS);
