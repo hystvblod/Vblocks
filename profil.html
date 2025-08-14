@@ -90,29 +90,27 @@
     .popup-box button:last-child { background: #eee; color: #333; }
     #pseudoError { color: #d33; font-size: 0.95em; margin-top: 0.5em; min-height: 1.1em; }
 
-    /* ===== POPUP THÈMES — SIMPLE (liste de noms + image à droite) ===== */
+    /* ===== POPUP THÈMES — SIMPLE (liste de noms) ===== */
     .popup-theme-bg { position: fixed; inset: 0; z-index: 1000; background: rgba(24,44,26,0.68);
       display: none; align-items: center; justify-content: center; }
     .popup-theme-bg.active { display: flex; }
-    .theme-shop-card { background:#fff; border-radius:20px; box-shadow:0 16px 48px #0006; width:min(96vw,920px); padding:16px; }
-    .theme-shop-header { display:flex; align-items:center; justify-content:center; position:relative; margin-bottom:8px; }
-    .theme-close { position:absolute; right:6px; top:6px; border:none; background:transparent; font-size:18px; padding:6px 10px; border-radius:10px; cursor:pointer; }
-    .theme-close:hover { background:#0000000f; }
-
-    .theme-layout { display:grid; grid-template-columns: 280px 1fr; gap:16px; }
-    @media (max-width:760px){ .theme-layout{ grid-template-columns:1fr; } }
-
-    /* Liste de noms */
-    .theme-list { border:1px solid #e5e7eb; border-radius:14px; background:#f8fafc; padding:8px; max-height:420px; overflow:auto; }
-    .theme-item { padding:10px 12px; border-radius:10px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:space-between; }
-    .theme-item:hover { background:#eef2f7; }
-    .theme-item.active { outline:3px solid #22c55e; background:#eafff3; }
-    .theme-item .lock { font-size:12px; opacity:.7; margin-left:10px; }
-
-    /* Zone image + actions */
-    .preview-panel { border:1px solid #e5e7eb; border-radius:14px; background:#f8fafc; padding:12px; display:flex; flex-direction:column; gap:10px; align-items:center; justify-content:center; }
-    .theme-image { width:100%; max-width:520px; height:280px; object-fit:cover; border-radius:12px; background:#ddd; display:block; }
-    .theme-actions { display:flex; gap:10px; justify-content:center; align-items:center; padding:6px 0 4px; }
+    .popup-theme-vb {
+      background: #fff; border-radius: 2em; padding: 2em 1.1em;
+      box-shadow: 0 8px 38px #82e7bc22; text-align: center; max-width: 370px; width: 93vw;
+      animation: popupfade 0.18s;
+    }
+    .theme-list-vb { display: flex; flex-wrap: wrap; gap: 1.2em; justify-content: center; margin-bottom: 0.5em;}
+    .theme-choice-vb {
+      border: none; border-radius: 1em; padding: 0.67em 1.3em; font-size: 1.05em; font-weight: 800;
+      background: #e6f6ea; color: #156c31; cursor: pointer; box-shadow: 0 2px 10px #a2dcd220;
+      transition: background 0.13s, color 0.13s, transform 0.13s; margin: 0; outline: none;
+    }
+    .theme-choice-vb.active, .theme-choice-vb:active {
+      background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%);
+      color: #0e4b26; transform: scale(1.05);
+    }
+    .theme-choice-vb.locked { filter: grayscale(1); opacity: .6; cursor: not-allowed; }
+    .popup-actions { margin-top: 1.7em; }
     .vb-btn-validate, .vb-btn-cancel { padding:.67em 1.7em; border-radius:1em; font-weight:800; border:none; font-size:1.03em; cursor:pointer; margin:0 .7em; }
     .vb-btn-validate { background:#59e7aa; color:#093c1c; } .vb-btn-validate:active{ background:#2ad680; }
     .vb-btn-cancel { background:#eee; color:#6d787a; } .vb-btn-cancel:active{ background:#c7c7c7; }
@@ -153,7 +151,7 @@
       <span data-i18n="profil.btn.theme">Thèmes</span>
     </button>
 
-    <!-- SUPPRIMÉ: Bouton Amis -->
+    <!-- SUPPRIMÉ: Bouton Amis + toute référence à amis.html -->
     <!-- SUPPRIMÉ: Texte 'Reçois 2 jetons…' -->
 
     <button class="applis-btn-vb" id="applisBtn">
@@ -161,208 +159,73 @@
     </button>
   </div>
 
-  <!-- Popup Pseudo -->
+  <!-- === POPUP PSEUDO === -->
   <div class="popup-bg" id="popupPseudo">
     <div class="popup-box">
       <h2 data-i18n="profil.popup.pseudoTitle">Ton nouveau pseudo</h2>
       <input type="text" id="newPseudo" maxlength="20" placeholder="Nouveau pseudo"/>
       <div id="pseudoError"></div>
-      <button id="btnSavePseudo"><span data-i18n="profil.popup.validate">Valider</span></button>
-      <button id="btnCancelPseudo"><span data-i18n="profil.popup.cancel">Annuler</span></button>
+      <button id="btnSavePseudo" data-i18n="profil.popup.validate">Valider</button>
+      <button id="btnCancelPseudo" data-i18n="profil.popup.cancel">Annuler</button>
     </div>
   </div>
 
-  <!-- ===== POPUP THÈMES — SIMPLE (liste de noms + image) ===== -->
-  <div id="themeModal" class="popup-theme-bg">
-    <div class="theme-shop-card">
-      <div class="theme-shop-header">
-        <h2 data-i18n="theme.popup.title">Choisis ton thème VBlocks</h2>
-        <button id="themeModalClose" class="theme-close" aria-label="Fermer">✕</button>
+  <!-- === POPUP SÉLECTEUR DE THÈME — SIMPLE === -->
+  <div id="theme-selector-popup" class="popup-theme-bg">
+    <div class="popup-theme-vb">
+      <h2 data-i18n="theme.popup.title">Choisis ton thème VBlocks</h2>
+      <div class="theme-list-vb" id="themeListVB"></div>
+      <div class="popup-actions">
+        <button class="vb-btn-validate" id="btnValiderTheme" data-i18n="theme.popup.use">Valider</button>
+        <button class="vb-btn-cancel" id="btnCancelTheme" data-i18n="theme.popup.cancel">Annuler</button>
       </div>
-
-      <div class="theme-layout">
-        <div id="themeList" class="theme-list"></div>
-
-        <div class="preview-panel">
-          <img id="themeModalImage" class="theme-image" src="" alt="Aperçu du thème" />
-          <div class="theme-actions">
-            <button id="themeUse" class="vb-btn-validate">
-              <span data-i18n="boutique.btn.utiliser">Utiliser ce thème</span>
-            </button>
-            <button id="themeCancel" class="vb-btn-cancel">
-              <span data-i18n="theme.popup.cancel">Annuler</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
-
-  <div id="toast" style="position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:10px;display:none;z-index:9999"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/userData.js"></script>
   <script src="js/pub.js"></script>
   <script>
-    // ---------- i18n safe ----------
+    // --- i18n safe ---
     function i18nSafe(key, fb){ try{ const v=(window.i18nGet?.(key)); return (!v||v===key)?fb:v }catch{ return fb } }
 
-    // ---------- Apps partenaires (détection + crédit) ----------
-    const APPS_TO_CHECK = [
-      { appId: 'vblocks', packageName: 'com.vboldstudio.VBlocks' },
-      { appId: 'vfindz',  packageName: 'com.vboldstudio.VFindz' },
-      { appId: 'vzone',   packageName: 'com.vboldstudio.VZone' }
-    ];
-    async function isAppInstalledAndroid(pkg){
-      try{
-        const AppChecker=(window.Capacitor?.Plugins||{}).AppChecker;
-        if(!AppChecker?.isInstalled) return false;
-        const res=await AppChecker.isInstalled({package:pkg});
-        return !!res?.installed;
-      }catch{return false;}
-    }
-    async function creditIfEligible(appId){
-      const user=(window.supabase?.auth?.user && supabase.auth.user());
-      if(!user) return {ok:false,reason:'no-user'};
-      const {error}=await supabase.rpc('grant_app_download_reward',{user_id:user.id, app_id:appId});
-      if(error){
-        if((error.message||'').toLowerCase().includes('unique')) return {ok:false,reason:'already-credited'};
-        return {ok:false,reason:'rpc-error',details:error.message};
-      }
-      return {ok:true};
-    }
-    function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.style.display='block'; setTimeout(()=>el.style.display='none',2600); }
-    async function checkInstalledAppsAndGrant(showNone=false){
-      if(!/Android/i.test(navigator.userAgent)) return;
-      let found=0, credited=0;
-      for(const app of APPS_TO_CHECK){
-        if(await isAppInstalledAndroid(app.packageName)){
-          found++; const r=await creditIfEligible(app.appId); if(r.ok) credited++;
-        }
-      }
-      if(found>0){
-        const m=i18nSafe('profil.applis.check.toastDetected','{count} appli(s) détectée(s), crédits: {credited}')
-                    .replace('{count}',found).replace('{credited}',credited);
-        toast(m);
-      } else if (showNone) {
-        toast(i18nSafe('profil.applis.check.toastNone','Aucune application partenaire détectée'));
-      }
-    }
-
-    // ---------- THEMES (liste de noms + image + utiliser) ----------
-    const THEMES_SHOP=[
-      {key:'neon',name:'Neon'},{key:'bubble',name:'Bubble'},{key:'nature',name:'Nature'},
-      {key:'nuit',name:'Nuit'},{key:'retro',name:'Retro'},{key:'vitraux',name:'Vitraux'},
-      {key:'angelique',name:'Angelique'},{key:'luxury',name:'Luxury'},{key:'space',name:'Space'},{key:'cyber',name:'Cyber'}
-    ];
-
-    async function getUnlockedThemes(){
-      const userId=localStorage.getItem('user_id');
-      try{
-        const sb=(window.sb||window.supabase); if(!sb||!userId) throw 0;
-        const {data,error}=await sb.from('users').select('themes_possedes').eq('id',userId).single();
-        if(!error && Array.isArray(data?.themes_possedes)) return data.themes_possedes;
-      }catch{}
-      try{ const local=JSON.parse(localStorage.getItem('unlockedVBlocksThemes')||'[]'); if(Array.isArray(local)&&local.length) return local;}catch{}
-      return ['neon'];
-    }
-
-    function setPreviewImage(themeKey){
-      const img=document.getElementById('themeModalImage');
-      const webp=`assets/modes/${themeKey}.webp`;
-      const png =`assets/modes/${themeKey}.png`;
-      img.src=webp;
-      img.onerror=()=>{ if(img.src.endsWith('.webp')) img.src=png; };
-    }
-
-    function applyTheme(selected){
-      if(!selected) return;
-      localStorage.setItem('themeVBlocks',selected);
-      document.body.setAttribute('data-theme',selected);
-      try{ const user=(window.supabase?.auth?.user && supabase.auth.user()); if(user){ supabase.from('users').update({theme_vblocks:selected}).eq('id',user.id); } }catch{}
-    }
-
-    async function openThemeModal(){
-      const modal=document.getElementById('themeModal');
-      const list=document.getElementById('themeList');
-      const btnUse=document.getElementById('themeUse');
-      const btnCancel=document.getElementById('themeCancel');
-      const btnClose=document.getElementById('themeModalClose');
-
-      const unlocked=await getUnlockedThemes();
-      const current=localStorage.getItem('themeVBlocks')||'neon';
-      let selected=current;
-
-      // Construire la liste des noms
-      list.innerHTML = THEMES_SHOP.map(t=>{
-        const locked = !unlocked.includes(t.key);
-        return `<div class="theme-item ${selected===t.key?'active':''} ${locked?'locked':''}" data-theme="${t.key}">
-                  <span>${t.name}</span>
-                  <span class="lock">${locked?'🔒':''}</span>
-                </div>`;
-      }).join('');
-
-      // Préview initiale
-      setPreviewImage(selected);
-
-      // Click sur un nom → active + image
-      list.querySelectorAll('.theme-item').forEach(item=>{
-        if(item.classList.contains('locked')) return;
-        item.addEventListener('click',()=>{
-          list.querySelectorAll('.theme-item').forEach(i=>i.classList.remove('active'));
-          item.classList.add('active');
-          selected=item.dataset.theme;
-          setPreviewImage(selected);
-        });
-      });
-
-      btnUse.onclick = ()=>{ applyTheme(selected); modal.classList.remove('active'); };
-      btnCancel.onclick = ()=> modal.classList.remove('active');
-      btnClose.onclick  = ()=> modal.classList.remove('active');
-
-      modal.classList.add('active');
-    }
-
-    // ---------- Page wiring ----------
+    // --- Thème courant au chargement ---
     window.addEventListener("DOMContentLoaded", async () => {
       // Thème initial
-      let user=null;
-      if (window.supabase?.auth && typeof supabase.auth.user === "function") user=supabase.auth.user();
+      let user = null;
+      if (window.supabase && supabase.auth && typeof supabase.auth.user === "function") {
+        user = supabase.auth.user();
+      }
       if (user) {
-        const { data, error } = await supabase.from('users').select('theme_vblocks').eq('id', user.id).single();
-        const theme = (!error && data && data.theme_vblocks) ? data.theme_vblocks : (localStorage.getItem('themeVBlocks') || 'neon');
-        localStorage.setItem('themeVBlocks', theme);
-        document.body.setAttribute('data-theme', theme);
+        try {
+          const { data, error } = await supabase.from('users').select('theme_vblocks').eq('id', user.id).single();
+          const theme = (!error && data && data.theme_vblocks) ? data.theme_vblocks : (localStorage.getItem('themeVBlocks') || 'neon');
+          localStorage.setItem('themeVBlocks', theme);
+          document.body.setAttribute('data-theme', theme);
+        } catch {
+          const theme = localStorage.getItem('themeVBlocks') || 'neon';
+          document.body.setAttribute('data-theme', theme);
+        }
       } else {
         const theme = localStorage.getItem('themeVBlocks') || 'neon';
         document.body.setAttribute('data-theme', theme);
       }
 
+      // Pseudo
       const p = localStorage.getItem("pseudo") || "MonPseudo";
       document.getElementById("profilPseudo").textContent = p;
 
       setupPseudoPopup();
-      updatePseudoUI();
 
-      // Bouton Thèmes → ouvre la popup simple (liste + image)
-      document.getElementById("changeThemeBtn").onclick = openThemeModal;
+      // Ouvrir la popup Thèmes simple
+      document.getElementById("changeThemeBtn").onclick = openThemePopup;
 
-      if (window.i18nGet) {
-        const ph = window.i18nGet('profil.popup.placeholder');
-        if (ph) document.getElementById('newPseudo').setAttribute('placeholder', ph);
-      }
-
-      // Détection applis partenaires (silencieux au chargement, pas au clic)
-      checkInstalledAppsAndGrant(false);
-
-      // Bouton "Nos applis" → redirection directe
-      document.getElementById("applisBtn").onclick = () => {
-        window.location.href = "applis.html";
-      };
+      // "Nos applis" -> applis.html direct
+      document.getElementById("applisBtn").onclick = () => { window.location.href = "applis.html"; };
     });
 
-    // ---- popup pseudo ----
+    // --- Popup pseudo ---
     function setupPseudoPopup() {
       const popup = document.getElementById('popupPseudo');
       const btnOpen = document.getElementById('btnChangePseudo');
@@ -393,9 +256,71 @@
         } catch(e) {}
       };
     }
-    function updatePseudoUI() {
-      const current = localStorage.getItem("pseudo");
-      if (current) document.getElementById("profilPseudo").textContent = current;
+
+    // --- Popup thèmes simple ---
+    async function openThemePopup() {
+      const popup = document.getElementById('theme-selector-popup');
+      const themeList = document.getElementById('themeListVB');
+
+      // Liste des thèmes : utilise window.getAllThemes() si dispo, sinon fallback local
+      const FALLBACK_THEMES = ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber"];
+      const ALL_THEMES = (typeof window.getAllThemes === 'function') ? window.getAllThemes() : FALLBACK_THEMES;
+
+      // Thèmes débloqués (cloud si possible, sinon local, sinon 'neon')
+      const userId = localStorage.getItem('user_id');
+      let unlocked = ["neon"];
+      try {
+        const sb = (window.sb || window.supabase);
+        if (sb && userId) {
+          const { data, error } = await sb.from('users').select('themes_possedes').eq('id', userId).single();
+          if (!error && data && Array.isArray(data.themes_possedes)) {
+            unlocked = data.themes_possedes;
+            localStorage.setItem("unlockedVBlocksThemes", JSON.stringify(unlocked));
+          } else {
+            // fallback localStorage
+            const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
+            if (Array.isArray(lc) && lc.length) unlocked = lc;
+          }
+        }
+      } catch { /* on garde 'neon' */ }
+
+      // Build UI (boutons simples)
+      themeList.innerHTML = ALL_THEMES.map(theme => {
+        const locked = !unlocked.includes(theme);
+        const label = theme.charAt(0).toUpperCase() + theme.slice(1);
+        return `<button class="theme-choice-vb${locked ? ' locked' : ''}" data-theme="${theme}" ${locked ? 'disabled' : ''}>${label}${locked ? ' 🔒' : ''}</button>`;
+      }).join('');
+
+      popup.classList.add("active");
+
+      // Sélection courante
+      let selectedTheme = localStorage.getItem("themeVBlocks") || "neon";
+      document.querySelectorAll('.theme-choice-vb').forEach(btn => {
+        if(btn.dataset.theme === selectedTheme) btn.classList.add('active');
+      });
+
+      // Choix d'un thème (bouton simple)
+      document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedTheme = btn.dataset.theme;
+        };
+      });
+
+      // Valider / Annuler
+      document.getElementById('btnValiderTheme').onclick = async () => {
+        if (!selectedTheme) return;
+        localStorage.setItem("themeVBlocks", selectedTheme);
+        document.body.setAttribute('data-theme', selectedTheme);
+        try {
+          const user = (window.supabase?.auth?.user && supabase.auth.user());
+          if (user) { await supabase.from('users').update({ theme_vblocks: selectedTheme }).eq('id', user.id); }
+        } catch(e) {}
+        popup.classList.remove('active');
+        location.reload();
+      };
+      document.getElementById('btnCancelTheme').onclick = () => popup.classList.remove('active');
     }
   </script>
 </body>
