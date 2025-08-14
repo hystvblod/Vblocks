@@ -467,6 +467,7 @@
 
     function togglePause() {
       paused = !paused;
+      if (paused) stopSoftDrop(); // coupe le soft drop quand on met en pause
       drawBoard();
       if (!paused && !gameOver) requestAnimationFrame(update);
     }
@@ -538,10 +539,10 @@
       // variants pour SPACE & VITRAUX
       if (currentTheme === 'space' || currentTheme === 'vitraux') {
         let numbers = [1,2,3,4,5,6];
-      for (let i = numbers.length - 1; i > 0; i--) {
-  const j = Math.floor(Math.random() * (i + 1));
-  [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-}
+        for (let i = numbers.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+        }
         let idx = 0;
         obj.variants = shape.map(row => row.map(val => (val ? numbers[idx++] : null)));
       }
@@ -858,43 +859,109 @@
     });
 
     // --- TOUCH & CLAVIER
+
+    // === SOFT DROP (tactile) ===
+    let softDropTimer = null;
+    let softDropActive = false;
+    const SOFT_DROP_INTERVAL = 55;     // vitesse de chute quand on maintient le doigt
+    const HOLD_ACTIVATION_MS = 260;    // durée du maintien avant d'activer la chute rapide
+
+    function startSoftDrop() {
+      if (softDropActive || paused || gameOver) return;
+      softDropActive = true;
+      // évite un "double drop" immédiat du loop principal
+      lastTime = performance.now();
+      softDropTimer = setInterval(() => {
+        if (!paused && !gameOver) dropPiece();
+      }, SOFT_DROP_INTERVAL);
+    }
+    function stopSoftDrop() {
+      if (softDropTimer) clearInterval(softDropTimer);
+      softDropTimer = null;
+      softDropActive = false;
+    }
+
+    // --- GESTES TACTILES --- //
     let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
+    let holdToDropTimeout = null;
+
     canvas.addEventListener('touchstart', function (e) {
       if (gameOver) return;
       if (e.touches.length !== 1) return;
       const t = e.touches[0];
-      startX = t.clientX;
-      startY = t.clientY;
-      movedX = movedY = 0;
-      dragging = true;
+      startX = t.clientX; startY = t.clientY;
+      movedX = 0; movedY = 0; dragging = true;
       touchStartTime = Date.now();
-    });
+
+      // Armer le "maintenir pour chute rapide"
+      clearTimeout(holdToDropTimeout);
+      holdToDropTimeout = setTimeout(() => {
+        // seulement si on n'a pas commencé un gros déplacement latéral ou vers le haut
+        if (dragging && Math.abs(movedX) < 12 && movedY >= -8) {
+          startSoftDrop();
+        }
+      }, HOLD_ACTIVATION_MS);
+    }, { passive: true });
+
     canvas.addEventListener('touchmove', function (e) {
       if (!dragging) return;
       const t = e.touches[0];
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
-      if (Math.abs(movedX) > Math.abs(movedY)) {
-        if (movedX > 24) { move(1);  startX = t.clientX; }
-        if (movedX < -24){ move(-1); startX = t.clientX; }
-      } else {
-        if (movedY > 28) { dropPiece();  startY = t.clientY; }
-        if (movedY < -28){ rotatePiece(); startY = t.clientY; }
+
+      // en cas de swipe clair, on annule l’armement du maintien
+      if (Math.abs(movedX) > 14 || movedY < -12) {
+        clearTimeout(holdToDropTimeout);
       }
-    });
+
+      if (Math.abs(movedX) > Math.abs(movedY)) {
+        // déplacement gauche/droite
+        if (movedX > 24)  { move(1);  startX = t.clientX; }
+        if (movedX < -24) { move(-1); startX = t.clientX; }
+      } else {
+        // swipe bas => on force aussi le soft drop
+        if (movedY > 28) {
+          if (!softDropActive) startSoftDrop();
+          dropPiece();
+          startY = t.clientY;
+        }
+        // swipe haut => rotation
+        if (movedY < -28) {
+          rotatePiece();
+          startY = t.clientY;
+        }
+      }
+    }, { passive: true });
+
     canvas.addEventListener('touchend', function () {
       dragging = false;
+      clearTimeout(holdToDropTimeout);
+
+      // si le soft drop était actif, on le coupe et on n’exécute pas le "tap rotate"
+      if (softDropActive) {
+        stopSoftDrop();
+        return;
+      }
+
+      // tap court => rotation (comme avant)
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
       const hasDropped = Math.abs(movedY) > 20;
       if (isShortPress && !hasDropped && Math.abs(movedX) < 10) rotatePiece();
-    });
+    }, { passive: true });
+
+    canvas.addEventListener('touchcancel', function () {
+      dragging = false;
+      clearTimeout(holdToDropTimeout);
+      stopSoftDrop();
+    }, { passive: true });
 
     if (holdCanvas) {
-      holdCanvas.addEventListener('touchstart', function(){ holdPiece(); });
+      holdCanvas.addEventListener('touchstart', function(){ holdPiece(); }, { passive: true });
       holdCanvas.addEventListener('click', function(){ holdPiece(); });
     }
 
+    // Clavier (desktop) — inchangé
     document.addEventListener('keydown', e => {
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
       if (e.key === 'p' || e.key === 'P') { togglePause(); return; }
@@ -907,6 +974,9 @@
         case 'c': case 'C': holdPiece(); break;
       }
     });
+
+    // sécurité : si on quitte l'app (perte de focus), on coupe le soft drop
+    window.addEventListener('blur', stopSoftDrop);
 
     // === SUPABASE Fonctions ===
     function getUserId() {
