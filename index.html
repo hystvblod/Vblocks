@@ -90,28 +90,45 @@
   <div class="tooltip-box" id="tooltip"></div>
 
   <script>
-    const tooltip = document.getElementById('tooltip');
-    document.querySelectorAll('.info-btn').forEach(el => {
-      el.addEventListener('click', function (e) {
-        e.stopPropagation();
-        let text = el.getAttribute('data-tip');
-        if (window.i18nGet) {
-          const key = el.getAttribute('data-i18n-tip');
-          const translated = key ? window.i18nGet(key) : null;
-          if (translated) text = translated;
-        }
-        const parentBtn = el.closest('.menu-btn');
-        const rect = parentBtn.getBoundingClientRect();
-        tooltip.innerHTML = text;
-        tooltip.style.width = '';
-        tooltip.style.display = 'block';
-        const scrollTop = window.scrollY || window.pageYOffset;
-        const scrollLeft = window.scrollX || window.pageXOffset;
-        tooltip.style.top = (rect.bottom + scrollTop) + 'px';
-        tooltip.style.left = (rect.left + rect.width/2 + scrollLeft) + 'px';
-        tooltip.classList.add('visible');
-      });
-    });
+const tooltip = document.getElementById('tooltip');
+document.querySelectorAll('.info-btn').forEach(el => {
+  el.addEventListener('click', function (e) {
+    e.stopPropagation();
+    let text = el.getAttribute('data-tip');
+    if (window.i18nGet) {
+      const key = el.getAttribute('data-i18n-tip');
+      const translated = key ? window.i18nGet(key) : null;
+      if (translated) text = translated;
+    }
+    const parentBtn = el.closest('.menu-btn');
+    const rect = parentBtn.getBoundingClientRect();
+    tooltip.innerHTML = text;
+    tooltip.style.width = '';
+    tooltip.style.display = 'block';
+    const scrollTop = window.scrollY || window.pageYOffset;
+    const scrollLeft = window.scrollX || window.pageXOffset;
+    tooltip.style.top = (rect.bottom + scrollTop) + 'px';
+    tooltip.style.left = (rect.left + rect.width/2 + scrollLeft) + 'px';
+    tooltip.classList.add('visible');
+  });
+});
+
+// Fermer si clic ailleurs
+document.addEventListener('click', (e) => {
+  if (!tooltip.contains(e.target)) {
+    tooltip.classList.remove('visible');
+    tooltip.style.display = 'none';
+  }
+});
+
+// Fermer si resize ou scroll
+['resize','scroll'].forEach(evt => {
+  window.addEventListener(evt, () => {
+    tooltip.classList.remove('visible');
+    tooltip.style.display = 'none';
+  });
+});
+
     document.addEventListener('click', () => tooltip.classList.remove('visible'));
     window.addEventListener('resize', () => tooltip.classList.remove('visible'));
 
