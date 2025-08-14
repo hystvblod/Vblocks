@@ -160,12 +160,17 @@
       <span data-i18n="profil.btn.theme">Thèmes</span>
     </button>
 
+    <button class="applis-btn-vb" id="amisBtn">
+      <span data-i18n="profil.btn.amis">Amis</span>
+    </button>
 
     <button class="applis-btn-vb" id="applisBtn">
       <span data-i18n="profil.btn.applis">Nos applis</span>
     </button>
 
-  
+    <div class="applis-reward-note" id="applisRewardNote" data-i18n="profil.applis.rewardNote">
+      Reçois 2 jetons et 800 pièces par téléchargement
+    </div>
   </div>
 
   <!-- Popup Pseudo -->
@@ -221,7 +226,6 @@
   <div id="toast" style="position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:10px;display:none;z-index:9999"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script src="js/i18n.js"></script>
   <script src="js/userData.js"></script>
   <script src="js/pub.js"></script>
   <script>
@@ -294,7 +298,7 @@
     }
 
     function setPreviewTheme(themeKey){
-      // Aperçu live minimal (tu peux brancher ton système de variables CSS si tu en as un)
+      // Aperçu live minimal
       const prev=document.getElementById('themePreview');
       prev.style.background = (themeKey==='nuit' || themeKey==='luxury') ? '#111' : '#f8fafc';
       prev.querySelector('.preview-btn').style.background = (themeKey==='nuit' || themeKey==='luxury') ? '#22c55e' : '#111';
@@ -350,7 +354,7 @@
         document.body.setAttribute('data-theme',selected);
         try{ const user=(window.supabase?.auth?.user && supabase.auth.user()); if(user){ await supabase.from('users').update({theme_vblocks:selected}).eq('id',user.id);} }catch{}
         modal.classList.remove('active');
-        location.reload(); // retire si tu préfères sans reload
+        location.reload();
       };
       btnCancel.onclick = ()=> modal.classList.remove('active');
       btnClose.onclick  = ()=> modal.classList.remove('active');
@@ -379,7 +383,7 @@
       setupPseudoPopup();
       updatePseudoUI();
 
-      // Bouton Thèmes → ouvre la popup façon Boutique
+      // Bouton Thèmes
       document.getElementById("changeThemeBtn").onclick = openThemeModal;
 
       if (window.i18nGet) {
@@ -391,10 +395,9 @@
       checkInstalledAppsAndGrant(false);
 
       // Autres boutons
-   
+      document.getElementById("amisBtn").onclick = () => { window.location.href = "amis.html"; };
       document.getElementById("applisBtn").onclick = async () => {
         await checkInstalledAppsAndGrant(true);
-        // si tu ne veux plus de redirection : commente la ligne ci-dessous
         // window.location.href = "applis.html";
       };
     });
@@ -427,7 +430,6 @@
           document.getElementById("profilPseudo").textContent = v;
           err.textContent = i18nSafe('profil.popup.success','Pseudo mis à jour.');
           setTimeout(() => popup.classList.remove('active'), 500);
-
         } catch(e) {}
       };
     }
