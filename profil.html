@@ -69,11 +69,6 @@
     }
     .theme-btn-vb:active, .applis-btn-vb:active { background: linear-gradient(90deg,#47bcd3 0%,#a6f382 100%); color: #143e1a; }
 
-    .applis-reward-note {
-      width: 96%; color: #f7fffb; font-weight: 800; text-align: center;
-      font-size: 0.98em; letter-spacing: 0.02em; text-shadow: 0 1px 4px #032b14aa; margin-top: -0.5em;
-    }
-
     @media (max-width: 520px) {
       .profil-title { font-size: 1.18em;}
       .profil-logo { width: 68px; margin-top: 0.1em;}
@@ -81,6 +76,7 @@
       .top-bar { padding-left: 2px; padding-right: 2px; }
     }
 
+    /* ===== POPUP PSEUDO ===== */
     .popup-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5);
       display: none; justify-content: center; align-items: center; z-index: 5000; }
     .popup-bg.active { display: flex; }
@@ -94,7 +90,7 @@
     .popup-box button:last-child { background: #eee; color: #333; }
     #pseudoError { color: #d33; font-size: 0.95em; margin-top: 0.5em; min-height: 1.1em; }
 
-    /* ===== POPUP THÈMES façon Boutique ===== */
+    /* ===== POPUP THÈMES — SIMPLE (liste de noms + image à droite) ===== */
     .popup-theme-bg { position: fixed; inset: 0; z-index: 1000; background: rgba(24,44,26,0.68);
       display: none; align-items: center; justify-content: center; }
     .popup-theme-bg.active { display: flex; }
@@ -102,24 +98,21 @@
     .theme-shop-header { display:flex; align-items:center; justify-content:center; position:relative; margin-bottom:8px; }
     .theme-close { position:absolute; right:6px; top:6px; border:none; background:transparent; font-size:18px; padding:6px 10px; border-radius:10px; cursor:pointer; }
     .theme-close:hover { background:#0000000f; }
-    .theme-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; margin-top:10px; }
-    .theme-card { border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; background:#f8fafc; cursor:pointer; transition:transform .12s, box-shadow .12s; }
-    .theme-card:hover { transform:translateY(-2px); box-shadow:0 10px 28px #0001; }
-    .theme-thumb { width:100%; height:120px; object-fit:cover; display:block; background:#ddd; }
-    .theme-meta { padding:10px; display:flex; align-items:center; justify-content:space-between; }
-    .theme-name { font-weight:800; }
-    .theme-lock { font-size:12px; opacity:.7; }
-    .theme-card.locked { filter:grayscale(1); opacity:.6; cursor:not-allowed; }
-    .theme-card.active { outline:3px solid #22c55e; }
-    .theme-preview { display:grid; grid-template-columns:280px 1fr; gap:16px; align-items:center; }
-    @media (max-width:760px){ .theme-preview{ grid-template-columns:1fr; } }
-    .preview-frame { border:1px solid #e5e7eb; border-radius:16px; padding:10px; background:#f8fafc; }
-    .preview-ui { height:180px; border-radius:12px; display:grid; place-items:center; gap:8px; }
-    .preview-logo { font-weight:900; }
-    .preview-chip { padding:6px 10px; border-radius:999px; background:#e2e8f0; }
-    .preview-btn { padding:8px 14px; border-radius:10px; background:#111; color:#fff; font-weight:800; }
-    .preview-caption { text-align:center; margin-top:6px; color:#666; font-weight:700; }
-    .theme-actions { display:flex; gap:10px; justify-content:center; align-items:center; padding:14px 0; }
+
+    .theme-layout { display:grid; grid-template-columns: 280px 1fr; gap:16px; }
+    @media (max-width:760px){ .theme-layout{ grid-template-columns:1fr; } }
+
+    /* Liste de noms */
+    .theme-list { border:1px solid #e5e7eb; border-radius:14px; background:#f8fafc; padding:8px; max-height:420px; overflow:auto; }
+    .theme-item { padding:10px 12px; border-radius:10px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:space-between; }
+    .theme-item:hover { background:#eef2f7; }
+    .theme-item.active { outline:3px solid #22c55e; background:#eafff3; }
+    .theme-item .lock { font-size:12px; opacity:.7; margin-left:10px; }
+
+    /* Zone image + actions */
+    .preview-panel { border:1px solid #e5e7eb; border-radius:14px; background:#f8fafc; padding:12px; display:flex; flex-direction:column; gap:10px; align-items:center; justify-content:center; }
+    .theme-image { width:100%; max-width:520px; height:280px; object-fit:cover; border-radius:12px; background:#ddd; display:block; }
+    .theme-actions { display:flex; gap:10px; justify-content:center; align-items:center; padding:6px 0 4px; }
     .vb-btn-validate, .vb-btn-cancel { padding:.67em 1.7em; border-radius:1em; font-weight:800; border:none; font-size:1.03em; cursor:pointer; margin:0 .7em; }
     .vb-btn-validate { background:#59e7aa; color:#093c1c; } .vb-btn-validate:active{ background:#2ad680; }
     .vb-btn-cancel { background:#eee; color:#6d787a; } .vb-btn-cancel:active{ background:#c7c7c7; }
@@ -160,17 +153,12 @@
       <span data-i18n="profil.btn.theme">Thèmes</span>
     </button>
 
-    <button class="applis-btn-vb" id="amisBtn">
-      <span data-i18n="profil.btn.amis">Amis</span>
-    </button>
+    <!-- SUPPRIMÉ: Bouton Amis -->
+    <!-- SUPPRIMÉ: Texte 'Reçois 2 jetons…' -->
 
     <button class="applis-btn-vb" id="applisBtn">
       <span data-i18n="profil.btn.applis">Nos applis</span>
     </button>
-
-    <div class="applis-reward-note" id="applisRewardNote" data-i18n="profil.applis.rewardNote">
-      Reçois 2 jetons et 800 pièces par téléchargement
-    </div>
   </div>
 
   <!-- Popup Pseudo -->
@@ -184,7 +172,7 @@
     </div>
   </div>
 
-  <!-- ===== POPUP THÈMES (style Boutique) ===== -->
+  <!-- ===== POPUP THÈMES — SIMPLE (liste de noms + image) ===== -->
   <div id="themeModal" class="popup-theme-bg">
     <div class="theme-shop-card">
       <div class="theme-shop-header">
@@ -192,34 +180,22 @@
         <button id="themeModalClose" class="theme-close" aria-label="Fermer">✕</button>
       </div>
 
-      <!-- Aperçu live -->
-      <div class="theme-preview">
-        <div class="preview-frame">
-          <div id="themePreview" class="preview-ui">
-            <div class="preview-logo">VBlocks</div>
-            <div class="preview-chip">Cartes / Badges</div>
-            <div class="preview-btn">Bouton</div>
+      <div class="theme-layout">
+        <div id="themeList" class="theme-list"></div>
+
+        <div class="preview-panel">
+          <img id="themeModalImage" class="theme-image" src="" alt="Aperçu du thème" />
+          <div class="theme-actions">
+            <button id="themeUse" class="vb-btn-validate">
+              <span data-i18n="boutique.btn.utiliser">Utiliser ce thème</span>
+            </button>
+            <button id="themeCancel" class="vb-btn-cancel">
+              <span data-i18n="theme.popup.cancel">Annuler</span>
+            </button>
           </div>
         </div>
-        <div class="preview-caption" data-i18n="theme.preview.legend">Aperçu en direct</div>
       </div>
 
-      <!-- Grille des thèmes -->
-      <div id="themeGrid" class="theme-grid"></div>
-
-      <!-- Grande image (comme Boutique) -->
-      <div class="modal-body" style="padding:14px 0 0">
-        <img id="themeModalImage" src="" alt="" />
-      </div>
-
-      <div class="theme-actions">
-        <button id="themeUse" class="vb-btn-validate">
-          <span data-i18n="theme.popup.use">Utiliser ce thème</span>
-        </button>
-        <button id="themeCancel" class="vb-btn-cancel">
-          <span data-i18n="theme.popup.cancel">Annuler</span>
-        </button>
-      </div>
     </div>
   </div>
 
@@ -230,7 +206,7 @@
   <script src="js/pub.js"></script>
   <script>
     // ---------- i18n safe ----------
-    function i18nSafe(key, fb){ try{ return (window.i18nGet?.(key)) || fb }catch{ return fb } }
+    function i18nSafe(key, fb){ try{ const v=(window.i18nGet?.(key)); return (!v||v===key)?fb:v }catch{ return fb } }
 
     // ---------- Apps partenaires (détection + crédit) ----------
     const APPS_TO_CHECK = [
@@ -274,7 +250,7 @@
       }
     }
 
-    // ---------- THEMES (grille + image + preview + utiliser) ----------
+    // ---------- THEMES (liste de noms + image + utiliser) ----------
     const THEMES_SHOP=[
       {key:'neon',name:'Neon'},{key:'bubble',name:'Bubble'},{key:'nature',name:'Nature'},
       {key:'nuit',name:'Nuit'},{key:'retro',name:'Retro'},{key:'vitraux',name:'Vitraux'},
@@ -291,23 +267,25 @@
       try{ const local=JSON.parse(localStorage.getItem('unlockedVBlocksThemes')||'[]'); if(Array.isArray(local)&&local.length) return local;}catch{}
       return ['neon'];
     }
-    async function setUnlockedThemes(list){
-      localStorage.setItem('unlockedVBlocksThemes',JSON.stringify(list));
-      const user=(window.supabase?.auth?.user && supabase.auth.user());
-      try{ if(user) await supabase.from('users').update({themes_possedes:list}).eq('id',user.id);}catch{}
+
+    function setPreviewImage(themeKey){
+      const img=document.getElementById('themeModalImage');
+      const webp=`assets/modes/${themeKey}.webp`;
+      const png =`assets/modes/${themeKey}.png`;
+      img.src=webp;
+      img.onerror=()=>{ if(img.src.endsWith('.webp')) img.src=png; };
     }
 
-    function setPreviewTheme(themeKey){
-      // Aperçu live minimal
-      const prev=document.getElementById('themePreview');
-      prev.style.background = (themeKey==='nuit' || themeKey==='luxury') ? '#111' : '#f8fafc';
-      prev.querySelector('.preview-btn').style.background = (themeKey==='nuit' || themeKey==='luxury') ? '#22c55e' : '#111';
+    function applyTheme(selected){
+      if(!selected) return;
+      localStorage.setItem('themeVBlocks',selected);
+      document.body.setAttribute('data-theme',selected);
+      try{ const user=(window.supabase?.auth?.user && supabase.auth.user()); if(user){ supabase.from('users').update({theme_vblocks:selected}).eq('id',user.id); } }catch{}
     }
 
     async function openThemeModal(){
       const modal=document.getElementById('themeModal');
-      const grid=document.getElementById('themeGrid');
-      const img=document.getElementById('themeModalImage');
+      const list=document.getElementById('themeList');
       const btnUse=document.getElementById('themeUse');
       const btnCancel=document.getElementById('themeCancel');
       const btnClose=document.getElementById('themeModalClose');
@@ -316,46 +294,30 @@
       const current=localStorage.getItem('themeVBlocks')||'neon';
       let selected=current;
 
-      grid.innerHTML = THEMES_SHOP.map(t=>{
+      // Construire la liste des noms
+      list.innerHTML = THEMES_SHOP.map(t=>{
         const locked = !unlocked.includes(t.key);
-        const webp = `assets/modes/${t.key}.webp`;
-        const png  = `assets/modes/${t.key}.png`;
-        return `
-          <div class="theme-card ${locked?'locked':''}" data-theme="${t.key}" tabindex="0">
-            <img class="theme-thumb" src="${webp}" onerror="this.onerror=null;this.src='${png}'" alt="${t.name}">
-            <div class="theme-meta">
-              <div class="theme-name">${t.name}</div>
-              <div class="theme-lock">${locked ? (i18nSafe('theme.item.lockedSuffix','🔒')) : i18nSafe('theme.item.unlocked','OK')}</div>
-            </div>
-          </div>`;
+        return `<div class="theme-item ${selected===t.key?'active':''} ${locked?'locked':''}" data-theme="${t.key}">
+                  <span>${t.name}</span>
+                  <span class="lock">${locked?'🔒':''}</span>
+                </div>`;
       }).join('');
 
-      grid.querySelectorAll('.theme-card').forEach(card=>{
-        if(card.classList.contains('locked')) return;
-        if(card.dataset.theme===selected) card.classList.add('active');
-        card.addEventListener('click',()=>{
-          grid.querySelectorAll('.theme-card').forEach(c=>c.classList.remove('active'));
-          card.classList.add('active');
-          selected=card.dataset.theme;
-          setPreviewTheme(selected);
-          const webp=`assets/modes/${selected}.webp`; const png=`assets/modes/${selected}.png`;
-          img.src=webp; img.onerror=()=>{ if(img.src.endsWith('.webp')) img.src=png; };
+      // Préview initiale
+      setPreviewImage(selected);
+
+      // Click sur un nom → active + image
+      list.querySelectorAll('.theme-item').forEach(item=>{
+        if(item.classList.contains('locked')) return;
+        item.addEventListener('click',()=>{
+          list.querySelectorAll('.theme-item').forEach(i=>i.classList.remove('active'));
+          item.classList.add('active');
+          selected=item.dataset.theme;
+          setPreviewImage(selected);
         });
       });
 
-      // init preview + image
-      setPreviewTheme(selected);
-      img.src=`assets/modes/${selected}.webp`;
-      img.onerror=()=>{ if(img.src.endsWith('.webp')) img.src=`assets/modes/${selected}.png`; };
-
-      btnUse.onclick = async ()=>{
-        if(!selected) return;
-        localStorage.setItem('themeVBlocks',selected);
-        document.body.setAttribute('data-theme',selected);
-        try{ const user=(window.supabase?.auth?.user && supabase.auth.user()); if(user){ await supabase.from('users').update({theme_vblocks:selected}).eq('id',user.id);} }catch{}
-        modal.classList.remove('active');
-        location.reload();
-      };
+      btnUse.onclick = ()=>{ applyTheme(selected); modal.classList.remove('active'); };
       btnCancel.onclick = ()=> modal.classList.remove('active');
       btnClose.onclick  = ()=> modal.classList.remove('active');
 
@@ -383,7 +345,7 @@
       setupPseudoPopup();
       updatePseudoUI();
 
-      // Bouton Thèmes
+      // Bouton Thèmes → ouvre la popup simple (liste + image)
       document.getElementById("changeThemeBtn").onclick = openThemeModal;
 
       if (window.i18nGet) {
@@ -391,14 +353,12 @@
         if (ph) document.getElementById('newPseudo').setAttribute('placeholder', ph);
       }
 
-      // Détection applis partenaires (silencieux)
+      // Détection applis partenaires (silencieux au chargement, pas au clic)
       checkInstalledAppsAndGrant(false);
 
-      // Autres boutons
-      document.getElementById("amisBtn").onclick = () => { window.location.href = "amis.html"; };
-      document.getElementById("applisBtn").onclick = async () => {
-        await checkInstalledAppsAndGrant(true);
-        // window.location.href = "applis.html";
+      // Bouton "Nos applis" → redirection directe
+      document.getElementById("applisBtn").onclick = () => {
+        window.location.href = "applis.html";
       };
     });
 
