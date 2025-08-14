@@ -477,7 +477,7 @@
         linesCleared += lines;
         let pts = computeScore(lines, combo);
         score += pts;
-        let level = Math.floor(linesCleared / 8);
+        let level = Math.floor(linesCleared / 7);
         if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
         dropInterval = SPEED_TABLE[level];
         updateScoreUI(); // <-- MAJ LIVE du score

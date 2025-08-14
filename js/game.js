@@ -494,6 +494,7 @@
     }
     document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
 
+    // === ICI: bonus combo uniquement pour classic/duel, PAS en infinite ===
     function computeScore(lines) {
       let pts = 0;
       switch (lines) {
@@ -503,7 +504,10 @@
         case 4: pts = 80; break;
         default: pts = 0;
       }
-      if (combo > 1 && lines > 0) pts += (combo - 1) * 5;
+      // bonus combo désactivé en mode infinite
+      if (mode !== 'infinite' && combo > 1 && lines > 0) {
+        pts += (combo - 1) * 5;
+      }
       return pts;
     }
 
@@ -534,10 +538,10 @@
       // variants pour SPACE & VITRAUX
       if (currentTheme === 'space' || currentTheme === 'vitraux') {
         let numbers = [1,2,3,4,5,6];
-        for (let i = numbers.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-        }
+      for (let i = numbers.length - 1; i > 0; i--) {
+  const j = Math.floor(Math.random() * (i + 1));
+  [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+}
         let idx = 0;
         obj.variants = shape.map(row => row.map(val => (val ? numbers[idx++] : null)));
       }
@@ -599,7 +603,7 @@
           }
         }
         if (mode === 'classic' || mode === 'duel') {
-          let level = Math.floor(linesCleared / 8);
+          let level = Math.floor(linesCleared / 7);
           if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
           dropInterval = SPEED_TABLE[level];
         }

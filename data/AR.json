@@ -6,13 +6,13 @@
   "settings.language.label": "لغة الواجهة:",
   "settings.vibrate.label": "الاهتزاز:",
   "settings.vibrate.on": "مفعّل",
-  "settings.vibrate.off": "معطل",
-  "settings.ads.label": "إعلانات مخصصة:",
+  "settings.vibrate.off": "معطّل",
+  "settings.ads.label": "الإعلانات المخصصة:",
   "settings.ads.on": "مفعّلة",
-  "settings.ads.off": "معطلة",
-  "settings.ghost.label": "عرض القطعة الشبح:",
-  "settings.ghost.on": "مفعلة",
-  "settings.ghost.off": "معطلة",
+  "settings.ads.off": "معطّلة",
+  "settings.ghost.label": "إظهار القطعة الشبح:",
+  "settings.ghost.on": "مفعّل",
+  "settings.ghost.off": "معطّل",
   "lang.fr": "Français",
   "lang.en": "English (US)",
   "lang.de": "Deutsch",
@@ -25,22 +25,21 @@
   "lang.ja": "日本語",
   "lang.ko": "한국어",
 
-  "home.title": "في بلوكس - الصفحة الرئيسية",
+  "home.title": "VBlocks - الصفحة الرئيسية",
   "menu.profil": "الملف الشخصي",
   "menu.parametres": "الإعدادات",
-  "settings.title" : "الإعدادات",
   "index.rgpd.title": "الخصوصية والإعلانات",
-  "index.rgpd.body1": "تستخدم VBlocks معرفات الإعلانات لعرض إعلانات مخصصة.<br>يمكنك رفض أو قبول التخصيص.",
-  "index.rgpd.body2": "(يمكنك تغيير رأيك لاحقًا من خلال الإعدادات)",
+  "index.rgpd.body1": "تستخدم VBlocks معرّفات الإعلانات لعرض إعلانات مخصصة. يمكنك رفض أو قبول التخصيص.",
+  "index.rgpd.body2": "(يمكنك تغيير رأيك لاحقاً من الإعدادات)",
   "index.rgpd.accept": "قبول",
   "index.rgpd.refuse": "رفض",
-  "menu.concours": "مسابقة",
+  "menu.concours": "المسابقات",
   "menu.classic": "كلاسيكي",
-  "tip.classic": "وضع كلاسيكي مع تسارع تدريجي",
+  "tip.classic": "وضع كلاسيكي مع زيادة تدريجية في السرعة",
   "menu.infini": "لا نهائي",
   "tip.infini": "وضع استرخاء بلا نهاية وبدون تسريع",
   "menu.duel": "مبارزة",
-  "tip.duel": "تحدى أصدقاءك",
+  "tip.duel": "تحدَّ أصدقاءك",
   "menu.boutique": "المتجر",
   "tip.boutique": "خصص لعبتك",
   
@@ -50,151 +49,143 @@
   "menu.parametres": "الإعدادات",
   "amis.titre": "أصدقاؤك",
   "amis.rechercheTitre": "ابحث عن صديق",
-  "amis.recherchePlaceholder": "اسم المستخدم أو المعرف",
+  "amis.recherchePlaceholder": "الاسم المستعار أو المعرف",
   "amis.btnRechercher": "بحث",
   "amis.btnAjouter": "إضافة",
   "amis.btnSupprimer": "حذف",
-  "amis.rechercheAucun": "لا توجد نتائج حاليًا.",
-  "amis.erreurChamp": "يرجى إدخال اسم مستخدم أو معرف.",
+  "amis.rechercheAucun": "لا توجد نتائج حالياً.",
+  "amis.erreurChamp": "يرجى إدخال اسم مستعار أو معرف.",
   "amis.listeTitre": "قائمة أصدقائي",
   "amis.listeVide": "ليس لديك أصدقاء بعد.",
   
   "boutique.titre": "المتجر",
-  "boutique.retour": "الرجوع للعبة",
+  "boutique.retour": "العودة إلى اللعبة",
   "menu.profil": "الملف الشخصي",
   "menu.parametres": "الإعدادات",
-  "boutique.section.vcoins": "VCoins و الرموز",
-  "boutique.section.themes": "الثيمات",
+  "boutique.section.vcoins": "VCoins والرموز",
+  "boutique.section.themes": "السمات",
   "boutique.cartouche.jetons12": "12 رمز: 0,99€",
   "boutique.cartouche.jetons50": "50 رمز: 2,99€",
   "boutique.cartouche.nopub": "إزالة الإعلانات: 2,99€",
   "boutique.cartouche.pub1jeton": "مشاهدة إعلان: 1 رمز",
   "boutique.cartouche.pub300points": "مشاهدة إعلان: 300 نقطة",
+  "boutique.cartouche.points3000" : "3000 عملة: 0.99€",
+  "boutique.cartouche.points10000" : "10,000 عملة: 1.99€",
   "theme.possede": "مملوك",
   "theme.debloquer": "فتح (3000)",
-  "boutique.alert.pasassez": "ليست هناك قطع كافية!",
-  
+  "boutique.alert.pasassez": "عملات غير كافية!",
+
   "apps.title": "تطبيقاتنا",
   "menu.retour": "رجوع",
   "menu.profil": "الملف الشخصي",
   "menu.parametres": "الإعدادات",
   "vfindz.title": "VFindz",
-  "vfindz.desc": "لعبة الصور الفيروسية: نفّذ التحديات، شارك صورتك، شارك في المسابقات واربح الجوائز!",
-  "vzone.title": "VZone",
-  "vzone.desc": "تجنب الكرات المعادية! لعبة مهارة بسيطة وإدمانية للمشاركة.", 
-  
-  "game.title": "في بلوكس - كلاسيكي",
-  "game.main_title": "في بلوكس - كلاسيكي",
-  "jetons.alt": "الرموز",
-  "game.hold": "احتياطي",
+  "vfindz.desc": "لعبة الصور الفيروسية: واجه التحديات، انشر صورتك، شارك في المسابقات واربح جوائز!",
+  "vone.title": "Vone",
+  "vone.desc": "ابحث عن الدخيل في الشبكة بأسرع وقت ممكن.",
+  "vmemory.title": "VMemory",
+  "vmemory.desc": "لعبة الذاكرة: اعثر على الأزواج بأسرع وقت ممكن.",
+
+  "game.title": "V-Blocks - كلاسيكي",
+  "game.main_title": "V-Blocks-كلاسيكي",
+  "jetons.alt": "رموز",
+  "game.hold": "احتياط",
   "game.next": "التالي",
   "game.pause_btn": "إيقاف مؤقت",
   "game.score": "النتيجة",
-  "game.record": "رقم قياسي:",
-  "game.music": "موسيقى",
+  "game.record": "الرقم القياسي:",
+  "game.music": "الموسيقى",
   "game.mute": "كتم",
   "game.replay": "إعادة اللعب",
-  "duel.title": "في بلوكس - مبارزة",
-  "duel.main_title": "في بلوكس - مبارزة",
-  "duel.hold": "احتياطي",
+  "duel.title": "V-Blocks-مبارزة",
+  "duel.main_title": "V-Blocks-مبارزة",
+  "duel.hold": "احتياط",
   "duel.next": "التالي",
   "duel.score": "النتيجة",
   "duel.highscore_global": "الرقم القياسي العالمي:",
-  "duel.music": "موسيقى",
+  "duel.music": "الموسيقى",
   "duel.mute": "كتم",
   "duel.replay": "إعادة اللعب",
 
   "duel.popup.choice.title": "مبارزة",
   "duel.popup.choice.new": "إنشاء مبارزة",
-  "duel.popup.choice.join": "انضم إلى مبارزة",
+  "duel.popup.choice.join": "الانضمام إلى مبارزة",
 
-  "duel.popup.wait.title": "ادعُ صديقًا للمبارزة!",
-  "duel.popup.wait.code": "رمز:",
-  "duel.popup.wait.text": "بانتظار منافس...",
+  "duel.popup.wait.title": "ادعُ صديقاً لمبارزة!",
+  "duel.popup.wait.code": "الرمز:",
+  "duel.popup.wait.text": "في انتظار الخصم...",
 
   "duel.popup.confirm.title": "تم العثور على مبارزة!",
-  "duel.popup.confirm.text": "هل تريد قبول التحدي؟",
+  "duel.popup.confirm.text": "هل تريد قبول المبارزة؟",
   "duel.popup.confirm.accept": "قبول",
   "duel.popup.confirm.refuse": "رفض",
 
   "duel.popup.countdown.title": "المبارزة جاهزة!",
 
-  "duel.popup.join.title": "انضم إلى مبارزة",
+  "duel.popup.join.title": "الانضمام إلى مبارزة",
   "duel.popup.join.placeholder": "رمز المبارزة...",
   "duel.popup.join.ok": "موافق",
   "duel.popup.join.cancel": "إلغاء",
 
-  "main.title.infini": "في بلوكس\nلا نهائي",
-  "wallet.vcoins": "VCoins",
-  "wallet.jetons": "الرموز",
-
-  "hold.label": "احتياطي",
-  "next.label": "التالي",
-
-  "score.label": "النتيجة",
-  "highscore.global": "رقم قياسي:",
-  "highscore.value": "رقم قياسي:",
-
-  "button.music": "موسيقى",
-  "button.mute": "كتم",
-  "button.replay": "إعادة اللعب",
-  "button.pause": "إيقاف مؤقت",
-
-  "profil.title": "ملفي الشخصي",
-  "profil.btn.changePseudo": "تغيير اسمي",
-  "profil.btn.theme": "الثيمات",
-  "profil.btn.amis": "الأصدقاء",
-  "profil.btn.applis": "تطبيقاتنا",
-
-  "profil.popup.pseudoTitle": "اسمك الجديد",
-  "profil.popup.validate": "تأكيد",
-  "profil.popup.cancel": "إلغاء",
-  "profil.popup.error.short": "اسم المستخدم قصير جدًا.",
-
-  "profil.popup.themeTitle": "اختر ثيم VBlocks الخاص بك",
-  "profil.popup.themeValidate": "تأكيد",
-  "profil.popup.themeCancel": "إلغاء",
-
   "duel.finished": "انتهت المبارزة!",
   "duel.yourscore": "نتيجتك:",
   "duel.opponentscore": "نتيجة الخصم:",
-  "duel.waiting": "بانتظار...",
+  "duel.waiting": "في الانتظار...",
   "gameover.title": "انتهت اللعبة!",
-  "gameover.points": "النقاط التي ربحتها!",
+  "gameover.points": "نقاط مكتسبة!",
   "gameover.tokens": "رصيد الرموز:",
-  "gameover.revive_token": "استخدم رمزًا واحدًا للمتابعة",
-  "gameover.revive_ad": "شاهد إعلانًا للمتابعة",
+  "gameover.revive_token": "استخدام رمز واحد للمتابعة",
+  "gameover.revive_ad": "مشاهدة إعلان للمتابعة",
   "gameover.quit": "خروج",
   "ad.fake": "إعلان...",
   "ad.wait": "انتظر 3 ثوانٍ",
-  "error.save_score": "حدث خطأ أثناء حفظ النتيجة أو VCoins!",
-  "error.duel_not_found": "لم يتم العثور على مبارزة أو تسلسل مفقود.",
-  "error.duel_create": "حدث خطأ أثناء إنشاء المبارزة.",
-  "button.replay": "إعادة اللعب",
+  "error.save_score": "خطأ في حفظ النتيجة أو العملات!",
+  "error.duel_not_found": "المبارزة غير موجودة أو تسلسل مفقود.",
+  "error.duel_create": "خطأ في إنشاء المبارزة.",
 
   "theme.bubble": "Bubble",
-  "theme.nature": "Nature",
-  "theme.nuit": "Nuit",
-  "theme.luxury": "Luxury",
+  "theme.nature": "الطبيعة",
+  "theme.nuit": "الليل",
+  "theme.luxury": "الفخامة",
   "theme.space": "Space",
-  "theme.candy": "Candy",
+  "theme.candy": "الحلوى",
   "theme.cyber": "Cyber",
-  "theme.vitraux": "Vitraux",
-  "theme.pixel": "Pixel Art",
-  "theme.halloween": "Halloween",
+  "theme.vitraux": "الزجاج الملون",
+  "theme.pixel": "بكسل آرت",
+  "theme.halloween": "هالوين",
 
-  "boutique.cartouche.jetons12": "12 رمز: 0,99€",
-  "boutique.cartouche.jetons50": "50 رمز: 2,99€",
-  "boutique.cartouche.nopub": "إزالة الإعلانات: 2,99€",
-  "boutique.cartouche.pub1jeton": "مشاهدة إعلان: 1 رمز",
-  "boutique.cartouche.pub300points": "مشاهدة إعلان: 300 نقطة",
-
-  "boutique.alert.vcoins_update_error": "حدث خطأ أثناء تحديث VCoins!",
-  "theme.deja_possede": "الثيم مملوك بالفعل!",
-  "boutique.alert.pasassez": "ليست هناك قطع كافية!",
-  "theme.debloque": "تم فتح الثيم!",
+  "boutique.alert.vcoins_update_error": "خطأ في تحديث العملات!",
+  "theme.deja_possede": "السمة موجودة بالفعل!",
+  "theme.debloque": "تم فتح السمة!",
   "theme.activated": "تم تفعيل النمط الجديد: {THEME}",
   "boutique.btn.selectionne": "محدد",
-  "boutique.btn.utiliser": "استخدم",
-  "boutique.btn.debloquer": "فتح ({PRICE})"
+  "boutique.btn.utiliser": "استخدام",
+  "boutique.btn.debloquer": "فتح ({PRICE})",
+
+  "profil.popup.pseudoTitle": "اسمك المستعار الجديد",
+  "profil.popup.placeholder": "اسم مستعار جديد",
+  "profil.popup.validate": "تأكيد",
+  "profil.popup.cancel": "إلغاء",
+  "profil.popup.error.empty": "أدخل اسماً مستعاراً.",
+  "profil.popup.error.length": "20 حرفاً كحد أقصى.",
+  "profil.popup.success": "تم تحديث الاسم المستعار.",
+
+  "theme.popup.title": "اختر سمة VBlocks الخاصة بك",
+  "theme.popup.validate": "تأكيد",
+  "theme.popup.cancel": "إلغاء",
+
+  "theme.item.lockedSuffix": " 🔒",
+
+  "theme.name.neon": "نيون",
+  "theme.name.nature": "الطبيعة",
+  "theme.name.pixel": "بكسل",
+  "theme.name.dark": "dark",
+  "theme.name.bubble": "bubble",
+  "theme.name.retro": "retro",
+  "theme.name.cyber": "Cyber",
+
+  "profil.applis.rewardNote": "احصل على 2 رمز و 800 عملة لكل تحميل",
+  "toastDetected": "تم اكتشاف {count} تطبيق، تم منح الرصيد: {credited}",
+  "toastNone": "لم يتم اكتشاف أي تطبيق شريك",
+  "toastError": "التحقق من التطبيقات غير متاح حالياً"
 }
