@@ -62,28 +62,27 @@
     <div class="menu-list">
       <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="location.href='concours.html'">
         <span class="btn-label" data-i18n="menu.concours">Concours</span>
-        <span class="info-btn" tabindex="0" data-i18n="tip.concours" data-tip="Participe et vote dans les concours photo">?</span>
+        <span class="info-btn" tabindex="0" data-i18n-tip="tip.concours" data-tip="Participe et vote dans les concours photo">?</span>
       </button>
 
       <button class="menu-btn blue" onclick="location.href='classic.html'">
         <span class="btn-label" data-i18n="menu.classic">Classic</span>
-        <span class="info-btn" tabindex="0" data-i18n="tip.classic" data-tip="Mode classique avec montée de vitesse progressive">?</span>
+        <span class="info-btn" tabindex="0" data-i18n-tip="tip.classic" data-tip="Mode classique avec montée de vitesse progressive">?</span>
       </button>
 
       <button class="menu-btn purple" onclick="location.href='infini.html'">
         <span class="btn-label" data-i18n="menu.infini">Infini</span>
-        <span class="info-btn" tabindex="0" data-i18n="tip.infini" data-tip="Mode relax sans fin, sans accélération">?</span>
+        <span class="info-btn" tabindex="0" data-i18n-tip="tip.infini" data-tip="Mode relax sans fin, sans accélération">?</span>
       </button>
 
       <button class="menu-btn yellow" onclick="location.href='duel.html'">
         <span class="btn-label" data-i18n="menu.duel">Duel</span>
-        <span class="info-btn" tabindex="0" data-i18n="tip.duel" data-tip="Défie des amis en face à face">?</span>
+        <span class="info-btn" tabindex="0" data-i18n-tip="tip.duel" data-tip="Défie des amis en face à face">?</span>
       </button>
 
       <button class="menu-btn green" onclick="location.href='boutique.html'">
         <span class="btn-label" data-i18n="menu.boutique">Boutique</span>
-        <span class="info-btn" tabindex="0" data-i18n="tip.boutique" data-tip="Personnalise ton jeu">?</span>
-    
+        <span class="info-btn" tabindex="0" data-i18n-tip="tip.boutique" data-tip="Personnalise ton jeu">?</span>
       </button>
     </div>
   </div>
@@ -97,8 +96,8 @@
         e.stopPropagation();
         let text = el.getAttribute('data-tip');
         if (window.i18nGet) {
-          const key = el.getAttribute('data-i18n');
-          const translated = window.i18nGet(key);
+          const key = el.getAttribute('data-i18n-tip');
+          const translated = key ? window.i18nGet(key) : null;
           if (translated) text = translated;
         }
         const parentBtn = el.closest('.menu-btn');
@@ -154,7 +153,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="js/userData.js"></script>
-    <script src="js/i18n.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/pub.js"></script>
 
   <script>
@@ -169,9 +168,8 @@
       store.register({ id: "points3000", alias: "3000 VCoins", type: store.CONSUMABLE });
       store.register({ id: "points10000", alias: "10000 VCoins", type: store.CONSUMABLE });
       store.register({ id: "jetons12", alias: "12 Jetons", type: store.CONSUMABLE });
-store.register({ id: "jetons50", alias: "50 Jetons", type: store.CONSUMABLE });
-store.register({ id: "nopub", alias: "Suppression pubs", type: store.NON_CONSUMABLE });
-
+      store.register({ id: "jetons50", alias: "50 Jetons", type: store.CONSUMABLE });
+      store.register({ id: "nopub", alias: "Suppression pubs", type: store.NON_CONSUMABLE });
 
       store.ready(function () {
         store.products.forEach(p => {
