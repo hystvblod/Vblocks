@@ -245,7 +245,7 @@ async function renderAchats() {
     <div class="special-cartouche ${c.color}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      <span class="prix-label">${c.prix ?? "…"}</span>
+      <span class="prix-label">${c.prix ?? ""}</span>
     </div>
   `).join('');
 
