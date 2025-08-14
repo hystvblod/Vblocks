@@ -312,5 +312,9 @@
   "profil.applis.rewardNote": "احصل على 2 رمز و 800 قطعة لكل عملية تنزيل",
   "toastDetected": "{count} تطبيق/تطبيقات تم اكتشافها، الرصيد المضاف: {credited}",
   "toastNone": "لم يتم اكتشاف أي تطبيق شريك",
-  "toastError": "يتعذر التحقق من التطبيقات حاليًا"
+  "toastError": "يتعذر التحقق من التطبيقات حاليًا",
+  "theme.angelique": "Angélique",
+"theme.retro": "Rétro",
+"theme.name.angelique": "Angelique"
+
 }
