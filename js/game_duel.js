@@ -279,11 +279,18 @@ async function handleDuelEnd(myScore) {
     if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
     await new Promise(r=>setTimeout(r,1500));
   }
-  let msg = `
-    <div style="font-weight:bold;">${t("duel.finished")}</div>
-    <div>${t("duel.yourscore")} <b>${myScore}</b></div>
-    <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
-  `;
+let msg = `
+  <div style="font-weight:bold;">${t("duel.finished")}</div>
+  <div>${t("duel.yourscore")} <b>${myScore}</b></div>
+  <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
+  <br>
+  <button style="padding:0.4em 1em;font-size:0.9em;border-radius:0.5em;
+                 border:none;background:#444;color:#fff;cursor:pointer;"
+          onclick="window.location.href='index.html'">
+    ${t("button.back")}
+  </button>
+`;
+
   let div = document.createElement("div");
   div.id = "duel-popup";
   div.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;";

@@ -251,18 +251,27 @@
       console.log("[DUEL] showDuelPopup", state, data);
       const popup = document.getElementById('duelPopup');
       popup.style.display = 'flex';
+popup.style.background = "rgba(0,0,0,0.85)";
       let html = '';
 
-      if (state === 'choice') {
-        html = `
-          <div>
-            <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
-            <button class="duel-btn" id="btnNewDuel" data-i18n="duel.popup.choice.new"></button>
-            <br>
-            <button class="duel-btn" id="btnJoinDuel" data-i18n="duel.popup.choice.join"></button>
-          </div>
-        `;
-      }
+if (state === 'choice') {
+  html = `
+    <div>
+      <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
+      <button class="duel-btn" id="btnNewDuel" data-i18n="duel.popup.choice.new"></button>
+      <br>
+      <button class="duel-btn" id="btnJoinDuel" data-i18n="duel.popup.choice.join"></button>
+      <br><br>
+    <button style="padding:0.4em 1em;font-size:0.9em;border-radius:0.5em;
+               border:none;background:#444;color:#fff;cursor:pointer;"
+        onclick="window.location.href='index.html'">
+  ${i18nT("button.back")}
+</button>
+
+    </div>
+  `;
+}
+
 
       if (state === 'wait') {
         html = `<div>
