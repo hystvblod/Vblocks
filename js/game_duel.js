@@ -1,6 +1,12 @@
 (function(global){
   'use strict';
 
+  // === IMPORTANT : alias sécurisé sur le client Supabase ===
+  const sb = window.sb;
+  if (!sb) {
+    console.error("[game_duel.js] Supabase client 'window.sb' introuvable. Assure-toi de l'initialiser avant ce script.");
+  }
+
   // ==== GESTION MUSIQUE UNIFIÉE ==== //
   const music = document.getElementById('music');
   if (music) music.volume = 0.45;
@@ -227,77 +233,76 @@
       console.log("[saveHistory] history.length=", history.length);
     }
 
-   // ==== DUEL ONLY ==== //
-async function setupDuelSequence() {
-  console.log("[setupDuelSequence] called, duelId=", duelId);
-  if (!duelId) { 
-    console.warn("[setupDuelSequence] PAS de duelId, fallback SOLO MODE"); 
-    piecesSequence = Array.from({length: 1000}, () => Math.floor(Math.random() * 7));
-    piecesUsed = 0;
-    return;
-  }
-  let tries = 0, data = null;
-  while (tries++ < 20) {
-    let res = await sb.from('duels').select('*').eq('id', duelId).single();
-    console.log(`[setupDuelSequence] Try ${tries}, res=`, res);
-    if (res?.data && res.data.pieces_seq) { data = res.data; break; }
-    await new Promise(r=>setTimeout(r,1500));
-  }
-  if (!data) {
-    console.error("[setupDuelSequence] ERREUR: aucune data reçue pour ce duelId=", duelId);
-    throw new Error(t("error.duel_not_found"));
-  }
-  console.log("[setupDuelSequence] data from BDD =", data);
-  piecesSequence = data.pieces_seq.split(',').map(x=>parseInt(x));
-  piecesUsed = 0;
-  console.log("[setupDuelSequence] piecesSequence loaded:", piecesSequence);
-}
+    // ==== DUEL ONLY ==== //
+    async function setupDuelSequence() {
+      console.log("[setupDuelSequence] called, duelId=", duelId);
+      if (!duelId) {
+        console.warn("[setupDuelSequence] PAS de duelId, fallback SOLO MODE");
+        piecesSequence = Array.from({length: 1000}, () => Math.floor(Math.random() * 7));
+        piecesUsed = 0;
+        return;
+      }
+      let tries = 0, data = null;
+      while (tries++ < 20) {
+        let res = await sb.from('duels').select('*').eq('id', duelId).single();
+        console.log(`[setupDuelSequence] Try ${tries}, res=`, res);
+        if (res?.data && res.data.pieces_seq) { data = res.data; break; }
+        await new Promise(r=>setTimeout(r,1500));
+      }
+      if (!data) {
+        console.error("[setupDuelSequence] ERREUR: aucune data reçue pour ce duelId=", duelId);
+        throw new Error(t("error.duel_not_found"));
+      }
+      console.log("[setupDuelSequence] data from BDD =", data);
+      piecesSequence = data.pieces_seq.split(',').map(x=>parseInt(x));
+      piecesUsed = 0;
+      console.log("[setupDuelSequence] piecesSequence loaded:", piecesSequence);
+    }
 
-function getDuelNextPieceId() {
-  if (!piecesSequence) {
-    const rnd = Math.floor(Math.random()*PIECES.length);
-    console.log("[getDuelNextPieceId] Fallback rnd:", rnd);
-    return rnd;
-  }
-  if (piecesUsed >= piecesSequence.length) {
-    const rnd = Math.floor(Math.random()*PIECES.length);
-    console.log("[getDuelNextPieceId] End of sequence, fallback:", rnd);
-    return rnd;
-  }
-  console.log("[getDuelNextPieceId] From seq idx", piecesUsed, "->", piecesSequence[piecesUsed]);
-  return piecesSequence[piecesUsed++];
-}
+    function getDuelNextPieceId() {
+      if (!piecesSequence) {
+        const rnd = Math.floor(Math.random()*PIECES.length);
+        console.log("[getDuelNextPieceId] Fallback rnd:", rnd);
+        return rnd;
+      }
+      if (piecesUsed >= piecesSequence.length) {
+        const rnd = Math.floor(Math.random()*PIECES.length);
+        console.log("[getDuelNextPieceId] End of sequence, fallback:", rnd);
+        return rnd;
+      }
+      console.log("[getDuelNextPieceId] From seq idx", piecesUsed, "->", piecesSequence[piecesUsed]);
+      return piecesSequence[piecesUsed++];
+    }
 
-async function handleDuelEnd(myScore) {
-  console.log("[handleDuelEnd] called, myScore=", myScore);
-  let field = (duelPlayerNum === 1) ? "score1" : "score2";
-  await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
-  let tries = 0, otherScore = null;
-  while(tries++ < 40) {
-    let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
-    if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
-    if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
-    await new Promise(r=>setTimeout(r,1500));
-  }
-let msg = `
-  <div style="font-weight:bold;">${t("duel.finished")}</div>
-  <div>${t("duel.yourscore")} <b>${myScore}</b></div>
-  <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
-  <br>
-  <button style="padding:0.4em 1em;font-size:0.9em;border-radius:0.5em;
-                 border:none;background:#444;color:#fff;cursor:pointer;"
-          onclick="window.location.href='index.html'">
-    ${t("button.back")}
-  </button>
-`;
-
-  let div = document.createElement("div");
-  div.id = "duel-popup";
-  div.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;";
-  div.innerHTML = `<div style="background:#23294a;padding:2em 2em 1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;">${msg}</div>`;
-  document.body.appendChild(div);
-}
-// ==== FIN DUEL ==== //
+    async function handleDuelEnd(myScore) {
+      console.log("[handleDuelEnd] called, myScore=", myScore);
+      let field = (duelPlayerNum === 1) ? "score1" : "score2";
+      await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
+      let tries = 0, otherScore = null;
+      while(tries++ < 40) {
+        let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
+        if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
+        if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
+        await new Promise(r=>setTimeout(r,1500));
+      }
+      let msg = `
+        <div style="font-weight:bold;">${t("duel.finished")}</div>
+        <div>${t("duel.yourscore")} <b>${myScore}</b></div>
+        <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
+        <br>
+        <button style="padding:0.4em 1em;font-size:0.9em;border-radius:0.5em;
+                       border:none;background:#444;color:#fff;cursor:pointer;"
+                onclick="window.location.href='index.html'">
+          ${t("button.back")}
+        </button>
+      `;
+      let div = document.createElement("div");
+      div.id = "duel-popup";
+      div.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;";
+      div.innerHTML = `<div style="background:#23294a;padding:2em 2em 1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;">${msg}</div>`;
+      document.body.appendChild(div);
+    }
+    // ==== FIN DUEL ==== //
 
 
     function showEndPopup(points) {
@@ -489,49 +494,58 @@ let msg = `
       console.log("[move] moved piece, offset=", offset, "currentPiece=", currentPiece);
     }
 
-function dropPiece() {
-  if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
+    function dropPiece() {
+      if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
 
-  // Descend d'une ligne
-  currentPiece.y++;
+      // Descend d'une ligne
+      currentPiece.y++;
 
-  // Si on heurte le bas ou une brique, on verrouille immédiatement
-  if (collision()) {
-    currentPiece.y--;          // revient à la dernière position valide
-    merge();                    // colle la pièce au board
-    saveHistory();
-    reset();                    // spawn de la suivante
-    lastTime = performance.now(); // <-- reset du timer pour la 2e pièce
+      // Si on heurte le bas ou une brique, on verrouille immédiatement
+      if (collision()) {
+        currentPiece.y--;          // revient à la dernière position valide
+        merge();                    // colle la pièce au board
+        saveHistory();
+        reset();                    // spawn de la suivante
+        lastTime = performance.now(); // <-- reset du timer pour la 2e pièce
 
-    // Si la nouvelle pièce est bloquée au spawn → fin
-    if (collision()) {
-      showEndPopup(score);
-      gameOver = true;
+        // Si la nouvelle pièce est bloquée au spawn → fin
+        if (collision()) {
+          showEndPopup(score);
+          gameOver = true;
+        }
+
+        // Relance propre de la boucle si on continue
+        if (!gameOver && !paused) {
+          requestAnimationFrame(update);
+        }
+      }
+
+      console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
     }
 
-    // Relance propre de la boucle si on continue
-    if (!gameOver && !paused) {
-      requestAnimationFrame(update);
-    }
-  }
-
-  console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
-}
-
-
-
+    // === ROTATION corrigée (scope 'oldVariants' sécurisé) ===
     function rotatePiece(){
       if (!currentPiece) { console.warn("[rotatePiece] no currentPiece!"); return; }
       const shape = currentPiece.shape;
+
+      // préparer 'oldVariants' au bon scope pour rollback
+      let oldVariants = null;
+      if(currentTheme === 'space' || currentTheme === 'vitraux'){
+        oldVariants = currentPiece.variants ? JSON.parse(JSON.stringify(currentPiece.variants)) : null;
+      }
+
+      // rotation
       currentPiece.shape = shape[0].map((_,i)=>shape.map(r=>r[i])).reverse();
       if(currentTheme === 'space' || currentTheme === 'vitraux'){
-        const old = currentPiece.variants;
-        currentPiece.variants = old[0].map((_,i)=>old.map(r=>r[i])).reverse();
+        const before = currentPiece.variants || [];
+        currentPiece.variants = before[0].map((_,i)=>before.map(r=>r[i])).reverse();
       }
+
+      // test collisions → rollback si besoin
       if(collision()) {
         currentPiece.shape = shape;
-        if(currentTheme === 'space' || currentTheme === 'vitraux'){
-          currentPiece.variants = old;
+        if((currentTheme === 'space' || currentTheme === 'vitraux') && oldVariants){
+          currentPiece.variants = oldVariants;
         }
       }
       console.log("[rotatePiece] currentPiece=", currentPiece);
@@ -757,17 +771,17 @@ function dropPiece() {
       }
       console.log("[touchmove] movedX:", movedX, "movedY:", movedY);
     });
-canvas.addEventListener('touchend', function(e){
-  dragging = false;
-  const pressDuration = Date.now() - touchStartTime;
+    canvas.addEventListener('touchend', function(e){
+      dragging = false;
+      const pressDuration = Date.now() - touchStartTime;
 
-  // Seulement rotation si appui court (< 200 ms) ET pas de descente pendant l'appui
-  const isShortPress = pressDuration < 200;
-  const hasDropped = Math.abs(movedY) > 20; // seuil pour considérer qu'on a descendu
+      // Seulement rotation si appui court (< 200 ms) ET pas de descente pendant l'appui
+      const isShortPress = pressDuration < 200;
+      const hasDropped = Math.abs(movedY) > 20; // seuil pour considérer qu'on a descendu
 
-  if (isShortPress && !hasDropped && Math.abs(movedX) < 10) {
-    rotatePiece();
-  }
+      if (isShortPress && !hasDropped && Math.abs(movedX) < 10) {
+        rotatePiece();
+      }
 
       console.log("[touchend]");
     });
