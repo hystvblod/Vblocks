@@ -320,6 +320,18 @@
     "profil.applis.rewardNote": "Reçois 2 jetons et 800 pièces par téléchargement",
         "toastDetected": "{count} appli(s) détectée(s), crédits effectués: {credited}",
         "toastNone": "Aucune application partenaire détectée",
-        "toastError": "Vérification des applis impossible pour le moment"
+        "toastError": "Vérification des applis impossible pour le moment",
+        "resume.title": "Reprendre la partie ?",
+    "resume.message": "Une partie sauvegardée a été trouvée. Voulez-vous reprendre là où vous vous êtes arrêté(e) ?",
+    "resume.resume": "Reprendre",
+    "resume.restart": "Recommencer",
+    "resume.later": "Plus tard",
+    "resume.countdown": "Reprise dans {s}…",
+    "resume.expired": "La sauvegarde est trop ancienne et a été supprimée.",
+    "resume.notfound": "Aucune partie à reprendre.",
+    "resume.saving": "Sauvegarde…",
+    "resume.saved": "Partie sauvegardée.",
+    "resume.restored": "Partie reprise.",
+    "resume.cancel": "Annuler"
 
 }

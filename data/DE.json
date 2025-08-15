@@ -320,6 +320,19 @@
     "profil.applis.rewardNote": "Erhalte 2 Token und 800 Münzen pro Download",
         "toastDetected": "{count} App(s) erkannt, gutgeschrieben: {credited}",
         "toastNone": "Keine Partner-App erkannt",
-        "toastError": "App-Prüfung momentan nicht möglich"
+        "toastError": "App-Prüfung momentan nicht möglich",
+
+         "resume.title": "Spiel fortsetzen?",
+    "resume.message": "Eine gespeicherte Partie wurde gefunden. Möchtest du dort weitermachen, wo du aufgehört hast?",
+    "resume.resume": "Fortsetzen",
+    "resume.restart": "Neu starten",
+    "resume.later": "Später",
+    "resume.countdown": "Fortsetzung in {s}…",
+    "resume.expired": "Die gespeicherte Partie ist zu alt und wurde gelöscht.",
+    "resume.notfound": "Keine Partie zum Fortsetzen.",
+    "resume.saving": "Speichern…",
+    "resume.saved": "Spiel gespeichert.",
+    "resume.restored": "Spiel fortgesetzt.",
+    "resume.cancel": "Abbrechen"
 
 }

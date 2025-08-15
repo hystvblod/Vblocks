@@ -315,6 +315,19 @@
   "toastError": "يتعذر التحقق من التطبيقات حاليًا",
   "theme.angelique": "Angélique",
 "theme.retro": "Rétro",
-"theme.name.angelique": "Angelique"
+"theme.name.angelique": "Angelique",
+
+ "resume.title": "هل تريد متابعة اللعبة؟",
+    "resume.message": "تم العثور على لعبة محفوظة. هل تريد المتابعة من حيث توقفت؟",
+    "resume.resume": "متابعة",
+    "resume.restart": "البدء من جديد",
+    "resume.later": "لاحقًا",
+    "resume.countdown": "استئناف خلال {s}…",
+    "resume.expired": "بيانات الحفظ قديمة جدًا وتم حذفها.",
+    "resume.notfound": "لا توجد لعبة يمكن متابعتها.",
+    "resume.saving": "جارٍ الحفظ…",
+    "resume.saved": "تم حفظ اللعبة.",
+    "resume.restored": "تم استئناف اللعبة.",
+    "resume.cancel": "إلغاء"
 
 }

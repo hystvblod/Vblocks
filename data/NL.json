@@ -320,6 +320,19 @@
     "profil.applis.rewardNote": "Ontvang 2 tokens en 800 munten per download",
         "toastDetected": "{count} app(s) gedetecteerd, credits toegepast: {credited}",
         "toastNone": "Geen partnerapplicatie gedetecteerd",
-        "toastError": "Apps controleren is momenteel niet mogelijk"
+        "toastError": "Apps controleren is momenteel niet mogelijk",
+
+         "resume.title": "Spel hervatten?",
+    "resume.message": "Er is een opgeslagen spel gevonden. Wil je verdergaan waar je was gebleven?",
+    "resume.resume": "Hervatten",
+    "resume.restart": "Opnieuw starten",
+    "resume.later": "Later",
+    "resume.countdown": "Hervatten over {s}…",
+    "resume.expired": "De opgeslagen game is te oud en is verwijderd.",
+    "resume.notfound": "Geen spel om te hervatten.",
+    "resume.saving": "Opslaan…",
+    "resume.saved": "Spel opgeslagen.",
+    "resume.restored": "Spel hervat.",
+    "resume.cancel": "Annuleren"
 
 }

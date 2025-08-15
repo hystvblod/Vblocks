@@ -320,6 +320,19 @@
     "profil.applis.rewardNote": "Recebe 2 fichas e 800 moedas por download",
         "toastDetected": "{count} app(s) detetada(s), créditos aplicados: {credited}",
         "toastNone": "Nenhuma aplicação parceira detetada",
-        "toastError": "Não é possível verificar as apps neste momento"
+        "toastError": "Não é possível verificar as apps neste momento",
+
+         "resume.title": "Retomar o jogo?",
+    "resume.message": "Foi encontrado um jogo guardado. Queres continuar de onde ficaste?",
+    "resume.resume": "Retomar",
+    "resume.restart": "Recomeçar",
+    "resume.later": "Mais tarde",
+    "resume.countdown": "A retomar em {s}…",
+    "resume.expired": "A gravação é demasiado antiga e foi apagada.",
+    "resume.notfound": "Nenhum jogo para retomar.",
+    "resume.saving": "A guardar…",
+    "resume.saved": "Jogo guardado.",
+    "resume.restored": "Jogo retomado.",
+    "resume.cancel": "Cancelar"
 
 }

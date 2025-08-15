@@ -320,5 +320,17 @@
     "profil.applis.rewardNote": "Recibe 2 fichas y 800 monedas por descarga",
         "toastDetected": "{count} app(s) detectada(s), créditos efectuados: {credited}",
         "toastNone": "Ninguna aplicación asociada detectada",
-        "toastError": "No es posible verificar las apps por el momento"
+        "toastError": "No es posible verificar las apps por el momento",
+        "resume.title": "¿Continuar la partida?",
+    "resume.message": "Se ha encontrado una partida guardada. ¿Quieres continuar donde la dejaste?",
+    "resume.resume": "Continuar",
+    "resume.restart": "Empezar de nuevo",
+    "resume.later": "Más tarde",
+    "resume.countdown": "Reanudando en {s}…",
+    "resume.expired": "La partida guardada es demasiado antigua y se ha eliminado.",
+    "resume.notfound": "No hay partida para reanudar.",
+    "resume.saving": "Guardando…",
+    "resume.saved": "Partida guardada.",
+    "resume.restored": "Partida reanudada.",
+    "resume.cancel": "Cancelar"
 }

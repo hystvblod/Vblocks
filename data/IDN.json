@@ -320,6 +320,19 @@
     "profil.applis.rewardNote": "Dapatkan 2 token dan 800 koin per unduhan",
         "toastDetected": "{count} aplikasi terdeteksi, kredit dilakukan: {credited}",
         "toastNone": "Tidak ada aplikasi mitra yang terdeteksi",
-        "toastError": "Verifikasi aplikasi tidak dapat dilakukan untuk saat ini"
+        "toastError": "Verifikasi aplikasi tidak dapat dilakukan untuk saat ini",
+
+         "resume.title": "Lanjutkan permainan?",
+    "resume.message": "Game tersimpan ditemukan. Ingin melanjutkan dari tempat terakhir?",
+    "resume.resume": "Lanjutkan",
+    "resume.restart": "Mulai ulang",
+    "resume.later": "Nanti",
+    "resume.countdown": "Melanjutkan dalam {s}…",
+    "resume.expired": "Data simpanan terlalu lama dan telah dihapus.",
+    "resume.notfound": "Tidak ada permainan untuk dilanjutkan.",
+    "resume.saving": "Menyimpan…",
+    "resume.saved": "Permainan disimpan.",
+    "resume.restored": "Permainan dilanjutkan.",
+    "resume.cancel": "Batal"
 
 }

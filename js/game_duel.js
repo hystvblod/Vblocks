@@ -134,6 +134,10 @@
     canvas.width = COLS * BLOCK_SIZE;
     canvas.height = ROWS * BLOCK_SIZE;
 
+    // Désactive gestes système/sélection sur le canvas (évite scroll/zoom/texte)
+    canvas.style.touchAction = 'none';
+    canvas.style.userSelect  = 'none';
+
     const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space', 'vitraux'];
     let currentTheme = localStorage.getItem('themeVBlocks') || 'neon';
     let currentThemeIndex = THEMES.indexOf(currentTheme);
@@ -307,6 +311,7 @@
 
     function showEndPopup(points) {
       paused = true;
+      stopSoftDrop(); // coupe le soft drop si actif
       drawBoard();
       handleDuelEnd(points);
       console.log("[showEndPopup] FIN de partie !");
@@ -356,6 +361,7 @@
 
     function togglePause() {
       paused = !paused;
+      if (paused) stopSoftDrop(); // coupe le soft drop quand on met en pause
       drawBoard();
       if (!paused && !gameOver) {
         requestAnimationFrame(update);
@@ -397,7 +403,7 @@
       reset();
       console.log("[startGame] after reset: currentPiece=", currentPiece, "nextPiece=", nextPiece, "board=", board);
       saveHistory();
-      updateScoreUI(); // <-- init affichage score
+      updateScoreUI(); // init affichage score
       window.startMusicForGame();
       requestAnimationFrame(update);
     }
@@ -480,7 +486,7 @@
         let level = Math.floor(linesCleared / 7);
         if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
         dropInterval = SPEED_TABLE[level];
-        updateScoreUI(); // <-- MAJ LIVE du score
+        updateScoreUI(); // MAJ LIVE du score
         console.log("[clearLines] lines:", lines, "score:", score, "level:", level);
       } else {
         combo = 0;
@@ -506,7 +512,7 @@
         merge();                    // colle la pièce au board
         saveHistory();
         reset();                    // spawn de la suivante
-        lastTime = performance.now(); // <-- reset du timer pour la 2e pièce
+        lastTime = performance.now(); // reset du timer
 
         // Si la nouvelle pièce est bloquée au spawn → fin
         if (collision()) {
@@ -528,7 +534,7 @@
       if (!currentPiece) { console.warn("[rotatePiece] no currentPiece!"); return; }
       const shape = currentPiece.shape;
 
-      // préparer 'oldVariants' au bon scope pour rollback
+      // préparer 'oldVariants' pour rollback
       let oldVariants = null;
       if(currentTheme === 'space' || currentTheme === 'vitraux'){
         oldVariants = currentPiece.variants ? JSON.parse(JSON.stringify(currentPiece.variants)) : null;
@@ -553,7 +559,7 @@
 
     function holdPiece() {
       if (holdUsed) return;
-      const deep = o => JSON.parse(JSON.stringify(o)); // deep copy pour éviter les alias
+      const deep = o => JSON.parse(JSON.stringify(o)); // deep copy
       if (!heldPiece) {
         heldPiece = deep(currentPiece);
         reset();
@@ -599,7 +605,7 @@
           c.fillRect(px, py, size, size);
         }else if(currentTheme === 'neon'){
           const color = global.currentColors?.[letter] || '#fff';
-          c.fillStyle = ghost ? '#111' : '#111';
+          c.fillStyle = '#111';
           c.fillRect(px, py, size, size);
           c.shadowColor = color;
           c.shadowBlur = ghost ? 3 : 15;
@@ -721,7 +727,6 @@
 
     function update(now) {
       if (paused || gameOver) {
-        //console.log("[update] Paused or game over, skip");
         return;
       }
       if (!lastTime) lastTime = now;
@@ -744,55 +749,121 @@
       }
     });
 
-    // --- TOUCH CONTROLS & CLAVIER
+    // --- SOFT DROP (tactile) — version robuste ---
+    let softDropTimer = null;
+    let softDropActive = false;
+    const SOFT_DROP_INTERVAL = 45;   // vitesse de chute pendant maintien (rapide)
+    const HOLD_ACTIVATION_MS = 180;  // durée d'appui avant d'activer la chute rapide (plus court)
+
+    function startSoftDrop() {
+      if (softDropActive || paused || gameOver) return;
+      softDropActive = true;
+      // évite un "double drop" avec le loop principal
+      lastTime = performance.now();
+      softDropTimer = setInterval(() => {
+        if (!paused && !gameOver) dropPiece();
+      }, SOFT_DROP_INTERVAL);
+    }
+    function stopSoftDrop() {
+      if (softDropTimer) clearInterval(softDropTimer);
+      softDropTimer = null;
+      softDropActive = false;
+    }
+
+    // --- TOUCH CONTROLS & CLAVIER ---
     let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
+    let holdToDropTimeout = null;
+
+    function isQuickSwipeUp(elapsed, dy) {
+      // rotation seulement si VRAI swipe haut rapide et ample
+      return (elapsed < 220) && (dy < -42);
+    }
+
     canvas.addEventListener('touchstart', function(e){
       if(gameOver) return;
       if(e.touches.length !== 1) return;
       const t = e.touches[0];
       startX = t.clientX;
       startY = t.clientY;
-      movedX = movedY = 0;
+      movedX = 0; movedY = 0;
       dragging = true;
       touchStartTime = Date.now();
+
+      // Armer le maintien pour soft drop
+      clearTimeout(holdToDropTimeout);
+      holdToDropTimeout = setTimeout(() => {
+        if (dragging && !softDropActive) startSoftDrop();
+      }, HOLD_ACTIVATION_MS);
+
       console.log("[touchstart]");
-    });
+    }, { passive: true });
+
     canvas.addEventListener('touchmove', function(e){
       if(!dragging) return;
       const t = e.touches[0];
+      const now = Date.now();
+      const elapsed = now - touchStartTime;
+
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
+
       if(Math.abs(movedX) > Math.abs(movedY)){
-        if(movedX > 24){ move(1); startX = t.clientX; }
-        if(movedX < -24){ move(-1); startX = t.clientX; }
+        if(movedX > 22){ move(1); startX = t.clientX; }
+        if(movedX < -22){ move(-1); startX = t.clientX; }
       }else{
-        if(movedY > 28){ dropPiece(); startY = t.clientY; }
-        if(movedY < -28){ rotatePiece(); startY = t.clientY; }
+        if(movedY > 24){
+          if (!softDropActive) startSoftDrop(); // swipe bas enclenche aussi le mode rapide
+          dropPiece();
+          startY = t.clientY;
+        }
+        if(!softDropActive && isQuickSwipeUp(elapsed, movedY)){
+          rotatePiece();
+          // anti-rotations multiples
+          touchStartTime = now;
+          startY = t.clientY;
+        }
       }
+
+      // Mouvement significatif latéral/haut => on annule l’armement
+      if (Math.abs(movedX) > 18 || movedY < -18) {
+        clearTimeout(holdToDropTimeout);
+      }
+
       console.log("[touchmove] movedX:", movedX, "movedY:", movedY);
-    });
-    canvas.addEventListener('touchend', function(e){
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', function(){
       dragging = false;
+      clearTimeout(holdToDropTimeout);
+
+      // si soft drop actif, on le coupe et on n'exécute pas le tap rotate
+      if (softDropActive) {
+        stopSoftDrop();
+        return;
+      }
+
+      // tap court => rotation (si pas de chute et pas de gros mouvement)
       const pressDuration = Date.now() - touchStartTime;
-
-      // Seulement rotation si appui court (< 200 ms) ET pas de descente pendant l'appui
       const isShortPress = pressDuration < 200;
-      const hasDropped = Math.abs(movedY) > 20; // seuil pour considérer qu'on a descendu
-
+      const hasDropped = Math.abs(movedY) > 18;
       if (isShortPress && !hasDropped && Math.abs(movedX) < 10) {
         rotatePiece();
       }
 
       console.log("[touchend]");
-    });
-    holdCanvas.addEventListener('touchstart', function(e){
-      holdPiece();
-      console.log("[holdCanvas touchstart]");
-    });
-    holdCanvas.addEventListener('click', function(e){
-      holdPiece();
-      console.log("[holdCanvas click]");
-    });
+    }, { passive: true });
+
+    canvas.addEventListener('touchcancel', function(){
+      dragging = false;
+      clearTimeout(holdToDropTimeout);
+      stopSoftDrop();
+    }, { passive: true });
+
+    if (holdCanvas) {
+      holdCanvas.addEventListener('touchstart', function(){ holdPiece(); console.log("[holdCanvas touchstart]"); }, { passive: true });
+      holdCanvas.addEventListener('click', function(){ holdPiece(); console.log("[holdCanvas click]"); });
+    }
+
     document.addEventListener('keydown', e => {
       if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
       if(e.key==='p' || e.key==='P'){ togglePause(); return; }
@@ -800,12 +871,15 @@
       switch(e.key){
         case 'ArrowLeft': move(-1); break;
         case 'ArrowRight': move(1); break;
-        case 'ArrowDown': dropPiece(); break;
+        case 'ArrowDown': dropPiece(); break; // le maintien clavier répète via key repeat
         case 'ArrowUp': rotatePiece(); break;
         case 'c': case 'C': holdPiece(); break;
       }
       console.log("[keydown]", e.key);
     });
+
+    // sécurité : perte de focus => coupe le soft drop
+    window.addEventListener('blur', stopSoftDrop);
 
     // ==== LANCEMENT ====
     startGame();

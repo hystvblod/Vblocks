@@ -320,6 +320,19 @@
     "profil.applis.rewardNote": "Get 2 tokens and 800 coins per download",
         "toastDetected": "{count} app(s) detected, credits applied: {credited}",
         "toastNone": "No partner application detected",
-        "toastError": "Unable to check apps for now"
+        "toastError": "Unable to check apps for now",
+
+         "resume.title": "Resume game?",
+    "resume.message": "A saved game was found. Do you want to resume from where you left off?",
+    "resume.resume": "Resume",
+    "resume.restart": "Restart",
+    "resume.later": "Later",
+    "resume.countdown": "Resuming in {s}…",
+    "resume.expired": "The save is too old and has been removed.",
+    "resume.notfound": "No game to resume.",
+    "resume.saving": "Saving…",
+    "resume.saved": "Game saved.",
+    "resume.restored": "Game resumed.",
+    "resume.cancel": "Cancel"
 
 }

@@ -17,7 +17,7 @@ const SPECIAL_CARTOUCHES = [
     key: "boutique.cartouche.points3000",
     icon: '<img src="assets/images/vcoin.webp" alt="Points">',
     color: 'color-yellow',
-    prix: "",               // <-- plus de prix en dur
+    prix: "",
     amount: 3000
   },
   {
@@ -36,13 +36,13 @@ const SPECIAL_CARTOUCHES = [
 
 const THEME_PRICE = 5000;
 
-// --- IDs des produits (Google Play / iOS)
+// --- IDs des produits (Google Play / iOS) — à remplacer par tes vrais IDs
 const PRODUCT_IDS = {
-  points3000: 'points3000_id',     // Remplace par ton ID
-  points10000: 'points10000_id',   // Remplace par ton ID
-  jetons12: 'jetons12_id',         // Remplace par ton ID
-  jetons50: 'jetons50_id',         // Remplace par ton ID
-  nopub: 'nopub_id'                // Remplace par ton ID
+  points3000: 'points3000_id',
+  points10000: 'points10000_id',
+  jetons12: 'jetons12_id',
+  jetons50: 'jetons50_id',
+  nopub: 'nopub_id'
 };
 
 // --- Utilitaires cloud (userId etc)
@@ -116,8 +116,8 @@ async function acheterProduitVercel(type) {
     if (data.success) {
       alert("Achat réussi !");
       await renderThemes();
-      setupPubCartouches();
-      setupBoutiqueAchats();
+      setupPubCartouches?.();
+      setupBoutiqueAchats?.();
     } else {
       alert("Erreur achat : " + (data.error || "inconnu"));
     }
@@ -145,7 +145,6 @@ function renderAchats() {
     </div>
   `).join('');
   $achatsList.innerHTML = achatsHtml;
-
 }
 
 // --- UI : Thèmes/cadres
@@ -190,11 +189,21 @@ function setupBoutiqueAchats() {
     if (!label) return;
     const key = label.dataset.i18n || label.textContent;
 
-    // --- Achats via Store
+    // --- Achats via Store (sécurisé)
     if (PRODUCT_IDS[key?.split('.').pop()]) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        store.order(PRODUCT_IDS[key.split('.').pop()]);
+        const alias = key.split('.').pop();
+        const pid = PRODUCT_IDS[alias];
+        const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
+        if (IAP) {
+          IAP.order(pid);
+        } else {
+          // Fallback web: passe par ton API
+          await acheterProduitVercel(alias);
+          await renderThemes();
+          setupBoutiqueAchats();
+        }
       };
     }
 
@@ -218,31 +227,30 @@ function setupBoutiqueAchats() {
   });
 }
 
-// --- Store initialisation (Cordova Purchase)
+// --- Store initialisation (Cordova Purchase) — sécurisé
 document.addEventListener('deviceready', function() {
-  if (!window.store) {
-    console.warn("Plugin purchase non dispo");
+  const IAP = (window.store && typeof window.store.register === 'function') ? window.store : null;
+  if (!IAP) {
+    console.warn("[IAP] Plugin purchase non dispo");
     return;
   }
+
   Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
-    store.register({
-      id: id,
-      alias: alias,
-      type: store.CONSUMABLE
-    });
+    IAP.register({ id, alias, type: IAP.CONSUMABLE });
   });
 
-  store.ready(function() {
-    console.log("Produits dispo:", store.products);
+  IAP.ready(function() {
+    console.log("Produits dispo:", IAP.products);
+    // Récupération des prix pour les cartouches
     SPECIAL_CARTOUCHES.forEach(c => {
       const pid = PRODUCT_IDS[c.key?.split('.').pop()];
       if (pid) {
-        const p = store.get(pid);
+        const p = IAP.get(pid);
         if (p && p.price) c.prix = p.price;
       }
     });
     renderAchats();
   });
 
-  store.refresh();
+  IAP.refresh();
 });

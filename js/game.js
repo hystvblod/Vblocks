@@ -1,3 +1,19 @@
+// --- PATCH anti-lignes (ne s'applique qu'au thème "nuit") ---
+function fillRectThemeSafe(c, px, py, size) {
+  const theme =
+    (typeof getCurrentTheme === 'function'
+      ? getCurrentTheme()
+      : (localStorage.getItem('themeVBlocks') || 'neon'));
+
+  if (theme === 'nuit') {
+    const pad = 0.5;
+    c.fillRect(px - pad, py - pad, size + 2 * pad, size + 2 * pad);
+  } else {
+    // Important: ne PAS se rappeler soi-même → pas de récursion
+    c.fillRect(px, py, size, size);
+  }
+}
+
 (function (global) {
   'use strict';
 
@@ -86,7 +102,7 @@
 
   let highscoreCloud = 0; // Record cloud global
 
-  // i18n
+  // i18n + fallbacks
   function t(key, params) {
     if (global.i18nGet) {
       let str = global.i18nGet(key) ?? key;
@@ -99,6 +115,11 @@
       return str;
     }
     return key;
+  }
+  // tt = i18n avec texte de repli si la clé n'existe pas
+  function tt(key, fallback, params) {
+    const val = t(key, params);
+    return (val === key ? fallback : val);
   }
 
   function initGame(opts) {
@@ -276,6 +297,7 @@
     let combo = 0;
     let linesCleared = 0;
     let history = [];
+
     function saveHistory() {
       history.push({
         board: board.map(row => row.map(cell => cell && typeof cell === 'object' ? { ...cell } : cell)),
@@ -349,8 +371,163 @@
     }
     // -------------------
 
+    // =========================
+    // AUTOSAVE / RESUME (LOCAL)
+    // =========================
+    const SAVE_KEY = 'vblocks:autosave:v1';
+    const SAVE_TTL_MS = 1000 * 60 * 60 * 48; // 48h
+    const CAN_RESUME = (mode !== 'duel'); // Par équité, pas de reprise en duel
+
+    function getSavableState() {
+      return {
+        board,
+        currentPiece,
+        nextPiece,
+        heldPiece,
+        holdUsed,
+        score,
+        combo,
+        linesCleared,
+        dropInterval,
+        mode,
+        theme: currentTheme,
+        ts: Date.now()
+      };
+    }
+    function clearSavedGame() {
+      try { localStorage.removeItem(SAVE_KEY); } catch (_e) {}
+    }
+    function saveStateNow() {
+      if (!CAN_RESUME) return;
+      try {
+        const payload = { version: 1, ts: Date.now(), state: getSavableState() };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+      } catch (_e) {}
+    }
+    let saveTimer = null;
+    function scheduleSave() {
+      if (!CAN_RESUME) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveStateNow, 400);
+    }
+    function safeParse(json) {
+      try { return JSON.parse(json); } catch { return null; }
+    }
+    function loadSaved() {
+      if (!CAN_RESUME) return null;
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const parsed = safeParse(raw);
+      if (!parsed || !parsed.state) return null;
+      if ((Date.now() - (parsed.ts || parsed.state.ts || 0)) > SAVE_TTL_MS) {
+        clearSavedGame();
+        return null;
+      }
+      // si le mode sauvé est "duel", on ignore
+      if (parsed.state.mode === 'duel') return null;
+      return parsed.state;
+    }
+    function restoreFromSave(s) {
+      try {
+        // Sécurité minimale sur les structures
+        if (!Array.isArray(s.board) || !s.currentPiece || !s.nextPiece) return false;
+
+        board = s.board.map(row => row.map(cell => cell && typeof cell === 'object' ? { ...cell } : cell));
+        currentPiece = JSON.parse(JSON.stringify(s.currentPiece));
+        nextPiece    = JSON.parse(JSON.stringify(s.nextPiece));
+        heldPiece    = s.heldPiece ? JSON.parse(JSON.stringify(s.heldPiece)) : null;
+        holdUsed     = !!s.holdUsed;
+        score        = +s.score || 0;
+        combo        = +s.combo || 0;
+        linesCleared = +s.linesCleared || 0;
+        dropInterval = +s.dropInterval || 500;
+        gameOver     = false;
+        paused       = false;
+
+        // thème éventuellement sauvegardé
+        if (s.theme && THEMES.includes(s.theme) && s.theme !== currentTheme) {
+          changeTheme(s.theme);
+        }
+
+        // UI
+        const scoreEl = document.getElementById('score');
+        if (scoreEl) scoreEl.textContent = String(score);
+        drawMiniPiece(nextCtx, nextPiece);
+        drawMiniPiece(holdCtx, heldPiece);
+        drawBoard();
+
+        // Historique: on redémarre proprement
+        history = [];
+        saveHistory();
+
+        lastTime = performance.now();
+        requestAnimationFrame(update);
+        window.startMusicForGame?.();
+
+        // On sauvegarde tout de suite (au cas où)
+        scheduleSave();
+        return true;
+      } catch (e) {
+        console.warn('[resume] restore error', e);
+        return false;
+      }
+    }
+
+    // Sauvegardes « événements »
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) saveStateNow();
+    });
+    window.addEventListener('beforeunload', saveStateNow);
+    window.addEventListener('pagehide', saveStateNow);
+    document.addEventListener('backbutton', saveStateNow, false);
+
+    // Popup de reprise
+    function showResumePopup(savedState) {
+      const overlay = document.createElement('div');
+      overlay.id = 'resume-popup';
+      overlay.style = `
+        position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);
+        display:flex;align-items:center;justify-content:center;
+      `;
+      const html = `
+        <div style="background:#23294a;border-radius:1em;padding:22px 18px;box-shadow:0 0 14px #3ff7;min-width:240px;max-width:92vw;text-align:center">
+          <div style="font-size:1.15em;font-weight:bold;margin-bottom:8px;">
+            ${tt('resume.title','Partie en cours')}
+          </div>
+          <div style="opacity:.9;margin-bottom:14px">
+            ${tt('resume.subtitle','Voulez-vous reprendre là où vous vous êtes arrêté ?')}
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button id="resume-yes" style="padding:.5em 1em;border-radius:.7em;border:none;background:#39f;color:#fff;cursor:pointer;">
+              ${tt('resume.resume','Reprendre')}
+            </button>
+            <button id="resume-restart" style="padding:.5em 1em;border-radius:.7em;border:none;background:#444;color:#fff;cursor:pointer;">
+              ${tt('resume.restart','Recommencer')}
+            </button>
+          </div>
+        </div>
+      `;
+      overlay.innerHTML = html;
+      document.body.appendChild(overlay);
+
+      overlay.querySelector('#resume-yes').onclick = () => {
+        overlay.remove();
+        restoreFromSave(savedState);
+      };
+      overlay.querySelector('#resume-restart').onclick = () => {
+        clearSavedGame();
+        overlay.remove();
+        startGame();
+      };
+    }
+
+    // -------------------
+    // FIN AUTOSAVE/RESUME
+    // -------------------
+
     function showEndPopup(points) {
       paused = true;
+      stopSoftDrop(); // par sécurité
       drawBoard();
 
       (async function saveScoreAndRewards(points) {
@@ -414,6 +591,8 @@
         }
       };
       document.getElementById('popup-stop').onclick = function () {
+        // On efface la sauvegarde si l'utilisateur quitte
+        clearSavedGame();
         removePopup();
         window.location.reload();
       };
@@ -577,6 +756,7 @@
         })
       );
       clearLines();
+      scheduleSave(); // ← sauvegarde dès qu’on a « fixé » une pièce
     }
 
     function clearLines() {
@@ -616,6 +796,7 @@
     function move(offset) {
       currentPiece.x += offset;
       if (collision()) currentPiece.x -= offset;
+      scheduleSave();
     }
 
     function dropPiece() {
@@ -639,12 +820,16 @@
 
       currentPiece.shape = shape[0].map((_, i) => shape.map(r => r[i])).reverse();
       if (currentTheme === 'space' || currentTheme === 'vitraux') {
-        currentPiece.variants = oldVariants[0].map((_, i) => oldVariants.map(r => r[i])).reverse();
+        if (oldVariants && oldVariants[0]) {
+          currentPiece.variants = oldVariants[0].map((_, i) => oldVariants.map(r => r[i])).reverse();
+        }
       }
 
       if (collision()) {
         currentPiece.shape = shape;
         if (currentTheme === 'space' || currentTheme === 'vitraux') currentPiece.variants = oldVariants;
+      } else {
+        scheduleSave();
       }
     }
 
@@ -658,6 +843,7 @@
       }
       holdUsed = true;
       drawMiniPiece(holdCtx, heldPiece);
+      scheduleSave();
     }
 
     function getGhostPiece() {
@@ -689,11 +875,11 @@
       } else {
         if (currentTheme === 'nuit') {
           c.fillStyle = '#ccc';
-          c.fillRect(px, py, size, size);
+          fillRectThemeSafe(c, px, py, size);
         } else if (currentTheme === 'neon') {
           const color = global.currentColors?.[letter] || '#fff';
           c.fillStyle = '#111';
-          c.fillRect(px, py, size, size);
+          fillRectThemeSafe(c, px, py, size);
           c.shadowColor = color;
           c.shadowBlur = ghost ? 3 : 15;
           c.strokeStyle = color;
@@ -703,14 +889,14 @@
         } else if (currentTheme === 'retro') {
           const color = global.currentColors?.[letter] || '#fff';
           c.fillStyle = color;
-          c.fillRect(px, py, size, size);
+          fillRectThemeSafe(c, px, py, size);
           c.strokeStyle = '#000';
           c.lineWidth = 1;
           c.strokeRect(px, py, size, size);
         } else {
           const fb = global.currentColors?.[letter] || '#999';
           c.fillStyle = fb;
-          c.fillRect(px, py, size, size);
+          fillRectThemeSafe(c, px, py, size);
           c.strokeStyle = '#333';
           c.strokeRect(px, py, size, size);
         }
@@ -758,10 +944,6 @@
           );
         })
       );
-
-      // Debug
-      // ctx.strokeStyle = 'rgba(0,255,255,.35)';
-      // ctx.strokeRect(0, 0, BLOCK_SIZE*COLS, BLOCK_SIZE*ROWS);
 
       ctx.restore();
     }
@@ -825,6 +1007,7 @@
       holdUsed = false;
       drawMiniPiece(nextCtx, nextPiece);
       drawMiniPiece(holdCtx, heldPiece);
+      scheduleSave();
     }
 
     function update(now) {
@@ -858,18 +1041,24 @@
       updateHighscoreDisplay();
     });
 
-    // --- TOUCH & CLAVIER
+    // ====================
+    // TOUCH & CLAVIER
+    // ====================
+
+    // Désactive les gestes système sur le canvas (évite scroll / sélection)
+    canvas.style.touchAction = 'none';
+    canvas.style.userSelect  = 'none';
 
     // === SOFT DROP (tactile) ===
     let softDropTimer = null;
     let softDropActive = false;
-    const SOFT_DROP_INTERVAL = 55;     // vitesse de chute quand on maintient le doigt
-    const HOLD_ACTIVATION_MS = 260;    // durée du maintien avant d'activer la chute rapide
+    const SOFT_DROP_INTERVAL = 45;     // vitesse rapide
+    const HOLD_ACTIVATION_MS = 180;    // temps de maintien pour activer
 
     function startSoftDrop() {
       if (softDropActive || paused || gameOver) return;
       softDropActive = true;
-      // évite un "double drop" immédiat du loop principal
+      // éviter le "double drop" avec la boucle principale
       lastTime = performance.now();
       softDropTimer = setInterval(() => {
         if (!paused && !gameOver) dropPiece();
@@ -881,55 +1070,62 @@
       softDropActive = false;
     }
 
-    // --- GESTES TACTILES --- //
+    // GESTES TACTILES
     let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
     let holdToDropTimeout = null;
+
+    function isQuickSwipeUp(elapsed, dy) {
+      // rotation seulement si VRAI swipe vers le haut (rapide et ample)
+      return (elapsed < 220) && (dy < -42);
+    }
 
     canvas.addEventListener('touchstart', function (e) {
       if (gameOver) return;
       if (e.touches.length !== 1) return;
       const t = e.touches[0];
       startX = t.clientX; startY = t.clientY;
-      movedX = 0; movedY = 0; dragging = true;
+      movedX = 0; movedY = 0;
+      dragging = true;
       touchStartTime = Date.now();
 
-      // Armer le "maintenir pour chute rapide"
       clearTimeout(holdToDropTimeout);
       holdToDropTimeout = setTimeout(() => {
-        // seulement si on n'a pas commencé un gros déplacement latéral ou vers le haut
-        if (dragging && Math.abs(movedX) < 12 && movedY >= -8) {
-          startSoftDrop();
-        }
+        if (dragging && !softDropActive) startSoftDrop();
       }, HOLD_ACTIVATION_MS);
     }, { passive: true });
 
     canvas.addEventListener('touchmove', function (e) {
       if (!dragging) return;
       const t = e.touches[0];
+      const now = Date.now();
+      const elapsed = now - touchStartTime;
+
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-      // en cas de swipe clair, on annule l’armement du maintien
-      if (Math.abs(movedX) > 14 || movedY < -12) {
-        clearTimeout(holdToDropTimeout);
-      }
-
       if (Math.abs(movedX) > Math.abs(movedY)) {
-        // déplacement gauche/droite
-        if (movedX > 24)  { move(1);  startX = t.clientX; }
-        if (movedX < -24) { move(-1); startX = t.clientX; }
+        // déplacement latéral permis même pendant soft-drop
+        if (movedX > 22)  { move(1);  startX = t.clientX; }
+        if (movedX < -22) { move(-1); startX = t.clientX; }
       } else {
-        // swipe bas => on force aussi le soft drop
-        if (movedY > 28) {
+        // swipe bas : enclenche le soft drop si besoin + drop immédiat
+        if (movedY > 24) {
           if (!softDropActive) startSoftDrop();
           dropPiece();
           startY = t.clientY;
         }
-        // swipe haut => rotation
-        if (movedY < -28) {
+        // swipe haut rapide : rotation, mais pas pendant soft-drop
+        if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
           rotatePiece();
+          // anti-rotations multiple
+          touchStartTime = now;
           startY = t.clientY;
         }
+      }
+
+      // si gros déplacement latéral ou haut → on annule l'armement du maintien
+      if (Math.abs(movedX) > 18 || movedY < -18) {
+        clearTimeout(holdToDropTimeout);
       }
     }, { passive: true });
 
@@ -937,17 +1133,19 @@
       dragging = false;
       clearTimeout(holdToDropTimeout);
 
-      // si le soft drop était actif, on le coupe et on n’exécute pas le "tap rotate"
+      // si soft-drop actif, on le coupe et on NE fait pas de rotation
       if (softDropActive) {
         stopSoftDrop();
         return;
       }
 
-      // tap court => rotation (comme avant)
+      // tap court = rotation (si pas de chute et pas de gros mouvement)
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
-      const hasDropped = Math.abs(movedY) > 20;
-      if (isShortPress && !hasDropped && Math.abs(movedX) < 10) rotatePiece();
+      const hasDropped   = Math.abs(movedY) > 18;
+      if (isShortPress && !hasDropped && Math.abs(movedX) < 10) {
+        rotatePiece();
+      }
     }, { passive: true });
 
     canvas.addEventListener('touchcancel', function () {
@@ -956,12 +1154,7 @@
       stopSoftDrop();
     }, { passive: true });
 
-    if (holdCanvas) {
-      holdCanvas.addEventListener('touchstart', function(){ holdPiece(); }, { passive: true });
-      holdCanvas.addEventListener('click', function(){ holdPiece(); });
-    }
-
-    // Clavier (desktop) — inchangé
+    // Clavier (desktop)
     document.addEventListener('keydown', e => {
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
       if (e.key === 'p' || e.key === 'P') { togglePause(); return; }
@@ -975,7 +1168,7 @@
       }
     });
 
-    // sécurité : si on quitte l'app (perte de focus), on coupe le soft drop
+    // sécurité : perte de focus => coupe soft drop
     window.addEventListener('blur', stopSoftDrop);
 
     // === SUPABASE Fonctions ===
@@ -986,22 +1179,37 @@
     async function setLastScoreSupabase(score) {
       if (!sb) return;
       const userId = getUserId();
+      if (!userId) return;
       await sb.from('users').update({ score }).eq('id', userId);
     }
     async function setHighScoreSupabase(score) {
       if (!sb) return;
       const userId = getUserId();
+      if (!userId) return;
       await sb.from('users').update({ highscore: score }).eq('id', userId);
     }
     async function getHighScoreSupabase() {
       if (!sb) return 0;
       const userId = getUserId();
+      if (!userId) return 0;
       const { data, error } = await sb.from('users').select('highscore').eq('id', userId).single();
       if (error) return 0;
       return data?.highscore || 0;
     }
 
-    startGame();
+    // ===== LANCEMENT avec reprise =====
+    (function boot() {
+      if (CAN_RESUME) {
+        const saved = loadSaved();
+        if (saved) {
+          // on stoppe la boucle tant que l’utilisateur choisit
+          paused = true;
+          showResumePopup(saved);
+          return;
+        }
+      }
+      startGame();
+    })();
   }
 
   global.VBlocksGame = { initGame };

@@ -320,6 +320,19 @@
     "profil.applis.rewardNote": "Ricevi 2 gettoni e 800 monete per download",
         "toastDetected": "{count} app rilevate, crediti effettuati: {credited}",
         "toastNone": "Nessuna applicazione partner rilevata",
-        "toastError": "Impossibile verificare le app al momento"
+        "toastError": "Impossibile verificare le app al momento",
+
+         "resume.title": "Riprendere la partita?",
+    "resume.message": "È stata trovata una partita salvata. Vuoi riprendere da dove avevi lasciato?",
+    "resume.resume": "Riprendi",
+    "resume.restart": "Ricomincia",
+    "resume.later": "Più tardi",
+    "resume.countdown": "Ripresa tra {s}…",
+    "resume.expired": "Il salvataggio è troppo vecchio ed è stato eliminato.",
+    "resume.notfound": "Nessuna partita da riprendere.",
+    "resume.saving": "Salvataggio…",
+    "resume.saved": "Partita salvata.",
+    "resume.restored": "Partita ripresa.",
+    "resume.cancel": "Annulla"
 
 }

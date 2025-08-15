@@ -6,22 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style/main.css" />
   <style>
-    .menu-btn.green {
-      background: #72eb63 !important;
-      color: #ffffff !important;
-      box-shadow: 0 3px 15px #2fd7b144;
-    }
-    .menu-btn.orange {
-      background: #f0d642  !important;
-      color: #fff !important;
-      box-shadow: 0 3px 15px #2fd7b144;
-    }
-    .prix-blanc {
-      color: white;
-      font-size: 0.9em;
-      display: block;
-      margin-top: 5px;
-    }
+    .menu-btn.green { background: #72eb63 !important; color: #ffffff !important; box-shadow: 0 3px 15px #2fd7b144; }
+    .menu-btn.orange { background: #f0d642  !important; color: #fff !important; box-shadow: 0 3px 15px #2fd7b144; }
+    .prix-blanc { color: white; font-size: 0.9em; display: block; margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -90,46 +77,43 @@
   <div class="tooltip-box" id="tooltip"></div>
 
   <script>
-const tooltip = document.getElementById('tooltip');
-document.querySelectorAll('.info-btn').forEach(el => {
-  el.addEventListener('click', function (e) {
-    e.stopPropagation();
-    let text = el.getAttribute('data-tip');
-    if (window.i18nGet) {
-      const key = el.getAttribute('data-i18n-tip');
-      const translated = key ? window.i18nGet(key) : null;
-      if (translated) text = translated;
-    }
-    const parentBtn = el.closest('.menu-btn');
-    const rect = parentBtn.getBoundingClientRect();
-    tooltip.innerHTML = text;
-    tooltip.style.width = '';
-    tooltip.style.display = 'block';
-    const scrollTop = window.scrollY || window.pageYOffset;
-    const scrollLeft = window.scrollX || window.pageXOffset;
-    tooltip.style.top = (rect.bottom + scrollTop) + 'px';
-    tooltip.style.left = (rect.left + rect.width/2 + scrollLeft) + 'px';
-    tooltip.classList.add('visible');
-  });
-});
+    // Tooltips
+    const tooltip = document.getElementById('tooltip');
+    document.querySelectorAll('.info-btn').forEach(el => {
+      el.addEventListener('click', function (e) {
+        e.stopPropagation();
+        let text = el.getAttribute('data-tip');
+        if (window.i18nGet) {
+          const key = el.getAttribute('data-i18n-tip');
+          const translated = key ? window.i18nGet(key) : null;
+          if (translated) text = translated;
+        }
+        const parentBtn = el.closest('.menu-btn');
+        const rect = parentBtn.getBoundingClientRect();
+        tooltip.innerHTML = text;
+        tooltip.style.width = '';
+        tooltip.style.display = 'block';
+        const scrollTop = window.scrollY || window.pageYOffset;
+        const scrollLeft = window.scrollX || window.pageXOffset;
+        tooltip.style.top = (rect.bottom + scrollTop) + 'px';
+        tooltip.style.left = (rect.left + rect.width/2 + scrollLeft) + 'px';
+        tooltip.classList.add('visible');
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (!tooltip.contains(e.target)) {
+        tooltip.classList.remove('visible');
+        tooltip.style.display = 'none';
+      }
+    });
+    ['resize','scroll'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        tooltip.classList.remove('visible');
+        tooltip.style.display = 'none';
+      });
+    });
 
-// Fermer si clic ailleurs
-document.addEventListener('click', (e) => {
-  if (!tooltip.contains(e.target)) {
-    tooltip.classList.remove('visible');
-    tooltip.style.display = 'none';
-  }
-});
-
-// Fermer si resize ou scroll
-['resize','scroll'].forEach(evt => {
-  window.addEventListener(evt, () => {
-    tooltip.classList.remove('visible');
-    tooltip.style.display = 'none';
-  });
-});
-
-
+    // RGPD
     window.addEventListener("DOMContentLoaded", function() {
       const consent = localStorage.getItem("rgpdConsent");
       if (!consent) {
@@ -145,6 +129,7 @@ document.addEventListener('click', (e) => {
       };
     });
 
+    // Affiche le bouton concours selon la config (Supabase)
     async function checkConcoursStatus() {
       try {
         const sb = (window.supabase || window.sb);
@@ -159,46 +144,99 @@ document.addEventListener('click', (e) => {
         }
       } catch(e) {}
     }
-
     window.addEventListener("DOMContentLoaded", () => {
       checkConcoursStatus();
       if (window.i18nTranslateAll) window.i18nTranslateAll();
     });
   </script>
 
+  <!-- libs -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="js/userData.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/pub.js"></script>
 
+  <!-- IAP sécurisé -->
   <script>
     document.addEventListener('deviceready', function () {
-      if (!window.store) {
-        console.error("Store non disponible");
+      const IAP = (window.store && typeof window.store.register === 'function') ? window.store : null;
+      if (!IAP) {
+        console.warn("[IAP] Plugin indisponible ici (web/localhost ?). On saute l’init IAP.");
         return;
       }
 
-      store.verbosity = store.DEBUG;
+      IAP.verbosity = IAP.DEBUG;
 
-      store.register({ id: "points3000", alias: "3000 VCoins", type: store.CONSUMABLE });
-      store.register({ id: "points10000", alias: "10000 VCoins", type: store.CONSUMABLE });
-      store.register({ id: "jetons12", alias: "12 Jetons", type: store.CONSUMABLE });
-      store.register({ id: "jetons50", alias: "50 Jetons", type: store.CONSUMABLE });
-      store.register({ id: "nopub", alias: "Suppression pubs", type: store.NON_CONSUMABLE });
+      IAP.register({ id: "points3000",  alias: "points3000",  type: IAP.CONSUMABLE });
+      IAP.register({ id: "points10000", alias: "points10000", type: IAP.CONSUMABLE });
+      IAP.register({ id: "jetons12",    alias: "jetons12",    type: IAP.CONSUMABLE });
+      IAP.register({ id: "jetons50",    alias: "jetons50",    type: IAP.CONSUMABLE });
+      IAP.register({ id: "nopub",       alias: "nopub",       type: IAP.NON_CONSUMABLE });
 
-      store.ready(function () {
-        store.products.forEach(p => {
+      IAP.ready(function () {
+        IAP.products.forEach(p => {
           const el = document.querySelector(`[data-product-id="${p.id}"]`);
           if (el && p.price) el.textContent = p.price;
         });
       });
 
-      store.refresh();
+      IAP.refresh();
     }, false);
 
     function acheterProduit(id) {
-      if (window.store) store.order(id);
+      const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
+      if (IAP) IAP.order(id);
+      else alert("Achat non disponible dans ce contexte.");
     }
+  </script>
+
+  <!-- Push (Capacitor FCM) : sans type=module -->
+  <script>
+    (function () {
+      function isNative() {
+        try { return window.Capacitor && window.Capacitor.getPlatform() !== 'web'; }
+        catch(e){ return false; }
+      }
+
+      async function initPush() {
+        if (!isNative()) return; // évite les erreurs sur web
+        const Push = window.Capacitor?.Plugins?.PushNotifications;
+        if (!Push) { console.warn('[Push] Plugin indisponible'); return; }
+
+        try {
+          const perm = await Push.requestPermissions();
+          if (perm.receive !== 'granted') return;
+
+          await Push.register();
+
+          Push.addListener('registration', (token) => {
+            const stored = localStorage.getItem('fcmToken');
+            if (!stored) {
+              alert('FCM token:\n' + token.value); // 1ère fois : pour test dans Firebase
+            }
+            localStorage.setItem('fcmToken', token.value);
+            console.log('[Push] FCM token:', token.value);
+          });
+
+          Push.addListener('registrationError', (e) => console.error('[Push] registrationError', e));
+          Push.addListener('pushNotificationReceived', (n) => {
+            console.log('[Push] reçu (foreground):', n);
+            // Ici tu peux afficher une bannière in-app si tu veux
+          });
+          Push.addListener('pushNotificationActionPerformed', (a) => {
+            console.log('[Push] action:', a);
+            // Exemple : route selon a.notification.data.page
+            const page = a?.notification?.data?.page;
+            if (page) location.href = page;
+          });
+        } catch (e) {
+          console.error('[Push] init error', e);
+        }
+      }
+
+      // Lance après chargement
+      document.addEventListener('DOMContentLoaded', initPush);
+    })();
   </script>
 </body>
 </html>

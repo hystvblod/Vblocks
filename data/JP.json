@@ -320,5 +320,18 @@
     "profil.applis.rewardNote": "アプリをダウンロードするとトークン2個とコイン800個を獲得",
         "toastDetected": "{count}個のアプリを検出、付与: {credited}",
         "toastNone": "パートナーアプリは検出されませんでした",
-        "toastError": "現在アプリの確認ができません"
+        "toastError": "現在アプリの確認ができません",
+
+         "resume.title": "ゲームを再開しますか？",
+    "resume.message": "保存されたゲームが見つかりました。中断したところから再開しますか？",
+    "resume.resume": "再開",
+    "resume.restart": "最初から",
+    "resume.later": "あとで",
+    "resume.countdown": "{s}秒後に再開…",
+    "resume.expired": "保存データが古すぎるため削除されました。",
+    "resume.notfound": "再開できるゲームはありません。",
+    "resume.saving": "保存中…",
+    "resume.saved": "ゲームを保存しました。",
+    "resume.restored": "ゲームを再開しました。",
+    "resume.cancel": "キャンセル"
 }

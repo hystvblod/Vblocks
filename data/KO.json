@@ -320,5 +320,18 @@
   "profil.applis.rewardNote": "앱 다운로드 시 토큰 2개와 코인 800개 지급",
   "toastDetected": "{count}개 앱 감지, 지급 완료: {credited}",
   "toastNone": "감지된 파트너 앱이 없습니다",
-  "toastError": "현재 앱 확인이 불가능합니다"
+  "toastError": "현재 앱 확인이 불가능합니다",
+
+    "resume.title": "게임을 이어하시겠어요?",
+    "resume.message": "저장된 게임을 찾았어요. 중단한 위치부터 다시 시작할까요?",
+    "resume.resume": "이어하기",
+    "resume.restart": "처음부터",
+    "resume.later": "나중에",
+    "resume.countdown": "{s}초 후 재개…",
+    "resume.expired": "저장 데이터가 오래되어 삭제되었습니다.",
+    "resume.notfound": "이어할 게임이 없습니다.",
+    "resume.saving": "저장 중…",
+    "resume.saved": "게임이 저장되었습니다.",
+    "resume.restored": "게임을 재개했습니다.",
+    "resume.cancel": "취소"
 }
