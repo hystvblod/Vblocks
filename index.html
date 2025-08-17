@@ -24,15 +24,28 @@
     </a>
   </div>
 
-  <!-- -------- POPUP RGPD/CONSENT PUBS -------- -->
+  <!-- -------- POPUP RGPD/CONSENT -------- -->
   <div id="popup-consent" class="popup-consent-bg" style="display:none;">
     <div class="popup-consent-box">
       <h2 data-i18n="index.rgpd.title">Confidentialité & Publicités</h2>
       <p data-i18n="index.rgpd.body1">
         VBlocks utilise des identifiants publicitaires pour diffuser des pubs personnalisées.<br>
-        Tu peux refuser ou accepter la personnalisation.
+        Tu peux refuser ou accepter la personnalisation et choisir si tu veux recevoir des notifications (FCM).
       </p>
       <small data-i18n="index.rgpd.body2">(Tu peux changer d'avis plus tard dans les paramètres)</small>
+
+      <!-- ✅ Choix détaillés -->
+      <div style="text-align:left;margin-top:.75rem">
+        <label style="display:flex;gap:.5em;align-items:center;margin:.25rem 0">
+          <input id="consent-ads" type="checkbox" checked>
+          <span data-i18n="index.rgpd.ads">Publicités personnalisées</span>
+        </label>
+        <label style="display:flex;gap:.5em;align-items:center;margin:.25rem 0">
+          <input id="consent-notif" type="checkbox">
+          <span data-i18n="index.rgpd.notif">Notifications (FCM)</span>
+        </label>
+      </div>
+
       <div style="display:flex;gap:1em;justify-content:center;margin-top:1em;">
         <button id="consent-accept" class="btn-accept" data-i18n="index.rgpd.accept">Accepter</button>
         <button id="consent-refuse" class="btn-refuse" data-i18n="index.rgpd.refuse">Refuser</button>
@@ -77,7 +90,7 @@
   <div class="tooltip-box" id="tooltip"></div>
 
   <script>
-    // Tooltips
+    // ---------------- Tooltips ----------------
     const tooltip = document.getElementById('tooltip');
     document.querySelectorAll('.info-btn').forEach(el => {
       el.addEventListener('click', function (e) {
@@ -113,23 +126,68 @@
       });
     });
 
-    // RGPD
-    window.addEventListener("DOMContentLoaded", function() {
-      const consent = localStorage.getItem("rgpdConsent");
-      if (!consent) {
-        document.getElementById("popup-consent").style.display = "flex";
-      }
-      document.getElementById("consent-accept").onclick = function() {
-        localStorage.setItem("rgpdConsent", "accept");
-        document.getElementById("popup-consent").style.display = "none";
-      };
-      document.getElementById("consent-refuse").onclick = function() {
-        localStorage.setItem("rgpdConsent", "refuse");
-        document.getElementById("popup-consent").style.display = "none";
-      };
-    });
+    // --------------- RGPD & Consents ---------------
+    (function(){
+      const CONSENT_KEY = "rgpdConsent";   // "accept" | "refuse"
+      const ADS_KEY     = "adsConsent";    // "yes" | "no"
+      const NOTIF_KEY   = "notifConsent";  // "yes" | "no"
 
-    // Affiche le bouton concours selon la config (Supabase)
+      function showConsentIfNeeded() {
+        const consent = localStorage.getItem(CONSENT_KEY);
+        if (!consent) {
+          document.getElementById("popup-consent").style.display = "flex";
+        } else {
+          // Déjà donné → appliquer directement les choix
+          applyConsentFromStorage();
+        }
+      }
+
+      function applyConsentFromStorage() {
+        const consent = localStorage.getItem(CONSENT_KEY);
+        const ads = localStorage.getItem(ADS_KEY) === "yes";
+        const notif = localStorage.getItem(NOTIF_KEY) === "yes";
+
+        // Pub : initialise seulement si consentement accepté et ads==yes
+        if (consent === "accept" && ads && typeof window.initAds === "function") {
+          try { window.initAds(); } catch(e){}
+        }
+
+        // FCM : initialise seulement si consentement accepté ET notif==yes
+        if (consent === "accept" && notif) {
+          try { window.__initPushOnce && window.__initPushOnce(); } catch(e){}
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", function() {
+        const popup = document.getElementById("popup-consent");
+        const btnAccept = document.getElementById("consent-accept");
+        const btnRefuse = document.getElementById("consent-refuse");
+        const cbAds   = document.getElementById("consent-ads");
+        const cbNotif = document.getElementById("consent-notif");
+
+        showConsentIfNeeded();
+
+        btnAccept.onclick = function() {
+          localStorage.setItem(CONSENT_KEY, "accept");
+          localStorage.setItem(ADS_KEY,   cbAds.checked   ? "yes" : "no");
+          localStorage.setItem(NOTIF_KEY, cbNotif.checked ? "yes" : "no");
+          popup.style.display = "none";
+          applyConsentFromStorage();
+        };
+        btnRefuse.onclick = function() {
+          localStorage.setItem(CONSENT_KEY, "refuse");
+          localStorage.setItem(ADS_KEY,   "no");
+          localStorage.setItem(NOTIF_KEY, "no");
+          popup.style.display = "none";
+          // On n'initialise rien (ni ads ni push)
+        };
+      });
+
+      // Expose pour d'autres pages (paramètres, etc.)
+      window.applyConsentFromStorage = applyConsentFromStorage;
+    })();
+
+    // --------- Concours via Supabase (affichage conditionnel) ---------
     async function checkConcoursStatus() {
       try {
         const sb = (window.supabase || window.sb);
@@ -190,18 +248,24 @@
     }
   </script>
 
-  <!-- Push (Capacitor FCM) : sans type=module -->
+  <!-- Push (Capacitor FCM) : init silencieuse, gated par consentement -->
   <script>
     (function () {
+      const DEBUG_PUSH = false; // passe à true pour voir des logs partiels
+      let inited = false;
+
       function isNative() {
-        try { return window.Capacitor && window.Capacitor.getPlatform() !== 'web'; }
+        try { return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web'; }
         catch(e){ return false; }
       }
 
       async function initPush() {
+        if (inited) return;
+        inited = true;
+
         if (!isNative()) return; // évite les erreurs sur web
         const Push = window.Capacitor?.Plugins?.PushNotifications;
-        if (!Push) { console.warn('[Push] Plugin indisponible'); return; }
+        if (!Push) { if (DEBUG_PUSH) console.warn('[Push] Plugin indisponible'); return; }
 
         try {
           const perm = await Push.requestPermissions();
@@ -210,32 +274,34 @@
           await Push.register();
 
           Push.addListener('registration', (token) => {
-            const stored = localStorage.getItem('fcmToken');
-            if (!stored) {
-              alert('FCM token:\n' + token.value); // 1ère fois : pour test dans Firebase
+            // Stocker sans log en clair
+            localStorage.setItem('fcmToken', token.value || '');
+            if (DEBUG_PUSH) {
+              const partial = (token.value || '').slice(0, 8) + '…';
+              console.log('[Push] FCM token:', partial);
             }
-            localStorage.setItem('fcmToken', token.value);
-            console.log('[Push] FCM token:', token.value);
           });
 
-          Push.addListener('registrationError', (e) => console.error('[Push] registrationError', e));
-          Push.addListener('pushNotificationReceived', (n) => {
-            console.log('[Push] reçu (foreground):', n);
-            // Ici tu peux afficher une bannière in-app si tu veux
-          });
+          Push.addListener('registrationError', (e) => { if (DEBUG_PUSH) console.error('[Push] registrationError', e); });
+          Push.addListener('pushNotificationReceived', (n) => { if (DEBUG_PUSH) console.log('[Push] reçu:', n); });
           Push.addListener('pushNotificationActionPerformed', (a) => {
-            console.log('[Push] action:', a);
-            // Exemple : route selon a.notification.data.page
             const page = a?.notification?.data?.page;
             if (page) location.href = page;
           });
         } catch (e) {
-          console.error('[Push] init error', e);
+          if (DEBUG_PUSH) console.error('[Push] init error', e);
         }
       }
 
-      // Lance après chargement
-      document.addEventListener('DOMContentLoaded', initPush);
+      // Expose un lanceur "une seule fois" que le RGPD appellera si notif consentie
+      window.__initPushOnce = initPush;
+
+      // Si consentement déjà donné avant l'ouverture, applique dès le chargement
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.applyConsentFromStorage === 'function') {
+          window.applyConsentFromStorage();
+        }
+      });
     })();
   </script>
 </body>

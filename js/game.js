@@ -133,7 +133,7 @@ function fillRectThemeSafe(c, px, py, size) {
     global.toggleGhostPiece = function (enabled) {
       ghostPieceEnabled = !!enabled;
       localStorage.setItem('ghostPiece', ghostPieceEnabled ? 'true' : 'false');
-      drawBoard();
+      safeRedraw();
     };
 
     // ==== CANVAS & DPR ==== //
@@ -151,12 +151,10 @@ function fillRectThemeSafe(c, px, py, size) {
     let BLOCK_SIZE = 30; // en px CSS (pas device)
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
 
-    // Améliore le rendu d'images pixelisées
     ctx.imageSmoothingEnabled = false;
     if (holdCtx) holdCtx.imageSmoothingEnabled = false;
     if (nextCtx) nextCtx.imageSmoothingEnabled = false;
 
-    // clear “safe” (ignore transform)
     function clearCanvas(c2d, cnv) {
       c2d.save();
       c2d.setTransform(1, 0, 0, 1, 0, 0);
@@ -168,25 +166,19 @@ function fillRectThemeSafe(c, px, py, size) {
       const rect = canvas.getBoundingClientRect();
       const cssW = Math.round(rect.width);
 
-      // On remplit toute la largeur (10 colonnes)
       BLOCK_SIZE = cssW / COLS;
 
-      // Hauteur exacte pour 20 lignes
-      const usedW = BLOCK_SIZE * COLS;   // = cssW
-      const usedH = BLOCK_SIZE * ROWS;   // 20 lignes
+      const usedW = BLOCK_SIZE * COLS;
+      const usedH = BLOCK_SIZE * ROWS;
 
-      // On impose la hauteur CSS du canvas
       canvas.style.height = usedH + 'px';
 
-      // Dimensions réelles en pixels device
       canvas.width  = Math.round(usedW * DPR);
       canvas.height = Math.round(usedH * DPR);
 
-      // Dessin en unités CSS
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
 
-    // offsets pour centrer le plateau logique dans le canvas
     function boardOffsets() {
       const cssW = canvas.width  / DPR;
       const cssH = canvas.height / DPR;
@@ -198,7 +190,6 @@ function fillRectThemeSafe(c, px, py, size) {
       };
     }
 
-    // par défaut 48px (match le HTML width/height=48)
     function sizeMiniCanvas(cnv, c2d, target = 48) {
       if (!cnv || !c2d) return;
       cnv.style.width  = target + 'px';
@@ -217,7 +208,7 @@ function fillRectThemeSafe(c, px, py, size) {
       fitCanvasToCSS();
       sizeMiniCanvas(holdCanvas, holdCtx, 48);
       sizeMiniCanvas(nextCanvas, nextCtx, 48);
-      drawBoard();
+      safeRedraw();
     });
 
     const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space', 'vitraux'];
@@ -233,8 +224,8 @@ function fillRectThemeSafe(c, px, py, size) {
         let imagesToLoad = 6, imagesLoaded = 0;
         for (let i = 1; i <= 6; i++) {
           const img = new Image();
-          img.onload = () => { imagesLoaded++; if (imagesLoaded === imagesToLoad) drawBoard(); };
-          img.onerror = () => { imagesLoaded++; if (imagesLoaded === imagesToLoad) drawBoard(); };
+          img.onload  = () => { imagesLoaded++; if (imagesLoaded === imagesToLoad) safeRedraw(); };
+          img.onerror = () => { imagesLoaded++; if (imagesLoaded === imagesToLoad) safeRedraw(); };
           img.src = `themes/${themeName}/${i}.png`;
           blockImages[themeName].push(img);
         }
@@ -243,7 +234,7 @@ function fillRectThemeSafe(c, px, py, size) {
         ['I', 'J', 'L', 'O', 'S', 'T', 'Z'].forEach(l => {
           if (themesWithPNG.includes(themeName)) {
             const img = new Image();
-            img.onload = () => { drawBoard(); };
+            img.onload  = () => { safeRedraw(); };
             img.onerror = () => {};
             img.src = `themes/${themeName}/${l}.png`;
             blockImages[l] = img;
@@ -263,13 +254,17 @@ function fillRectThemeSafe(c, px, py, size) {
         global.currentColors = { I: '#5cb85c', J: '#388e3c', L: '#7bb661', O: '#cddc39', S: '#a2d149', T: '#558b2f', Z: '#9ccc65' };
       }
     }
+
     function changeTheme(themeName) {
       document.body.setAttribute('data-theme', themeName);
+      localStorage.setItem('themeVBlocks', themeName);
       const style = document.getElementById('theme-style');
       if (style) style.href = `themes/${themeName}.css`;
-      setTimeout(() => loadBlockImages(themeName), 100);
+      loadBlockImages(themeName);
       currentThemeIndex = Math.max(0, THEMES.indexOf(themeName));
+      safeRedraw();
     }
+
     loadBlockImages(currentTheme);
 
     const PIECES = [
@@ -288,7 +283,7 @@ function fillRectThemeSafe(c, px, py, size) {
     let currentPiece = null;
     let nextPiece = null;
     let heldPiece = null;
-    let holdUsed = false;
+    let holdUsed = false; // conservé pour compat, mais ignoré (échanges illimités)
     let score = 0;
     let dropInterval = 500;
     let lastTime = 0;
@@ -359,9 +354,9 @@ function fillRectThemeSafe(c, px, py, size) {
         await new Promise(r => setTimeout(r, 1500));
       }
       let msg = `
-        <div style="font-weight:bold;">${t('duel.finished')}</div>
-        <div>${t('duel.yourscore')} <b>${myScore}</b></div>
-        <div>${t('duel.opponentscore')} <b>${otherScore != null ? otherScore : t('duel.waiting')}</b></div>
+        <div style="font-weight:bold;">${tt('duel.finished','Duel terminé')}</div>
+        <div>${tt('duel.yourscore','Votre score')} <b>${myScore}</b></div>
+        <div>${tt('duel.opponentscore',"Score de l'adversaire")} <b>${otherScore != null ? otherScore : tt('duel.waiting','En attente…')}</b></div>
       `;
       let div = document.createElement('div');
       div.id = 'duel-popup';
@@ -423,13 +418,11 @@ function fillRectThemeSafe(c, px, py, size) {
         clearSavedGame();
         return null;
       }
-      // si le mode sauvé est "duel", on ignore
       if (parsed.state.mode === 'duel') return null;
       return parsed.state;
     }
     function restoreFromSave(s) {
       try {
-        // Sécurité minimale sur les structures
         if (!Array.isArray(s.board) || !s.currentPiece || !s.nextPiece) return false;
 
         board = s.board.map(row => row.map(cell => cell && typeof cell === 'object' ? { ...cell } : cell));
@@ -444,19 +437,16 @@ function fillRectThemeSafe(c, px, py, size) {
         gameOver     = false;
         paused       = false;
 
-        // thème éventuellement sauvegardé
         if (s.theme && THEMES.includes(s.theme) && s.theme !== currentTheme) {
           changeTheme(s.theme);
         }
 
-        // UI
         const scoreEl = document.getElementById('score');
         if (scoreEl) scoreEl.textContent = String(score);
         drawMiniPiece(nextCtx, nextPiece);
         drawMiniPiece(holdCtx, heldPiece);
-        drawBoard();
+        safeRedraw();
 
-        // Historique: on redémarre proprement
         history = [];
         saveHistory();
 
@@ -464,7 +454,6 @@ function fillRectThemeSafe(c, px, py, size) {
         requestAnimationFrame(update);
         window.startMusicForGame?.();
 
-        // On sauvegarde tout de suite (au cas où)
         scheduleSave();
         return true;
       } catch (e) {
@@ -481,7 +470,7 @@ function fillRectThemeSafe(c, px, py, size) {
     window.addEventListener('pagehide', saveStateNow);
     document.addEventListener('backbutton', saveStateNow, false);
 
-    // Popup de reprise
+    // Popup de reprise (avec i18n)
     function showResumePopup(savedState) {
       const overlay = document.createElement('div');
       overlay.id = 'resume-popup';
@@ -525,10 +514,17 @@ function fillRectThemeSafe(c, px, py, size) {
     // FIN AUTOSAVE/RESUME
     // -------------------
 
+    // URL index pour "Quitter"
+    const INDEX_URL = global.GAME_INDEX_URL || 'index.html';
+
+    // Nouvelle popup de fin de partie (sans reprise)
     function showEndPopup(points) {
       paused = true;
-      stopSoftDrop(); // par sécurité
-      drawBoard();
+      stopSoftDrop();
+      safeRedraw();
+
+      // On efface toute sauvegarde pour ne PAS reproposer "Reprendre"
+      clearSavedGame();
 
       (async function saveScoreAndRewards(points) {
         try {
@@ -559,48 +555,46 @@ function fillRectThemeSafe(c, px, py, size) {
         background: rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center;
       `;
       popup.innerHTML = `
-        <div style="background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:220px">
+        <div style="background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:240px;max-width:92vw;text-align:center">
           <div style="font-size:1.2em;font-weight:bold;margin-bottom:10px;">
-            <span>${t('gameover.title')}</span><br>
-            <span>+${points} ${t('gameover.points')}</span>
+            <span>${tt('end.title','Partie terminée')}</span><br>
+            <span>+${points} ${tt('end.points','points')}</span>
           </div>
-          <div style="margin-bottom:10px">
-            <span>${t('gameover.tokens')} <b id="solde-jetons-popup">…</b></span>
+          <div style="opacity:.9;margin-bottom:14px">
+            ${tt('end.subtitle','Que voulez-vous faire ?')}
           </div>
-          <button id="popup-jeton">${t('gameover.revive_token')}</button><br>
-          <button id="popup-pub" style="margin-top:8px">${t('gameover.revive_ad')}</button><br>
-          <button id="popup-stop" style="margin-top:16px">${t('gameover.quit')}</button>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button id="end-restart" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#39f;color:#fff;cursor:pointer;">
+              ${tt('end.restart','Recommencer')}
+            </button>
+            <button id="end-quit" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#444;color:#fff;cursor:pointer;">
+              ${tt('end.quit','Quitter')}
+            </button>
+          </div>
         </div>
       `;
       document.body.appendChild(popup);
-      getJetons().then(solde => {
-        document.getElementById('solde-jetons-popup').textContent = solde;
-        document.getElementById('popup-jeton').disabled = (solde <= 0);
-      });
 
-      document.getElementById('popup-jeton').onclick = async function () {
-        await useJeton();
-        removePopup();
-        rewind();
-      };
-      document.getElementById('popup-pub').onclick = function () {
-        if (window.showRewardRevive) {
-          showRewardRevive(() => { removePopup(); rewind(); });
-        } else {
-          showFakeAd().then(() => { removePopup(); rewind(); });
-        }
-      };
-      document.getElementById('popup-stop').onclick = function () {
-        // On efface la sauvegarde si l'utilisateur quitte
+      document.getElementById('end-restart').onclick = function () {
         clearSavedGame();
-        removePopup();
-        window.location.reload();
-      };
-      function removePopup() {
         popup.remove();
-        paused = false;
+        // redémarre une partie propre
+        score = 0;
+        combo = 0;
+        linesCleared = 0;
         gameOver = false;
-      }
+        paused = false;
+        nextPiece = newPiece();
+        reset();
+        saveHistory();
+        window.startMusicForGame?.();
+        requestAnimationFrame(update);
+      };
+
+      document.getElementById('end-quit').onclick = function () {
+        clearSavedGame();
+        window.location.href = INDEX_URL;
+      };
     }
 
     function rewind() {
@@ -619,7 +613,7 @@ function fillRectThemeSafe(c, px, py, size) {
       dropInterval = state.dropInterval || 500;
       paused = true;
       gameOver = false;
-      drawBoard();
+      safeRedraw();
 
       let countdown = 5;
       const overlay = document.createElement('div');
@@ -646,8 +640,8 @@ function fillRectThemeSafe(c, px, py, size) {
 
     function togglePause() {
       paused = !paused;
-      if (paused) stopSoftDrop(); // coupe le soft drop quand on met en pause
-      drawBoard();
+      if (paused) stopSoftDrop();
+      safeRedraw();
       if (!paused && !gameOver) requestAnimationFrame(update);
     }
     global.togglePause = togglePause;
@@ -674,7 +668,6 @@ function fillRectThemeSafe(c, px, py, size) {
     }
     document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
 
-    // === ICI: bonus combo uniquement pour classic/duel, PAS en infinite ===
     function computeScore(lines) {
       let pts = 0;
       switch (lines) {
@@ -684,7 +677,6 @@ function fillRectThemeSafe(c, px, py, size) {
         case 4: pts = 80; break;
         default: pts = 0;
       }
-      // bonus combo désactivé en mode infinite
       if (mode !== 'infinite' && combo > 1 && lines > 0) {
         pts += (combo - 1) * 5;
       }
@@ -692,15 +684,18 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     async function startGame() {
+      paused = false;
+      gameOver = false;
+      lastTime = 0;
+
       if (mode === 'duel') await setupDuelSequence();
       nextPiece = newPiece();
       reset();
       saveHistory();
-      window.startMusicForGame();
+      window.startMusicForGame?.();
       requestAnimationFrame(update);
     }
 
-    // NOUVELLE LOGIQUE : random PAR CARRÉ, FIXÉ À LA CRÉATION DE LA PIÈCE
     function newPiece() {
       let typeId;
       if (mode === 'duel') typeId = getDuelNextPieceId();
@@ -715,7 +710,6 @@ function fillRectThemeSafe(c, px, py, size) {
         y: 0
       };
 
-      // variants pour SPACE & VITRAUX
       if (currentTheme === 'space' || currentTheme === 'vitraux') {
         let numbers = [1,2,3,4,5,6];
         for (let i = numbers.length - 1; i > 0; i--) {
@@ -729,6 +723,7 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     function collision(p = currentPiece) {
+      if (!p || !p.shape) return false;
       return p.shape.some((row, dy) =>
         row.some((val, dx) => {
           if (!val) return false;
@@ -756,7 +751,7 @@ function fillRectThemeSafe(c, px, py, size) {
         })
       );
       clearLines();
-      scheduleSave(); // ← sauvegarde dès qu’on a « fixé » une pièce
+      scheduleSave();
     }
 
     function clearLines() {
@@ -803,6 +798,9 @@ function fillRectThemeSafe(c, px, py, size) {
       currentPiece.y++;
       if (collision()) {
         currentPiece.y--;
+        stopSoftDrop();
+        mustLiftFingerForNextSoftDrop = true;
+
         merge();
         saveHistory();
         reset();
@@ -833,28 +831,49 @@ function fillRectThemeSafe(c, px, py, size) {
       }
     }
 
+    function clonePiece(p) {
+      return JSON.parse(JSON.stringify(p));
+    }
+
+    // HOLD illimité + clic/tap sur la réserve
     function holdPiece() {
-      if (holdUsed) return;
+      if (!currentPiece) return;
+
       if (!heldPiece) {
-        heldPiece = { ...currentPiece };
-        reset();
+        heldPiece = clonePiece(currentPiece);
+        currentPiece = clonePiece(nextPiece);
+        nextPiece = newPiece();
       } else {
-        [heldPiece, currentPiece] = [{ ...currentPiece }, { ...heldPiece }];
+        const tmp = clonePiece(currentPiece);
+        currentPiece = clonePiece(heldPiece);
+        heldPiece = tmp;
       }
-      holdUsed = true;
+
+      currentPiece.y = 0;
+      currentPiece.x = Math.floor((COLS - currentPiece.shape[0].length) / 2);
+      if (collision(currentPiece)) {
+        showEndPopup(score);
+        gameOver = true;
+        return;
+      }
+
+      holdUsed = false;
+
       drawMiniPiece(holdCtx, heldPiece);
+      drawMiniPiece(nextCtx, nextPiece);
       scheduleSave();
+      safeRedraw();
     }
 
     function getGhostPiece() {
       if (!ghostPieceEnabled) return null;
+      if (!currentPiece || !currentPiece.shape) return null;
       let ghost = JSON.parse(JSON.stringify(currentPiece));
       while (!collision(ghost)) { ghost.y++; }
       ghost.y--;
       return ghost;
     }
 
-    // Draw d'un bloc
     function drawBlockCustom(c, x, y, letter, size = BLOCK_SIZE, ghost = false, variant = 0) {
       let img = blockImages[letter];
       const px = x * size, py = y * size;
@@ -907,7 +926,6 @@ function fillRectThemeSafe(c, px, py, size) {
     function drawBoard() {
       clearCanvas(ctx, canvas);
 
-      // centre le plateau logique dans le canvas
       const { x: OX, y: OY } = boardOffsets();
       ctx.save();
       ctx.translate(OX, OY);
@@ -935,26 +953,30 @@ function fillRectThemeSafe(c, px, py, size) {
         })
       );
 
-      currentPiece.shape.forEach((row, dy) =>
-        row.forEach((val, dx) => {
-          if (!val) return;
-          drawBlockCustom(
-            ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter, BLOCK_SIZE, false,
-            (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
-          );
-        })
-      );
+      if (currentPiece && currentPiece.shape) {
+        currentPiece.shape.forEach((row, dy) =>
+          row.forEach((val, dx) => {
+            if (!val) return;
+            drawBlockCustom(
+              ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter, BLOCK_SIZE, false,
+              (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
+            );
+          })
+        );
+      }
 
       ctx.restore();
     }
 
-    // Mini (Réserve/Suivante) — centrage DPR-aware
+    function safeRedraw() {
+      try { drawBoard(); } catch (_e) {}
+    }
+
     function drawMiniPiece(c, piece) {
       if (!c) return;
       clearCanvas(c, c.canvas);
       if (!piece) return;
 
-      // dimensions CSS (car setTransform(DPR,...))
       const cssW = c.canvas.width  / DPR;
       const cssH = c.canvas.height / DPR;
 
@@ -973,7 +995,7 @@ function fillRectThemeSafe(c, px, py, size) {
       const w = maxX - minX + 1;
       const h = maxY - minY + 1;
 
-      const PAD = 6; // CSS px
+      const PAD = 6;
       const cellSize = Math.min(
         (cssW - 2 * PAD) / w,
         (cssH - 2 * PAD) / h
@@ -1002,6 +1024,9 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     function reset() {
+      stopSoftDrop();
+      mustLiftFingerForNextSoftDrop = true;
+
       currentPiece = nextPiece;
       nextPiece = newPiece();
       holdUsed = false;
@@ -1018,7 +1043,7 @@ function fillRectThemeSafe(c, px, py, size) {
         dropPiece();
         lastTime = now;
       }
-      drawBoard();
+      safeRedraw();
       requestAnimationFrame(update);
     }
 
@@ -1037,6 +1062,14 @@ function fillRectThemeSafe(c, px, py, size) {
           changeTheme(THEMES[currentThemeIndex]);
         });
       }
+
+      if (holdCanvas) {
+        holdCanvas.style.cursor = 'pointer';
+        const triggerHold = (e) => { e.preventDefault?.(); holdPiece(); };
+        holdCanvas.addEventListener('click', triggerHold);
+        holdCanvas.addEventListener('touchstart', triggerHold, { passive: true });
+      }
+
       updateBalancesHeader();
       updateHighscoreDisplay();
     });
@@ -1045,20 +1078,19 @@ function fillRectThemeSafe(c, px, py, size) {
     // TOUCH & CLAVIER
     // ====================
 
-    // Désactive les gestes système sur le canvas (évite scroll / sélection)
     canvas.style.touchAction = 'none';
     canvas.style.userSelect  = 'none';
 
-    // === SOFT DROP (tactile) ===
     let softDropTimer = null;
     let softDropActive = false;
-    const SOFT_DROP_INTERVAL = 45;     // vitesse rapide
-    const HOLD_ACTIVATION_MS = 180;    // temps de maintien pour activer
+    const SOFT_DROP_INTERVAL = 70;
+    const HOLD_ACTIVATION_MS = 180;
+    let mustLiftFingerForNextSoftDrop = false;
 
     function startSoftDrop() {
       if (softDropActive || paused || gameOver) return;
+      if (mustLiftFingerForNextSoftDrop) return;
       softDropActive = true;
-      // éviter le "double drop" avec la boucle principale
       lastTime = performance.now();
       softDropTimer = setInterval(() => {
         if (!paused && !gameOver) dropPiece();
@@ -1070,14 +1102,15 @@ function fillRectThemeSafe(c, px, py, size) {
       softDropActive = false;
     }
 
-    // GESTES TACTILES
     let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
     let holdToDropTimeout = null;
 
     function isQuickSwipeUp(elapsed, dy) {
-      // rotation seulement si VRAI swipe vers le haut (rapide et ample)
       return (elapsed < 220) && (dy < -42);
     }
+
+    const HORIZ_THRESHOLD = 30;
+    const DEAD_ZONE = 12;
 
     canvas.addEventListener('touchstart', function (e) {
       if (gameOver) return;
@@ -1103,27 +1136,18 @@ function fillRectThemeSafe(c, px, py, size) {
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-      if (Math.abs(movedX) > Math.abs(movedY)) {
-        // déplacement latéral permis même pendant soft-drop
-        if (movedX > 22)  { move(1);  startX = t.clientX; }
-        if (movedX < -22) { move(-1); startX = t.clientX; }
+      if (Math.abs(movedX) > Math.max(Math.abs(movedY), DEAD_ZONE)) {
+        if (movedX > HORIZ_THRESHOLD)  { move(1);  startX = t.clientX; }
+        if (movedX < -HORIZ_THRESHOLD) { move(-1); startX = t.clientX; }
       } else {
-        // swipe bas : enclenche le soft drop si besoin + drop immédiat
-        if (movedY > 24) {
-          if (!softDropActive) startSoftDrop();
-          dropPiece();
-          startY = t.clientY;
-        }
-        // swipe haut rapide : rotation, mais pas pendant soft-drop
+        // pas de swipe bas → pas de drop
         if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
           rotatePiece();
-          // anti-rotations multiple
           touchStartTime = now;
           startY = t.clientY;
         }
       }
 
-      // si gros déplacement latéral ou haut → on annule l'armement du maintien
       if (Math.abs(movedX) > 18 || movedY < -18) {
         clearTimeout(holdToDropTimeout);
       }
@@ -1133,42 +1157,42 @@ function fillRectThemeSafe(c, px, py, size) {
       dragging = false;
       clearTimeout(holdToDropTimeout);
 
-      // si soft-drop actif, on le coupe et on NE fait pas de rotation
       if (softDropActive) {
         stopSoftDrop();
+        mustLiftFingerForNextSoftDrop = false;
         return;
       }
 
-      // tap court = rotation (si pas de chute et pas de gros mouvement)
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
       const hasDropped   = Math.abs(movedY) > 18;
       if (isShortPress && !hasDropped && Math.abs(movedX) < 10) {
         rotatePiece();
       }
+
+      mustLiftFingerForNextSoftDrop = false;
     }, { passive: true });
 
     canvas.addEventListener('touchcancel', function () {
       dragging = false;
       clearTimeout(holdToDropTimeout);
       stopSoftDrop();
+      mustLiftFingerForNextSoftDrop = false;
     }, { passive: true });
 
-    // Clavier (desktop)
     document.addEventListener('keydown', e => {
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
       if (e.key === 'p' || e.key === 'P') { togglePause(); return; }
       if (gameOver || paused) return;
       switch (e.key) {
-        case 'ArrowLeft':  move(-1);   break;
-        case 'ArrowRight': move(1);    break;
-        case 'ArrowDown':  dropPiece();break;
+        case 'ArrowLeft':  move(-1);    break;
+        case 'ArrowRight': move(1);     break;
+        case 'ArrowDown':  dropPiece(); break;
         case 'ArrowUp':    rotatePiece(); break;
-        case 'c': case 'C': holdPiece(); break;
+        case 'c': case 'C': holdPiece();  break;
       }
     });
 
-    // sécurité : perte de focus => coupe soft drop
     window.addEventListener('blur', stopSoftDrop);
 
     // === SUPABASE Fonctions ===
@@ -1202,7 +1226,6 @@ function fillRectThemeSafe(c, px, py, size) {
       if (CAN_RESUME) {
         const saved = loadSaved();
         if (saved) {
-          // on stoppe la boucle tant que l’utilisateur choisit
           paused = true;
           showResumePopup(saved);
           return;

@@ -1,15 +1,31 @@
 import { PushNotifications } from '@capacitor/push-notifications';
 
+const DEBUG_PUSH = false; // passe à true seulement en debug local
+
 (async () => {
-  const perm = await PushNotifications.requestPermissions();
-  if (perm.receive !== 'granted') return;
+  try {
+    // Si besoin: gate consent (utilise la même clé que ta home si tu veux)
+    const consent = localStorage.getItem('rgpdConsent'); 
+    if (consent !== 'accept') return;
 
-  await PushNotifications.register();
+    const perm = await PushNotifications.requestPermissions();
+    if (perm.receive !== 'granted') return;
 
-  PushNotifications.addListener('registration', (token) => {
-    alert('FCM token:\n' + token.value);   // copie-le
-    console.log('FCM token:', token.value);
-  });
+    await PushNotifications.register();
 
-  PushNotifications.addListener('registrationError', (e) => console.error(e));
+    PushNotifications.addListener('registration', (token) => {
+      localStorage.setItem('fcmToken', token.value);
+      if (DEBUG_PUSH) {
+        // Log masqué : pas de fuite du token complet
+        console.log('[Push] FCM token:', (token.value || '').slice(0, 8) + '…');
+      }
+      // NOTE: plus d'alert() ni de console.log complet
+    });
+
+    PushNotifications.addListener('registrationError', (e) => {
+      if (DEBUG_PUSH) console.error('[Push] registrationError', e);
+    });
+  } catch (e) {
+    if (DEBUG_PUSH) console.error('[Push] init error', e);
+  }
 })();
