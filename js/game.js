@@ -367,9 +367,9 @@ function fillRectThemeSafe(c, px, py, size) {
     // -------------------
 
     // =========================
-    // AUTOSAVE / RESUME (LOCAL)
+    // AUTOSAVE / RESUME (LOCAL + CLOUD)
     // =========================
-    const SAVE_KEY = 'vblocks:autosave:v1';
+    const SAVE_KEY = `vblocks:autosave:${mode}:v2`; // par mode
     const SAVE_TTL_MS = 1000 * 60 * 60 * 48; // 48h
     const CAN_RESUME = (mode !== 'duel'); // Par équité, pas de reprise en duel
 
@@ -391,36 +391,82 @@ function fillRectThemeSafe(c, px, py, size) {
     }
     function clearSavedGame() {
       try { localStorage.removeItem(SAVE_KEY); } catch (_e) {}
-    }
-    function saveStateNow() {
-      if (!CAN_RESUME) return;
-      try {
-        const payload = { version: 1, ts: Date.now(), state: getSavableState() };
-        localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
-      } catch (_e) {}
-    }
-    let saveTimer = null;
-    function scheduleSave() {
-      if (!CAN_RESUME) return;
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveStateNow, 400);
+      // cloud aussi
+      saveStateCloud(null).catch(()=>{});
     }
     function safeParse(json) {
       try { return JSON.parse(json); } catch { return null; }
     }
-    function loadSaved() {
+
+    function saveStateNowLocal() {
+      if (!CAN_RESUME) return;
+      try {
+        const payload = { version: 2, ts: Date.now(), state: getSavableState() };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+      } catch (_e) {}
+    }
+    async function saveStateCloud(stateOrNull) {
+      // Optionnel : nécessite table vblocks_saves (user_id uuid, mode text, payload jsonb, updated_at timestamptz default now())
+      if (!CAN_RESUME || !sb) return;
+      const userId = getUserId();
+      if (!userId) return;
+      try {
+        if (stateOrNull === null) {
+          await sb.from('vblocks_saves').delete().eq('user_id', userId).eq('mode', mode);
+        } else {
+          const payload = { version: 2, ts: Date.now(), state: stateOrNull };
+          await sb.from('vblocks_saves').upsert(
+            { user_id: userId, mode, payload },
+            { onConflict: 'user_id,mode' }
+          );
+        }
+      } catch (_e) { /* silencieux */ }
+    }
+    async function loadSavedCloud() {
+      if (!CAN_RESUME || !sb) return null;
+      const userId = getUserId();
+      if (!userId) return null;
+      try {
+        const { data, error } = await sb
+          .from('vblocks_saves')
+          .select('payload')
+          .eq('user_id', userId)
+          .eq('mode', mode)
+          .maybeSingle();
+        if (error || !data || !data.payload) return null;
+        const p = data.payload;
+        if ((Date.now() - (p.ts || p.state?.ts || 0)) > SAVE_TTL_MS) return null;
+        return p.state || null;
+      } catch (_e) { return null; }
+    }
+    function loadSavedLocal() {
       if (!CAN_RESUME) return null;
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return null;
       const parsed = safeParse(raw);
       if (!parsed || !parsed.state) return null;
       if ((Date.now() - (parsed.ts || parsed.state.ts || 0)) > SAVE_TTL_MS) {
-        clearSavedGame();
+        try { localStorage.removeItem(SAVE_KEY); } catch (_e) {}
         return null;
       }
-      if (parsed.state.mode === 'duel') return null;
+      if (parsed.state.mode !== mode) return null;
       return parsed.state;
     }
+
+    async function saveStateNow() {
+      if (!CAN_RESUME) return;
+      const state = getSavableState();
+      saveStateNowLocal();
+      await saveStateCloud(state).catch(()=>{});
+    }
+
+    let saveTimer = null;
+    function scheduleSave() {
+      if (!CAN_RESUME) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveStateNow, 300);
+    }
+
     function restoreFromSave(s) {
       try {
         if (!Array.isArray(s.board) || !s.currentPiece || !s.nextPiece) return false;
@@ -506,24 +552,60 @@ function fillRectThemeSafe(c, px, py, size) {
       overlay.querySelector('#resume-restart').onclick = () => {
         clearSavedGame();
         overlay.remove();
-        startGame();
+        restartGameHard(); // nouveau restart propre
       };
     }
-
-    // -------------------
-    // FIN AUTOSAVE/RESUME
-    // -------------------
 
     // URL index pour "Quitter"
     const INDEX_URL = global.GAME_INDEX_URL || 'index.html';
 
-    // Nouvelle popup de fin de partie (sans reprise)
+    // === RESTART PROPRE GLOBAL (utile en cours de partie ou fin) ===
+    function restartGameHard() {
+      // stop timers
+      stopSoftDrop();
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+
+      // reset state
+      board = Array.from({ length: ROWS }, () => Array(COLS).fill(''));
+      currentPiece = null;
+      nextPiece = null;
+      heldPiece = null;
+      holdUsed = false;
+      score = 0;
+      combo = 0;
+      linesCleared = 0;
+      dropInterval = 500;
+      gameOver = false;
+      paused = false;
+      history = [];
+      lastTime = 0;
+
+      // UI
+      const scoreEl = document.getElementById('score');
+      if (scoreEl) scoreEl.textContent = '0';
+      drawMiniPiece(nextCtx, null);
+      drawMiniPiece(holdCtx, null);
+      safeRedraw();
+
+      clearSavedGame();
+
+      // start new
+      nextPiece = newPiece();
+      reset();
+      saveHistory();
+      window.startMusicForGame?.();
+      requestAnimationFrame(update);
+    }
+    // Expose facultatif si tu as un bouton "Recommencer" en HUD
+    global.restartGameHard = restartGameHard;
+
+    // Nouvelle popup de fin de partie (UNIQUEMENT recommencer/quitter)
     function showEndPopup(points) {
       paused = true;
       stopSoftDrop();
       safeRedraw();
 
-      // On efface toute sauvegarde pour ne PAS reproposer "Reprendre"
+      // on efface ttes sauvegardes → pas de "reprendre"
       clearSavedGame();
 
       (async function saveScoreAndRewards(points) {
@@ -576,23 +658,11 @@ function fillRectThemeSafe(c, px, py, size) {
       document.body.appendChild(popup);
 
       document.getElementById('end-restart').onclick = function () {
-        clearSavedGame();
         popup.remove();
-        // redémarre une partie propre
-        score = 0;
-        combo = 0;
-        linesCleared = 0;
-        gameOver = false;
-        paused = false;
-        nextPiece = newPiece();
-        reset();
-        saveHistory();
-        window.startMusicForGame?.();
-        requestAnimationFrame(update);
+        restartGameHard();
       };
 
       document.getElementById('end-quit').onclick = function () {
-        clearSavedGame();
         window.location.href = INDEX_URL;
       };
     }
@@ -649,6 +719,9 @@ function fillRectThemeSafe(c, px, py, size) {
     setTimeout(() => {
       let btn = document.getElementById('pause-btn');
       if (btn) btn.onclick = (e) => { e.preventDefault(); togglePause(); };
+      // Si tu as un bouton "recommencer" en HUD
+      const btnRestart = document.getElementById('restart-btn');
+      if (btnRestart) btnRestart.onclick = (e) => { e.preventDefault(); restartGameHard(); };
     }, 200);
 
     const SPEED_TABLE = [
@@ -835,30 +908,72 @@ function fillRectThemeSafe(c, px, py, size) {
       return JSON.parse(JSON.stringify(p));
     }
 
-    // HOLD illimité + clic/tap sur la réserve
-    function holdPiece() {
+    // === HOLD = échange instantané sans remonter, avec petits "kicks" anti-collision ===
+    function tryApplyPieceAt(p, x, y) {
+      const backup = { x: p.x, y: p.y };
+      p.x = x; p.y = y;
+      const ok = !collision(p);
+      if (!ok) { p.x = backup.x; p.y = backup.y; }
+      return ok;
+    }
+    function tryKickPlace(p, targetX, targetY) {
+      // ordre de kicks: (0,0), (-1,0), (1,0), (0,-1), (-2,0), (2,0), (0,-2)
+      const kicks = [[0,0],[-1,0],[1,0],[0,-1],[-2,0],[2,0],[0,-2]];
+      const bx = p.x, by = p.y;
+      for (const [kx,ky] of kicks) {
+        p.x = targetX + kx; p.y = targetY + ky;
+        if (!collision(p)) return true;
+      }
+      p.x = bx; p.y = by;
+      return false;
+    }
+
+    function holdPieceSwapStay() {
       if (!currentPiece) return;
 
+      // positions actuelles conservées
+      const cx = currentPiece.x;
+      const cy = currentPiece.y;
+      const cshape = currentPiece.shape.map(r=>r.slice());
+      const cvars  = currentPiece.variants ? currentPiece.variants.map(r=>r.slice()) : null;
+      const clet   = currentPiece.letter;
+
       if (!heldPiece) {
+        // on met la pièce courante en réserve, et on prend la prochaine SANS remonter
         heldPiece = clonePiece(currentPiece);
         currentPiece = clonePiece(nextPiece);
         nextPiece = newPiece();
       } else {
+        // échange simple
         const tmp = clonePiece(currentPiece);
         currentPiece = clonePiece(heldPiece);
         heldPiece = tmp;
       }
 
-      currentPiece.y = 0;
-      currentPiece.x = Math.floor((COLS - currentPiece.shape[0].length) / 2);
+      // garder position/orientation
+      currentPiece.x = cx;
+      currentPiece.y = cy;
+
+      // petits kicks si collision immédiate
       if (collision(currentPiece)) {
-        showEndPopup(score);
-        gameOver = true;
-        return;
+        if (!tryKickPlace(currentPiece, cx, cy)) {
+          // échange impossible → annuler proprement
+          if (heldPiece && heldPiece.letter === clet) {
+            const tmp = heldPiece;
+            heldPiece = currentPiece;
+            currentPiece = tmp;
+          } else {
+            currentPiece.shape = cshape;
+            currentPiece.letter = clet;
+            currentPiece.variants = cvars;
+            currentPiece.x = cx;
+            currentPiece.y = cy;
+          }
+          return;
+        }
       }
 
-      holdUsed = false;
-
+      holdUsed = false; // illimité
       drawMiniPiece(holdCtx, heldPiece);
       drawMiniPiece(nextCtx, nextPiece);
       scheduleSave();
@@ -1065,9 +1180,17 @@ function fillRectThemeSafe(c, px, py, size) {
 
       if (holdCanvas) {
         holdCanvas.style.cursor = 'pointer';
-        const triggerHold = (e) => { e.preventDefault?.(); holdPiece(); };
-        holdCanvas.addEventListener('click', triggerHold);
-        holdCanvas.addEventListener('touchstart', triggerHold, { passive: true });
+        // anti double déclenchement (click + touchstart)
+        let lastHoldTs = 0;
+        const triggerHold = (e) => {
+          e.preventDefault?.();
+          const now = Date.now();
+          if (now - lastHoldTs < 180) return; // debounce
+          lastHoldTs = now;
+          holdPieceSwapStay();
+        };
+        holdCanvas.addEventListener('click', triggerHold, { passive: false });
+        holdCanvas.addEventListener('touchstart', triggerHold, { passive: false });
       }
 
       updateBalancesHeader();
@@ -1086,6 +1209,12 @@ function fillRectThemeSafe(c, px, py, size) {
     const SOFT_DROP_INTERVAL = 70;
     const HOLD_ACTIVATION_MS = 180;
     let mustLiftFingerForNextSoftDrop = false;
+
+    // --- Nouveau : gestion de mode de geste pour éviter les "glissements" latéraux pendant le drop
+    let gestureMode = 'none'; // 'none' | 'horizontal' | 'vertical'
+    const HORIZ_THRESHOLD = 36; // (était 30) un peu plus strict pour éviter les faux positifs
+    const DEAD_ZONE = 12;
+    const VERTICAL_LOCK_EARLY_MS = 140; // on verrouille vertical peu avant l'activation du soft drop
 
     function startSoftDrop() {
       if (softDropActive || paused || gameOver) return;
@@ -1109,9 +1238,6 @@ function fillRectThemeSafe(c, px, py, size) {
       return (elapsed < 220) && (dy < -42);
     }
 
-    const HORIZ_THRESHOLD = 30;
-    const DEAD_ZONE = 12;
-
     canvas.addEventListener('touchstart', function (e) {
       if (gameOver) return;
       if (e.touches.length !== 1) return;
@@ -1120,10 +1246,14 @@ function fillRectThemeSafe(c, px, py, size) {
       movedX = 0; movedY = 0;
       dragging = true;
       touchStartTime = Date.now();
+      gestureMode = 'none';
 
       clearTimeout(holdToDropTimeout);
       holdToDropTimeout = setTimeout(() => {
-        if (dragging && !softDropActive) startSoftDrop();
+        if (dragging && !softDropActive) {
+          gestureMode = 'vertical';  // on lock vertical au moment du soft drop
+          startSoftDrop();
+        }
       }, HOLD_ACTIVATION_MS);
     }, { passive: true });
 
@@ -1136,18 +1266,44 @@ function fillRectThemeSafe(c, px, py, size) {
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-      if (Math.abs(movedX) > Math.max(Math.abs(movedY), DEAD_ZONE)) {
-        if (movedX > HORIZ_THRESHOLD)  { move(1);  startX = t.clientX; }
-        if (movedX < -HORIZ_THRESHOLD) { move(-1); startX = t.clientX; }
-      } else {
-        // pas de swipe bas → pas de drop
+      // Si on est déjà en mode vertical (ou soft drop actif) → ignorer TOUT mouvement horizontal
+      if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
+        gestureMode = 'vertical';
+        // On permet juste la rotation par "swipe up" rapide tant que le drop n’est pas actif
         if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
           rotatePiece();
-          touchStartTime = now;
+          // reset de référence pour ne pas ré-déclencher immédiatement
           startY = t.clientY;
+          touchStartTime = now;
+        }
+        // éviter que la tenue du doigt relance le timer horizontal
+        clearTimeout(holdToDropTimeout);
+        return;
+      }
+
+      // Si aucun mode fixé, on regarde d'abord l'horizontal (clairement dominant)
+      if (gestureMode === 'none') {
+        if (Math.abs(movedX) > Math.max(Math.abs(movedY), DEAD_ZONE) && Math.abs(movedX) > HORIZ_THRESHOLD) {
+          gestureMode = 'horizontal';
+          clearTimeout(holdToDropTimeout); // un vrai swipe horizontal annule le futur soft drop
         }
       }
 
+      // Traitement si mode horizontal
+      if (gestureMode === 'horizontal') {
+        if (movedX > HORIZ_THRESHOLD)  { move(1);  startX = t.clientX; }
+        if (movedX < -HORIZ_THRESHOLD) { move(-1); startX = t.clientX; }
+        // éviter que le hold démarre par erreur si on a déjà bien bougé
+        if (Math.abs(movedX) > 18) clearTimeout(holdToDropTimeout);
+        return;
+      }
+
+      // Sinon (mode encore 'none'): on autorise la rotation par "swipe up" rapide
+      if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
+        rotatePiece();
+        touchStartTime = now;
+        startY = t.clientY;
+      }
       if (Math.abs(movedX) > 18 || movedY < -18) {
         clearTimeout(holdToDropTimeout);
       }
@@ -1160,17 +1316,21 @@ function fillRectThemeSafe(c, px, py, size) {
       if (softDropActive) {
         stopSoftDrop();
         mustLiftFingerForNextSoftDrop = false;
+        gestureMode = 'none';
         return;
       }
 
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
       const hasDropped   = Math.abs(movedY) > 18;
-      if (isShortPress && !hasDropped && Math.abs(movedX) < 10) {
+
+      // Tap pour rotation uniquement si ni drop ni mouvement horizontal
+      if (gestureMode !== 'horizontal' && isShortPress && !hasDropped && Math.abs(movedX) < 10) {
         rotatePiece();
       }
 
       mustLiftFingerForNextSoftDrop = false;
+      gestureMode = 'none';
     }, { passive: true });
 
     canvas.addEventListener('touchcancel', function () {
@@ -1178,6 +1338,7 @@ function fillRectThemeSafe(c, px, py, size) {
       clearTimeout(holdToDropTimeout);
       stopSoftDrop();
       mustLiftFingerForNextSoftDrop = false;
+      gestureMode = 'none';
     }, { passive: true });
 
     document.addEventListener('keydown', e => {
@@ -1189,7 +1350,7 @@ function fillRectThemeSafe(c, px, py, size) {
         case 'ArrowRight': move(1);     break;
         case 'ArrowDown':  dropPiece(); break;
         case 'ArrowUp':    rotatePiece(); break;
-        case 'c': case 'C': holdPiece();  break;
+        case 'c': case 'C': holdPieceSwapStay();  break;
       }
     });
 
@@ -1222,12 +1383,19 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     // ===== LANCEMENT avec reprise =====
-    (function boot() {
+    (async function boot() {
       if (CAN_RESUME) {
-        const saved = loadSaved();
-        if (saved) {
+        // priorité au cloud (changement de téléphone) puis local
+        const savedCloud = await loadSavedCloud();
+        if (savedCloud) {
           paused = true;
-          showResumePopup(saved);
+          showResumePopup(savedCloud);
+          return;
+        }
+        const savedLocal = loadSavedLocal();
+        if (savedLocal) {
+          paused = true;
+          showResumePopup(savedLocal);
           return;
         }
       }
