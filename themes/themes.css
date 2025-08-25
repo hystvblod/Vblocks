@@ -124,7 +124,7 @@ body[data-theme="bubble"] {
   --canvas-border: #00bcd4;
   --canvas-shadow: #b2ebf2;
 
-  --panel-bg: #f0ffff;
+  --panel-bg: transparent;
   --panel-border: #00bcd4;
   --panel-shadow: #4dd0e1;
   --panel-text: #007c91;
@@ -270,7 +270,7 @@ body[data-theme="vitraux"] {
   --canvas-border: #970036;
   --canvas-shadow: #970036;
 
-  --panel-bg: #1b1322;
+  --panel-bg: transparent;
   --panel-border: #970036;
   --panel-shadow: #970036;
   --panel-text: #eaeaea;
