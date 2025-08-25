@@ -62,22 +62,8 @@
       /* garder visible mais griser légèrement */
       filter: grayscale(35%) brightness(.92);
     }
-    .theme-card.unlocked::after{
-      content: "✓ Possédé";
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(0,0,0,.55);
-      color: #fff;
-      font-size: .72rem;
-      font-weight: 800;
-      padding: 4px 8px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,.15);
-      pointer-events: none;
-      user-select: none;
-      letter-spacing: .2px;
-    }
+
+  
 
     /* Modal */
     .modal-backdrop {
@@ -308,7 +294,7 @@ async function renderThemes() {
            role="button" tabindex="0"
            data-theme="${theme.key}">
         <span class="theme-label">${theme.name}</span>
-        <span class="prix-label">${isUnlocked ? (t('boutique.modal.possede') || 'Possédé') : (THEME_PRICE + ' VCoins')}</span>
+        <span class="prix-label">${isUnlocked ? '' : (THEME_PRICE + ' VCoins')}</span>
       </div>
     `;
   }).join('');
