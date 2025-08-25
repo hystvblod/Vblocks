@@ -115,12 +115,11 @@ button:hover {
 
 /* ---- BUBBLE ---- */
 body[data-theme="bubble"] {
-  --body-bg: transparent; /* neutralise le fond uni */
+  --body-bg: transparent; /* sinon le body de base recouvre */
   --body-color: #336699;
   --title-color: #00acc1;
   --title-shadow: 0 0 4px #b2ebf2;
 
-  /* ⬇️ rendu semi-transparent pour laisser voir le fond */
   --canvas-bg: rgba(240, 248, 255, 0.72);
   --canvas-border: #00bcd4;
   --canvas-shadow: #b2ebf2;
@@ -130,7 +129,6 @@ body[data-theme="bubble"] {
   --panel-shadow: #4dd0e1;
   --panel-text: #007c91;
 
-  /* mini canvases (Hold/Next) translucides */
   --canvas-panel-bg: rgba(240, 255, 255, 0.72);
   --canvas-panel-border: #26c6da;
 
@@ -263,12 +261,11 @@ body[data-theme="retro"] {
 }
 /* ---- GOTHIC ---- */
 body[data-theme="vitraux"] {
-  --body-bg: transparent; /* neutralise le dégradé */
+  --body-bg: transparent; /* empêche le dégradé de recouvrir */
   --body-color: #eaeaea;
   --title-color: #eaeaea;
   --title-shadow: 0 0 16px #970036;
 
-  /* ⬇️ rendu semi-transparent */
   --canvas-bg: rgba(34, 20, 28, 0.75);
   --canvas-border: #970036;
   --canvas-shadow: #970036;
@@ -278,7 +275,6 @@ body[data-theme="vitraux"] {
   --panel-shadow: #970036;
   --panel-text: #eaeaea;
 
-  /* mini canvases (Hold/Next) translucides aussi */
   --canvas-panel-bg: rgba(27, 19, 34, 0.75);
   --canvas-panel-border: #970036;
 
