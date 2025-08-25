@@ -119,15 +119,21 @@ body[data-theme="bubble"] {
   --body-color: #336699;
   --title-color: #00acc1;
   --title-shadow: 0 0 4px #b2ebf2;
-  --canvas-bg: #f0f8ff;
+
+  /* ⬇️ rendu semi-transparent pour laisser voir le fond */
+  --canvas-bg: rgba(240, 248, 255, 0.72);
   --canvas-border: #00bcd4;
   --canvas-shadow: #b2ebf2;
+
   --panel-bg: #f0ffff;
   --panel-border: #00bcd4;
   --panel-shadow: #4dd0e1;
   --panel-text: #007c91;
-  --canvas-panel-bg: #f0ffff;
+
+  /* mini canvases (Hold/Next) translucides */
+  --canvas-panel-bg: rgba(240, 255, 255, 0.72);
   --canvas-panel-border: #26c6da;
+
   --box-bg: rgba(240,255,255,0.6);
   --box-border: #00bcd4;
   --score-color: #0097a7;
@@ -139,6 +145,7 @@ body[data-theme="bubble"] {
   --btn-hover-color: #0097a7;
   --btn-hover-border: #00bcd4;
   --btn-shadow: 0 0 8px #b2ebf2;
+
   background: url("bubble/fond_bubble.png") center center / cover no-repeat fixed;
 }
 /* ---- NATURE ---- */
@@ -260,15 +267,21 @@ body[data-theme="vitraux"] {
   --body-color: #eaeaea;
   --title-color: #eaeaea;
   --title-shadow: 0 0 16px #970036;
-  --canvas-bg: #22141c;
+
+  /* ⬇️ rendu semi-transparent */
+  --canvas-bg: rgba(34, 20, 28, 0.75);
   --canvas-border: #970036;
   --canvas-shadow: #970036;
+
   --panel-bg: #1b1322;
   --panel-border: #970036;
   --panel-shadow: #970036;
   --panel-text: #eaeaea;
-  --canvas-panel-bg: #1b1322;
+
+  /* mini canvases (Hold/Next) translucides aussi */
+  --canvas-panel-bg: rgba(27, 19, 34, 0.75);
   --canvas-panel-border: #970036;
+
   --box-bg: rgba(33,13,28,0.8);
   --box-border: #970036;
   --score-color: #a23b6c;
@@ -280,6 +293,7 @@ body[data-theme="vitraux"] {
   --btn-hover-color: #eaeaea;
   --btn-hover-border: #a23b6c;
   --btn-shadow: 0 0 10px #970036;
+
   background-image: url('vitraux/vitrail.png');
 }
 /* ---- CANDY ---- */
