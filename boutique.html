@@ -31,6 +31,7 @@
       user-select: none;
       align-items: center;
       justify-content: space-between;
+      position: relative;
     }
     .theme-card.special-cartouche:hover { transform: translateY(-1px); }
 
@@ -48,6 +49,35 @@
 
     /* Prix en blanc pour toutes les cartouches d'achats (hors thèmes) */
     .achats-list .prix-label { color:#fff; font-weight:700; }
+
+    /* ====== AJOUTS DEMANDÉS ====== */
+    /* Nom des thèmes plus grand (n’affecte que la grille des thèmes) */
+    .themes-list .theme-card .theme-label{
+      font-size: clamp(1.06rem, 1.7vw, 1.32rem);
+      line-height: 1.2;
+    }
+
+    /* Thème déjà possédé = léger assombrissement + badge */
+    .theme-card.unlocked{
+      /* garder visible mais griser légèrement */
+      filter: grayscale(35%) brightness(.92);
+    }
+    .theme-card.unlocked::after{
+      content: "✓ Possédé";
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0,0,0,.55);
+      color: #fff;
+      font-size: .72rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.15);
+      pointer-events: none;
+      user-select: none;
+      letter-spacing: .2px;
+    }
 
     /* Modal */
     .modal-backdrop {
@@ -395,9 +425,9 @@ const $close    = document.getElementById('themeModalClose');
 function openThemeModal(themeKey) {
   // Titre i18n (spécifique -> sinon "Aperçu du thème <key>")
   const specificKey = "boutique.modal.titre." + themeKey;
-  const specific = t(specificKey);
+  theSpecific = t(specificKey);
   const base = t("boutique.modal.titre");
-  $title.textContent = (specific !== specificKey ? specific : `${base} ${themeKey}`);
+  $title.textContent = (theSpecific !== specificKey ? theSpecific : `${base} ${themeKey}`);
 
   // Image avec fallback PNG UNIQUEMENT dans la popup
   const webp = `assets/modes/${themeKey}.webp`;
