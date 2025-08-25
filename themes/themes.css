@@ -115,7 +115,7 @@ button:hover {
 
 /* ---- BUBBLE ---- */
 body[data-theme="bubble"] {
-  --body-bg: #e0f7fa;
+  --body-bg: transparent; /* neutralise le fond uni */
   --body-color: #336699;
   --title-color: #00acc1;
   --title-shadow: 0 0 4px #b2ebf2;
@@ -146,7 +146,7 @@ body[data-theme="bubble"] {
   --btn-hover-border: #00bcd4;
   --btn-shadow: 0 0 8px #b2ebf2;
 
-  background: url("bubble/fond_bubble.png") center center / cover no-repeat fixed;
+  background: url("bubble/fond_bubble.png") center center / cover no-repeat fixed !important;
 }
 /* ---- NATURE ---- */
 body[data-theme="nature"] {
@@ -263,7 +263,7 @@ body[data-theme="retro"] {
 }
 /* ---- GOTHIC ---- */
 body[data-theme="vitraux"] {
-  --body-bg: linear-gradient(130deg, #25111a 60%, #302e37 100%);
+  --body-bg: transparent; /* neutralise le dégradé */
   --body-color: #eaeaea;
   --title-color: #eaeaea;
   --title-shadow: 0 0 16px #970036;
@@ -294,7 +294,7 @@ body[data-theme="vitraux"] {
   --btn-hover-border: #a23b6c;
   --btn-shadow: 0 0 10px #970036;
 
-  background-image: url('vitraux/vitrail.png');
+  background: url('vitraux/vitrail.png') center center / cover no-repeat fixed !important;
 }
 /* ---- CANDY ---- */
 body[data-theme="angelique"] {
