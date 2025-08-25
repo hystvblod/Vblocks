@@ -453,3 +453,25 @@ body[data-theme="space"] #controls {
   z-index: 2 !important;
 }
 
+/* 1) Canvas vraiment transparent, sans fallback noir */
+body[data-theme="bubble"]  canvas,
+body[data-theme="vitraux"] canvas {
+  background: transparent !important;
+}
+
+/* 2) Le conteneur du canvas ne doit pas recouvrir l'image de fond */
+body[data-theme="bubble"]  .canvas-main-wrap,
+body[data-theme="vitraux"] .canvas-main-wrap {
+  background: transparent !important;   /* enlève le panel-bg opaque */
+  box-shadow: none;                      /* optionnel: pas de voile d’ombre */
+  /* garder la bordure si tu veux un cadre autour : */
+  border-color: var(--panel-border, transparent) !important;
+}
+
+/* 3) (optionnel) Transparents aussi pour Hold/Next si tu veux voir le fond */
+body[data-theme="bubble"]  #holdCanvas,
+body[data-theme="bubble"]  #nextCanvas,
+body[data-theme="vitraux"] #holdCanvas,
+body[data-theme="vitraux"] #nextCanvas {
+  background: transparent !important;
+}
