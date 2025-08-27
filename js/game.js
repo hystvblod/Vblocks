@@ -989,6 +989,24 @@ function fillRectThemeSafe(c, px, py, size) {
       return ghost;
     }
 
+    // === HARD DROP (descente instantanée jusqu'au fantôme) ===
+    function hardDrop() {
+      if (!currentPiece) return;
+      const ghost = getGhostPiece();
+      if (!ghost) return;
+      currentPiece.y = ghost.y;
+      stopSoftDrop(); // au cas où
+      merge();
+      saveHistory();
+      reset();
+      lastTime = performance.now();
+      if (collision()) {
+        showEndPopup(score);
+        gameOver = true;
+      }
+      if (!gameOver && !paused) requestAnimationFrame(update);
+    }
+
     function drawBlockCustom(c, x, y, letter, size = BLOCK_SIZE, ghost = false, variant = 0) {
       let img = blockImages[letter];
       const px = x * size, py = y * size;
@@ -1206,15 +1224,18 @@ function fillRectThemeSafe(c, px, py, size) {
 
     let softDropTimer = null;
     let softDropActive = false;
-    const SOFT_DROP_INTERVAL = 70;
+    const SOFT_DROP_INTERVAL = 45;   // (aligné) chute rapide sur maintien
     const HOLD_ACTIVATION_MS = 180;
     let mustLiftFingerForNextSoftDrop = false;
 
-    // --- Nouveau : gestion de mode de geste pour éviter les "glissements" latéraux pendant le drop
+    // Verrou de geste pour éviter les glissements latéraux
     let gestureMode = 'none'; // 'none' | 'horizontal' | 'vertical'
-    const HORIZ_THRESHOLD = 36; // (était 30) un peu plus strict pour éviter les faux positifs
-    const DEAD_ZONE = 12;
-    const VERTICAL_LOCK_EARLY_MS = 140; // on verrouille vertical peu avant l'activation du soft drop
+    const HORIZ_THRESHOLD = 20; // (aligné) latéral plus vif
+    const DEAD_ZONE = 10;
+    const VERTICAL_LOCK_EARLY_MS = 140;
+
+    // flags de swipe
+    let didHardDrop = false;
 
     function startSoftDrop() {
       if (softDropActive || paused || gameOver) return;
@@ -1229,14 +1250,18 @@ function fillRectThemeSafe(c, px, py, size) {
       if (softDropTimer) clearInterval(softDropTimer);
       softDropTimer = null;
       softDropActive = false;
+      mustLiftFingerForNextSoftDrop = true; // anti “yo-yo”
     }
-
-    let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
-    let holdToDropTimeout = null;
 
     function isQuickSwipeUp(elapsed, dy) {
       return (elapsed < 220) && (dy < -42);
     }
+    function isQuickSwipeDown(elapsed, dy) {
+      return (elapsed < 220) && (dy > 42);
+    }
+
+    let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
+    let holdToDropTimeout = null;
 
     canvas.addEventListener('touchstart', function (e) {
       if (gameOver) return;
@@ -1247,11 +1272,12 @@ function fillRectThemeSafe(c, px, py, size) {
       dragging = true;
       touchStartTime = Date.now();
       gestureMode = 'none';
+      didHardDrop = false;
 
       clearTimeout(holdToDropTimeout);
       holdToDropTimeout = setTimeout(() => {
         if (dragging && !softDropActive) {
-          gestureMode = 'vertical';  // on lock vertical au moment du soft drop
+          gestureMode = 'vertical';  // lock vertical au moment du drop
           startSoftDrop();
         }
       }, HOLD_ACTIVATION_MS);
@@ -1266,50 +1292,65 @@ function fillRectThemeSafe(c, px, py, size) {
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-      // Si on est déjà en mode vertical (ou soft drop actif) → ignorer TOUT mouvement horizontal
+      // HARD DROP : flick down rapide → descente instantanée
+      if (!softDropActive && isQuickSwipeDown(elapsed, movedY) && !didHardDrop) {
+        didHardDrop = true;
+        gestureMode = 'vertical';
+        clearTimeout(holdToDropTimeout);
+        hardDrop();
+        dragging = false;
+        return;
+      }
+
+      // si vertical ou soft-drop actif → ignorer horizontal
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';
-        // On permet juste la rotation par "swipe up" rapide tant que le drop n’est pas actif
-        if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
+        if (!softDropActive && isQuickSwipeUp(elapsed, movedY)){
           rotatePiece();
-          // reset de référence pour ne pas ré-déclencher immédiatement
-          startY = t.clientY;
           touchStartTime = now;
+          startY = t.clientY;
         }
-        // éviter que la tenue du doigt relance le timer horizontal
         clearTimeout(holdToDropTimeout);
         return;
       }
 
-      // Si aucun mode fixé, on regarde d'abord l'horizontal (clairement dominant)
+      // détection du mode horizontal
       if (gestureMode === 'none') {
         if (Math.abs(movedX) > Math.max(Math.abs(movedY), DEAD_ZONE) && Math.abs(movedX) > HORIZ_THRESHOLD) {
           gestureMode = 'horizontal';
-          clearTimeout(holdToDropTimeout); // un vrai swipe horizontal annule le futur soft drop
+          clearTimeout(holdToDropTimeout);
         }
       }
 
-      // Traitement si mode horizontal
+      // déplacements latéraux (seuil 20px)
       if (gestureMode === 'horizontal') {
         if (movedX > HORIZ_THRESHOLD)  { move(1);  startX = t.clientX; }
         if (movedX < -HORIZ_THRESHOLD) { move(-1); startX = t.clientX; }
-        // éviter que le hold démarre par erreur si on a déjà bien bougé
         if (Math.abs(movedX) > 18) clearTimeout(holdToDropTimeout);
         return;
       }
 
-      // Sinon (mode encore 'none'): on autorise la rotation par "swipe up" rapide
+      // rotation par swipe up rapide
       if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
         rotatePiece();
         touchStartTime = now;
         startY = t.clientY;
       }
+
+      // swipe bas non rapide : drop + éventuellement enclencher soft-drop
+      if (movedY > 24 && !didHardDrop) {
+        if (!softDropActive) startSoftDrop();
+        dropPiece();
+        startY = t.clientY;
+      }
+
       if (Math.abs(movedX) > 18 || movedY < -18) {
         clearTimeout(holdToDropTimeout);
       }
     }, { passive: true });
 
     canvas.addEventListener('touchend', function () {
+      const wasHard = didHardDrop;
       dragging = false;
       clearTimeout(holdToDropTimeout);
 
@@ -1320,11 +1361,16 @@ function fillRectThemeSafe(c, px, py, size) {
         return;
       }
 
+      if (wasHard) {
+        didHardDrop = false;
+        gestureMode = 'none';
+        return;
+      }
+
+      // tap court => rotation si pas de drop ni de glissé horizontal
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
       const hasDropped   = Math.abs(movedY) > 18;
-
-      // Tap pour rotation uniquement si ni drop ni mouvement horizontal
       if (gestureMode !== 'horizontal' && isShortPress && !hasDropped && Math.abs(movedX) < 10) {
         rotatePiece();
       }
@@ -1336,13 +1382,14 @@ function fillRectThemeSafe(c, px, py, size) {
     canvas.addEventListener('touchcancel', function () {
       dragging = false;
       clearTimeout(holdToDropTimeout);
-      stopSoftDrop();
+      if (softDropActive) stopSoftDrop();
       mustLiftFingerForNextSoftDrop = false;
       gestureMode = 'none';
+      didHardDrop = false;
     }, { passive: true });
 
     document.addEventListener('keydown', e => {
-      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
       if (e.key === 'p' || e.key === 'P') { togglePause(); return; }
       if (gameOver || paused) return;
       switch (e.key) {
@@ -1350,6 +1397,7 @@ function fillRectThemeSafe(c, px, py, size) {
         case 'ArrowRight': move(1);     break;
         case 'ArrowDown':  dropPiece(); break;
         case 'ArrowUp':    rotatePiece(); break;
+        case ' ':          hardDrop(); break; // hard-drop clavier
         case 'c': case 'C': holdPieceSwapStay();  break;
       }
     });
