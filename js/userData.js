@@ -51,9 +51,46 @@ function setPseudo(pseudo) {
   localStorage.setItem('pseudo', pseudo);
 }
 
-// 3️⃣ Langue
+// 3️⃣ Langue — alignée sur i18n.js (même clé, même normalisation)
+function normalizeLangForCloud(code) {
+  if (!code) return null;
+  const c = String(code).toUpperCase();
+  // On accepte déjà les formats fichiers: FR, EN, PT-BR…
+  if (["FR","EN","ES","DE","IT","PT","PT-BR","NL","AR","IDN","JP","KO"].includes(c)) return c;
+
+  const lower = c.toLowerCase();
+  if (lower.startsWith("pt-br")) return "PT-BR";
+  if (lower.startsWith("pt"))    return "PT";
+  if (lower.startsWith("en"))    return "EN";
+  if (lower.startsWith("fr"))    return "FR";
+  if (lower.startsWith("de"))    return "DE";
+  if (lower.startsWith("es"))    return "ES";
+  if (lower.startsWith("it"))    return "IT";
+  if (lower.startsWith("nl"))    return "NL";
+  if (lower === "ar" || lower.startsWith("ar-")) return "AR";
+  if (lower === "id" || lower.startsWith("id-")) return "IDN";
+  if (lower === "ja" || lower.startsWith("ja-")) return "JP";
+  if (lower === "ko" || lower.startsWith("ko-")) return "KO";
+  return null;
+}
+
+function detectPreferredLangForCloud() {
+  const list = Array.isArray(navigator.languages) && navigator.languages.length
+    ? navigator.languages
+    : [navigator.language || navigator.userLanguage];
+  for (const c of list) {
+    const n = normalizeLangForCloud(c);
+    if (n) return n;
+  }
+  return "EN";
+}
+
 function getLang() {
-  return localStorage.getItem('lang') || navigator.language?.split('-')[0] || 'fr';
+  // même clé que les Paramètres / i18n.js
+  const stored = localStorage.getItem('langue');
+  const nStored = normalizeLangForCloud(stored);
+  if (nStored) return nStored;
+  return detectPreferredLangForCloud();
 }
 
 // 4️⃣ Crée/Sync user Supabase
@@ -125,7 +162,7 @@ function setupPseudoPopup() {
   };
 }
 
-// 8️⃣ Highscore local + cloud (inchangé, c’est juste du score)
+// 8️⃣ Highscore local + cloud (inchangé)
 function getLocalHighScore() {
   return parseInt(localStorage.getItem('highscore') || '0', 10);
 }

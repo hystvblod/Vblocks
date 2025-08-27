@@ -1,42 +1,84 @@
-// i18n.js
-(function(global){
-  // Dossier où sont stockées les langues (relatif au HTML courant)
+// i18n.js — auto-détection + override utilisateur + fallback propre
+(function (global) {
+  // Emplacement des JSON de langue
   const LANG_PATH = "data/";
 
-  // Liste des langues et correspondance code <-> fichier
-  const LANG_CODES = [
-    "FR", "EN", "ES", "DE", "IT", "PT", "PT-BR", "NL", "AR", "IDN", "JP", "KO"
-  ];
+  // Langues supportées (noms de fichiers disponibles)
+  const SUP = ["FR","EN","ES","DE","IT","PT","PT-BR","NL","AR","IDN","JP","KO"];
 
-  // Fonction pour récupérer le code langue, gère fallback (fr par défaut)
-  function getLangCode() {
-    let lang = (localStorage.getItem("langue") || "fr").toUpperCase().replace('-', '');
-    if (lang === "PTBR") lang = "PT-BR";
-    if (!LANG_CODES.includes(lang)) lang = "FR";
-    return lang;
+  // Normalise un code navigateur -> code de fichier
+  function normalize(code) {
+    if (!code) return null;
+    let c = String(code).trim();
+
+    // ex: fr-FR -> fr, en-GB -> en, pt-BR -> pt-BR
+    c = c.replace('_','-');
+    const lower = c.toLowerCase();
+
+    // cas spéciaux vers nos fichiers
+    if (lower.startsWith("pt-br")) return "PT-BR";
+    if (lower.startsWith("pt"))    return "PT";
+    if (lower.startsWith("en"))    return "EN";
+    if (lower.startsWith("fr"))    return "FR";
+    if (lower.startsWith("de"))    return "DE";
+    if (lower.startsWith("es"))    return "ES";
+    if (lower.startsWith("it"))    return "IT";
+    if (lower.startsWith("nl"))    return "NL";
+    if (lower === "ar" || lower.startsWith("ar-")) return "AR";
+    if (lower === "id" || lower.startsWith("id-")) return "IDN";
+    if (lower === "ja" || lower.startsWith("ja-")) return "JP";
+    if (lower === "ko" || lower.startsWith("ko-")) return "KO";
+
+    // si on nous passe déjà un code fichier valide
+    const up = lower.toUpperCase();
+    if (SUP.includes(up)) return up;
+
+    return null;
   }
 
-  // Charge le fichier de langue choisi (Promise)
+  // Détecte la meilleure langue côté device
+  function detectPreferredLang() {
+    const list = Array.isArray(navigator.languages) && navigator.languages.length
+      ? navigator.languages
+      : [navigator.language || navigator.userLanguage];
+
+    for (const c of list) {
+      const n = normalize(c);
+      if (n && SUP.includes(n)) return n;
+    }
+    return "EN"; // fallback global (change en "FR" si tu veux imposer FR par défaut)
+  }
+
+  // Lit l'override utilisateur (Paramètres) OU auto-détection
+  function getLangCode() {
+    const stored = localStorage.getItem("langue"); // override manuel
+    const nStored = normalize(stored);
+    if (nStored && SUP.includes(nStored)) return nStored;
+    return detectPreferredLang();
+  }
+
   async function loadLang(langCode) {
-    let response;
     try {
-      response = await fetch(`${LANG_PATH}${langCode}.json`);
-      if (!response.ok) throw new Error("404");
-      let json = await response.json();
-      return json;
-    } catch (e) {
-      // Fallback FR si fichier absent
-      if (langCode !== "FR") return await loadLang("FR");
+      const res = await fetch(`${LANG_PATH}${langCode}.json`, { cache: "no-store" });
+      if (!res.ok) throw new Error("Not OK");
+      return await res.json();
+    } catch (_) {
+      // Fallback final si fichier manquant
+      if (langCode !== "EN") {
+        try {
+          const res2 = await fetch(`${LANG_PATH}EN.json`, { cache: "no-store" });
+          if (res2.ok) return await res2.json();
+        } catch {}
+      }
       return {};
     }
   }
 
-  // Remplace tout dans le DOM avec data-i18n
-  function applyI18n(i18nMap) {
+  function applyI18n(map) {
     document.querySelectorAll("[data-i18n]").forEach(el => {
-      let key = el.getAttribute("data-i18n");
+      const key = el.getAttribute("data-i18n");
       if (!key) return;
-      let txt = i18nMap[key];
+      const txt = map[key];
       if (typeof txt === "string") {
         if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
           el.placeholder = txt;
@@ -47,34 +89,35 @@
     });
   }
 
-  // Méthode globale : appelable depuis le HTML ou n'importe où
-  global.i18nTranslateAll = async function() {
+  global.i18nTranslateAll = async function () {
     const langCode = getLangCode();
+    // met à jour <html lang="..">
+    document.documentElement.setAttribute("lang",
+      langCode === "PT-BR" ? "pt-BR" : langCode.toLowerCase()
+    );
+
     const i18nMap = await loadLang(langCode);
-    global.I18N_MAP = i18nMap; // Pour accès global si besoin
+    global.I18N_MAP = i18nMap;
     applyI18n(i18nMap);
   };
 
-  // Accès direct à la traduction d'une clé
-  global.i18nGet = function(key) {
-    if (global.I18N_MAP && global.I18N_MAP[key]) return global.I18N_MAP[key];
-    return key;
+  global.i18nGet = function (key) {
+    return (global.I18N_MAP && global.I18N_MAP[key]) || key;
   };
 
-  // Permet d'appliquer manuellement i18n (pour compatibilité)
-  global.applyI18n = applyI18n;
-
-  // Charge et applique automatiquement à l'ouverture de la page
-  window.addEventListener("DOMContentLoaded", global.i18nTranslateAll);
-
-  // Permet de changer de langue dynamiquement (recharge le JSON et relance apply)
-  global.setLang = async function(code) {
-    localStorage.setItem("langue", code);
+  global.setLang = async function (code) {
+    const n = normalize(code);
+    if (n && SUP.includes(n)) {
+      localStorage.setItem("langue", n); // on stocke AU FORMAT FICHIER (FR, EN, PT-BR…)
+    } else {
+      localStorage.removeItem("langue");
+    }
     await global.i18nTranslateAll();
+    // à toi de rafraîchir l’écran si nécessaire
   };
 
+  window.addEventListener("DOMContentLoaded", global.i18nTranslateAll);
 })(window);
 
-window.i18nReady = (async () => {
-  await window.i18nTranslateAll();
-})();
+// Optionnel: promesse d’init prête
+window.i18nReady = (async () => { await window.i18nTranslateAll(); })();

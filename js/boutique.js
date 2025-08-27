@@ -208,22 +208,22 @@ function setupBoutiqueAchats() {
     }
 
     // --- PUB REWARD
-    if (key === 'boutique.cartouche.pub1jeton') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        await addJetonsSupabase(1);
-        alert("+1 jeton ajouté !");
-        await renderThemes();
-      };
-    }
-    if (key === 'boutique.cartouche.pub300points') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        await addVCoinsSupabase(300);
-        alert("+300 VCoins ajoutés !");
-        await renderThemes();
-      };
-    }
+ if (key === 'boutique.cartouche.pub1jeton') {
+  cartouche.style.cursor = 'pointer';
+  cartouche.onclick = () => {
+    // ✅ déclenche la rewarded ; crédite 1 jeton seulement si “rewarded == true”
+    showRewardBoutique();
+  };
+}
+
+if (key === 'boutique.cartouche.pub300points') {
+  cartouche.style.cursor = 'pointer';
+  cartouche.onclick = () => {
+    // ✅ déclenche la rewarded ; crédite 300 VCoins seulement si “rewarded == true”
+    showRewardVcoins();
+  };
+}
+
   });
 }
 

@@ -151,10 +151,8 @@
       <span data-i18n="profil.btn.theme">Thèmes</span>
     </button>
 
-    <!-- SUPPRIMÉ: Bouton Amis + toute référence à amis.html -->
-    <!-- SUPPRIMÉ: Texte 'Reçois 2 jetons…' -->
-
-    <button class="applis-btn-vb" id="applisBtn">
+    <!-- Bouton "Nos applis" masqué temporairement -->
+    <button class="applis-btn-vb" id="applisBtn" style="display:none;">
       <span data-i18n="profil.btn.applis">Nos applis</span>
     </button>
   </div>
@@ -221,8 +219,12 @@
       // Ouvrir la popup Thèmes simple
       document.getElementById("changeThemeBtn").onclick = openThemePopup;
 
-      // "Nos applis" -> applis.html direct
-      document.getElementById("applisBtn").onclick = () => { window.location.href = "applis.html"; };
+      // Désactivation explicite du bouton "Nos applis"
+      const btnApplis = document.getElementById("applisBtn");
+      if (btnApplis) {
+        btnApplis.style.display = "none";
+        btnApplis.onclick = null;
+      }
     });
 
     // --- Popup pseudo ---
