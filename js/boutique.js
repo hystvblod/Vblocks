@@ -11,32 +11,20 @@ const THEMES = [
   { key: "pixel" }, { key: "halloween" }
 ];
 
-// --- Cartouches d’achats spéciaux (OFFRES POINTS AJOUTÉES)
+// --- Cartouches d’achats spéciaux
 const SPECIAL_CARTOUCHES = [
-  {
-    key: "boutique.cartouche.points3000",
-    icon: '<img src="assets/images/vcoin.webp" alt="Points">',
-    color: 'color-yellow',
-    prix: "",
-    amount: 3000
-  },
-  {
-    key: "boutique.cartouche.points10000",
-    icon: '<img src="assets/images/vcoin.webp" alt="Points">',
-    color: 'color-purple',
-    prix: "",
-    amount: 10000
-  },
-  { key: "boutique.cartouche.jetons12",  icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-blue',   prix:"", amount:12 },
-  { key: "boutique.cartouche.jetons50",  icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-purple', prix:"", amount:50 },
-  { key: "boutique.cartouche.nopub",     icon:'<img src="assets/images/ads.png" alt="No Ads">',   color:'color-yellow', prix:"" },
-  { key: "boutique.cartouche.pub1jeton", icon:'<img src="assets/images/jeton.webp" alt="Pub">',   color:'color-green' },
-  { key: "boutique.cartouche.pub300points", icon:'<img src="assets/images/vcoin.webp" alt="Pub">', color:'color-blue' }
+  { key: "boutique.cartouche.points3000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "", amount: 3000 },
+  { key: "boutique.cartouche.points10000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-purple', prix: "", amount: 10000 },
+  { key: "boutique.cartouche.jetons12",    icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-blue',   prix:"", amount:12 },
+  { key: "boutique.cartouche.jetons50",    icon: '<img src="assets/images/jeton.webp" alt="jeton">', color: 'color-purple', prix:"", amount:50 },
+  { key: "boutique.cartouche.nopub",       icon: '<img src="assets/images/ads.png" alt="No Ads">',   color: 'color-yellow', prix:"" },
+  { key: "boutique.cartouche.pub1jeton",   icon: '<img src="assets/images/jeton.webp" alt="Pub">',   color: 'color-green' },
+  { key: "boutique.cartouche.pub300points",icon: '<img src="assets/images/vcoin.webp" alt="Pub">',   color: 'color-blue' }
 ];
 
 const THEME_PRICE = 5000;
 
-// --- IDs des produits (Google Play / iOS) — à remplacer par tes vrais IDs
+// --- IDs des produits (Google Play / iOS)
 const PRODUCT_IDS = {
   points3000: 'points3000_id',
   points10000: 'points10000_id',
@@ -45,12 +33,12 @@ const PRODUCT_IDS = {
   nopub: 'nopub_id'
 };
 
-// --- Utilitaires cloud (userId etc)
+// --- Utilitaires cloud
 function getUserId() {
   return localStorage.getItem('user_id') || "";
 }
 
-// --- VCoins & Jetons 100% Supabase (gains gratuits only)
+// --- VCoins & Jetons Supabase
 async function getVCoinsSupabase() {
   const { data, error } = await sb.from('users').select('vcoins').eq('id', getUserId()).single();
   if (error) return 0;
@@ -72,7 +60,7 @@ async function addJetonsSupabase(amount) {
   return await getJetonsSupabase();
 }
 
-// --- Themes/cadres POSSEDES : cloud ONLY
+// --- Themes/cadres POSSEDES
 async function getUnlockedThemesCloud() {
   const { data, error } = await sb.from('users').select('themes_possedes').eq('id', getUserId()).single();
   if (error) return [];
@@ -82,7 +70,7 @@ async function setUnlockedThemesCloud(newThemes) {
   await sb.from('users').update({ themes_possedes: newThemes }).eq('id', getUserId());
 }
 
-// --- Achat sécurisé (débloque dans Supabase)
+// --- Achat sécurisé (Supabase RPC)
 async function acheterTheme(themeKey, prix) {
   try {
     const { error } = await sb.rpc('purchase_theme', {
@@ -103,7 +91,7 @@ async function acheterTheme(themeKey, prix) {
   }
 }
 
-// --- Achats EUR (API Vercel)
+// --- Achats EUR (via API Vercel)
 async function acheterProduitVercel(type) {
   const userId = getUserId();
   try {
@@ -127,27 +115,23 @@ async function acheterProduitVercel(type) {
 }
 
 // --- Activation (localStorage)
-function getCurrentTheme() {
-  return localStorage.getItem('themeVBlocks') || "bubble";
-}
-function setCurrentTheme(theme) {
-  localStorage.setItem('themeVBlocks', theme);
-}
+function getCurrentTheme() { return localStorage.getItem('themeVBlocks') || "bubble"; }
+function setCurrentTheme(theme) { localStorage.setItem('themeVBlocks', theme); }
 
-// --- UI : Cartouches achats
+// --- UI Achats
 function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
   let achatsHtml = SPECIAL_CARTOUCHES.map(c => `
     <div class="special-cartouche ${c.color}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      <span class="prix-label">${c.prix || "…"}</span>  <!-- placeholder -->
+      <span class="prix-label">${c.prix || "…"}</span>
     </div>
   `).join('');
   $achatsList.innerHTML = achatsHtml;
 }
 
-// --- UI : Thèmes/cadres
+// --- UI Themes
 async function renderThemes() {
   renderAchats();
   const list = document.getElementById('themes-list');
@@ -176,20 +160,20 @@ async function renderThemes() {
   document.querySelectorAll('.vcoins-solde')[1].textContent = await getJetonsSupabase();
 }
 
-// --- Initialisation
+// --- Init
 document.addEventListener("DOMContentLoaded", function() {
   renderThemes();
   setupBoutiqueAchats();
 });
 
-// --- Branche les achats monétaires et pub reward
+// --- Branche Achats + Pub
 function setupBoutiqueAchats() {
   document.querySelectorAll('.special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
     if (!label) return;
     const key = label.dataset.i18n || label.textContent;
 
-    // --- Achats via Store (sécurisé)
+    // Achats via Store
     if (PRODUCT_IDS[key?.split('.').pop()]) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
@@ -199,7 +183,6 @@ function setupBoutiqueAchats() {
         if (IAP) {
           IAP.order(pid);
         } else {
-          // Fallback web: passe par ton API
           await acheterProduitVercel(alias);
           await renderThemes();
           setupBoutiqueAchats();
@@ -207,27 +190,19 @@ function setupBoutiqueAchats() {
       };
     }
 
-    // --- PUB REWARD
- if (key === 'boutique.cartouche.pub1jeton') {
-  cartouche.style.cursor = 'pointer';
-  cartouche.onclick = () => {
-    // ✅ déclenche la rewarded ; crédite 1 jeton seulement si “rewarded == true”
-    showRewardBoutique();
-  };
-}
-
-if (key === 'boutique.cartouche.pub300points') {
-  cartouche.style.cursor = 'pointer';
-  cartouche.onclick = () => {
-    // ✅ déclenche la rewarded ; crédite 300 VCoins seulement si “rewarded == true”
-    showRewardVcoins();
-  };
-}
-
+    // PUB Reward
+    if (key === 'boutique.cartouche.pub1jeton') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = () => showRewardBoutique();
+    }
+    if (key === 'boutique.cartouche.pub300points') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = () => showRewardVcoins();
+    }
   });
 }
 
-// --- Store initialisation (Cordova Purchase) — sécurisé
+// --- Store init Cordova Purchase
 document.addEventListener('deviceready', function() {
   const IAP = (window.store && typeof window.store.register === 'function') ? window.store : null;
   if (!IAP) {
@@ -239,9 +214,29 @@ document.addEventListener('deviceready', function() {
     IAP.register({ id, alias, type: IAP.CONSUMABLE });
   });
 
+  // Ecouteurs IAP pour appliquer l'achat
+  Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
+    store.when(id).approved(async (p) => {
+      try {
+        await acheterProduitVercel(alias);
+        if (alias === "nopub") {
+          await sb.from('users').update({ nopub: true }).eq('id', getUserId());
+        }
+        p.finish();
+        await renderThemes?.();
+        setupPubCartouches?.();
+        setupBoutiqueAchats?.();
+        alert("Achat réussi !");
+      } catch (e) {
+        console.warn("[IAP] post-achat erreur:", e);
+        p.finish();
+        alert("Erreur post-achat.");
+      }
+    });
+  });
+
   IAP.ready(function() {
     console.log("Produits dispo:", IAP.products);
-    // Récupération des prix pour les cartouches
     SPECIAL_CARTOUCHES.forEach(c => {
       const pid = PRODUCT_IDS[c.key?.split('.').pop()];
       if (pid) {
