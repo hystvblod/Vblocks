@@ -1,7 +1,6 @@
 // =============================
-// INIT SUPABASE (création unique, mode Capacitor)
+// INIT SUPABASE (création unique, mode Capacitor / Web)
 // =============================
-
 const SUPABASE_URL = 'https://youhealyblgbwjhsskca.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
 
@@ -16,11 +15,9 @@ const ALL_THEMES = [
   "nuit", "nature", "bubble", "retro",
   "vitraux", "angelique", "luxury", "space", "cyber"
 ];
-window.getAllThemes = function() {
-  return ALL_THEMES;
-};
+window.getAllThemes = function () { return ALL_THEMES; };
 
-// Thème courant (peut rester local, purement visuel)
+// Thème courant (local, purement visuel)
 function getCurrentTheme() {
   return localStorage.getItem("themeVBlocks") || "neon";
 }
@@ -28,18 +25,18 @@ function setCurrentTheme(theme) {
   localStorage.setItem("themeVBlocks", theme);
 }
 
-// 1️⃣ ID local uniquement pour l’auth (obligatoire)
-function getUserId() {
-  let id = localStorage.getItem('user_id');
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem('user_id', id);
-  }
-  return id;
+// =============================
+// AUTH ANONYME + MIGRATION LEGACY
+// =============================
+
+// (legacy) ID local historique — on ne s’en sert plus pour écrire,
+// mais on l’utilise 1x pour lier l’ancien profil à l’auth anonyme
+function getLegacyLocalUserId() {
+  return localStorage.getItem('user_id') || null;
 }
 
-// 2️⃣ Pseudo local pour le cache, mais MAJ cloud dès modif
-function getPseudo() {
+// Pseudo local (cache UI, on passe ensuite par RPC sécurisée pour écrire)
+function getPseudoLocal() {
   let pseudo = localStorage.getItem('pseudo');
   if (!pseudo) {
     pseudo = 'Player_' + Math.random().toString(36).substring(2, 8);
@@ -47,15 +44,14 @@ function getPseudo() {
   }
   return pseudo;
 }
-function setPseudo(pseudo) {
+function setPseudoLocal(pseudo) {
   localStorage.setItem('pseudo', pseudo);
 }
 
-// 3️⃣ Langue — alignée sur i18n.js (même clé, même normalisation)
+// Langue — alignée sur i18n.js (mêmes clés)
 function normalizeLangForCloud(code) {
   if (!code) return null;
   const c = String(code).toUpperCase();
-  // On accepte déjà les formats fichiers: FR, EN, PT-BR…
   if (["FR","EN","ES","DE","IT","PT","PT-BR","NL","AR","IDN","JP","KO"].includes(c)) return c;
 
   const lower = c.toLowerCase();
@@ -73,7 +69,6 @@ function normalizeLangForCloud(code) {
   if (lower === "ko" || lower.startsWith("ko-")) return "KO";
   return null;
 }
-
 function detectPreferredLangForCloud() {
   const list = Array.isArray(navigator.languages) && navigator.languages.length
     ? navigator.languages
@@ -84,53 +79,197 @@ function detectPreferredLangForCloud() {
   }
   return "EN";
 }
-
 function getLang() {
-  // même clé que les Paramètres / i18n.js
   const stored = localStorage.getItem('langue');
   const nStored = normalizeLangForCloud(stored);
   if (nStored) return nStored;
   return detectPreferredLangForCloud();
 }
 
-// 4️⃣ Crée/Sync user Supabase
-async function initUserData() {
-  const id = getUserId();
-  const pseudo = getPseudo();
-  const lang = getLang();
-  let { data } = await sb
-    .from('users')
-    .select('id')
-    .eq('id', id)
-    .single();
-  if (!data) {
-    await sb.from('users').insert([{ id, pseudo, lang }]);
+// --- 1) S’assurer qu’on a une session anonyme ---
+async function ensureAuth() {
+  try {
+    const { data: { session }, error } = await sb.auth.getSession();
+    if (error) console.warn('[auth.getSession] warn:', error?.message);
+
+    if (!session) {
+      const { error: errAnon } = await sb.auth.signInAnonymously();
+      if (errAnon) throw errAnon;
+    }
+  } catch (e) {
+    console.error('[ensureAuth] échec auth anonyme:', e?.message || e);
+    throw e;
   }
 }
 
-// 5️⃣ MAJ pseudo côté Supabase
-async function updatePseudo(newPseudo) {
-  setPseudo(newPseudo); // MAJ local
-  const { error } = await sb.from('users').update({ pseudo: newPseudo }).eq('id', getUserId());
-  if (error) {
-    alert("Erreur Supabase: " + error.message);
-    return false;
+// --- 2) Lier l’auth anonyme à l’ancien profil local (si existant) ---
+async function linkLegacyIfNeeded() {
+  const legacy = getLegacyLocalUserId();
+  if (!legacy) return;
+
+  const already = localStorage.getItem('legacy_linked');
+  if (already === '1') return;
+
+  try {
+    // lie auth.uid() -> users.auth_id = me pour l'ancienne ligne id = legacy
+    const { error } = await sb.rpc('link_auth_to_legacy', { legacy_id: legacy });
+    if (!error) {
+      localStorage.setItem('legacy_linked', '1');
+    }
+  } catch (e) {
+    console.warn('[linkLegacyIfNeeded] non bloquant:', e?.message || e);
   }
+}
+
+// --- 3) Créer la ligne user si besoin (via RPC sécurisée) ---
+async function ensureUserRow() {
+  try {
+    const lang = getLang();
+    const pseudoFallback = getPseudoLocal();
+    // crée le profil si inexistant (id = auth.uid() OU déjà mappé via auth_id)
+    await sb.rpc('ensure_user', { default_lang: lang, default_pseudo: pseudoFallback });
+  } catch (e) {
+    console.warn('[ensureUserRow] non bloquant:', e?.message || e);
+  }
+}
+
+// --- 4) Bootstrap global à appeler au démarrage de l’app ---
+async function bootstrapAuthAndProfile() {
+  await ensureAuth();
+  await linkLegacyIfNeeded();
+  await ensureUserRow();
+}
+
+// Récup id auth courant
+async function getAuthUserId() {
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    return user?.id || null;
+  } catch { return null; }
+}
+
+// =============================
+// LECTURES / ÉCRITURES SÉCURISÉES (RPC)
+// =============================
+
+// Regroupe les champs courants du profil
+async function getProfileSecure() {
+  await bootstrapAuthAndProfile();
+  const { data, error } = await sb.rpc('get_balances'); // renvoie 1 ligne
+  if (error) throw error;
+
+  const row = (Array.isArray(data) ? data[0] : data) || {};
+  // fallback minimum si table vide (ne devrait pas arriver)
+  if (!row.themes_possedes || !Array.isArray(row.themes_possedes)) {
+    row.themes_possedes = ["neon"];
+  }
+  return row;
+}
+
+// --- PSEUDO ---
+async function updatePseudoSecure(newPseudo) {
+  await bootstrapAuthAndProfile();
+  const np = String(newPseudo || '').trim();
+  if (np.length < 3) throw new Error('Pseudo trop court.');
+  const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
+  if (error) throw error;
+  setPseudoLocal(np); // garde le cache visuel en phase
   return true;
 }
 
-// 6️⃣ Injecte le pseudo dans le profil.html (toujours cloud, jamais local direct)
-async function updatePseudoUI() {
-  const id = getUserId();
-  let { data, error } = await sb.from('users').select('pseudo').eq('id', id).single();
-  let pseudo = data?.pseudo;
-  if (!pseudo) pseudo = getPseudo(); // fallback
-  setPseudo(pseudo); // keep local en phase
-  const el = document.getElementById("profilPseudo");
-  if (el) el.textContent = pseudo;
+// --- VCOINS ---
+async function addVCoinsSecure(amount) {
+  await bootstrapAuthAndProfile();
+  const delta = parseInt(amount, 10) || 0;
+  const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
+  if (error) throw error;
+  // On relit si besoin via getProfileSecure()
+}
+async function getVCoinsSecure() {
+  const p = await getProfileSecure();
+  return p.vcoins || 0;
 }
 
-// 7️⃣ Prépare le popup UI pour changer pseudo
+// --- JETONS ---
+async function addJetonsSecure(amount) {
+  await bootstrapAuthAndProfile();
+  const delta = parseInt(amount, 10) || 0;
+  const { error } = await sb.rpc('ajouter_jetons', { montant: delta });
+  if (error) throw error;
+}
+async function getJetonsSecure() {
+  const p = await getProfileSecure();
+  return p.jetons || 0;
+}
+
+// --- THEMES ---
+async function getUnlockedThemesCloud() {
+  const p = await getProfileSecure();
+  return Array.isArray(p.themes_possedes) ? p.themes_possedes : ["neon"];
+}
+async function setUnlockedThemesCloud(themes) {
+  // Normalement on passe par purchase_theme() côté serveur pour les achats.
+  // Si besoin admin/debug: setter sécurisé (optionnel).
+  await bootstrapAuthAndProfile();
+  const { error } = await sb.rpc('set_themes_secure', { themes });
+  if (error) throw error;
+  return true;
+}
+async function purchaseThemeSecure(themeKey, price) {
+  await bootstrapAuthAndProfile();
+  const { error } = await sb.rpc('purchase_theme', { theme_key: String(themeKey), price: parseInt(price, 10) || 0 });
+  if (error) throw error;
+  return true;
+}
+
+// --- SCORES ---
+function getLocalHighScore() {
+  return parseInt(localStorage.getItem('highscore') || '0', 10);
+}
+function setLocalHighScore(score) {
+  localStorage.setItem('highscore', String(score));
+}
+async function setHighScoreSecure(score) {
+  await bootstrapAuthAndProfile();
+  const val = parseInt(score, 10) || 0;
+  const { error } = await sb.rpc('set_highscore_secure', { new_score: val });
+  if (error) throw error;
+}
+async function getHighScoreSecure() {
+  const p = await getProfileSecure();
+  return p.highscore || 0;
+}
+async function setLastScoreSecure(score) {
+  await bootstrapAuthAndProfile();
+  const val = parseInt(score, 10) || 0;
+  const { error } = await sb.rpc('set_lastscore_secure', { last_score: val });
+  if (error) throw error;
+}
+function updateScoreIfHigher(newScore) {
+  const current = getLocalHighScore();
+  if (newScore > current) {
+    setLocalHighScore(newScore);
+    // on ne bloque pas sur l’async
+    setHighScoreSecure(newScore).catch(() => {});
+  }
+}
+
+// =============================
+// UI HELPERS (profil / pseudo / concours / popups)
+// =============================
+async function updatePseudoUI() {
+  try {
+    const prof = await getProfileSecure();
+    const pseudo = prof?.pseudo || getPseudoLocal();
+    setPseudoLocal(pseudo);
+    const el = document.getElementById("profilPseudo");
+    if (el) el.textContent = pseudo;
+  } catch {
+    const el = document.getElementById("profilPseudo");
+    if (el) el.textContent = getPseudoLocal();
+  }
+}
+
 function setupPseudoPopup() {
   const popup = document.getElementById("popupPseudo");
   const input = document.getElementById("newPseudo");
@@ -143,7 +282,7 @@ function setupPseudoPopup() {
   btnChange.onclick = () => {
     popup.classList.add("active");
     errorDiv.textContent = "";
-    input.value = getPseudo();
+    input.value = getPseudoLocal();
   };
   btnCancel.onclick = () => {
     popup.classList.remove("active");
@@ -154,137 +293,96 @@ function setupPseudoPopup() {
       errorDiv.textContent = "Pseudo trop court.";
       return;
     }
-    const ok = await updatePseudo(pseudo);
-    if (ok) {
+    try {
+      await updatePseudoSecure(pseudo);
       await updatePseudoUI();
       popup.classList.remove("active");
+    } catch (e) {
+      errorDiv.textContent = e?.message || "Erreur";
     }
   };
 }
 
-// 8️⃣ Highscore local + cloud (inchangé)
-function getLocalHighScore() {
-  return parseInt(localStorage.getItem('highscore') || '0', 10);
-}
-function setLocalHighScore(score) {
-  localStorage.setItem('highscore', score);
-}
-async function syncHighScore() {
-  const id = getUserId();
-  const score = getLocalHighScore();
-  await sb.from('users').update({ highscore: score }).eq('id', id);
-}
-function updateScoreIfHigher(newScore) {
-  const current = getLocalHighScore();
-  if (newScore > current) {
-    setLocalHighScore(newScore);
-    syncHighScore();
-  }
+// Bouton concours affiché selon config
+async function checkConcoursStatus() {
+  try {
+    const { data, error } = await sb
+      .from('config')
+      .select('concours_enabled')
+      .eq('id', 'global')
+      .single();
+    if (!error) {
+      const el = document.getElementById("btnConcours");
+      if (el) el.style.display = data?.concours_enabled ? "block" : "none";
+    }
+  } catch {}
 }
 
-// 9️⃣ Init complet
-initUserData();
-window.addEventListener("DOMContentLoaded", () => {
-  updatePseudoUI();
-  setupPseudoPopup();
-});
-window.updatePseudo = updatePseudo;
+// Popups ciblées (table messages_popup.userid = auth.uid())
+// + marquage "vue"
+async function checkAndShowPopupOnce() {
+  try {
+    await bootstrapAuthAndProfile();
+    const me = await getAuthUserId();
+    if (!me) return;
 
-// ===== VCOINS, JETONS, THEMES : SUPABASE SEULEMENT ! =====
+    const { data, error } = await sb
+      .from('messages_popup')
+      .select('id,message,vue,created_at')
+      .eq('userid', me)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (error || !data || !data.length) return;
 
-// ➡️ Ajoute/retire des VCoins (RPC Supabase)
-async function addVCoinsSupabase(amount) {
-  const userId = getUserId();
-  const { data, error } = await sb.rpc('add_vcoins', {
-    user_id: userId,
-    delta: amount
-  });
-  if (error) throw error;
-  return data?.[0]?.new_balance ?? 0;
+    const msg = data[0];
+    if (!msg.vue) {
+      alert(msg.message); // remplace par ta modale custom si besoin
+      await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
+    }
+  } catch {}
 }
 
-// ➡️ Lis le solde VCoins cloud ONLY
-async function getVCoinsSupabase() {
-  const userId = getUserId();
-  const { data, error } = await sb.from('users').select('vcoins').eq('id', userId).single();
-  if (error) return 0;
-  return data.vcoins;
+// Realtime popups
+async function listenPopupsRealtime() {
+  try {
+    await bootstrapAuthAndProfile();
+    const me = await getAuthUserId();
+    if (!me) return;
+
+    sb.channel('popups_for_' + me)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages_popup', filter: `userid=eq.${me}` },
+        async (payload) => {
+          const m = payload.new;
+          alert(m.message);
+          await sb.from('messages_popup').update({ vue: true }).eq('id', m.id);
+        }
+      )
+      .subscribe();
+  } catch {}
 }
 
-// ➡️ Ajoute/retire des Jetons (RPC Supabase)
-async function addJetonsSupabase(amount) {
-  const userId = getUserId();
-  const { data, error } = await sb.rpc('add_jetons', {
-    user_id: userId,
-    delta: amount
-  });
-  if (error) throw error;
-  return data?.[0]?.new_balance ?? 0;
-}
-
-// ➡️ Définit la valeur des jetons (setter cloud only)
-async function setJetonsSupabase(newValue) {
-  const userId = getUserId();
-  const { error } = await sb.from('users').update({ jetons: newValue }).eq('id', userId);
-  if (error) throw error;
-  return newValue;
-}
-
-// ➡️ Lis le solde Jetons cloud ONLY
-async function getJetonsSupabase() {
-  const userId = getUserId();
-  const { data, error } = await sb.from('users').select('jetons').eq('id', userId).single();
-  if (error) return 0;
-  return data.jetons;
-}
-
-// --- THEMES VBLOCKS ---
-// 100% CLOUD pour débloqués !
-async function getUnlockedThemesCloud() {
-  const userId = getUserId();
-  const { data, error } = await sb.from('users').select('themes_possedes').eq('id', userId).single();
-  if (error) return ["neon"]; // fallback minimal
-  return Array.isArray(data?.themes_possedes) ? data.themes_possedes : ["neon"];
-}
-async function setUnlockedThemesCloud(themes) {
-  const userId = getUserId();
-  await sb.from('users').update({ themes_possedes: themes }).eq('id', userId);
-}
-
-// Ajoute un score au cloud (dernier score joué)
-async function setLastScoreSupabase(score) {
-  const userId = getUserId();
-  await sb.from('users').update({ score }).eq('id', userId);
-}
-
-// Lis le highscore cloud (utile si besoin)
-async function getHighScoreSupabase() {
-  const userId = getUserId();
-  const { data, error } = await sb.from('users').select('highscore').eq('id', userId).single();
-  if (error) return 0;
-  return data.highscore || 0;
-}
-
-// Met à jour le highscore cloud si besoin
-async function setHighScoreSupabase(score) {
-  const userId = getUserId();
-  await sb.from('users').update({ highscore: score }).eq('id', userId);
-}
-
-// --- USERDATA pour tout brancher ---
+// =============================
+// EXPORTS GLOBAUX
+// =============================
 window.userData = window.userData || {};
-userData.getVCoins = getVCoinsSupabase;
-userData.addVCoins = addVCoinsSupabase;
-userData.getJetons = getJetonsSupabase;
-userData.addJetons = addJetonsSupabase;
-userData.setJetons = setJetonsSupabase;
-userData.getHighScore = getHighScoreSupabase;
-userData.setHighScore = setHighScoreSupabase;
+userData.getVCoins       = getVCoinsSecure;
+userData.addVCoins       = addVCoinsSecure;
+userData.getJetons       = getJetonsSecure;
+userData.addJetons       = addJetonsSecure;
 userData.getUnlockedThemes = getUnlockedThemesCloud;
-userData.setUnlockedThemes = setUnlockedThemesCloud;
+userData.setUnlockedThemes = setUnlockedThemesCloud; // admin/debug
+userData.purchaseTheme   = purchaseThemeSecure;
 
-// (Optionnel) expose les fonctions utiles si besoin :
-window.getUserId = getUserId;
-window.getPseudo = getPseudo;
-window.setPseudo = setPseudo;
-window.getLang = getLang;
+userData.getHighScore    = getHighScoreSecure;
+userData.setHighScore    = setHighScoreSecure;
+userData.setLastScore    = setLastScoreSecure;
+userData.updateScoreIfHigher = updateScoreIfHigher;
+
+window.updatePseudoUI    = updatePseudoUI;
+window.setupPseudoPopup  = setupPseudoPopup;
+window.bootstrapAuthAndProfile = bootstrapAuthAndProfile;
+
+// Confort : expose aussi ces helpers
+window.getCurrentTheme   = getCurrentTheme;
+window.setCurrentTheme   = setCurrentTheme;

@@ -128,16 +128,15 @@
 
     // --------------- RGPD & Consents ---------------
     (function(){
-      const CONSENT_KEY = "rgpdConsent";   // "accept" | "refuse"
-      const ADS_KEY     = "adsConsent";    // "yes" | "no"
-      const NOTIF_KEY   = "notifConsent";  // "yes" | "no"
+      const CONSENT_KEY = "rgpdConsent";
+      const ADS_KEY     = "adsConsent";
+      const NOTIF_KEY   = "notifConsent";
 
       function showConsentIfNeeded() {
         const consent = localStorage.getItem(CONSENT_KEY);
         if (!consent) {
           document.getElementById("popup-consent").style.display = "flex";
         } else {
-          // Déjà donné → appliquer directement les choix
           applyConsentFromStorage();
         }
       }
@@ -147,12 +146,9 @@
         const ads = localStorage.getItem(ADS_KEY) === "yes";
         const notif = localStorage.getItem(NOTIF_KEY) === "yes";
 
-        // Pub : initialise seulement si consentement accepté et ads==yes
         if (consent === "accept" && ads && typeof window.initAds === "function") {
           try { window.initAds(); } catch(e){}
         }
-
-        // FCM : initialise seulement si consentement accepté ET notif==yes
         if (consent === "accept" && notif) {
           try { window.__initPushOnce && window.__initPushOnce(); } catch(e){}
         }
@@ -179,15 +175,13 @@
           localStorage.setItem(ADS_KEY,   "no");
           localStorage.setItem(NOTIF_KEY, "no");
           popup.style.display = "none";
-          // On n'initialise rien (ni ads ni push)
         };
       });
 
-      // Expose pour d'autres pages (paramètres, etc.)
       window.applyConsentFromStorage = applyConsentFromStorage;
     })();
 
-    // --------- Concours via Supabase (affichage conditionnel) ---------
+    // --------- Concours via Supabase ---------
     async function checkConcoursStatus() {
       try {
         const sb = (window.supabase || window.sb);
@@ -222,25 +216,20 @@
         console.warn("[IAP] Plugin indisponible ici (web/localhost ?). On saute l’init IAP.");
         return;
       }
-
       IAP.verbosity = IAP.DEBUG;
-
       IAP.register({ id: "points3000",  alias: "points3000",  type: IAP.CONSUMABLE });
       IAP.register({ id: "points10000", alias: "points10000", type: IAP.CONSUMABLE });
       IAP.register({ id: "jetons12",    alias: "jetons12",    type: IAP.CONSUMABLE });
       IAP.register({ id: "jetons50",    alias: "jetons50",    type: IAP.CONSUMABLE });
       IAP.register({ id: "nopub",       alias: "nopub",       type: IAP.NON_CONSUMABLE });
-
       IAP.ready(function () {
         IAP.products.forEach(p => {
           const el = document.querySelector(`[data-product-id="${p.id}"]`);
           if (el && p.price) el.textContent = p.price;
         });
       });
-
       IAP.refresh();
     }, false);
-
     function acheterProduit(id) {
       const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
       if (IAP) IAP.order(id);
@@ -248,55 +237,32 @@
     }
   </script>
 
-  <!-- Push (Capacitor FCM) : init silencieuse, gated par consentement -->
+  <!-- Push (Capacitor FCM) -->
   <script>
     (function () {
-      const DEBUG_PUSH = false; // passe à true pour voir des logs partiels
+      const DEBUG_PUSH = false;
       let inited = false;
-
       function isNative() {
         try { return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web'; }
         catch(e){ return false; }
       }
-
       async function initPush() {
         if (inited) return;
         inited = true;
-
-        if (!isNative()) return; // évite les erreurs sur web
+        if (!isNative()) return;
         const Push = window.Capacitor?.Plugins?.PushNotifications;
-        if (!Push) { if (DEBUG_PUSH) console.warn('[Push] Plugin indisponible'); return; }
-
+        if (!Push) return;
         try {
           const perm = await Push.requestPermissions();
           if (perm.receive !== 'granted') return;
-
           await Push.register();
-
           Push.addListener('registration', (token) => {
-            // Stocker sans log en clair
             localStorage.setItem('fcmToken', token.value || '');
-            if (DEBUG_PUSH) {
-              const partial = (token.value || '').slice(0, 8) + '…';
-              console.log('[Push] FCM token:', partial);
-            }
+            if (DEBUG_PUSH) console.log('[Push] FCM token:', token.value);
           });
-
-          Push.addListener('registrationError', (e) => { if (DEBUG_PUSH) console.error('[Push] registrationError', e); });
-          Push.addListener('pushNotificationReceived', (n) => { if (DEBUG_PUSH) console.log('[Push] reçu:', n); });
-          Push.addListener('pushNotificationActionPerformed', (a) => {
-            const page = a?.notification?.data?.page;
-            if (page) location.href = page;
-          });
-        } catch (e) {
-          if (DEBUG_PUSH) console.error('[Push] init error', e);
-        }
+        } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
       }
-
-      // Expose un lanceur "une seule fois" que le RGPD appellera si notif consentie
       window.__initPushOnce = initPush;
-
-      // Si consentement déjà donné avant l'ouverture, applique dès le chargement
       document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.applyConsentFromStorage === 'function') {
           window.applyConsentFromStorage();
@@ -305,23 +271,83 @@
     })();
   </script>
 
-  <!-- ========= AJOUT : Supabase client + Popups ========= -->
+  <!-- ========= Supabase client + Auth Anonyme + Migration Legacy + Popups ========= -->
   <script>
     // Client Supabase réutilisable dans toute l'app
     const SB_URL  = 'https://youhealyblgbwjhsskca.supabase.co';
-    const SB_ANON = 'YOUR_ANON_KEY'; // <-- mets ta clé anon ici
+    const SB_ANON = 'TON_ANON_KEY_ICI'; // <-- mets ta clé anon ici
     window.sb = window.sb || supabase.createClient(SB_URL, SB_ANON);
 
-    // Récupère l'ID utilisateur courant (session supabase ou localStorage)
-    async function getCurrentUserId() {
-      try {
-        const { data: { user } } = await sb.auth.getUser();
-        if (user?.id) return user.id;
-      } catch (_) {}
+    // --------------------------
+    // CAS 1 : anciens joueurs "local only"
+    // --------------------------
+
+    // Lecture du vieil id local (ne plus l'utiliser ensuite pour écrire)
+    function getLegacyLocalUserId() {
       return localStorage.getItem('user_id') || null;
     }
 
-    // Affiche 1 popup non vue (si existe) puis marque "vue"
+    // Pseudo/lang locaux pour init si besoin
+    function getPseudoLocal() {
+      let p = localStorage.getItem('pseudo');
+      if (!p) {
+        p = 'Player_' + Math.random().toString(36).substring(2, 8);
+        localStorage.setItem('pseudo', p);
+      }
+      return p;
+    }
+    function getLangLocal() {
+      return localStorage.getItem('langue') || 'FR';
+    }
+
+    // 1) S’assurer d’une session anonyme
+    async function ensureAuth() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) {
+        const { error } = await sb.auth.signInAnonymously();
+        if (error) throw error;
+      }
+    }
+
+    // 2) Lier l'UID anonyme à l'ancien profil (une seule fois)
+    async function linkLegacyIfNeeded() {
+      const legacy = getLegacyLocalUserId();
+      if (!legacy) return;
+      if (localStorage.getItem('legacy_linked') === '1') return;
+      try {
+        const { error } = await sb.rpc('link_auth_to_legacy', { legacy_id: legacy });
+        if (!error) localStorage.setItem('legacy_linked', '1');
+      } catch (e) {
+        console.warn('[linkLegacyIfNeeded]', e?.message || e);
+      }
+    }
+
+    // 3) S’assurer qu’une ligne user existe (création si besoin)
+    async function ensureUserRow() {
+      const pseudo = getPseudoLocal();
+      const lang   = getLangLocal();
+      try {
+        await sb.rpc('ensure_user', { default_lang: lang, default_pseudo: pseudo });
+      } catch (e) {
+        console.warn('[ensureUserRow]', e?.message || e);
+      }
+    }
+
+    // 4) Bootstrap global pour les anciens joueurs locaux
+    async function bootstrapAuthForLegacy() {
+      await ensureAuth();
+      await linkLegacyIfNeeded();
+      await ensureUserRow();
+    }
+
+    // Utilisateur courant
+    async function getCurrentUserId() {
+      await ensureAuth();
+      const { data: { user } } = await sb.auth.getUser();
+      return user?.id || null;
+    }
+
+    // --------- Popups ciblées ---------
     async function checkAndShowPopupOnce() {
       const uid = await getCurrentUserId();
       if (!uid) return;
@@ -329,20 +355,19 @@
       const { data, error } = await sb
         .from('messages_popup')
         .select('id,message,vue,created_at')
-        .eq('userid', uid)               // ⚠️ colonne = userid (minuscule)
+        .eq('userid', uid)
         .order('created_at', { ascending: false })
         .limit(1);
 
-      if (error || !data || data.length === 0) return;
-
-      const msg = data[0];
-      if (!msg.vue) {
-        alert(msg.message); // remplace par ta modale custom si besoin
-        await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
+      if (!error && data?.length) {
+        const msg = data[0];
+        if (!msg.vue) {
+          alert(msg.message);
+          await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
+        }
       }
     }
 
-    // Abonnement temps réel aux nouvelles popups
     async function listenPopupsRealtime() {
       const uid = await getCurrentUserId();
       if (!uid) return;
@@ -359,7 +384,7 @@
         .subscribe();
     }
 
-    // Corrige checkConcoursStatus pour utiliser le vrai client
+    // --------- Concours (version fix) ---------
     async function checkConcoursStatusFixed() {
       try {
         const { data, error } = await sb
@@ -374,11 +399,67 @@
       } catch(e) {}
     }
 
-    // Lancements au chargement
+    // --------- userData : appels RPC sécurisés ---------
+    window.userData = window.userData || {};
+
+    // Lecture groupée via get_balances()
+    async function __getBalances() {
+      const { data, error } = await sb.rpc('get_balances');
+      if (error) throw error;
+      // Supabase peut renvoyer un objet ou un array selon la config → on gère les deux
+      const row = Array.isArray(data) ? data[0] : data;
+      return row || {};
+    }
+
+    userData.getVCoins = async () => {
+      const b = await __getBalances();
+      return b?.vcoins ?? 0;
+    };
+    userData.addVCoins = async (n) => {
+      const delta = parseInt(n, 10) || 0;
+      const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
+      if (error) throw error;
+      return true;
+    };
+
+    userData.getJetons = async () => {
+      const b = await __getBalances();
+      return b?.jetons ?? 0;
+    };
+    userData.addJetons = async (n) => {
+      const delta = parseInt(n, 10) || 0;
+      const { error } = await sb.rpc('ajouter_jetons', { montant: delta });
+      if (error) throw error;
+      return true;
+    };
+
+    userData.getUnlockedThemes = async () => {
+      const b = await __getBalances();
+      return Array.isArray(b?.themes_possedes) ? b.themes_possedes : ['neon'];
+    };
+    // Setter admin/debug (optionnel)
+    userData.setUnlockedThemes = async (themes) => {
+      const { error } = await sb.rpc('set_themes_secure', { themes });
+      if (error) throw error;
+      return true;
+    };
+
+    userData.purchaseTheme = async (key, price) => {
+      const { error } = await sb.rpc('purchase_theme', { theme_key: String(key), price: parseInt(price,10) || 0 });
+      if (error) throw error;
+      return true;
+    };
+
+    // Démarrage : bootstrap legacy + UI
     document.addEventListener('DOMContentLoaded', async () => {
-      await checkConcoursStatusFixed();
-      await checkAndShowPopupOnce();
-      await listenPopupsRealtime();
+      try {
+        await bootstrapAuthForLegacy();   // << cas 1 ici
+        await checkConcoursStatusFixed();
+        await checkAndShowPopupOnce();
+        await listenPopupsRealtime();
+      } catch (e) {
+        console.warn('[INDEX bootstrap]', e?.message || e);
+      }
     });
   </script>
 </body>

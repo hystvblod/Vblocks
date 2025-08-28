@@ -1,8 +1,19 @@
 // =============================
 // INIT SUPABASE (création unique, mode Capacitor)
 // =============================
+// (On suppose que `sb` est déjà créé globalement dans index.html)
+// Si besoin de robustesse locale, décommente :
+// const SB_URL  = 'https://...supabase.co';
+// const SB_ANON = '...';
+// window.sb = window.sb || supabase.createClient(SB_URL, SB_ANON);
 
-
+// Petite sécurité : s’assurer d’une session anonyme opérationnelle
+async function ensureAuth() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) await sb.auth.signInAnonymously();
+  } catch (_) {}
+}
 
 // === CONFIG PUBS ===
 // → Interstitiel au DÉBUT de la 3e partie (modifier la valeur si besoin)
@@ -36,7 +47,7 @@ if (window.lovappApplovinmax && !window._lovapp_applovin_init) {
 // UTILITAIRES UTILISATEUR
 // =============================
 
-// ID unique local
+// ID unique local (legacy) — conservé pour compat (mais non utilisé pour créditer)
 function getUserId() {
   let id = localStorage.getItem('user_id');
   if (!id) {
@@ -47,39 +58,49 @@ function getUserId() {
 }
 
 // =============================
-// HELPER NoPub CLOUD
+// HELPERS RPC SÉCURISÉES
+// =============================
+
+// Lecture groupée (vcoins, jetons, themes_possedes, nopub...) via RPC SECURITY DEFINER
+async function __getBalances() {
+  await ensureAuth();
+  const { data, error } = await sb.rpc('get_balances');
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return row || {};
+}
+
+// =============================
+// HELPER NoPub CLOUD (RPC, pas de SELECT par id)
 // =============================
 async function hasNoAds() {
-  const { data, error } = await sb.from('users').select('nopub').eq('id', getUserId()).single();
-  if (error) return false;
-  return !!data?.nopub;
+  const b = await __getBalances();
+  return !!b?.nopub;
 }
 window.hasNoAds = hasNoAds;
 
 // =============================
-// FONCTIONS SUPABASE (JETONS, VCOINS, ETC.)
+// FONCTIONS SUPABASE (JETONS, VCOINS, ETC.) - 100% RPC
 // =============================
 
-// Ajoute/retire des Jetons (RPC cloud)
+// Ajoute/retire des Jetons (RPC cloud, auth.uid())
 async function addJetonsSupabase(amount) {
-  const userId = getUserId();
-  const { data, error } = await sb.rpc('add_jetons', {
-    user_id: userId,
-    delta: amount
-  });
+  await ensureAuth();
+  const delta = Number(amount) || 0;
+  const { error } = await sb.rpc('ajouter_jetons', { montant: delta });
   if (error) throw error;
-  return data?.[0]?.new_balance ?? 0;
+  const b = await __getBalances();
+  return b?.jetons ?? 0;
 }
 
-// Ajoute/retire des VCoins (RPC cloud)
+// Ajoute/retire des VCoins (RPC cloud, auth.uid())
 async function addVCoinsSupabase(amount) {
-  const userId = getUserId();
-  const { data, error } = await sb.rpc('add_vcoins', {
-    user_id: userId,
-    delta: amount
-  });
+  await ensureAuth();
+  const delta = Number(amount) || 0;
+  const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
   if (error) throw error;
-  return data?.[0]?.new_balance ?? 0;
+  const b = await __getBalances();
+  return b?.vcoins ?? 0;
 }
 
 // =============================
@@ -98,7 +119,7 @@ function markInterstitialShownNow() {
 
 // Affiche une pub interstitielle
 async function showInterstitial() {
-  // Respecte NoPub depuis la boutique (champ cloud `nopub`)
+  // Respecte NoPub depuis la boutique (champ cloud via RPC)
   if (await hasNoAds()) {
     console.log("[PUB] Interstitiel bloquée (NoPub activé)");
     return;
@@ -149,8 +170,8 @@ function showRewardBoutique() {
   showRewarded(async (ok) => {
     if (ok) {
       try {
-        await addJetonsSupabase(REWARD_JETONS);
-        alert(`+${REWARD_JETONS} jeton ajouté !`);
+        const newBal = await addJetonsSupabase(REWARD_JETONS);
+        alert(`+${REWARD_JETONS} jeton ajouté ! (solde: ${newBal})`);
         if (window.renderThemes) renderThemes();
       } catch (e) {
         alert("Erreur lors de l'ajout de jeton: " + (e?.message || e));
@@ -164,8 +185,8 @@ function showRewardVcoins() {
   showRewarded(async (ok) => {
     if (ok) {
       try {
-        await addVCoinsSupabase(REWARD_VCOINS);
-        alert(`+${REWARD_VCOINS} VCoins ajoutés !`);
+        const newBal = await addVCoinsSupabase(REWARD_VCOINS);
+        alert(`+${REWARD_VCOINS} VCoins ajoutés ! (solde: ${newBal})`);
         if (window.renderThemes) renderThemes();
       } catch (e) {
         alert("Erreur lors de l'ajout de VCoins: " + (e?.message || e));
@@ -220,5 +241,5 @@ window.partieTerminee     = partieTerminee;  // ← gardée pour compat (ne mont
 
 window.addJetonsSupabase  = addJetonsSupabase;
 window.addVCoinsSupabase  = addVCoinsSupabase;
-window.getUserId          = getUserId;
+window.getUserId          = getUserId; // legacy (plus utilisé pour créditer)
 window.hasNoAds           = hasNoAds;

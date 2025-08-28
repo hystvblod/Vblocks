@@ -1,5 +1,5 @@
 /* ===========================
-   boutique.js (IAP + UI boutique)
+   boutique.js (IAP + UI boutique) — version sécurisée RPC
    =========================== */
 
 // --- Helper i18n universel
@@ -42,50 +42,85 @@ const PRODUCT_IDS = window.PRODUCT_IDS = {
 const PRICES_BY_ALIAS = window.PRICES_BY_ALIAS = {}; 
 // { alias: { price: "€0,99", currency: "EUR", micros: 990000 } }
 
-// --- Utilitaires cloud
+// --- Utilitaires (toujours dispo pour tes appels serveur externes)
 function getUserId() {
   return localStorage.getItem('user_id') || "";
 }
 
-// --- VCoins & Jetons Supabase
-async function getVCoinsSupabase() {
-  const { data, error } = await sb.from('users').select('vcoins').eq('id', getUserId()).single();
-  if (error) return 0;
-  return data.vcoins;
-}
-async function addVCoinsSupabase(amount) {
-  const { error } = await sb.rpc('add_vcoins', { user_id: getUserId(), delta: amount });
+/* ===========================
+   SUPABASE — Accès SÉCURISÉ (RPC)
+   ===========================
+
+   Prérequis côté SQL (toutes en SECURITY DEFINER) :
+   - ensure_user(default_lang text, default_pseudo text)
+   - get_balances() -> (vcoins int, jetons int, themes_possedes text[])
+   - ajouter_vcoins(montant int)
+   - ajouter_jetons(montant int)
+   - purchase_theme(theme_key text, price int)
+   - set_themes_secure(themes text[]) (optionnel admin/debug)
+   - ajouter_nopub()  -- (optionnel) voir snippet ci-dessous
+
+   -- Snippet pour ajouter_nopub si besoin :
+   -- CREATE OR REPLACE FUNCTION public.ajouter_nopub()
+   -- RETURNS void
+   -- LANGUAGE sql
+   -- SECURITY DEFINER
+   -- SET search_path TO 'public'
+   -- AS $$
+   --   update public.users
+   --      set nopub = true
+   --    where id = auth.uid() or auth_id = auth.uid();
+   -- $$;
+*/
+
+// Lecture groupée via RPC
+async function __getBalances() {
+  const { data, error } = await sb.rpc('get_balances');
   if (error) throw error;
-  return await getVCoinsSupabase();
-}
-async function getJetonsSupabase() {
-  const { data, error } = await sb.from('users').select('jetons').eq('id', getUserId()).single();
-  if (error) return 0;
-  return data.jetons;
-}
-async function addJetonsSupabase(amount) {
-  const { error } = await sb.rpc('add_jetons', { user_id: getUserId(), delta: amount });
-  if (error) throw error;
-  return await getJetonsSupabase();
+  const row = Array.isArray(data) ? data[0] : data;
+  return row || {};
 }
 
-// --- Themes/cadres POSSEDES
+// --- VCoins & Jetons (100% RPC sécurisées)
+async function getVCoinsSupabase() {
+  const b = await __getBalances();
+  return b?.vcoins ?? 0;
+}
+async function addVCoinsSupabase(amount) {
+  const delta = Number(amount) || 0;
+  const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
+  if (error) throw error;
+  const b = await __getBalances();
+  return b?.vcoins ?? 0;
+}
+async function getJetonsSupabase() {
+  const b = await __getBalances();
+  return b?.jetons ?? 0;
+}
+async function addJetonsSupabase(amount) {
+  const delta = Number(amount) || 0;
+  const { error } = await sb.rpc('ajouter_jetons', { montant: delta });
+  if (error) throw error;
+  const b = await __getBalances();
+  return b?.jetons ?? 0;
+}
+
+// --- Themes/cadres POSSEDES (lecture via RPC, setter sécurisé optionnel)
 async function getUnlockedThemesCloud() {
-  const { data, error } = await sb.from('users').select('themes_possedes').eq('id', getUserId()).single();
-  if (error) return [];
-  return Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
+  const b = await __getBalances();
+  return Array.isArray(b?.themes_possedes) ? b.themes_possedes : [];
 }
 async function setUnlockedThemesCloud(newThemes) {
-  await sb.from('users').update({ themes_possedes: newThemes }).eq('id', getUserId());
+  const { error } = await sb.rpc('set_themes_secure', { themes: newThemes });
+  if (error) throw error;
 }
 
 // --- Achat sécurisé (Supabase RPC)
 async function acheterTheme(themeKey, prix) {
   try {
     const { error } = await sb.rpc('purchase_theme', {
-      user_id: getUserId(),
-      theme_key: themeKey,
-      price: prix
+      theme_key: String(themeKey),
+      price: Number(prix) || 0
     });
     if (error) {
       alert("Erreur: " + error.message);
@@ -100,7 +135,7 @@ async function acheterTheme(themeKey, prix) {
   }
 }
 
-// --- Achats EUR (via API Vercel) – fallback web
+// --- Achats EUR (via API Vercel) – fallback web (tu peux le laisser)
 async function acheterProduitVercel(type) {
   const userId = getUserId();
   try {
@@ -149,7 +184,7 @@ function setupBoutiqueAchats() {
         } else {
           // Web / plugin absent → soit message clair, soit fallback serveur
           alert("Achat via Google Play indisponible ici. Ouvre l’app installée depuis le Play Store.");
-          // // Si tu veux autoriser l’achat côté serveur sur web, décommente :
+          // // Pour autoriser l’achat côté serveur sur web, décommente :
           // await acheterProduitVercel(alias);
           // await renderThemes(); setupPubCartouches?.(); setupBoutiqueAchats?.();
         }
@@ -241,11 +276,17 @@ document.addEventListener('deviceready', function() {
   Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
     IAP.when(id).approved(async (p) => {
       try {
+        // Déclenche le traitement serveur (vérif côté backend si tu veux)
         await acheterProduitVercel(alias);
+
+        // Cas spécial : "nopub" → passe aussi par une RPC sécurisée
         if (alias === "nopub") {
-          await sb.from('users').update({ nopub: true }).eq('id', getUserId());
+          // Nécessite la fonction SQL ajouter_nopub() SECURITY DEFINER (voir snippet)
+          await sb.rpc('ajouter_nopub');
         }
+
         p.finish();
+
         await renderThemes?.();
         setupPubCartouches?.();
         setupBoutiqueAchats?.();
