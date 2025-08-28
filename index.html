@@ -190,9 +190,9 @@
     // --------- Concours via Supabase (affichage conditionnel) ---------
     async function checkConcoursStatus() {
       try {
-        const sbc = (window.supabase || window.sb);
-        if (!sbc) return;
-        const { data, error } = await sbc
+        const sb = (window.supabase || window.sb);
+        if (!sb) return;
+        const { data, error } = await sb
           .from('config')
           .select('concours_enabled')
           .eq('id', 'global')
@@ -305,43 +305,20 @@
     })();
   </script>
 
-  <!-- ========= Supabase client + Auth anonyme + Popups ========= -->
+  <!-- ========= AJOUT : Supabase client + Popups ========= -->
   <script>
     // Client Supabase réutilisable dans toute l'app
     const SB_URL  = 'https://youhealyblgbwjhsskca.supabase.co';
-    const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
+    const SB_ANON = 'YOUR_ANON_KEY'; // <-- mets ta clé anon ici
     window.sb = window.sb || supabase.createClient(SB_URL, SB_ANON);
 
-    // Auth anonyme (comme VFind) + upsert user + migration (si ancien local user_id)
-    async function ensureAnonAndUpsert() {
-      const { data: { session } } = await sb.auth.getSession();
-      if (!session) await sb.auth.signInAnonymously();
-
-      const { data: { user } } = await sb.auth.getUser();
-      if (!user) return;
-
-      // Migration facultative : si ancien localStorage user_id ≠ auth.uid()
-      const oldId = localStorage.getItem('user_id');
-      if (oldId && oldId !== user.id) {
-        try {
-          await sb.rpc('claim_account', { old_id: oldId, new_id: user.id });
-        } catch (_) { /* si la RPC n’existe pas, on ignore */ }
-        localStorage.setItem('user_id', user.id); // on aligne le local sur auth.uid
-      } else {
-        // crée le local si absent pour compatibilité
-        localStorage.setItem('user_id', user.id);
-      }
-
-      // Upsert de la fiche users (id = auth.uid)
-      const pseudo = localStorage.getItem('pseudo') || ('Player_' + Math.random().toString(36).slice(2,8));
-      const langLS = localStorage.getItem('langue') || 'FR';
-      await sb.from('users').upsert({ id: user.id, pseudo, lang: langLS }, { onConflict: 'id' });
-    }
-
-    // Récupère l'uid auth courant
+    // Récupère l'ID utilisateur courant (session supabase ou localStorage)
     async function getCurrentUserId() {
-      const { data: { user } } = await sb.auth.getUser();
-      return user?.id || null;
+      try {
+        const { data: { user } } = await sb.auth.getUser();
+        if (user?.id) return user.id;
+      } catch (_) {}
+      return localStorage.getItem('user_id') || null;
     }
 
     // Affiche 1 popup non vue (si existe) puis marque "vue"
@@ -352,7 +329,7 @@
       const { data, error } = await sb
         .from('messages_popup')
         .select('id,message,vue,created_at')
-        .eq('userid', uid)               // colonne = userid (minuscule)
+        .eq('userid', uid)               // ⚠️ colonne = userid (minuscule)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -382,13 +359,26 @@
         .subscribe();
     }
 
+    // Corrige checkConcoursStatus pour utiliser le vrai client
+    async function checkConcoursStatusFixed() {
+      try {
+        const { data, error } = await sb
+          .from('config')
+          .select('concours_enabled')
+          .eq('id', 'global')
+          .single();
+        if (!error) {
+          document.getElementById("btnConcours").style.display =
+            data?.concours_enabled ? "block" : "none";
+        }
+      } catch(e) {}
+    }
+
     // Lancements au chargement
     document.addEventListener('DOMContentLoaded', async () => {
-      await ensureAnonAndUpsert();          // ⬅️ login anonyme + fiche user
-      await checkConcoursStatus();          // conserve ta logique
+      await checkConcoursStatusFixed();
       await checkAndShowPopupOnce();
       await listenPopupsRealtime();
-      if (window.i18nTranslateAll) window.i18nTranslateAll();
     });
   </script>
 </body>
