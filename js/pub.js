@@ -5,16 +5,22 @@
 
 
 // === CONFIG PUBS ===
-const INTERSTITIEL_APRES_X_PARTIES = 2; // Nombre de parties avant pub interstitielle
+// → Interstitiel au DÉBUT de la 3e partie (modifier la valeur si besoin)
+const INTERSTITIEL_APRES_X_PARTIES = 3; // Nombre de parties avant pub interstitielle (déclenchée au début de la Xème)
+
+// Montants de récompense pour les pubs rewarded
 const REWARD_JETONS = 1;                // Jetons gagnés par pub reward
 const REWARD_VCOINS = 300;              // VCoins gagnés par pub reward
 const REWARD_REVIVE = true;             // Activer reward revive fin de partie
 
-let compteurParties = parseInt(localStorage.getItem("compteurParties") || "0");
+// (Optionnel) Anti-spam : cooldown minimal entre deux interstitiels (ms). 0 pour désactiver.
+const INTER_COOLDOWN_MS = 0;
+
+let compteurParties = parseInt(localStorage.getItem("compteurParties") || "0", 10);
 
 // === ID AppLovin MAX ===
 const AD_UNIT_ID_INTERSTITIEL = 'TA_CLE_INTERSTITIEL';
-const AD_UNIT_ID_REWARDED = 'TA_CLE_REWARDED';
+const AD_UNIT_ID_REWARDED     = 'TA_CLE_REWARDED';
 
 // === Initialisation AppLovin MAX (optionnel, à faire dans ton init principal) ===
 if (window.lovappApplovinmax && !window._lovapp_applovin_init) {
@@ -80,34 +86,54 @@ async function addVCoinsSupabase(amount) {
 // GESTION DES PUBS (AppLovin MAX)
 // =============================
 
+// Cooldown interstitiel
+function canShowInterstitialNow() {
+  if (!INTER_COOLDOWN_MS) return true;
+  const last = parseInt(localStorage.getItem('lastInterstitialTs') || '0', 10);
+  return (Date.now() - last) >= INTER_COOLDOWN_MS;
+}
+function markInterstitialShownNow() {
+  localStorage.setItem('lastInterstitialTs', Date.now().toString());
+}
+
 // Affiche une pub interstitielle
 async function showInterstitial() {
+  // Respecte NoPub depuis la boutique (champ cloud `nopub`)
   if (await hasNoAds()) {
     console.log("[PUB] Interstitiel bloquée (NoPub activé)");
     return;
   }
-  if (window.lovappApplovinmax) {
-    window.lovappApplovinmax.showInterstitialAd({adUnitId: AD_UNIT_ID_INTERSTITIEL})
-      .then(() => console.log("[PUB] Interstitiel affichée (prod)"))
-      .catch(e => alert("Erreur pub interstitielle: " + (e?.message || e)));
+  if (!canShowInterstitialNow()) {
+    console.log("[PUB] Interstitiel non affichée (cooldown actif)");
     return;
   }
+
+  if (window.lovappApplovinmax) {
+    return window.lovappApplovinmax.showInterstitialAd({ adUnitId: AD_UNIT_ID_INTERSTITIEL })
+      .then(() => {
+        console.log("[PUB] Interstitiel affichée (prod)");
+        markInterstitialShownNow();
+      })
+      .catch(e => alert("Erreur pub interstitielle: " + (e?.message || e)));
+  }
+
   // Simulation dev
   console.log("[PUB] Interstitiel affichée (dev)");
+  markInterstitialShownNow();
 }
 
 // Affiche une pub rewarded (AppLovin)
-// (optionnel : si tu veux bloquer aussi les rewarded, ajoute le même check qu'au-dessus)
+// (Remarque: par défaut, NoPub n’affecte PAS les rewarded)
 function showRewarded(callback) {
   if (window.lovappApplovinmax) {
-    window.lovappApplovinmax.showRewardedAd({
-      adUnitId: AD_UNIT_ID_REWARDED
-    }).then((result) => {
-      if (typeof callback === "function") callback(!!result?.rewarded);
-    }).catch(e => {
-      alert("Erreur pub rewarded: " + (e?.message || e));
-      if (typeof callback === "function") callback(false);
-    });
+    window.lovappApplovinmax.showRewardedAd({ adUnitId: AD_UNIT_ID_REWARDED })
+      .then((result) => {
+        if (typeof callback === "function") callback(!!result?.rewarded);
+      })
+      .catch(e => {
+        alert("Erreur pub rewarded: " + (e?.message || e));
+        if (typeof callback === "function") callback(false);
+      });
     return;
   }
   // Simulation dev
@@ -156,28 +182,43 @@ function showRewardRevive(callback) {
   });
 }
 
-// Gère le compteur pour afficher une interstitielle toutes les X parties
-function partieTerminee() {
-  compteurParties++;
-  localStorage.setItem("compteurParties", compteurParties);
+// =============================
+// LOGIQUE "DÉBUT DE LA 3ᵉ PARTIE"
+// =============================
 
+// Appelle ceci AU DÉMARRAGE d’une partie
+async function partieCommencee() {
+  compteurParties++;
+  localStorage.setItem("compteurParties", String(compteurParties));
+
+  // Si c'est le début de la Xème (ex: 3ème), on affiche l'interstitiel puis reset.
   if (compteurParties >= INTERSTITIEL_APRES_X_PARTIES) {
+    // Reset compteur avant pour éviter double affichage en cas d’erreur réseau
     compteurParties = 0;
-    localStorage.setItem("compteurParties", compteurParties);
-    showInterstitial();
+    localStorage.setItem("compteurParties", "0");
+    await showInterstitial();
   }
+}
+
+// (Compat) Ancienne logique fin de partie — conservée si tu l’appelles ailleurs
+function partieTerminee() {
+  // Ne déclenche plus d’interstitiel ici, on garde juste le log si besoin
+  console.log("[Game] Partie terminée.");
 }
 
 // =============================
 // EXPOSER FONCTIONS GLOBALES
 // =============================
-window.showInterstitial = showInterstitial;
-window.showRewarded = showRewarded;
+window.showInterstitial   = showInterstitial;
+window.showRewarded       = showRewarded;
 window.showRewardBoutique = showRewardBoutique;
-window.showRewardVcoins = showRewardVcoins;
-window.showRewardRevive = showRewardRevive;
-window.partieTerminee = partieTerminee;
-window.addJetonsSupabase = addJetonsSupabase;
-window.addVCoinsSupabase = addVCoinsSupabase;
-window.getUserId = getUserId;
-window.hasNoAds = hasNoAds;
+window.showRewardVcoins   = showRewardVcoins;
+window.showRewardRevive   = showRewardRevive;
+
+window.partieCommencee    = partieCommencee; // ← à appeler AU LANCEMENT d’une partie
+window.partieTerminee     = partieTerminee;  // ← gardée pour compat (ne montre pas d’ad)
+
+window.addJetonsSupabase  = addJetonsSupabase;
+window.addVCoinsSupabase  = addVCoinsSupabase;
+window.getUserId          = getUserId;
+window.hasNoAds           = hasNoAds;

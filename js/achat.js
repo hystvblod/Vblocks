@@ -1,22 +1,79 @@
-// Handler central pour tous les achats de la boutique
+/* ===========================
+   achat.js (confirmation + achat générique)
+   =========================== */
+
+// Utilise la même map que boutique.js (exposée en global)
+const _PRODUCT_IDS = (window.PRODUCT_IDS) || {
+  points3000:  'points3000',
+  points10000: 'points10000',
+  jetons12:    'jetons12',
+  jetons50:    'jetons50',
+  nopub:       'nopub'
+};
+
+// Récupère un prix localisé depuis le Store si possible
+function _getLocalizedPrice(alias) {
+  // Priorité 1 : cache rempli par boutique.js
+  if (window.PRICES_BY_ALIAS && window.PRICES_BY_ALIAS[alias]?.price) {
+    return window.PRICES_BY_ALIAS[alias].price;
+  }
+  // Priorité 2 : lire directement depuis le plugin
+  const IAP = (window.store && typeof window.store.get === 'function') ? window.store : null;
+  const pid = _PRODUCT_IDS[alias] || alias;
+  if (IAP) {
+    const p = IAP.get(pid);
+    if (p && p.price) return p.price; // déjà localisé: "€0,99", "US$0.99", ...
+  }
+  return ""; // inconnu
+}
+
+// Fonction générique de confirmation (pas de "€" en dur)
+window.lancerPaiement = async function(type) {
+  const priceStr = _getLocalizedPrice(type);
+  const labelMap = {
+    jetons12:     "12 jetons",
+    jetons50:     "50 jetons",
+    nopub:        "Suppression des pubs",
+    points3000:   "3000 points",
+    points10000:  "10 000 points"
+  };
+  const item = labelMap[type] || type;
+  const message = priceStr ? `${item} pour ${priceStr} ?` : `Valider l'achat : ${item} ?`;
+  return confirm(message);
+};
+
+// Handler central pour tous les achats “boutique” déclenchés ailleurs dans l’app
 window.accordeAchat = async function(type) {
-  // --- Achats EN ARGENT RÉEL : passent par l'API Vercel ---
-if (
+  const isPaidItem =
     type === "jetons12" ||
     type === "jetons50" ||
     type === "points3000" ||
     type === "points10000" ||
-    type === "nopub"
-  ) {
-    await acheterProduitVercel(type);
-    if (type === "nopub") {
-      await sb.from('users').update({ nopub: true }).eq('id', getUserId());
+    type === "nopub";
+
+  if (isPaidItem) {
+    const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
+    const ok = await window.lancerPaiement(type);
+    if (!ok) return;
+
+    if (IAP) {
+      // Achats in-app (pop-up Google Play)
+      const pid = _PRODUCT_IDS[type] || type;
+      IAP.order(pid);
+    } else {
+      // Fallback serveur (web / plugin absent)
+      await acheterProduitVercel(type);
+      if (type === "nopub") {
+        await sb.from('users').update({ nopub: true }).eq('id', getUserId());
+      }
+      await renderThemes?.();
+      setupPubCartouches?.();
+      setupBoutiqueAchats?.();
     }
     return;
   }
 
-
-  // --- Gains gratuits (ex : pubs reward, bonus) ---
+  // Gains gratuits (pub reward, bonus)
   if (type === "pub1jeton") {
     await userData.addJetons(1);
     alert("+1 jeton ajouté !");
@@ -29,17 +86,4 @@ if (
   await renderThemes?.();
   setupPubCartouches?.();
   setupBoutiqueAchats?.();
-}
-
-// Fonction générique à appeler avant de remettre la récompense
-window.lancerPaiement = async function(type) {
-  // Affiche un message de confirmation avant tout achat argent réel
-  let texte = "";
-  if (type === "jetons12") texte = "12 jetons pour 0,99 € ?";
-  else if (type === "jetons50") texte = "50 jetons pour 2,99 € ?";
-  else if (type === "nopub") texte = "Supprimer les pubs pour 3,49 € ?";
-  else if (type === "points3000") texte = "3000 points pour 0,99 € ?";
-  else if (type === "points10000") texte = "10 000 points pour 1,99 € ?";
-  // Remplace ce confirm par ton paiement réel
-  return confirm("Valider l'achat : " + texte);
-}
+};
