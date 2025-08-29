@@ -135,13 +135,11 @@
   <div class="main-content">
     <div class="top-bar">
       <div class="top-bar-row">
-        <!-- BTN RETOUR : bouton et pas lien -->
         <button class="btn-back" id="btn-back" title="Retour" aria-label="Retour">
           <img src="assets/icons/arrow_back.svg" alt="Retour">
         </button>
         <span class="main-title" data-i18n="settings.title">Paramètres</span>
         <div class="profile-row">
-          <!-- BTN PROFIL : vrai lien -->
           <a href="profil.html" class="btn-icon" id="btn-profile" title="Profil">
             <img src="assets/icons/user.svg" alt="Profil">
           </a>
@@ -155,7 +153,7 @@
         <label data-i18n="settings.language.label">Langue de l'interface :</label>
         <div id="langue-select" class="lang-select"></div>
       </div>
-      </div>
+
       <!-- Publicités -->
       <div class="param-group">
         <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
@@ -164,6 +162,7 @@
           <span id="ads-label" data-i18n="settings.ads.on">Activées</span>
         </div>
       </div>
+
       <!-- Pièce fantôme -->
       <div class="param-group">
         <label data-i18n="settings.ghost.label">Afficher la pièce fantôme :</label>
@@ -172,6 +171,7 @@
           <span id="ghost-label" data-i18n="settings.ghost.on">Activée</span>
         </div>
       </div>
+
       <!-- Musique -->
       <div class="param-group">
         <label>Musique :</label>
@@ -187,14 +187,12 @@
     </div>
   </div>
   <script>
-    // BTN RETOUR (natif, sinon index)
     document.addEventListener("DOMContentLoaded", function() {
       const btnBack = document.getElementById('btn-back');
       if (btnBack) {
         btnBack.addEventListener('click', function(e) {
           e.preventDefault();
           if (window.vibrateIfEnabled) window.vibrateIfEnabled(40);
-          // Retour historique si possible, sinon accueil
           if (window.history.length > 1) {
             window.history.back();
           } else {
@@ -202,7 +200,6 @@
           }
         });
       }
-      // BTN PROFIL fonctionne direct via <a>, mais on peut ajouter vibration :
       const btnProfile = document.getElementById('btn-profile');
       if (btnProfile) {
         btnProfile.addEventListener('click', function() {
@@ -211,8 +208,6 @@
       }
     });
 
-    // --- TON CODE APRES ---
-    // LISTE DES LANGUES + DRAPEAUX + LABELS FIXES
     const langues = [
       { code: "fr", label: "Français", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#0055a4"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ef4135"/></svg>` },
       { code: "en", label: "English (US)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#b22234"/><g><rect width="22" height="1.23" y="1.23" fill="#fff"/><rect width="22" height="1.23" y="3.69" fill="#fff"/><rect width="22" height="1.23" y="6.15" fill="#fff"/><rect width="22" height="1.23" y="8.61" fill="#fff"/><rect width="22" height="1.23" y="11.07" fill="#fff"/><rect width="22" height="1.23" y="13.53" fill="#fff"/></g><rect width="8.8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.2" cy="1" r="0.35"/><circle cx="2.4" cy="1" r="0.35"/><circle cx="3.6" cy="1" r="0.35"/><circle cx="4.8" cy="1" r="0.35"/><circle cx="6" cy="1" r="0.35"/><circle cx="7.2" cy="1" r="0.35"/><circle cx="1.8" cy="2" r="0.35"/><circle cx="3" cy="2" r="0.35"/><circle cx="4.2" cy="2" r="0.35"/><circle cx="5.4" cy="2" r="0.35"/><circle cx="6.6" cy="2" r="0.35"/><circle cx="2.4" cy="3" r="0.35"/><circle cx="3.6" cy="3" r="0.35"/><circle cx="4.8" cy="3" r="0.35"/><circle cx="6" cy="3" r="0.35"/><circle cx="7.2" cy="3" r="0.35"/><circle cx="1.2" cy="4" r="0.35"/><circle cx="2.4" cy="4" r="0.35"/><circle cx="3.6" cy="4" r="0.35"/><circle cx="4.8" cy="4" r="0.35"/><circle cx="6" cy="4" r="0.35"/><circle cx="1.8" cy="5" r="0.35"/><circle cx="3" cy="5" r="0.35"/><circle cx="4.2" cy="5" r="0.35"/><circle cx="5.4" cy="5" r="0.35"/><circle cx="6.6" cy="5" r="0.35"/><circle cx="2.4" cy="6" r="0.35"/><circle cx="3.6" cy="6" r="0.35"/><circle cx="4.8" cy="6" r="0.35"/><circle cx="6" cy="6" r="0.35"/><circle cx="7.2" cy="6" r="0.35"/></g></svg>` },
@@ -242,19 +237,6 @@
       langueSelect.appendChild(opt);
     });
 
-    // Vibrations
-    const vibrateToggle = document.getElementById("vibrate-toggle");
-    const vibrateLabel = document.getElementById("vibrate-label");
-    vibrateToggle.checked = localStorage.getItem("vibrateEnabled") !== "false";
-    vibrateLabel.setAttribute("data-i18n", vibrateToggle.checked ? "settings.vibrate.on" : "settings.vibrate.off");
-    vibrateLabel.textContent = vibrateToggle.checked ? "Activées" : "Désactivées";
-    vibrateToggle.addEventListener("change", () => {
-      localStorage.setItem("vibrateEnabled", vibrateToggle.checked ? "true" : "false");
-      vibrateLabel.setAttribute("data-i18n", vibrateToggle.checked ? "settings.vibrate.on" : "settings.vibrate.off");
-      vibrateLabel.textContent = vibrateToggle.checked ? "Activées" : "Désactivées";
-    });
-
-    // Helper globale
     window.vibrateIfEnabled = async function (ms = 60) {
       const vibrateEnabled = localStorage.getItem("vibrateEnabled") !== "false";
       if (!vibrateEnabled) return;
@@ -265,7 +247,6 @@
       }
     }
 
-    // Publicités i18n
     const adsToggle = document.getElementById("ads-toggle");
     const adsLabel = document.getElementById("ads-label");
     adsToggle.checked = localStorage.getItem("adsEnabled") !== "false";
@@ -279,7 +260,6 @@
       location.reload();
     });
 
-    // Pièce fantôme
     const ghostToggle = document.getElementById("ghost-toggle");
     const ghostLabel = document.getElementById("ghost-label");
     ghostToggle.checked = localStorage.getItem("ghostPiece") !== "false";
@@ -291,7 +271,6 @@
       ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
     });
 
-    // ----- MUSIQUE (DÉFINITIF) -----
     const musicToggleBtn = document.getElementById("music-toggle-btn");
     const musicToggleImg = document.getElementById("music-toggle-img");
     const musicToggleLabel = document.getElementById("music-toggle-label");

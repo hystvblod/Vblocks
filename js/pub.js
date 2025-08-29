@@ -33,14 +33,66 @@ let compteurParties = parseInt(localStorage.getItem("compteurParties") || "0", 1
 const AD_UNIT_ID_INTERSTITIEL = 'TA_CLE_INTERSTITIEL';
 const AD_UNIT_ID_REWARDED     = 'TA_CLE_REWARDED';
 
-// === Initialisation AppLovin MAX (optionnel, à faire dans ton init principal) ===
+// =============================
+// CONSENTEMENT UTILISATEUR (RGPD / pubs personnalisées)
+// =============================
+
+// Lecture unifiée du consentement depuis le stockage local.
+// On considère personnalisées = TRUE seulement si:
+//  - rgpdConsent == "accept" (si cette clé existe) ET
+//  - adsConsent == "yes"  (nouvelle clé)
+//  (Compat: on accepte aussi adsEnabled == "true")
+function getPersonalizedAdsGranted() {
+  const rgpd = localStorage.getItem("rgpdConsent"); // "accept" | "refuse" | null
+  const adsConsent = (localStorage.getItem("adsConsent") || "").toLowerCase(); // "yes" | "no" | ""
+  const adsEnabled = (localStorage.getItem("adsEnabled") || "").toLowerCase(); // "true" | "false" | ""
+
+  // Si RGPD explicitement refusé → pas de personnalisées
+  if (rgpd === "refuse") return false;
+
+  // Si RGPD accepté, on regarde le choix pubs:
+  if (rgpd === "accept") {
+    if (adsConsent) return adsConsent === "yes";
+    if (adsEnabled) return adsEnabled === "true";
+    return false;
+  }
+
+  // Si pas de clé RGPD, on tombe sur le choix pubs
+  if (adsConsent) return adsConsent === "yes";
+  if (adsEnabled) return adsEnabled === "true";
+
+  // Par défaut: non-personnalisées
+  return false;
+}
+
+// Appliquer le consentement côté SDK AppLovin MAX
+function applyConsentToAppLovin() {
+  const granted = getPersonalizedAdsGranted();
+  if (window.lovappApplovinmax && typeof window.lovappApplovinmax.setHasUserConsent === "function") {
+    window.lovappApplovinmax.setHasUserConsent(!!granted);
+    console.log("[Consent] AppLovin MAX →", granted ? "PERSONNALISÉES (consent YES)" : "NON-PERSONNALISÉES (consent NO)");
+  }
+}
+// Expose pour le toggle paramètres (si tu ne veux pas recharger la page)
+window.refreshAdConsent = applyConsentToAppLovin;
+
+// === Initialisation AppLovin MAX ===
 if (window.lovappApplovinmax && !window._lovapp_applovin_init) {
+  // Appliquer le consentement avant init si possible
+  applyConsentToAppLovin();
+
   window.lovappApplovinmax.initialize()
     .then(() => {
       window._lovapp_applovin_init = true;
       console.log('[AppLovin] MAX initialisé');
+
+      // Sécurité: ré-appliquer après init (au cas où le SDK réinitialise son état)
+      applyConsentToAppLovin();
     })
     .catch((e) => console.warn('[AppLovin] Erreur init:', e));
+} else {
+  // Même sans init MAX (dev), on enregistre l’intention
+  applyConsentToAppLovin();
 }
 
 // =============================
@@ -223,7 +275,6 @@ async function partieCommencee() {
 
 // (Compat) Ancienne logique fin de partie — conservée si tu l’appelles ailleurs
 function partieTerminee() {
-  // Ne déclenche plus d’interstitiel ici, on garde juste le log si besoin
   console.log("[Game] Partie terminée.");
 }
 
