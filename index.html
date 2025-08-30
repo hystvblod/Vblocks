@@ -349,25 +349,31 @@
     }
 
     // --------- Popups ciblées ---------
-    async function checkAndShowPopupOnce() {
-      const uid = await getCurrentUserId();
-      if (!uid) return;
+async function checkAndShowPopupOnce() {
+  const uid = await getCurrentUserId();
+  if (!uid) {
+    console.warn("[Popup] Aucun UID trouvé");
+    return;
+  }
 
-      const { data, error } = await sb
-        .from('messages_popup')
-        .select('id,message,vue,created_at')
-        .eq('userid', uid)
-        .order('created_at', { ascending: false })
-        .limit(1);
+  const { data, error } = await sb
+    .from('messages_popup')
+    .select('id,message,vue,created_at,userid')   // <== ajoute userid pour debug
+    .eq('userid', uid)  // ⚠️ vérifie bien le nom de ta colonne dans Supabase
+    .order('created_at', { ascending: false })
+    .limit(1);
 
-      if (!error && data?.length) {
-        const msg = data[0];
-        if (!msg.vue) {
-          alert(msg.message);
-          await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
-        }
-      }
+  console.log("[Popup DEBUG]", { uid, error, data });
+
+  if (!error && data?.length) {
+    const msg = data[0];
+    if (!msg.vue) {
+      alert(msg.message);
+      await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
     }
+  }
+}
+
 
     async function listenPopupsRealtime() {
       const uid = await getCurrentUserId();
