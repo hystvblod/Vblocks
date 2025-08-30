@@ -220,5 +220,8 @@
 "ad.fake":"広告",
 "ad.wait":"数秒お待ちください…",
 "revive.count":"{n}",
-"error.duel_not_found":"デュエルが見つかりません"
+"error.duel_not_found":"デュエルが見つかりません",
+  "theme.arabic": "アラビアン",
+  "theme.grece":  "古代ギリシャ",
+  "theme.japon":  "日本"
 }

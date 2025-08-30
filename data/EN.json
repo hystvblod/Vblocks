@@ -220,5 +220,8 @@
   "ad.fake": "Advertisement",
   "ad.wait": "Please wait a few seconds…",
   "revive.count": "{n}",
-  "error.duel_not_found": "Duel not found"
+  "error.duel_not_found": "Duel not found",
+    "theme.arabic": "Arabic",
+  "theme.grece":  "Ancient Greece",
+  "theme.japon":  "Japan"
 }

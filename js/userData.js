@@ -13,7 +13,7 @@ const sb = window.sb;
 const ALL_THEMES = [
   "neon",   // par défaut, toujours débloqué
   "nuit", "nature", "bubble", "retro",
-  "vitraux", "angelique", "luxury", "space", "cyber"
+  "vitraux", "angelique", "luxury", "space", "cyber",   "arabic", "grece", "japon" 
 ];
 window.getAllThemes = function () { return ALL_THEMES; };
 
@@ -149,7 +149,7 @@ async function getAuthUserId() {
 }
 
 // =============================
-// LECTURES / ÉCRITURES SÉCURISÉES (RPC)
+// LECTURES / ÉCRITURES SÉCURISÉES (RPC + direct)
 // =============================
 
 // Regroupe les champs courants du profil
@@ -174,6 +174,26 @@ async function updatePseudoSecure(newPseudo) {
   const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
   if (error) throw error;
   setPseudoLocal(np); // garde le cache visuel en phase
+  return true;
+}
+
+// --- LANG (update direct, sans RPC) ---
+async function updateLangDirect(langCode) {
+  const normalized = normalizeLangForCloud(langCode);
+  if (!normalized) throw new Error('Langue invalide');
+
+  await bootstrapAuthAndProfile();
+  const { data: { user } } = await sb.auth.getUser();
+  const uid = user?.id;
+  if (!uid) throw new Error('No auth user');
+
+  // Met à jour la ligne où id==uid OU auth_id==uid (migration legacy)
+  const { error } = await sb
+    .from('users')
+    .update({ lang: normalized })
+    .or(`id.eq.${uid},auth_id.eq.${uid}`);
+
+  if (error) throw error;
   return true;
 }
 
@@ -366,23 +386,26 @@ async function listenPopupsRealtime() {
 // EXPORTS GLOBAUX
 // =============================
 window.userData = window.userData || {};
-userData.getVCoins       = getVCoinsSecure;
-userData.addVCoins       = addVCoinsSecure;
-userData.getJetons       = getJetonsSecure;
-userData.addJetons       = addJetonsSecure;
+userData.getVCoins         = getVCoinsSecure;
+userData.addVCoins         = addVCoinsSecure;
+userData.getJetons         = getJetonsSecure;
+userData.addJetons         = addJetonsSecure;
 userData.getUnlockedThemes = getUnlockedThemesCloud;
 userData.setUnlockedThemes = setUnlockedThemesCloud; // admin/debug
-userData.purchaseTheme   = purchaseThemeSecure;
+userData.purchaseTheme     = purchaseThemeSecure;
 
-userData.getHighScore    = getHighScoreSecure;
-userData.setHighScore    = setHighScoreSecure;
-userData.setLastScore    = setLastScoreSecure;
+userData.getHighScore      = getHighScoreSecure;
+userData.setHighScore      = setHighScoreSecure;
+userData.setLastScore      = setLastScoreSecure;
 userData.updateScoreIfHigher = updateScoreIfHigher;
 
-window.updatePseudoUI    = updatePseudoUI;
-window.setupPseudoPopup  = setupPseudoPopup;
+// ⬇️ Export de la mise à jour directe de la langue
+userData.updateLangDirect  = updateLangDirect;
+
+window.updatePseudoUI      = updatePseudoUI;
+window.setupPseudoPopup    = setupPseudoPopup;
 window.bootstrapAuthAndProfile = bootstrapAuthAndProfile;
 
 // Confort : expose aussi ces helpers
-window.getCurrentTheme   = getCurrentTheme;
-window.setCurrentTheme   = setCurrentTheme;
+window.getCurrentTheme     = getCurrentTheme;
+window.setCurrentTheme     = setCurrentTheme;

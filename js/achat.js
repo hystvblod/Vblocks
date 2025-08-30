@@ -64,7 +64,7 @@ window.accordeAchat = async function(type) {
       // Fallback serveur (web / plugin absent)
       await acheterProduitVercel(type);
       if (type === "nopub") {
-        await sb.from('users').update({ nopub: true }).eq('id', getUserId());
+        await sb.rpc('ajouter_nopub');
       }
       await renderThemes?.();
       setupPubCartouches?.();

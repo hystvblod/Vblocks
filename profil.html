@@ -298,7 +298,7 @@
       const themeList = document.getElementById('themeListVB');
 
       // Liste des thèmes : window.getAllThemes() si dispo, sinon fallback
-      const FALLBACK_THEMES = ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber"];
+      const FALLBACK_THEMES = ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber", "grece", "japon", "arabic"];
       const ALL_THEMES = (typeof window.getAllThemes === 'function') ? window.getAllThemes() : FALLBACK_THEMES;
 
       // Thèmes débloqués (cloud si possible, sinon local, sinon 'neon')

@@ -449,3 +449,35 @@ body[data-theme="space"] #controls {
   z-index: 2 !important;
 }
 
+/* ---- ARABIC ---- */
+body[data-theme="arabic"] {
+  --body-bg: linear-gradient(135deg, #f5deb3, #d2b48c);
+  --body-color: #5a3e1b;
+  --title-color: #b8860b;
+  --canvas-bg: #fff8dc;
+  --canvas-border: #cd853f;
+  /* ... tes couleurs et fond arabesques */
+  background: url("arabic/fond.png") center center / cover no-repeat fixed !important;
+}
+
+/* ---- GRECE ---- */
+body[data-theme="grece"] {
+  --body-bg: linear-gradient(135deg, #e6f0ff, #b3cde0);
+  --body-color: #001f54;
+  --title-color: #003366;
+  --canvas-bg: #ffffff;
+  --canvas-border: #003366;
+  /* ... inspiration colonnes / marbre */
+  background: url("grece/fond.png") center center / cover no-repeat fixed !important;
+}
+
+/* ---- JAPON ---- */
+body[data-theme="japon"] {
+  --body-bg: linear-gradient(135deg, #ffebee, #ffcdd2);
+  --body-color: #880e4f;
+  --title-color: #c2185b;
+  --canvas-bg: #fff1f2;
+  --canvas-border: #ad1457;
+  /* ... inspiration sakura / torii */
+  background: url("japon/fond.png") center center / cover no-repeat fixed !important;
+}

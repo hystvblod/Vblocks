@@ -186,6 +186,11 @@
       </div>
     </div>
   </div>
+
+  <!-- ⚠️ IMPORTANT : charger le JS qui contient Supabase + updateLangDirect -->
+  <!-- Adapte le chemin si besoin (ex: js/userData.js) -->
+  <script src="js/userData.js"></script>
+
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       const btnBack = document.getElementById('btn-back');
@@ -227,11 +232,21 @@
       const opt = document.createElement('div');
       opt.className = 'lang-option' + (l.code === selectedLang ? ' selected' : '');
       opt.innerHTML = l.flag + '<span style="margin-left:0.35em;">' + l.label + '</span>';
-      opt.onclick = () => {
+      opt.onclick = async () => {
         localStorage.setItem("langue", l.code);
         document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
         opt.classList.add('selected');
         if (window.setLang) window.setLang(l.code);
+
+        // ⬇️ Envoi en base (mise à jour users.lang)
+        try {
+          if (window.userData?.updateLangDirect) {
+            await window.userData.updateLangDirect(l.code);
+          }
+        } catch (e) {
+          console.warn('[updateLangDirect] échec:', e?.message || e);
+        }
+
         location.reload();
       };
       langueSelect.appendChild(opt);
@@ -280,11 +295,9 @@
       return localStorage.getItem('alwaysMuteMusic') === 'true';
     }
     function setAlwaysMuted(val) {
-      // Si la fonction unifiée existe (dans tes scripts de jeu), on l’utilise
       if (typeof window.setMusicAlwaysMuted === 'function') {
         window.setMusicAlwaysMuted(!!val);
       } else {
-        // Fallback : on écrit dans localStorage et on simule un event "storage"
         localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
         try {
           window.dispatchEvent(new StorageEvent('storage', {

@@ -220,5 +220,8 @@
 "ad.fake":"광고",
 "ad.wait":"잠시 기다려주세요…",
 "revive.count":"{n}",
-"error.duel_not_found":"대결을 찾을 수 없습니다"
+"error.duel_not_found":"대결을 찾을 수 없습니다",
+  "theme.arabic": "아라비안",
+  "theme.grece":  "고대 그리스",
+  "theme.japon":  "일본"
 }

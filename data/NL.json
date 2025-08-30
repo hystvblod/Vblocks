@@ -220,5 +220,8 @@
 "ad.fake":"Advertentie",
 "ad.wait":"Even geduld…",
 "revive.count":"{n}",
-"error.duel_not_found":"Duel niet gevonden"
+"error.duel_not_found":"Duel niet gevonden",
+  "theme.arabic": "Arabisch",
+  "theme.grece":  "Oud-Griekenland",
+  "theme.japon":  "Japan"
 }

@@ -12,7 +12,11 @@ function t(key) {
 const THEMES = [
   { key: "bubble" }, { key: "nature" }, { key: "nuit" }, { key: "luxury" },
   { key: "space" }, { key: "angelique" }, { key: "cyber" }, { key: "vitraux" },
-  { key: "pixel" }, { key: "halloween" }
+  { key: "pixel" }, { key: "halloween" },
+  { key: "arabic", name: "Arabic" },
+{ key: "grece", name: "Grèce antique" },
+{ key: "japon", name: "Japon" }
+
 ];
 
 // --- Cartouches d’achats spéciaux

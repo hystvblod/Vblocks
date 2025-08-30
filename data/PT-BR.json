@@ -220,5 +220,8 @@
 "ad.fake":"Publicidade",
 "ad.wait":"Por favor, aguarde alguns segundos…",
 "revive.count":"{n}",
-"error.duel_not_found":"Duelo não encontrado"
+"error.duel_not_found":"Duelo não encontrado",
+  "theme.arabic": "Árabe",
+  "theme.grece":  "Grécia Antiga",
+  "theme.japon":  "Japão"
 }
