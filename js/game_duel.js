@@ -27,20 +27,26 @@
     window.musicStarted = false;
     refreshMusicBtn();
   }
-  function refreshMusicBtn() {
-    const btn = document.getElementById('music-btn');
-    if (!btn) return;
-    if (isMusicAlwaysMuted() || music.paused) {
-      btn.textContent = '🔇 Muet';
-    } else {
-      btn.textContent = '🎵 Musique';
-    }
+function refreshMusicBtn() {
+  const btn = document.getElementById('music-btn');
+  if (!btn) return;
+
+  const muted = isMusicAlwaysMuted() || (music && music.paused);
+  const icon = muted ? 'volume-x' : 'volume-2';
+
+  btn.innerHTML = `<img src="assets/icons/${icon}.svg" alt="${muted ? 'Muet' : 'Actif'}" class="music-btn-img">`;
+
   }
-  window.setMusicAlwaysMuted = function(val) {
-    localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
-    if (val) pauseMusic();
-    refreshMusicBtn();
+window.setMusicAlwaysMuted = function(val) {
+  localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
+  if (val) {
+    pauseMusic();
+  } else {
+    playMusicAuto();   // démarre immédiatement après unmute
   }
+  refreshMusicBtn();
+};
+
   window.startMusicForGame = function() {
     if (!music) return;
     if (isMusicAlwaysMuted()) {
@@ -68,22 +74,29 @@
     }, { once: true });
   }
   setTimeout(refreshMusicBtn, 200);
-  document.addEventListener('DOMContentLoaded', () => {
-    const btnMusic = document.getElementById('music-btn');
-    if (btnMusic) {
-      btnMusic.onclick = function() {
-        if (isMusicAlwaysMuted()) return;
-        if (music.paused) {
-          music.play();
-          btnMusic.textContent = '🎵 Musique';
-        } else {
-          music.pause();
-          btnMusic.textContent = '🔇 Muet';
-        }
-      };
-      refreshMusicBtn();
+document.addEventListener('DOMContentLoaded', () => {
+  const btnMusic = document.getElementById('music-btn');
+  if (!btnMusic) return;
+
+  btnMusic.onclick = () => {
+    const currentlyMuted = isMusicAlwaysMuted() || (music && music.paused);
+    const nextMute = !currentlyMuted;
+
+    if (typeof window.setMusicAlwaysMuted === 'function') {
+      window.setMusicAlwaysMuted(nextMute); // met aussi à jour localStorage côté jeu
+    } else {
+      localStorage.setItem('alwaysMuteMusic', nextMute ? 'true' : 'false');
+      if (music) {
+        if (nextMute) music.pause();
+        else music.play().catch(()=>{});
+      }
     }
-  });
+    refreshMusicBtn();
+  };
+
+  refreshMusicBtn();
+});
+
   // ==== FIN MUSIQUE ====
 
 
