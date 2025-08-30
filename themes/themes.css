@@ -448,36 +448,137 @@ body[data-theme="space"] #controls {
   position: relative !important;
   z-index: 2 !important;
 }
-
 /* ---- ARABIC ---- */
 body[data-theme="arabic"] {
-  --body-bg: linear-gradient(135deg, #f5deb3, #d2b48c);
+  /* Fond & texte */
+  --body-bg: linear-gradient(135deg, #f5e6c8 0%, #d8c2a3 100%);
   --body-color: #5a3e1b;
   --title-color: #b8860b;
-  --canvas-bg: #fff8dc;
-  --canvas-border: #cd853f;
-  /* ... tes couleurs et fond arabesques */
+  --title-shadow: 0 0 10px rgba(184,134,11,0.45);
+
+  /* Canvas principal */
+  --canvas-bg: rgba(255, 248, 220, 0.85); /* cornsilk légèrement translucide */
+  --canvas-border: #cd853f;               /* peru */
+  --canvas-shadow: rgba(205,133,63,0.45);
+
+  /* Panneaux / encarts */
+  --panel-bg: rgba(250, 240, 210, 0.9);
+  --panel-border: #b8860b;                /* darkgoldenrod */
+  --panel-shadow: rgba(184,134,11,0.35);
+  --panel-text: #5a3e1b;
+
+  /* Hold / Next (mini canvas) */
+  --canvas-panel-bg: rgba(255, 248, 220, 0.85);
+  --canvas-panel-border: #b8860b;
+  --canvas-panel-shadow: rgba(184,134,11,0.25);
+
+  /* Boîtes utilitaires */
+  --box-bg: rgba(255, 248, 220, 0.6);
+  --box-border: #cd853f;
+
+  /* Score */
+  --score-color: #b8860b;
+  --score-shadow: 0 0 3px rgba(184,134,11,0.6);
+
+  /* Boutons */
+  --btn-bg: #f4e3c1;
+  --btn-color: #5a3e1b;
+  --btn-border: #b8860b;
+  --btn-hover-bg: #fff0d6;
+  --btn-hover-color: #7a5326;
+  --btn-hover-border: #d1a53a;
+  --btn-shadow: 0 0 10px rgba(209,165,58,0.35);
+
+  /* Fond image (arabesques/or) */
   background: url("arabic/fond.png") center center / cover no-repeat fixed !important;
 }
 
 /* ---- GRECE ---- */
 body[data-theme="grece"] {
-  --body-bg: linear-gradient(135deg, #e6f0ff, #b3cde0);
-  --body-color: #001f54;
-  --title-color: #003366;
-  --canvas-bg: #ffffff;
-  --canvas-border: #003366;
-  /* ... inspiration colonnes / marbre */
+  /* Fond & texte */
+  --body-bg: linear-gradient(135deg, #e6f0ff 0%, #cbdcf3 60%, #b3cde0 100%);
+  --body-color: #0d2a5b;
+  --title-color: #0a3d91;                 /* bleu profond */
+  --title-shadow: 0 0 8px rgba(10,61,145,0.35);
+
+  /* Canvas principal (marbre clair) */
+  --canvas-bg: rgba(255, 255, 255, 0.92);
+  --canvas-border: #0a3d91;
+  --canvas-shadow: rgba(10,61,145,0.35);
+
+  /* Panneaux / encarts (marbre + liseré bleu) */
+  --panel-bg: rgba(250, 252, 255, 0.96);
+  --panel-border: #1f5fbf;
+  --panel-shadow: rgba(31,95,191,0.25);
+  --panel-text: #0d2a5b;
+
+  /* Hold / Next */
+  --canvas-panel-bg: rgba(245, 248, 255, 0.96);
+  --canvas-panel-border: #1f5fbf;
+  --canvas-panel-shadow: rgba(31,95,191,0.2);
+
+  /* Boîtes utilitaires */
+  --box-bg: rgba(245, 248, 255, 0.7);
+  --box-border: #1f5fbf;
+
+  /* Score (bleu Égée) */
+  --score-color: #0a3d91;
+  --score-shadow: 0 0 3px rgba(10,61,145,0.5);
+
+  /* Boutons (blanc/bleu, style colonnes) */
+  --btn-bg: #ffffff;
+  --btn-color: #0d2a5b;
+  --btn-border: #1f5fbf;
+  --btn-hover-bg: #e6f0ff;
+  --btn-hover-color: #0a3d91;
+  --btn-hover-border: #3a7cff;
+  --btn-shadow: 0 0 10px rgba(58,124,255,0.25);
+
+  /* Fond image (colonnes / marbre) */
   background: url("grece/fond.png") center center / cover no-repeat fixed !important;
 }
 
 /* ---- JAPON ---- */
 body[data-theme="japon"] {
-  --body-bg: linear-gradient(135deg, #ffebee, #ffcdd2);
-  --body-color: #880e4f;
+  /* Fond & texte (sakura doux) */
+  --body-bg: linear-gradient(135deg, #fff1f3 0%, #ffd9e1 50%, #ffcdd2 100%);
+  --body-color: #6a0f2b;                  /* bordeaux cerise */
   --title-color: #c2185b;
-  --canvas-bg: #fff1f2;
+  --title-shadow: 0 0 10px rgba(194,24,91,0.35);
+
+  /* Canvas principal (washi très léger) */
+  --canvas-bg: rgba(255, 241, 243, 0.9);
   --canvas-border: #ad1457;
-  /* ... inspiration sakura / torii */
+  --canvas-shadow: rgba(173,20,87,0.35);
+
+  /* Panneaux / encarts */
+  --panel-bg: rgba(255, 235, 238, 0.95);
+  --panel-border: #c2185b;
+  --panel-shadow: rgba(194,24,91,0.28);
+  --panel-text: #6a0f2b;
+
+  /* Hold / Next */
+  --canvas-panel-bg: rgba(255, 241, 243, 0.9);
+  --canvas-panel-border: #c2185b;
+  --canvas-panel-shadow: rgba(194,24,91,0.22);
+
+  /* Boîtes utilitaires */
+  --box-bg: rgba(255, 235, 238, 0.7);
+  --box-border: #c2185b;
+
+  /* Score (rose soutenu) */
+  --score-color: #d81b60;
+  --score-shadow: 0 0 3px rgba(216,27,96,0.55);
+
+  /* Boutons (sakura / torii) */
+  --btn-bg: #ffe4ec;
+  --btn-color: #6a0f2b;
+  --btn-border: #c2185b;
+  --btn-hover-bg: #ffc1d6;
+  --btn-hover-color: #fff;
+  --btn-hover-border: #d81b60;
+  --btn-shadow: 0 0 10px rgba(216,27,96,0.35);
+
+  /* Fond image (sakura / torii / Fuji) */
   background: url("japon/fond.png") center center / cover no-repeat fixed !important;
 }

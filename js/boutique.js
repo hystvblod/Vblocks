@@ -14,9 +14,8 @@ const THEMES = [
   { key: "space" }, { key: "angelique" }, { key: "cyber" }, { key: "vitraux" },
   { key: "pixel" }, { key: "halloween" },
   { key: "arabic", name: "Arabic" },
-{ key: "grece", name: "Grèce antique" },
-{ key: "japon", name: "Japon" }
-
+  { key: "grece",  name: "Grèce antique" },
+  { key: "japon",  name: "Japon" }
 ];
 
 // --- Cartouches d’achats spéciaux
@@ -43,7 +42,7 @@ const PRODUCT_IDS = window.PRODUCT_IDS = {
 };
 
 // --- Mémo des prix localisés (rempli dans IAP.ready) → lisible depuis achat.js
-const PRICES_BY_ALIAS = window.PRICES_BY_ALIAS = {}; 
+const PRICES_BY_ALIAS = window.PRICES_BY_ALIAS = {};
 // { alias: { price: "€0,99", currency: "EUR", micros: 990000 } }
 
 // --- Utilitaires (toujours dispo pour tes appels serveur externes)
@@ -119,19 +118,61 @@ async function setUnlockedThemesCloud(newThemes) {
   if (error) throw error;
 }
 
-// --- Achat sécurisé (Supabase RPC)
+/* ===========================
+   POPUP (ouverture/fermeture accessibles)
+   =========================== */
+
+function openThemeModal() {
+  const modal = document.getElementById("themeModalBackdrop");
+  if (!modal) return;
+  modal.style.display = "flex";
+  modal.removeAttribute("aria-hidden");
+  modal.removeAttribute("inert");
+  const closeBtn = document.getElementById("themeModalClose");
+  if (closeBtn) closeBtn.focus();
+}
+
+function closeThemeModal() {
+  const modal = document.getElementById("themeModalBackdrop");
+  if (!modal) return;
+  modal.setAttribute("aria-hidden", "true");
+  modal.setAttribute("inert", "");
+  modal.style.display = "none";
+  // focus retour sur le bouton d’ouverture si présent
+  const opener = document.getElementById("btnThemes") || document.querySelector("[data-open='themeModal']");
+  if (opener) opener.focus();
+  // défocus de secours
+  if (document.activeElement) document.activeElement.blur();
+}
+
+/* ===========================
+   Achat sécurisé (Supabase RPC)
+   =========================== */
+
 async function acheterTheme(themeKey, prix) {
   try {
-    const { error } = await sb.rpc('purchase_theme', {
+    // S'assurer qu'on a une session Auth (anonyme ok)
+    if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+
+    const { data, error } = await sb.rpc('purchase_theme', {
       theme_key: String(themeKey),
       price: Number(prix) || 0
     });
+
     if (error) {
+      const msg = (error.message || "").toLowerCase();
+      if (msg.includes("not enough vcoins")) {
+        alert(t("boutique.alert.pasassez") || "Pas assez de VCoins.");
+        return false;
+      }
       alert("Erreur: " + error.message);
       return false;
     }
-    alert(t("theme.debloque"));
+
+    // Rafraîchir UI + fermer la popup d’achat
     await renderThemes();
+    closeThemeModal();
+    alert(t("theme.debloque") || "Thème débloqué !");
     return true;
   } catch (e) {
     alert("Erreur: " + (e.message || e));
@@ -139,28 +180,9 @@ async function acheterTheme(themeKey, prix) {
   }
 }
 
-// --- Achats EUR (via API Vercel) – fallback web (tu peux le laisser)
-async function acheterProduitVercel(type) {
-  const userId = getUserId();
-  try {
-    const response = await fetch('https://vfindez-api.vercel.app/api/purchasevblock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, achat: type })
-    });
-    const data = await response.json();
-    if (data.success) {
-      alert("Achat réussi !");
-      await renderThemes();
-      setupPubCartouches?.();
-      setupBoutiqueAchats?.();
-    } else {
-      alert("Erreur achat : " + (data.error || "inconnu"));
-    }
-  } catch (e) {
-    alert("Erreur réseau: " + (e.message || e));
-  }
-}
+/* ===========================
+   UI
+   =========================== */
 
 // --- Activation (localStorage)
 // ⚠️ Harmonisé : "neon" devient la valeur par défaut (au lieu de "bubble")
