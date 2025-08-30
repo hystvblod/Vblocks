@@ -59,11 +59,8 @@
 
     /* Thème déjà possédé = léger assombrissement + badge */
     .theme-card.unlocked{
-      /* garder visible mais griser légèrement */
       filter: grayscale(35%) brightness(.92);
     }
-
-  
 
     /* Modal */
     .modal-backdrop {
@@ -148,7 +145,7 @@
   </div>
 
   <!-- MODAL -->
-  <div class="modal-backdrop" id="themeModalBackdrop" aria-hidden="true">
+  <div class="modal-backdrop" id="themeModalBackdrop" aria-hidden="true" inert>
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="themeModalTitle">
       <div class="modal-header">
         <div id="themeModalTitle"></div>
@@ -178,9 +175,8 @@ const THEMES = [
   { key: "space",  name: "Space"  },
   { key: "cyber",  name: "Cyber"  },
   { key: "arabic", name: "Arabic" },
-{ key: "grece", name: "Grèce antique" },
-{ key: "japon", name: "Japon" },
-
+  { key: "grece", name: "Grèce antique" },
+  { key: "japon", name: "Japon" }
 ];
 
 /* Chaque cartouche a maintenant un productId (même ID que sur Google/Apple) */
@@ -213,31 +209,10 @@ const THEME_COLOR = {
   arabic : 'color-purple',
   grece : 'color-yellow',
   japon : 'color-green'
-
-
-
 };
 
-/* ===== Cloud unlock (optionnel) ===== */
-async function unlockThemeCloud(themeKey) {
-  const userId = window.getUserId ? window.getUserId() : (window.userData?.getUserId?.() || "");
-  const sb = window.sb || window.supabaseClient || window.userData?.sb || window.supabase;
-  if (!sb || !userId) return true;
-
-  const { data, error } = await sb.from('users').select('themes_possedes').eq('id', userId).single();
-  if (error) return false;
-  let themes = Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
-  if (!themes.includes(themeKey)) {
-    themes.push(themeKey);
-    await sb.from('users').update({ themes_possedes: themes }).eq('id', userId);
-  }
-  return true;
-}
-
-/* ========= Store Bridge (fallback web) =========
-   ➜ Sur Capacitor, on remplacera getStoreProducts() pour renvoyer les prix du store */
+/* ========= Store Bridge (fallback web) ========= */
 async function getStoreProducts(productIds){
-  // Si le store est prêt → on prend les vrais prix
   if (window.store && Array.isArray(store.products) && store.products.length) {
     const out = {};
     productIds.forEach(id => {
@@ -246,8 +221,6 @@ async function getStoreProducts(productIds){
     });
     return out;
   }
-
-  // Sinon, prix par défaut (mode test navigateur)
   const fallback = {
     points3000:  "€0,99",
     points10000: "€1,99",
@@ -261,12 +234,10 @@ async function getStoreProducts(productIds){
   }, {});
 }
 
-
 /* ===== Rendus ===== */
 async function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
 
-  // 1) construire le DOM
   $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => `
     <div class="special-cartouche ${c.color}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
       <span class="theme-ico">${c.icon}</span>
@@ -275,21 +246,18 @@ async function renderAchats() {
     </div>
   `).join('');
 
-  // 2) récupérer les prix locaux depuis le store (ou fallback)
   const ids = SPECIAL_CARTOUCHES.map(c => c.productId).filter(Boolean);
-  const products = await getStoreProducts(ids); // {points3000:{price:"$0.99"}, ...}
+  const products = await getStoreProducts(ids);
 
-  // 3) injecter les prix (en blanc via CSS)
   document.querySelectorAll('#achats-list .special-cartouche').forEach(node=>{
     const id = node.getAttribute('data-product-id');
     const priceNode = node.querySelector('.prix-label');
     if (id && products[id]?.price && priceNode) {
-      priceNode.textContent = products[id].price; // ex: "$0.99", "1,99 €"
+      priceNode.textContent = products[id].price;
     }
   });
 }
 
-/* Liste thèmes: SANS photo (pas d'icône), texte blanc, WEBP only en popup */
 async function renderThemes() {
   await renderAchats();
 
@@ -310,7 +278,6 @@ async function renderThemes() {
   }).join('');
   $themesList.innerHTML = html;
 
-  // Rebranche les clics à chaque rendu
   setupBoutiqueAchats();
   setupPubCartouches();
 
@@ -375,7 +342,6 @@ function setupBoutiqueAchats() {
     if (!label) return;
     const key = label.dataset.i18n;
 
-    // ➜ NOUVEAU : rendre cliquables points3000 / points10000
     if (key === 'boutique.cartouche.points3000') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
@@ -389,7 +355,6 @@ function setupBoutiqueAchats() {
       };
     }
 
-    // déjà présents
     if (key === 'boutique.cartouche.jetons12') {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
@@ -419,13 +384,12 @@ const $actions  = document.getElementById('themeModalActions');
 const $close    = document.getElementById('themeModalClose');
 
 function openThemeModal(themeKey) {
-  // Titre i18n (spécifique -> sinon "Aperçu du thème <key>")
   const specificKey = "boutique.modal.titre." + themeKey;
-  theSpecific = t(specificKey);
+  const theSpecific = t(specificKey);
   const base = t("boutique.modal.titre");
   $title.textContent = (theSpecific !== specificKey ? theSpecific : `${base} ${themeKey}`);
 
-  // Image avec fallback PNG UNIQUEMENT dans la popup
+  // Image avec fallback PNG
   const webp = `assets/modes/${themeKey}.webp`;
   const png  = `assets/modes/${themeKey}.png`;
   $img.src = webp;
@@ -434,15 +398,27 @@ function openThemeModal(themeKey) {
 
   renderModalActions(themeKey);
 
+  // ouvrir (access)
   $backdrop.style.display = 'flex';
-  $backdrop.setAttribute('aria-hidden', 'false');
+  $backdrop.removeAttribute('aria-hidden');
+  $backdrop.removeAttribute('inert');
+  // focus dans la modale
+  $close?.focus();
 
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
 }
 
 function closeThemeModal() {
-  $backdrop.style.display = 'none';
+  // retirer focus s'il est dans la modale
+  if ($backdrop.contains(document.activeElement)) document.activeElement.blur();
+
   $backdrop.setAttribute('aria-hidden', 'true');
+  $backdrop.setAttribute('inert', '');
+  $backdrop.style.display = 'none';
+
+  // focus de retour
+  const opener = document.querySelector("[data-open='themeModal']") || document.getElementById("btnThemes");
+  if (opener) opener.focus();
 }
 
 async function renderModalActions(themeKey) {
@@ -462,13 +438,22 @@ async function renderModalActions(themeKey) {
     buy.setAttribute('data-i18n', 'boutique.modal.acheter');
     buy.textContent = (t('boutique.modal.acheter') || 'Acheter') + ` (${THEME_PRICE} VCoins)`;
     buy.onclick = async () => {
-      const coins = await window.userData?.getVCoins?.();
-      if (coins < THEME_PRICE) { alert(t("boutique.alert.pasassez")); return; }
-      await window.userData.addVCoins(-THEME_PRICE);
-      await unlockThemeCloud(themeKey);
-      await renderThemes();      // refresh listes + soldes
-      renderModalActions(themeKey); // transforme en "Possédé"
-      if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+      try {
+        // assure une session (sinon auth.uid() null côté SQL)
+        if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+
+        // ⚡ achat atomique via RPC (débit + ajout dans themes_possedes)
+        const ok = await window.userData?.purchaseTheme?.(themeKey, THEME_PRICE);
+        if (!ok) return;
+
+        await renderThemes();   // refresh listes + soldes
+        closeThemeModal();      // ferme la popup
+        if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+      } catch (e) {
+        const msg = (e?.message || "").toLowerCase();
+        if (msg.includes("not enough vcoins")) alert(t("boutique.alert.pasassez") || "Pas assez de VCoins.");
+        else alert("Erreur : " + (e?.message || e));
+      }
     };
     $actions.appendChild(buy);
   }
@@ -492,7 +477,6 @@ function ready(fn) {
 }
 ready(async () => {
   await renderThemes();           // => renderAchats() inclus
-  // i18n global après génération dynamique
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
   if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
 });
