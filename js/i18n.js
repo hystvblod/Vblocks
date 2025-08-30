@@ -1,4 +1,4 @@
-// i18n.js — auto-détection + override utilisateur + fallback propre
+// i18n.js — auto-détection + override utilisateur + fallback + gestion RTL/LTR + lang BCP47 + HTML-safe rendering
 (function (global) {
   // Emplacement des JSON de langue
   const LANG_PATH = "data/";
@@ -6,12 +6,29 @@
   // Langues supportées (noms de fichiers disponibles)
   const SUP = ["FR","EN","ES","DE","IT","PT","PT-BR","NL","AR","IDN","JP","KO"];
 
+  // Langues en écriture droite→gauche
+  const RTL = new Set(["AR"]);
+
+  // Mapping code-fichier -> code BCP47 pour <html lang="...">
+  const HTML_LANG = {
+    "FR": "fr",
+    "EN": "en",
+    "ES": "es",
+    "DE": "de",
+    "IT": "it",
+    "PT": "pt",
+    "PT-BR": "pt-BR",
+    "NL": "nl",
+    "AR": "ar",
+    "IDN": "id",
+    "JP": "ja",
+    "KO": "ko"
+  };
+
   // Normalise un code navigateur -> code de fichier
   function normalize(code) {
     if (!code) return null;
     let c = String(code).trim();
-
-    // ex: fr-FR -> fr, en-GB -> en, pt-BR -> pt-BR
     c = c.replace('_','-');
     const lower = c.toLowerCase();
 
@@ -46,7 +63,7 @@
       const n = normalize(c);
       if (n && SUP.includes(n)) return n;
     }
-    return "EN"; // fallback global (change en "FR" si tu veux imposer FR par défaut)
+    return "EN"; // fallback global (mets "FR" si tu veux forcer FR par défaut)
   }
 
   // Lit l'override utilisateur (Paramètres) OU auto-détection
@@ -74,27 +91,44 @@
     }
   }
 
+  // Applique lang & direction sur <html> et classe utilitaire sur <body>
+  function applyDocumentLangAndDir(langCode) {
+    const htmlLang = HTML_LANG[langCode] || langCode.toLowerCase();
+    document.documentElement.setAttribute("lang", htmlLang);
+
+    const isRtl = RTL.has(langCode);
+    document.documentElement.setAttribute("dir", isRtl ? "rtl" : "ltr");
+    document.body && document.body.classList.toggle("rtl", !!isRtl);
+  }
+
+  // Insère le texte : si la chaîne contient du HTML (ex. <br>), on utilise innerHTML
+  function setElementText(el, txt) {
+    if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+      el.placeholder = txt;
+      return;
+    }
+    // rendu HTML contrôlé (les JSON sont sous ton contrôle)
+    if (typeof txt === "string" && txt.indexOf("<") !== -1) {
+      el.innerHTML = txt;
+    } else {
+      el.textContent = txt;
+    }
+  }
+
   function applyI18n(map) {
     document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.getAttribute("data-i18n");
       if (!key) return;
       const txt = map[key];
       if (typeof txt === "string") {
-        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-          el.placeholder = txt;
-        } else {
-          el.textContent = txt;
-        }
+        setElementText(el, txt);
       }
     });
   }
 
   global.i18nTranslateAll = async function () {
     const langCode = getLangCode();
-    // met à jour <html lang="..">
-    document.documentElement.setAttribute("lang",
-      langCode === "PT-BR" ? "pt-BR" : langCode.toLowerCase()
-    );
+    applyDocumentLangAndDir(langCode);
 
     const i18nMap = await loadLang(langCode);
     global.I18N_MAP = i18nMap;

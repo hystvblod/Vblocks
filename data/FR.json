@@ -1,8 +1,5 @@
 {
   "header.title.settings": "Paramètres",
-  "button.back": "Retour",
-  "button.profile": "Profil",
-  "button.settings": "Paramètres",
   "settings.language.label": "Langue de l'interface :",
   "settings.vibrate.label": "Vibrations :",
   "settings.vibrate.on": "Activées",
@@ -24,29 +21,16 @@
   "lang.idn": "Bahasa Indonesia",
   "lang.ja": "日本語",
   "lang.ko": "한국어",
-
   "home.title": "VBlocks - Accueil",
-  "menu.profil": "Profil",
-  "menu.parametres": "Paramètres",
-  "index.rgpd.title": "Confidentialité & Publicités",
   "index.rgpd.body1": "VBlocks utilise des identifiants publicitaires pour diffuser des pubs personnalisées.<br>Tu peux refuser ou accepter la personnalisation.",
   "index.rgpd.body2": "(Tu peux changer d'avis plus tard dans les paramètres)",
-  "index.rgpd.accept": "Accepter",
   "index.rgpd.refuse": "Refuser",
-  "menu.concours": "Concours",
   "menu.classic": "Classique",
   "tip.classic": "Mode classique avec montée de vitesse progressive",
   "menu.infini": "Infini",
-  "tip.infini": "Mode relax sans fin, sans accélération",
-  "menu.duel": "Duel",
   "tip.duel": "Défi tes amis",
-  "menu.boutique": "Boutique",
-  "tip.boutique": "Personnalise ton jeu",
-  
   "amis.title": "Amis",
   "menu.retour": "Retour",
-  "menu.profil": "Profil",
-  "menu.parametres": "Paramètres",
   "amis.titre": "Tes amis",
   "amis.rechercheTitre": "Rechercher un ami",
   "amis.recherchePlaceholder": "Pseudo ou ID",
@@ -57,24 +41,13 @@
   "amis.erreurChamp": "Veuillez entrer un pseudo ou un ID.",
   "amis.listeTitre": "Liste de mes amis",
   "amis.listeVide": "Tu n’as pas encore d’amis.",
-  
   "boutique.titre": "Boutique",
   "boutique.retour": "Retour au jeu",
-  "menu.profil": "Profil",
-  "menu.parametres": "Paramètres",
   "boutique.section.vcoins": "Vcoins & jetons",
-  "boutique.section.themes": "Thèmes",
- 
- 
-
- 
-  "boutique.cartouche.pub300points": "Regarder pub : 300 points",
+  "boutique.section.themes": "Thèmes", 
   "theme.possede": "Possédé",
-  "theme.debloquer": "Débloquer (3000)",
-
-  
+  "theme.debloquer": "Débloquer (3000)", 
   "apps.title": "Nos applis",
-  "menu.retour": "Retour",
   "menu.profil": "Profil",
   "menu.parametres": "Paramètres",
   "vfindz.title": "VFindz",
@@ -83,7 +56,6 @@
 "vone.desc": "Trouve l'intrus dans la grille le plus vite possible.",
 "vmemory.title": "VMemory",
 "vmemory.desc": "Jeu de mémoire : retrouve les paires le plus vite possible.",
-  
   "game.title": "V-Blocks - Classique",
   "game.main_title": "V-Blocks-Classique",
   "jetons.alt": "Jetons",
@@ -95,111 +67,51 @@
   "game.music": "Musique",
   "game.mute": "Muet",
   "game.replay": "Rejouer",
-    "duel.title": "V-Blocks-Duel",
-  "duel.main_title": "V-Blocks-Duel",
-  "duel.hold": "Réserve",
+    "duel.title": "VBlocks-Duel",
   "duel.next": "Suivante",
-  "duel.score": "Score",
-  "duel.highscore_global": "Record global :",
-  "duel.music": "Musique",
-  "duel.mute": "Muet",
   "duel.replay": "Rejouer",
-
-  "duel.popup.choice.title": "Duel",
   "duel.popup.choice.new": "Créer un duel",
-  "duel.popup.choice.join": "Rejoindre un duel",
-
-  "duel.popup.wait.title": "Invite un ami en duel !",
   "duel.popup.wait.code": "Code :",
   "duel.popup.wait.text": "En attente d'un adversaire...",
-
   "duel.popup.confirm.title": "Duel trouvé !",
-  "duel.popup.confirm.text": "Tu veux accepter le duel ?",
-  "duel.popup.confirm.accept": "Accepter",
   "duel.popup.confirm.refuse": "Refuser",
-
   "duel.popup.countdown.title": "Duel prêt !",
-
-  "duel.popup.join.title": "Rejoindre un duel",
   "duel.popup.join.placeholder": "Code duel...",
   "duel.popup.join.ok": "OK",
   "duel.popup.join.cancel": "Annuler",
-
-  "button.back": "Retour",
   "main.title.infini": "V-Blocks\nInfini",
   "button.profile": "Profil",
   "button.settings": "Paramètres",
-
-
   "wallet.vcoins": "VCoins",
   "wallet.jetons": "Jetons",
-
-
   "hold.label": "Réserve",
   "next.label": "Suivante",
-
-
   "score.label": "Score",
   "highscore.global": "Record :",
   "highscore.value": "Record :",
-
-
   "button.music": "Musique",
   "button.mute": "Muet",
-  "button.replay": "Rejouer",
   "button.pause": "Pause",
-
-  "button.back": "Retour",
-  "button.profile": "Profil",
-  "button.settings": "Paramètres",
-
-
   "profil.title": "Mon Profil",
   "profil.btn.changePseudo": "Modifier mon pseudo",
   "profil.btn.theme": "Thèmes",
-  "profil.btn.amis": "Amis",
-  "profil.btn.applis": "Nos applis",
-
-
-  "profil.popup.pseudoTitle": "Ton nouveau pseudo",
-  "profil.popup.validate": "Valider",
   "profil.popup.cancel": "Annuler",
   "profil.popup.error.short": "Pseudo trop court.",
-
   "profil.popup.themeTitle": "Choisis ton thème VBlocks",
   "profil.popup.themeValidate": "Valider",
   "profil.popup.themeCancel": "Annuler",
-
-  "duel.title": "V-Blocks - Duel",
-  "duel.main_title": "V-Blocks - Duel",
+  "duel.main_title": "VBlocks - Duel",
   "duel.hold": "Réserve",
-  "duel.next": "Suivante",
   "duel.score": "Score",
-  "duel.highscore_global": "Record global :",
+  "duel.highscore_global": "Record:",
   "duel.music": "Musique",
   "duel.mute": "Muet",
-  "duel.replay": "Rejouer",
-
   "duel.popup.choice.title": "Duel",
-  "duel.popup.choice.new": "Créer un duel",
   "duel.popup.choice.join": "Rejoindre un duel",
-
   "duel.popup.wait.title": "Invite un ami en duel !",
-  "duel.popup.wait.code": "Code :",
-  "duel.popup.wait.text": "En attente d'un adversaire...",
-
-  "duel.popup.confirm.title": "Duel trouvé !",
   "duel.popup.confirm.text": "Tu veux accepter le duel ?",
   "duel.popup.confirm.accept": "Accepter",
-  "duel.popup.confirm.refuse": "Refuser",
-
-  "duel.popup.countdown.title": "Duel prêt !",
-
   "duel.popup.join.title": "Rejoindre un duel",
-  "duel.popup.join.placeholder": "Code duel...",
-  "duel.popup.join.ok": "OK",
-  "duel.popup.join.cancel": "Annuler",
-  
   "duel.finished": "DUEL TERMINÉ !",
   "duel.yourscore": "Ton score :",
   "duel.opponentscore": "Score adverse :",
@@ -211,10 +123,8 @@
   "gameover.revive_ad": "Regarder une pub pour reprendre",
   "gameover.quit": "Quitter",
   "error.save_score": "Erreur lors de la sauvegarde du score ou des VCoins !",
-  "error.duel_not_found": "Duel introuvable ou séquence absente.",
   "error.duel_create": "Erreur lors de la création du duel.",
   "button.replay": "Rejouer",
-
 "theme.bubble": "Bubble",
 "theme.nature": "Nature",
 "theme.nuit": "Nuit",
@@ -225,14 +135,6 @@
 "theme.vitraux": "Vitraux",
 "theme.pixel": "Pixel Art",
 "theme.halloween": "Halloween",
-
-
-
-
-
-"boutique.cartouche.pub300points": "Regarder pub : 300 points",
-
-
 "boutique.alert.vcoins_update_error": "Erreur lors de la mise à jour des VCoins !",
 "theme.deja_possede": "Thème déjà possédé !",
 "boutique.alert.pasassez": "Pas assez de pièces !",
@@ -241,10 +143,6 @@
 "boutique.btn.selectionne": "Sélectionné",
 "boutique.btn.utiliser": "Utiliser",
 "boutique.btn.debloquer": "Débloquer ({PRICE})",
-
-  "boutique.titre": "Boutique",
-  "boutique.section.vcoins": "Acheter des VCoins et Jetons",
-  "boutique.section.themes": "Thèmes disponibles",
   "boutique.cartouche.points3000": "3000 VCoins",
   "boutique.cartouche.points10000": "10 000 VCoins",
   "boutique.cartouche.jetons12": "12 Jetons",
@@ -266,46 +164,27 @@
   "boutique.modal.titre.cyber": "Thème Cyber",
   "boutique.modal.acheter": "Acheter",
   "boutique.modal.fermer": "Fermer",
- 
-  
   "menu.concours": "Concours",
-  "menu.classic": "Classic",
-  "menu.infini": "Infini",
   "menu.duel": "Duel",
   "menu.boutique": "Boutique",
   "tip.concours": "Participe et vote dans les concours photo",
-  "tip.classic": "Mode classique avec montée de vitesse progressive",
   "tip.infini": "Mode relax sans fin, sans accélération",
-  "tip.duel": "Défie des amis en face à face",
   "tip.boutique": "Personnalise ton jeu",
   "index.rgpd.title": "Confidentialité & Publicités",
-  "index.rgpd.body1": "VBlocks utilise des identifiants publicitaires pour diffuser des pubs personnalisées. Tu peux refuser ou accepter la personnalisation.",
-  "index.rgpd.body2": "(Tu peux changer d'avis plus tard dans les paramètres)",
   "index.rgpd.accept": "Accepter",
-  "index.rgpd.refuse": "Refuser",
   "index.rgpd.manage": "Gérer les accords publicitaires",
-
-
-  "profil.title": "Mon Profil",
-  "profil.btn.changePseudo": "Modifier mon pseudo",
-  "profil.btn.theme": "Thèmes",
   "profil.btn.amis": "Amis",
   "profil.btn.applis": "Nos applis",
-
   "profil.popup.pseudoTitle": "Ton nouveau pseudo",
   "profil.popup.placeholder": "Nouveau pseudo",
   "profil.popup.validate": "Valider",
-  "profil.popup.cancel": "Annuler",
   "profil.popup.error.empty": "Entre un pseudo.",
   "profil.popup.error.length": "20 caractères max.",
   "profil.popup.success": "Pseudo mis à jour.",
-
   "theme.popup.title": "Choisis ton thème VBlocks",
   "theme.popup.validate": "Valider",
   "theme.popup.cancel": "Annuler",
-
   "theme.item.lockedSuffix": " 🔒",
-
   "theme.name.neon": "Neon",
   "theme.name.nature": "Nature",
   "theme.name.pixel": "Pixel",
@@ -320,7 +199,6 @@
         "resume.title": "Reprendre la partie ?",
     "resume.message": "Une partie sauvegardée a été trouvée. Voulez-vous reprendre là où vous vous êtes arrêté(e) ?",
     "resume.resume": "Reprendre",
-    "resume.restart": "Recommencer",
     "resume.later": "Plus tard",
     "resume.countdown": "Reprise dans {s}…",
     "resume.expired": "La sauvegarde est trop ancienne et a été supprimée.",
@@ -329,13 +207,8 @@
     "resume.saved": "Partie sauvegardée.",
     "resume.restored": "Partie reprise.",
     "resume.cancel": "Annuler",
-
-
-  "resume.title": "Partie en cours",
   "resume.subtitle": "Voulez-vous reprendre là où vous vous êtes arrêté ?",
-  "resume.resume": "Reprendre",
   "resume.restart": "Recommencer",
-
   "end.title": "Partie terminée",
   "end.points": "points",
   "end.subtitle": "Que voulez-vous faire ?",
@@ -344,13 +217,8 @@
   "end.revive.token": "Revivre (1 jeton)",
   "end.revive.ad": "Revivre (pub)",
   "end.revive.no_tokens": "Pas assez de jetons.",
-
   "ad.fake": "Publicité",
   "ad.wait": "Veuillez patienter quelques secondes…",
-
   "revive.count": "{n}",
-
   "error.duel_not_found": "Duel introuvable"
 }
-
-

@@ -1,333 +1,224 @@
 {
-  "header.title.settings": "الإعدادات",
-  "button.back": "رجوع",
-  "button.profile": "الملف الشخصي",
-  "button.settings": "الإعدادات",
-  "settings.language.label": "لغة الواجهة:",
-  "settings.vibrate.label": "الاهتزازات:",
-  "settings.vibrate.on": "مفعّلة",
-  "settings.vibrate.off": "معطّلة",
-  "settings.ads.label": "الإعلانات المخصّصة:",
-  "settings.ads.on": "مفعّلة",
-  "settings.ads.off": "معطّلة",
-  "settings.ghost.label": "إظهار القطعة الشبح:",
-  "settings.ghost.on": "مفعّلة",
-  "settings.ghost.off": "معطّلة",
-  "lang.fr": "Français",
-  "lang.en": "English (US)",
-  "lang.de": "Deutsch",
-  "lang.it": "Italiano",
-  "lang.es": "Español",
-  "lang.pt": "Português",
-  "lang.ptbr": "Português (BR)",
-  "lang.ar": "العربية",
-  "lang.idn": "Bahasa Indonesia",
-  "lang.ja": "日本語",
-  "lang.ko": "한국어",
-
-  "home.title": "VBlocks - الرئيسية",
-  "menu.profil": "الملف الشخصي",
-  "menu.parametres": "الإعدادات",
-  "index.rgpd.title": "الخصوصية والإعلانات",
-  "index.rgpd.body1": "يستخدم VBlocks معرّفات إعلانية لعرض إعلانات مخصّصة.<br>يمكنك رفض تخصيص الإعلانات أو قبوله.",
-  "index.rgpd.body2": "(يمكنك تغيير رأيك لاحقًا من الإعدادات)",
-  "index.rgpd.accept": "قبول",
-  "index.rgpd.refuse": "رفض",
-  "menu.concours": "المسابقات",
-  "menu.classic": "كلاسيكي",
-  "tip.classic": "وضع كلاسيكي مع تزايد تدريجي للسرعة",
-  "menu.infini": "لا نهائي",
-  "tip.infini": "وضع مريح بلا نهاية وبدون تسريع",
-  "menu.duel": "مبارزة",
-  "tip.duel": "تحدَّ أصدقاءك",
-  "menu.boutique": "المتجر",
-  "tip.boutique": "خصّص لعبتك",
-  
-  "amis.title": "الأصدقاء",
-  "menu.retour": "رجوع",
-  "menu.profil": "الملف الشخصي",
-  "menu.parametres": "الإعدادات",
-  "amis.titre": "أصدقاؤك",
-  "amis.rechercheTitre": "البحث عن صديق",
-  "amis.recherchePlaceholder": "اسم مستعار أو معرّف",
-  "amis.btnRechercher": "بحث",
-  "amis.btnAjouter": "إضافة",
-  "amis.btnSupprimer": "حذف",
-  "amis.rechercheAucun": "لا توجد نتائج حاليًا.",
-  "amis.erreurChamp": "يرجى إدخال اسم مستعار أو معرّف.",
-  "amis.listeTitre": "قائمة أصدقائي",
-  "amis.listeVide": "ليس لديك أصدقاء بعد.",
-  
-  "boutique.titre": "المتجر",
-  "boutique.retour": "العودة إلى اللعبة",
-  "menu.profil": "الملف الشخصي",
-  "menu.parametres": "الإعدادات",
-  "boutique.section.vcoins": "VCoins والرموز",
-  "boutique.section.themes": "السمات",
-  "boutique.cartouche.jetons12": "12 رمز: 0,99€",
-  "boutique.cartouche.jetons50": "50 رمز: 2,99€",
-  "boutique.cartouche.nopub": "إزالة الإعلانات: 2,99€",
-  "boutique.cartouche.pub1jeton": "مشاهدة إعلان: 1 رمز",
-  "boutique.cartouche.pub300points": "مشاهدة إعلان: 300 نقطة",
-  "boutique.cartouche.points3000" : "3 000 قطعة: 0.99€",
-  "boutique.cartouche.points10000" : "10 000 قطعة: 1.99€",
-  "theme.possede": "مملوك",
-  "theme.debloquer": "فتح (3000)",
-  "boutique.alert.pasassez": "ليس لديك ما يكفي من القطع!",
-  
-  "apps.title": "تطبيقاتنا",
-  "menu.retour": "رجوع",
-  "menu.profil": "الملف الشخصي",
-  "menu.parametres": "الإعدادات",
-  "vfindz.title": "VFindz",
-  "vfindz.desc": "لعبة الصور الشهيرة: أنجز التحديات، انشر صورتك، شارك في المسابقات واربح جوائز!",
-  "vone.title": "Vone",
-  "vone.desc": "اعثر على الدخيل في الشبكة بأسرع وقت ممكن.",
-  "vmemory.title": "VMemory",
-  "vmemory.desc": "لعبة ذاكرة: اعثر على الأزواج بأسرع وقت ممكن.",
-  
-  "game.title": "V-Blocks - كلاسيكي",
-  "game.main_title": "V-Blocks - كلاسيكي",
-  "jetons.alt": "رموز",
-  "game.hold": "الاحتياطي",
-  "game.next": "التالية",
-  "game.pause_btn": "إيقاف مؤقت",
-  "game.score": "النتيجة",
-  "game.record": "الرقم القياسي:",
-  "game.music": "الموسيقى",
-  "game.mute": "صامت",
-  "game.replay": "إعادة اللعب",
-  "duel.title": "V-Blocks - مبارزة",
-  "duel.main_title": "V-Blocks - مبارزة",
-  "duel.hold": "الاحتياطي",
-  "duel.next": "التالية",
-  "duel.score": "النتيجة",
-  "duel.highscore_global": "الرقم القياسي العالمي:",
-  "duel.music": "الموسيقى",
-  "duel.mute": "صامت",
-  "duel.replay": "إعادة اللعب",
-
-  "duel.popup.choice.title": "مبارزة",
-  "duel.popup.choice.new": "إنشاء مبارزة",
-  "duel.popup.choice.join": "الانضمام إلى مبارزة",
-
-  "duel.popup.wait.title": "ادعُ صديقًا للمبارزة!",
-  "duel.popup.wait.code": "الرمز:",
-  "duel.popup.wait.text": "في انتظار الخصم...",
-
-  "duel.popup.confirm.title": "تم العثور على مبارزة!",
-  "duel.popup.confirm.text": "هل تريد قبول المبارزة؟",
-  "duel.popup.confirm.accept": "قبول",
-  "duel.popup.confirm.refuse": "رفض",
-
-  "duel.popup.countdown.title": "المبارزة جاهزة!",
-
-  "duel.popup.join.title": "الانضمام إلى مبارزة",
-  "duel.popup.join.placeholder": "رمز المبارزة...",
-  "duel.popup.join.ok": "موافق",
-  "duel.popup.join.cancel": "إلغاء",
-
-  "button.back": "رجوع",
-  "main.title.infini": "V-Blocks\nلا نهائي",
-  "button.profile": "الملف الشخصي",
-  "button.settings": "الإعدادات",
-
-  "wallet.vcoins": "VCoins",
-  "wallet.jetons": "رموز",
-
-  "hold.label": "الاحتياطي",
-  "next.label": "التالية",
-
-  "score.label": "النتيجة",
-  "highscore.global": "الرقم القياسي:",
-  "highscore.value": "الرقم القياسي:",
-
-  "button.music": "الموسيقى",
-  "button.mute": "صامت",
-  "button.replay": "إعادة اللعب",
-  "button.pause": "إيقاف مؤقت",
-
-  "button.back": "رجوع",
-  "button.profile": "الملف الشخصي",
-  "button.settings": "الإعدادات",
-
-  "profil.title": "ملفي الشخصي",
-  "profil.btn.changePseudo": "تعديل الاسم المستعار",
-  "profil.btn.theme": "السمات",
-  "profil.btn.amis": "الأصدقاء",
-  "profil.btn.applis": "تطبيقاتنا",
-
-  "profil.popup.pseudoTitle": "اسمك المستعار الجديد",
-  "profil.popup.validate": "تأكيد",
-  "profil.popup.cancel": "إلغاء",
-  "profil.popup.error.short": "الاسم المستعار قصير جدًا.",
-
-  "profil.popup.themeTitle": "اختر سمة VBlocks",
-  "profil.popup.themeValidate": "تأكيد",
-  "profil.popup.themeCancel": "إلغاء",
-
-  "duel.title": "V-Blocks - مبارزة",
-  "duel.main_title": "V-Blocks - مبارزة",
-  "duel.hold": "الاحتياطي",
-  "duel.next": "التالية",
-  "duel.score": "النتيجة",
-  "duel.highscore_global": "الرقم القياسي العالمي:",
-  "duel.music": "الموسيقى",
-  "duel.mute": "صامت",
-  "duel.replay": "إعادة اللعب",
-
-  "duel.popup.choice.title": "مبارزة",
-  "duel.popup.choice.new": "إنشاء مبارزة",
-  "duel.popup.choice.join": "الانضمام إلى مبارزة",
-
-  "duel.popup.wait.title": "ادعُ صديقًا للمبارزة!",
-  "duel.popup.wait.code": "الرمز:",
-  "duel.popup.wait.text": "في انتظار الخصم...",
-
-  "duel.popup.confirm.title": "تم العثور على مبارزة!",
-  "duel.popup.confirm.text": "هل تريد قبول المبارزة؟",
-  "duel.popup.confirm.accept": "قبول",
-  "duel.popup.confirm.refuse": "رفض",
-
-  "duel.popup.countdown.title": "المبارزة جاهزة!",
-
-  "duel.popup.join.title": "الانضمام إلى مبارزة",
-  "duel.popup.join.placeholder": "رمز المبارزة...",
-  "duel.popup.join.ok": "موافق",
-  "duel.popup.join.cancel": "إلغاء",
-  
-  "duel.finished": "انتهت المبارزة!",
-  "duel.yourscore": "نتيجتك:",
-  "duel.opponentscore": "نتيجة الخصم:",
-  "duel.waiting": "في الانتظار...",
-  "gameover.title": "انتهت اللعبة!",
-  "gameover.points": "نقاط مكتسبة!",
-  "gameover.tokens": "رصيد الرموز:",
-  "gameover.revive_token": "استخدم رمزًا واحدًا للمتابعة",
-  "gameover.revive_ad": "شاهد إعلانًا للمتابعة",
-  "gameover.quit": "خروج",
-  "ad.fake": "إعلان...",
-  "ad.wait": "انتظر 3 ثوانٍ",
-  "error.save_score": "حدث خطأ أثناء حفظ النتيجة أو VCoins!",
-  "error.duel_not_found": "المبارزة غير موجودة أو التسلسل مفقود.",
-  "error.duel_create": "حدث خطأ أثناء إنشاء المبارزة.",
-  "button.replay": "إعادة اللعب",
-
-  "theme.bubble": "Bubble",
-  "theme.nature": "الطبيعة",
-  "theme.nuit": "الليل",
-  "theme.luxury": "الفخامة",
-  "theme.space": "Space",
-  "theme.candy": "الحلوى",
-  "theme.cyber": "سايبر",
-  "theme.vitraux": "الزجاج المعشّق",
-  "theme.pixel": "بيكسل آرت",
-  "theme.halloween": "هالووين",
-
-  "boutique.cartouche.jetons12": "12 رمز: 0,99€",
-  "boutique.cartouche.jetons50": "50 رمز: 2,99€",
-  "boutique.cartouche.nopub": "إزالة الإعلانات: 3,49€",
-  "boutique.cartouche.pub1jeton": "مشاهدة إعلان: 1 رمز",
-  "boutique.cartouche.pub300points": "مشاهدة إعلان: 300 نقطة",
-
-  "boutique.alert.vcoins_update_error": "خطأ أثناء تحديث VCoins!",
-  "theme.deja_possede": "السمة مملوكة بالفعل!",
-  "boutique.alert.pasassez": "ليس لديك ما يكفي من القطع!",
-  "theme.debloque": "تم فتح السمة!",
-  "theme.activated": "تم تفعيل النمط الجديد: {THEME}",
-  "boutique.btn.selectionne": "محدّد",
-  "boutique.btn.utiliser": "استخدام",
-  "boutique.btn.debloquer": "فتح ({PRICE})",
-
-  "boutique.titre": "المتجر",
-  "boutique.section.vcoins": "شراء VCoins والرموز",
-  "boutique.section.themes": "السمات المتاحة",
-  "boutique.cartouche.points3000": "3000 VCoins",
-  "boutique.cartouche.points10000": "10 000 VCoins",
-  "boutique.cartouche.jetons12": "12 رمز",
-  "boutique.cartouche.jetons50": "50 رمز",
-  "boutique.cartouche.nopub": "إزالة الإعلانات",
-  "boutique.cartouche.pub1jeton": "مشاهدة إعلان - 1 رمز",
-  "boutique.cartouche.pub300points": "مشاهدة إعلان - 300 VCoins",
-  "boutique.modal.possede": "مملوك",
-  "boutique.modal.titre": "معاينة السمة",
-  "boutique.modal.titre.neon": "سمة نيون",
-  "boutique.modal.titre.bubble": "Thème Bulles",
-  "boutique.modal.titre.nature": "سمة الطبيعة",
-  "boutique.modal.titre.nuit": "سمة الليل",
-  "boutique.modal.titre.retro": "Thème Rétro",
-  "boutique.modal.titre.vitraux": "سمة الزجاج المعشّق",
-  "boutique.modal.titre.angelique": "Thème Angélique",
-  "boutique.modal.titre.luxury": "سمة الفخامة",
-  "boutique.modal.titre.space": "Thème Espace",
-  "boutique.modal.titre.cyber": "سمة سايبر",
-  "boutique.modal.acheter": "شراء",
-  "boutique.modal.fermer": "إغلاق",
-  "boutique.alert.pasassez": "ليس لديك ما يكفي من VCoins.",
-  
-  "menu.concours": "المسابقات",
-  "menu.classic": "كلاسيكي",
-  "menu.infini": "لا نهائي",
-  "menu.duel": "مبارزة",
-  "menu.boutique": "المتجر",
-  "tip.concours": "شارك وصوّت في مسابقات الصور",
-  "tip.classic": "وضع كلاسيكي مع تزايد تدريجي للسرعة",
-  "tip.infini": "وضع مريح بلا نهاية وبدون تسريع",
-  "tip.duel": "تحدَّ الأصدقاء وجهًا لوجه",
-  "tip.boutique": "خصّص لعبتك",
-  "index.rgpd.title": "الخصوصية والإعلانات",
-  "index.rgpd.body1": "يستخدم VBlocks معرّفات إعلانية لعرض إعلانات مخصّصة. يمكنك رفض تخصيص الإعلانات أو قبوله.",
-  "index.rgpd.body2": "(يمكنك تغيير رأيك لاحقًا من الإعدادات)",
-  "index.rgpd.accept": "قبول",
-  "index.rgpd.refuse": "رفض",
-  "index.rgpd.manage": "إدارة موافقات الإعلانات",
-
-  "profil.title": "ملفي الشخصي",
-  "profil.btn.changePseudo": "تعديل الاسم المستعار",
-  "profil.btn.theme": "السمات",
-  "profil.btn.amis": "الأصدقاء",
-  "profil.btn.applis": "تطبيقاتنا",
-
-  "profil.popup.pseudoTitle": "اسمك المستعار الجديد",
-  "profil.popup.placeholder": "اسم مستعار جديد",
-  "profil.popup.validate": "تأكيد",
-  "profil.popup.cancel": "إلغاء",
-  "profil.popup.error.empty": "أدخل اسمًا مستعارًا.",
-  "profil.popup.error.length": "20 حرفًا كحد أقصى.",
-  "profil.popup.success": "تم تحديث الاسم المستعار.",
-
-  "theme.popup.title": "اختر سمة VBlocks",
-  "theme.popup.validate": "تأكيد",
-  "theme.popup.cancel": "إلغاء",
-
-  "theme.item.lockedSuffix": " 🔒",
-
-  "theme.name.neon": "نيون",
-  "theme.name.nature": "الطبيعة",
-  "theme.name.pixel": "بيكسل",
-  "theme.name.dark": "Dark",
-  "theme.name.bubble": "Bubble",
-  "theme.name.retro": "Retro",
-  "theme.name.cyber": "سايبر",
-  "profil.applis.rewardNote": "احصل على 2 رمز و 800 قطعة لكل عملية تنزيل",
-  "toastDetected": "{count} تطبيق/تطبيقات تم اكتشافها، الرصيد المضاف: {credited}",
-  "toastNone": "لم يتم اكتشاف أي تطبيق شريك",
-  "toastError": "يتعذر التحقق من التطبيقات حاليًا",
-  "theme.angelique": "Angélique",
-"theme.retro": "Rétro",
-"theme.name.angelique": "Angelique",
-
- "resume.title": "هل تريد متابعة اللعبة؟",
-    "resume.message": "تم العثور على لعبة محفوظة. هل تريد المتابعة من حيث توقفت؟",
-    "resume.resume": "متابعة",
-    "resume.restart": "البدء من جديد",
-    "resume.later": "لاحقًا",
-    "resume.countdown": "استئناف خلال {s}…",
-    "resume.expired": "بيانات الحفظ قديمة جدًا وتم حذفها.",
-    "resume.notfound": "لا توجد لعبة يمكن متابعتها.",
-    "resume.saving": "جارٍ الحفظ…",
-    "resume.saved": "تم حفظ اللعبة.",
-    "resume.restored": "تم استئناف اللعبة.",
-    "resume.cancel": "إلغاء"
-
+"header.title.settings":"الإعدادات",
+"settings.language.label":"لغة الواجهة:",
+"settings.vibrate.label":"الاهتزاز:",
+"settings.vibrate.on":"مفعل",
+"settings.vibrate.off":"معطل",
+"settings.ads.label":"إعلانات مخصصة:",
+"settings.ads.on":"مفعلة",
+"settings.ads.off":"معطلة",
+"settings.ghost.label":"إظهار القطعة الشبح:",
+"settings.ghost.on":"مفعل",
+"settings.ghost.off":"معطل",
+"lang.fr":"Français",
+"lang.en":"English (US)",
+"lang.de":"Deutsch",
+"lang.it":"Italiano",
+"lang.es":"Español",
+"lang.pt":"Português",
+"lang.ptbr":"Português (BR)",
+"lang.ar":"العربية",
+"lang.idn":"Bahasa Indonesia",
+"lang.ja":"日本語",
+"lang.ko":"한국어",
+"home.title":"VBlocks - الرئيسية",
+"index.rgpd.body1":"يستخدم VBlocks معرفات الإعلانات لعرض إعلانات مخصصة.<br>يمكنك رفض أو قبول التخصيص.",
+"index.rgpd.body2":"(يمكنك تغيير رأيك لاحقاً من الإعدادات)",
+"index.rgpd.refuse":"رفض",
+"menu.classic":"كلاسيكي",
+"tip.classic":"وضع كلاسيكي مع زيادة تدريجية في السرعة",
+"menu.infini":"لانهائي",
+"tip.duel":"تحد أصدقاءك",
+"amis.title":"الأصدقاء",
+"menu.retour":"رجوع",
+"amis.titre":"أصدقاؤك",
+"amis.rechercheTitre":"ابحث عن صديق",
+"amis.recherchePlaceholder":"اسم المستخدم أو المعرف",
+"amis.btnRechercher":"بحث",
+"amis.btnAjouter":"إضافة",
+"amis.btnSupprimer":"حذف",
+"amis.rechercheAucun":"لا توجد نتائج حالياً.",
+"amis.erreurChamp":"يرجى إدخال اسم مستخدم أو معرف.",
+"amis.listeTitre":"قائمة أصدقائي",
+"amis.listeVide":"ليس لديك أصدقاء بعد.",
+"boutique.titre":"المتجر",
+"boutique.retour":"العودة إلى اللعبة",
+"boutique.section.vcoins":"VCoins و الرموز",
+"boutique.section.themes":"الثيمات",
+"theme.possede":"مملوك",
+"theme.debloquer":"فتح (3000)",
+"apps.title":"تطبيقاتنا",
+"menu.profil":"الملف الشخصي",
+"menu.parametres":"الإعدادات",
+"vfindz.title":"VFindz",
+"vfindz.desc":"لعبة الصور الفيروسية: واجه التحديات، انشر صورتك، شارك في المسابقات واربح الجوائز!",
+"vone.title":"Vone",
+"vone.desc":"اعثر على الدخيل في الشبكة بأسرع وقت ممكن.",
+"vmemory.title":"VMemory",
+"vmemory.desc":"لعبة ذاكرة: اعثر على الأزواج بأسرع وقت ممكن.",
+"game.title":"V-Blocks - كلاسيكي",
+"game.main_title":"V-Blocks - كلاسيكي",
+"jetons.alt":"رموز",
+"game.hold":"احتياطي",
+"game.next":"التالي",
+"game.pause_btn":"إيقاف مؤقت",
+"game.score":"النتيجة",
+"game.record":"الرقم القياسي:",
+"game.music":"الموسيقى",
+"game.mute":"كتم",
+"game.replay":"إعادة اللعب",
+"duel.title":"VBlocks - مبارزة",
+"duel.next":"التالي",
+"duel.replay":"إعادة اللعب",
+"duel.popup.choice.new":"إنشاء مبارزة",
+"duel.popup.wait.code":"الرمز:",
+"duel.popup.wait.text":"بانتظار خصم...",
+"duel.popup.confirm.title":"تم العثور على مبارزة!",
+"duel.popup.confirm.refuse":"رفض",
+"duel.popup.countdown.title":"المبارزة جاهزة!",
+"duel.popup.join.placeholder":"رمز المبارزة...",
+"duel.popup.join.ok":"موافق",
+"duel.popup.join.cancel":"إلغاء",
+"main.title.infini":"V-Blocks\nلانهائي",
+"button.profile":"الملف الشخصي",
+"button.settings":"الإعدادات",
+"wallet.vcoins":"VCoins",
+"wallet.jetons":"رموز",
+"hold.label":"احتياطي",
+"next.label":"التالي",
+"score.label":"النتيجة",
+"highscore.global":"الرقم القياسي:",
+"highscore.value":"الرقم القياسي:",
+"button.music":"الموسيقى",
+"button.mute":"كتم",
+"button.pause":"إيقاف مؤقت",
+"profil.title":"ملفي الشخصي",
+"profil.btn.changePseudo":"تغيير اسم المستخدم",
+"profil.btn.theme":"الثيمات",
+"profil.popup.cancel":"إلغاء",
+"profil.popup.error.short":"اسم المستخدم قصير جداً.",
+"profil.popup.themeTitle":"اختر ثيم VBlocks",
+"profil.popup.themeValidate":"تأكيد",
+"profil.popup.themeCancel":"إلغاء",
+"duel.main_title":"VBlocks - مبارزة",
+"duel.hold":"احتياطي",
+"duel.score":"النتيجة",
+"duel.highscore_global":"الرقم القياسي:",
+"duel.music":"الموسيقى",
+"duel.mute":"كتم",
+"duel.popup.choice.title":"مبارزة",
+"duel.popup.choice.join":"انضم إلى مبارزة",
+"duel.popup.wait.title":"ادعُ صديقك إلى مبارزة!",
+"duel.popup.confirm.text":"هل تريد قبول المبارزة؟",
+"duel.popup.confirm.accept":"قبول",
+"duel.popup.join.title":"انضم إلى مبارزة",
+"duel.finished":"انتهت المبارزة!",
+"duel.yourscore":"نتيجتك:",
+"duel.opponentscore":"نتيجة الخصم:",
+"duel.waiting":"بانتظار...",
+"gameover.title":"انتهت اللعبة!",
+"gameover.points":"نقاط مكتسبة!",
+"gameover.tokens":"رصيد الرموز:",
+"gameover.revive_token":"استخدم رمزاً واحداً للمتابعة",
+"gameover.revive_ad":"شاهد إعلاناً للمتابعة",
+"gameover.quit":"خروج",
+"error.save_score":"خطأ أثناء حفظ النتيجة أو VCoins!",
+"error.duel_create":"خطأ أثناء إنشاء المبارزة.",
+"button.replay":"إعادة اللعب",
+"theme.bubble":"Bubble",
+"theme.nature":"طبيعة",
+"theme.nuit":"ليل",
+"theme.luxury":"Luxury",
+"theme.space":"Space",
+"theme.candy":"حلويات",
+"theme.cyber":"Cyber",
+"theme.vitraux":"زجاج معشق",
+"theme.pixel":"فن البيكسل",
+"theme.halloween":"هالوين",
+"boutique.alert.vcoins_update_error":"خطأ أثناء تحديث VCoins!",
+"theme.deja_possede":"الثيم مملوك بالفعل!",
+"boutique.alert.pasassez":"عملات غير كافية!",
+"theme.debloque":"تم فتح الثيم!",
+"theme.activated":"تم تفعيل النمط الجديد: {THEME}",
+"boutique.btn.selectionne":"محدد",
+"boutique.btn.utiliser":"استخدام",
+"boutique.btn.debloquer":"فتح ({PRICE})",
+"boutique.cartouche.points3000":"3000 VCoins",
+"boutique.cartouche.points10000":"10,000 VCoins",
+"boutique.cartouche.jetons12":"12 رمز",
+"boutique.cartouche.jetons50":"50 رمز",
+"boutique.cartouche.nopub":"إزالة الإعلانات",
+"boutique.cartouche.pub1jeton":"شاهد إعلاناً - 1 رمز",
+"boutique.cartouche.pub300points":"شاهد إعلاناً - 300 VCoins",
+"boutique.modal.possede":"مملوك",
+"boutique.modal.titre":"معاينة الثيم",
+"boutique.modal.titre.neon":"ثيم نيون",
+"boutique.modal.titre.bubble":"ثيم Bubble",
+"boutique.modal.titre.nature":"ثيم الطبيعة",
+"boutique.modal.titre.nuit":"ثيم الليل",
+"boutique.modal.titre.retro":"ثيم ريترو",
+"boutique.modal.titre.vitraux":"ثيم الزجاج المعشق",
+"boutique.modal.titre.angelique":"ثيم Angelique",
+"boutique.modal.titre.luxury":"ثيم Luxury",
+"boutique.modal.titre.space":"ثيم Space",
+"boutique.modal.titre.cyber":"ثيم Cyber",
+"boutique.modal.acheter":"شراء",
+"boutique.modal.fermer":"إغلاق",
+"menu.concours":"مسابقة",
+"menu.duel":"مبارزة",
+"menu.boutique":"المتجر",
+"tip.concours":"شارك وصوّت في مسابقات الصور",
+"tip.infini":"وضع استرخاء بلا نهاية، بلا تسريع",
+"tip.boutique":"خصص لعبتك",
+"index.rgpd.title":"الخصوصية & الإعلانات",
+"index.rgpd.accept":"قبول",
+"index.rgpd.manage":"إدارة موافقات الإعلانات",
+"profil.btn.amis":"الأصدقاء",
+"profil.btn.applis":"تطبيقاتنا",
+"profil.popup.pseudoTitle":"اسم المستخدم الجديد",
+"profil.popup.placeholder":"اسم مستخدم جديد",
+"profil.popup.validate":"تأكيد",
+"profil.popup.error.empty":"أدخل اسم مستخدم.",
+"profil.popup.error.length":"20 حرفاً كحد أقصى.",
+"profil.popup.success":"تم تحديث اسم المستخدم.",
+"theme.popup.title":"اختر ثيم VBlocks",
+"theme.popup.validate":"تأكيد",
+"theme.popup.cancel":"إلغاء",
+"theme.item.lockedSuffix":" 🔒",
+"theme.name.neon":"نيون",
+"theme.name.nature":"طبيعة",
+"theme.name.pixel":"بيكسل",
+"theme.name.dark":"غامق",
+"theme.name.bubble":"Bubble",
+"theme.name.retro":"ريترو",
+"theme.name.cyber":"Cyber",
+"profil.applis.rewardNote":"احصل على 2 رمز و800 قطعة نقدية لكل تحميل",
+"toastDetected":"{count} تطبيق/تطبيقات مكتشفة، الرصيد المضاف: {credited}",
+"toastNone":"لم يتم العثور على تطبيق شريك",
+"toastError":"تعذر التحقق من التطبيقات حالياً",
+"resume.title":"متابعة اللعبة؟",
+"resume.message":"تم العثور على لعبة محفوظة. هل تريد المتابعة من حيث توقفت؟",
+"resume.resume":"متابعة",
+"resume.later":"لاحقاً",
+"resume.countdown":"المتابعة خلال {s}…",
+"resume.expired":"الحفظ قديم جداً وتم حذفه.",
+"resume.notfound":"لا توجد لعبة للمتابعة.",
+"resume.saving":"جاري الحفظ…",
+"resume.saved":"تم حفظ اللعبة.",
+"resume.restored":"تمت متابعة اللعبة.",
+"resume.cancel":"إلغاء",
+"resume.subtitle":"هل تريد المتابعة من حيث توقفت؟",
+"resume.restart":"إعادة التشغيل",
+"end.title":"انتهت اللعبة",
+"end.points":"نقاط",
+"end.subtitle":"ماذا تريد أن تفعل؟",
+"end.restart":"إعادة التشغيل",
+"end.quit":"خروج",
+"end.revive.token":"إحياء (رمز واحد)",
+"end.revive.ad":"إحياء (إعلان)",
+"end.revive.no_tokens":"رموز غير كافية.",
+"ad.fake":"إعلان",
+"ad.wait":"يرجى الانتظار بضع ثوان…",
+"revive.count":"{n}",
+"error.duel_not_found":"المبارزة غير موجودة"
 }
