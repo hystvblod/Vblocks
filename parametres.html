@@ -210,7 +210,7 @@
 
     const langues = [
       { code: "fr", label: "Français", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#0055a4"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ef4135"/></svg>` },
-      { code: "en", label: "English (US)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#b22234"/><g><rect width="22" height="1.23" y="1.23" fill="#fff"/><rect width="22" height="1.23" y="3.69" fill="#fff"/><rect width="22" height="1.23" y="6.15" fill="#fff"/><rect width="22" height="1.23" y="8.61" fill="#fff"/><rect width="22" height="1.23" y="11.07" fill="#fff"/><rect width="22" height="1.23" y="13.53" fill="#fff"/></g><rect width="8.8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.2" cy="1" r="0.35"/><circle cx="2.4" cy="1" r="0.35"/><circle cx="3.6" cy="1" r="0.35"/><circle cx="4.8" cy="1" r="0.35"/><circle cx="6" cy="1" r="0.35"/><circle cx="7.2" cy="1" r="0.35"/><circle cx="1.8" cy="2" r="0.35"/><circle cx="3" cy="2" r="0.35"/><circle cx="4.2" cy="2" r="0.35"/><circle cx="5.4" cy="2" r="0.35"/><circle cx="6.6" cy="2" r="0.35"/><circle cx="2.4" cy="3" r="0.35"/><circle cx="3.6" cy="3" r="0.35"/><circle cx="4.8" cy="3" r="0.35"/><circle cx="6" cy="3" r="0.35"/><circle cx="7.2" cy="3" r="0.35"/><circle cx="1.2" cy="4" r="0.35"/><circle cx="2.4" cy="4" r="0.35"/><circle cx="3.6" cy="4" r="0.35"/><circle cx="4.8" cy="4" r="0.35"/><circle cx="6" cy="4" r="0.35"/><circle cx="1.8" cy="5" r="0.35"/><circle cx="3" cy="5" r="0.35"/><circle cx="4.2" cy="5" r="0.35"/><circle cx="5.4" cy="5" r="0.35"/><circle cx="6.6" cy="5" r="0.35"/><circle cx="2.4" cy="6" r="0.35"/><circle cx="3.6" cy="6" r="0.35"/><circle cx="4.8" cy="6" r="0.35"/><circle cx="6" cy="6" r="0.35"/><circle cx="7.2" cy="6" r="0.35"/></g></svg>` },
+      { code: "en", label: "English (US)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#b22234"/><g><rect width="22" height="1.23" y="1.23" fill="#fff"/><rect width="22" height="1.23" y="3.69" fill="#fff"/><rect width="22" height="1.23" y="6.15" fill="#fff"/><rect width="22" height="1.23" y="8.61" fill="#fff"/><rect width="22" height="1.23" y="11.07" fill="#fff"/><rect width="22" height="1.23" y="13.53" fill="#fff"/></g><rect width="8.8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.2" cy="1" r="0.35"/><circle cx="2.4" cy="1" r="0.35"/><circle cx="3.6" cy="1" r="0.35"/><circle cx="4.8" cy="1" r="0.35"/><circle cx="6" cy="1" r="0.35"/><circle cx="7.2" cy="1" r="0.35"/><circle cx="1.8" cy="2" r="0.35"/><circle cx="3" cy="2" r="0.35"/><circle cx="4.2" cy="2" r="0.35"/><circle cx="5.4" cy="2" r="0.35"/><circle cx="6.6" cy="2" r="0.35"/><circle cx="2.4" cy="3" r="0.35"/><circle cx="3.6" cy="3" r="0.35"/><circle cx="4.8" cy="3" r="0.35"/><circle cx="6" cy="3" r="0.35"/><circle cx="7.2" cy="3" r="0.35"/></g></svg>` },
       { code: "de", label: "Deutsch", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="5.33" fill="#000"/><rect y="5.33" width="22" height="5.33" fill="#dd0000"/><rect y="10.67" width="22" height="5.33" fill="#ffce00"/></svg>` },
       { code: "it", label: "Italiano", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#009246"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ce2b37"/></svg>` },
       { code: "es", label: "Español", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#aa151b"/><rect y="4" width="22" height="8" fill="#f1bf00"/></svg>` },
@@ -271,14 +271,32 @@
       ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
     });
 
+    // === MUSIQUE : respecte vraiment le mute global du jeu ===
     const musicToggleBtn = document.getElementById("music-toggle-btn");
     const musicToggleImg = document.getElementById("music-toggle-img");
     const musicToggleLabel = document.getElementById("music-toggle-label");
 
-    let alwaysMuteMusic = localStorage.getItem('alwaysMuteMusic') === 'true';
-
-    function updateMusicToggleUI() {
-      if (alwaysMuteMusic) {
+    function isAlwaysMuted() {
+      return localStorage.getItem('alwaysMuteMusic') === 'true';
+    }
+    function setAlwaysMuted(val) {
+      // Si la fonction unifiée existe (dans tes scripts de jeu), on l’utilise
+      if (typeof window.setMusicAlwaysMuted === 'function') {
+        window.setMusicAlwaysMuted(!!val);
+      } else {
+        // Fallback : on écrit dans localStorage et on simule un event "storage"
+        localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
+        try {
+          window.dispatchEvent(new StorageEvent('storage', {
+            key: 'alwaysMuteMusic',
+            newValue: val ? 'true' : 'false'
+          }));
+        } catch (_) {}
+      }
+    }
+    function refreshMusicUI() {
+      const muted = isAlwaysMuted();
+      if (muted) {
         musicToggleImg.src = "assets/icons/volume-x.svg";
         musicToggleImg.alt = "Musique coupée";
         musicToggleLabel.textContent = "Coupée";
@@ -288,13 +306,12 @@
         musicToggleLabel.textContent = "Activée";
       }
     }
-    updateMusicToggleUI();
+    refreshMusicUI();
 
     musicToggleBtn.addEventListener("click", () => {
-      alwaysMuteMusic = !alwaysMuteMusic;
-      localStorage.setItem('alwaysMuteMusic', alwaysMuteMusic ? 'true' : 'false');
-      updateMusicToggleUI();
-      location.reload();
+      const next = !isAlwaysMuted();
+      setAlwaysMuted(next);
+      refreshMusicUI();
     });
 
     window.addEventListener("DOMContentLoaded", () => {

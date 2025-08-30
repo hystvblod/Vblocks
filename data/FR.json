@@ -64,16 +64,14 @@
   "menu.parametres": "Paramètres",
   "boutique.section.vcoins": "Vcoins & jetons",
   "boutique.section.themes": "Thèmes",
-  "boutique.cartouche.jetons12": "12 jetons : 0,99€",
-  "boutique.cartouche.jetons50": "50 jetons : 2,99€",
-  "boutique.cartouche.nopub": "Supprimer pubs : 2,99€",
-  "boutique.cartouche.pub1jeton": "Regarder pub : 1 jeton",
+ 
+ 
+
+ 
   "boutique.cartouche.pub300points": "Regarder pub : 300 points",
-  "boutique.cartouche.points3000" : "3 000 pièces : 0.99€",
-  "boutique.cartouche.points10000" : "10 000 pièces : 1.99€",
   "theme.possede": "Possédé",
   "theme.debloquer": "Débloquer (3000)",
-  "boutique.alert.pasassez": "Pas assez de pièces !",
+
   
   "apps.title": "Nos applis",
   "menu.retour": "Retour",
@@ -212,8 +210,6 @@
   "gameover.revive_token": "Utiliser 1 jeton pour reprendre",
   "gameover.revive_ad": "Regarder une pub pour reprendre",
   "gameover.quit": "Quitter",
-  "ad.fake": "Publicité...",
-  "ad.wait": "Attends 3 secondes",
   "error.save_score": "Erreur lors de la sauvegarde du score ou des VCoins !",
   "error.duel_not_found": "Duel introuvable ou séquence absente.",
   "error.duel_create": "Erreur lors de la création du duel.",
@@ -230,10 +226,10 @@
 "theme.pixel": "Pixel Art",
 "theme.halloween": "Halloween",
 
-"boutique.cartouche.jetons12": "12 jetons : 0,99€",
-"boutique.cartouche.jetons50": "50 jetons : 2,99€",
-"boutique.cartouche.nopub": "Supprimer pubs : 3,49€",
-"boutique.cartouche.pub1jeton": "Regarder pub : 1 jeton",
+
+
+
+
 "boutique.cartouche.pub300points": "Regarder pub : 300 points",
 
 
@@ -270,7 +266,7 @@
   "boutique.modal.titre.cyber": "Thème Cyber",
   "boutique.modal.acheter": "Acheter",
   "boutique.modal.fermer": "Fermer",
-  "boutique.alert.pasassez": "Vous n'avez pas assez de VCoins.",
+ 
   
   "menu.concours": "Concours",
   "menu.classic": "Classic",
