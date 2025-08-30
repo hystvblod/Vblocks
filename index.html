@@ -276,30 +276,19 @@
     // Client Supabase réutilisable dans toute l'app
     const SB_URL  = 'https://youhealyblgbwjhsskca.supabase.co';
     const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
-; // <-- mets ta clé anon ici
     window.sb = window.sb || supabase.createClient(SB_URL, SB_ANON);
 
     // --------------------------
     // CAS 1 : anciens joueurs "local only"
     // --------------------------
 
-    // Lecture du vieil id local (ne plus l'utiliser ensuite pour écrire)
-    function getLegacyLocalUserId() {
-      return localStorage.getItem('user_id') || null;
-    }
-
-    // Pseudo/lang locaux pour init si besoin
+    function getLegacyLocalUserId() { return localStorage.getItem('user_id') || null; }
     function getPseudoLocal() {
       let p = localStorage.getItem('pseudo');
-      if (!p) {
-        p = 'Player_' + Math.random().toString(36).substring(2, 8);
-        localStorage.setItem('pseudo', p);
-      }
+      if (!p) { p = 'Player_' + Math.random().toString(36).substring(2, 8); localStorage.setItem('pseudo', p); }
       return p;
     }
-    function getLangLocal() {
-      return localStorage.getItem('langue') || 'FR';
-    }
+    function getLangLocal() { return localStorage.getItem('langue') || 'FR'; }
 
     // 1) S’assurer d’une session anonyme
     async function ensureAuth() {
@@ -318,70 +307,76 @@
       try {
         const { error } = await sb.rpc('link_auth_to_legacy', { legacy_id: legacy });
         if (!error) localStorage.setItem('legacy_linked', '1');
-      } catch (e) {
-        console.warn('[linkLegacyIfNeeded]', e?.message || e);
-      }
+      } catch (e) { console.warn('[linkLegacyIfNeeded]', e?.message || e); }
     }
 
     // 3) S’assurer qu’une ligne user existe (création si besoin)
     async function ensureUserRow() {
       const pseudo = getPseudoLocal();
       const lang   = getLangLocal();
-      try {
-        await sb.rpc('ensure_user', { default_lang: lang, default_pseudo: pseudo });
-      } catch (e) {
-        console.warn('[ensureUserRow]', e?.message || e);
-      }
+      try { await sb.rpc('ensure_user', { default_lang: lang, default_pseudo: pseudo }); }
+      catch (e) { console.warn('[ensureUserRow]', e?.message || e); }
     }
 
     // 4) Bootstrap global pour les anciens joueurs locaux
-    async function bootstrapAuthForLegacy() {
-      await ensureAuth();
-      await linkLegacyIfNeeded();
-      await ensureUserRow();
-    }
+    async function bootstrapAuthForLegacy() { await ensureAuth(); await linkLegacyIfNeeded(); await ensureUserRow(); }
 
-    // Utilisateur courant
+    // Utilisateur courant (UID auth)
     async function getCurrentUserId() {
       await ensureAuth();
       const { data: { user } } = await sb.auth.getUser();
       return user?.id || null;
     }
 
-    // --------- Popups ciblées ---------
-async function checkAndShowPopupOnce() {
-  const uid = await getCurrentUserId();
-  if (!uid) {
-    console.warn("[Popup] Aucun UID trouvé");
-    return;
-  }
+    // ===== Helper: traduire auth.uid -> users.id =====
+    async function getUsersTableIdForCurrentAuth() {
+      await ensureAuth();
+      const { data: { user } } = await sb.auth.getUser();
+      const authId = user?.id || null;
+      if (!authId) return null;
 
-  const { data, error } = await sb
-    .from('messages_popup')
-    .select('id,message,vue,created_at,userid')   // <== ajoute userid pour debug
-    .eq('userid', uid)  // ⚠️ vérifie bien le nom de ta colonne dans Supabase
-    .order('created_at', { ascending: false })
-    .limit(1);
+      // Cas standard : users.auth_id = auth.uid
+      let { data, error } = await sb.from('users').select('id').eq('auth_id', authId).maybeSingle();
+      if (!error && data?.id) return data.id;
 
-  console.log("[Popup DEBUG]", { uid, error, data });
+      // Fallback si chez toi users.id == authId
+      ({ data, error } = await sb.from('users').select('id').eq('id', authId).maybeSingle());
+      if (!error && data?.id) return data.id;
 
-  if (!error && data?.length) {
-    const msg = data[0];
-    if (!msg.vue) {
-      alert(msg.message);
-      await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
+      console.warn('[popup] users.id introuvable pour auth_id', authId);
+      return null;
     }
-  }
-}
 
+    // --------- Popups ciblées ---------
+    async function checkAndShowPopupOnce() {
+      const usersTableId = await getUsersTableIdForCurrentAuth();
+      if (!usersTableId) return;
+
+      const { data, error } = await sb
+        .from('messages_popup')
+        .select('id,message,vue,created_at,userid')
+        .eq('userid', usersTableId)       // filtre sur users.id
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      console.log('[Popup DEBUG]', { usersTableId, error, data });
+
+      if (!error && data?.length) {
+        const msg = data[0];
+        if (!msg.vue) {
+          alert(msg.message);
+          await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
+        }
+      }
+    }
 
     async function listenPopupsRealtime() {
-      const uid = await getCurrentUserId();
-      if (!uid) return;
+      const usersTableId = await getUsersTableIdForCurrentAuth();
+      if (!usersTableId) return;
 
-      sb.channel('popups_for_' + uid)
+      sb.channel('popups_for_' + usersTableId)
         .on('postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'messages_popup', filter: `userid=eq.${uid}` },
+          { event: 'INSERT', schema: 'public', table: 'messages_popup', filter: `userid=eq.${usersTableId}` },
           async (payload) => {
             const m = payload.new;
             alert(m.message);
@@ -409,58 +404,27 @@ async function checkAndShowPopupOnce() {
     // --------- userData : appels RPC sécurisés ---------
     window.userData = window.userData || {};
 
-    // Lecture groupée via get_balances()
     async function __getBalances() {
       const { data, error } = await sb.rpc('get_balances');
       if (error) throw error;
-      // Supabase peut renvoyer un objet ou un array selon la config → on gère les deux
       const row = Array.isArray(data) ? data[0] : data;
       return row || {};
     }
 
-    userData.getVCoins = async () => {
-      const b = await __getBalances();
-      return b?.vcoins ?? 0;
-    };
-    userData.addVCoins = async (n) => {
-      const delta = parseInt(n, 10) || 0;
-      const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
-      if (error) throw error;
-      return true;
-    };
+    userData.getVCoins = async () => { const b = await __getBalances(); return b?.vcoins ?? 0; };
+    userData.addVCoins = async (n) => { const delta = parseInt(n, 10) || 0; const { error } = await sb.rpc('ajouter_vcoins', { montant: delta }); if (error) throw error; return true; };
 
-    userData.getJetons = async () => {
-      const b = await __getBalances();
-      return b?.jetons ?? 0;
-    };
-    userData.addJetons = async (n) => {
-      const delta = parseInt(n, 10) || 0;
-      const { error } = await sb.rpc('ajouter_jetons', { montant: delta });
-      if (error) throw error;
-      return true;
-    };
+    userData.getJetons = async () => { const b = await __getBalances(); return b?.jetons ?? 0; };
+    userData.addJetons = async (n) => { const delta = parseInt(n, 10) || 0; const { error } = await sb.rpc('ajouter_jetons', { montant: delta }); if (error) throw error; return true; };
 
-    userData.getUnlockedThemes = async () => {
-      const b = await __getBalances();
-      return Array.isArray(b?.themes_possedes) ? b.themes_possedes : ['neon'];
-    };
-    // Setter admin/debug (optionnel)
-    userData.setUnlockedThemes = async (themes) => {
-      const { error } = await sb.rpc('set_themes_secure', { themes });
-      if (error) throw error;
-      return true;
-    };
-
-    userData.purchaseTheme = async (key, price) => {
-      const { error } = await sb.rpc('purchase_theme', { theme_key: String(key), price: parseInt(price,10) || 0 });
-      if (error) throw error;
-      return true;
-    };
+    userData.getUnlockedThemes = async () => { const b = await __getBalances(); return Array.isArray(b?.themes_possedes) ? b.themes_possedes : ['neon']; };
+    userData.setUnlockedThemes = async (themes) => { const { error } = await sb.rpc('set_themes_secure', { themes }); if (error) throw error; return true; };
+    userData.purchaseTheme = async (key, price) => { const { error } = await sb.rpc('purchase_theme', { theme_key: String(key), price: parseInt(price,10) || 0 }); if (error) throw error; return true; };
 
     // Démarrage : bootstrap legacy + UI
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        await bootstrapAuthForLegacy();   // << cas 1 ici
+        await bootstrapAuthForLegacy();
         await checkConcoursStatusFixed();
         await checkAndShowPopupOnce();
         await listenPopupsRealtime();
