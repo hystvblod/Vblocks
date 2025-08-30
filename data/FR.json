@@ -332,6 +332,29 @@
     "resume.saving": "Sauvegarde…",
     "resume.saved": "Partie sauvegardée.",
     "resume.restored": "Partie reprise.",
-    "resume.cancel": "Annuler"
+    "resume.cancel": "Annuler",
 
+
+  "resume.title": "Partie en cours",
+  "resume.subtitle": "Voulez-vous reprendre là où vous vous êtes arrêté ?",
+  "resume.resume": "Reprendre",
+  "resume.restart": "Recommencer",
+
+  "end.title": "Partie terminée",
+  "end.points": "points",
+  "end.subtitle": "Que voulez-vous faire ?",
+  "end.restart": "Recommencer",
+  "end.quit": "Quitter",
+  "end.revive.token": "Revivre (1 jeton)",
+  "end.revive.ad": "Revivre (pub)",
+  "end.revive.no_tokens": "Pas assez de jetons.",
+
+  "ad.fake": "Publicité",
+  "ad.wait": "Veuillez patienter quelques secondes…",
+
+  "revive.count": "{n}",
+
+  "error.duel_not_found": "Duel introuvable"
 }
+
+

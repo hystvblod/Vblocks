@@ -159,7 +159,8 @@ async function acheterProduitVercel(type) {
 }
 
 // --- Activation (localStorage)
-function getCurrentTheme() { return localStorage.getItem('themeVBlocks') || "bubble"; }
+// ⚠️ Harmonisé : "neon" devient la valeur par défaut (au lieu de "bubble")
+function getCurrentTheme() { return localStorage.getItem('themeVBlocks') || "neon"; }
 function setCurrentTheme(theme) { localStorage.setItem('themeVBlocks', theme); }
 
 // --- Branche Achats + Pub
@@ -184,7 +185,7 @@ function setupBoutiqueAchats() {
         } else {
           // Web / plugin absent → soit message clair, soit fallback serveur
           alert("Achat via Google Play indisponible ici. Ouvre l’app installée depuis le Play Store.");
-          // // Pour autoriser l’achat côté serveur sur web, décommente :
+          // // Pour autoriser l’achat côté web, décommente :
           // await acheterProduitVercel(alias);
           // await renderThemes(); setupPubCartouches?.(); setupBoutiqueAchats?.();
         }

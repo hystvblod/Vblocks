@@ -161,7 +161,7 @@ async function getProfileSecure() {
   const row = (Array.isArray(data) ? data[0] : data) || {};
   // fallback minimum si table vide (ne devrait pas arriver)
   if (!row.themes_possedes || !Array.isArray(row.themes_possedes)) {
-    row.themes_possedes = ["neon"];
+    row.themes_possedes = ["neon","retro"]; // ← ajouté retro par défaut
   }
   return row;
 }
@@ -205,7 +205,7 @@ async function getJetonsSecure() {
 // --- THEMES ---
 async function getUnlockedThemesCloud() {
   const p = await getProfileSecure();
-  return Array.isArray(p.themes_possedes) ? p.themes_possedes : ["neon"];
+  return Array.isArray(p.themes_possedes) ? p.themes_possedes : ["neon","retro"]; // ← fallback harmonisé
 }
 async function setUnlockedThemesCloud(themes) {
   // Normalement on passe par purchase_theme() côté serveur pour les achats.

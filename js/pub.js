@@ -1,13 +1,13 @@
 // =============================
+// PUB.JS — Version AdMob (Capacitor) + SSV Supabase
+// =============================
+
+// =============================
 // INIT SUPABASE (création unique, mode Capacitor)
 // =============================
-// (On suppose que `sb` est déjà créé globalement dans index.html)
-// Si besoin de robustesse locale, décommente :
-// const SB_URL  = 'https://...supabase.co';
-// const SB_ANON = '...';
-// window.sb = window.sb || supabase.createClient(SB_URL, SB_ANON);
+// On suppose que `sb` (client supabase) est déjà créé globalement dans index.html
 
-// Petite sécurité : s’assurer d’une session anonyme opérationnelle
+// Petite sécurité : s’assurer d’une session (anonyme si besoin)
 async function ensureAuth() {
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -15,91 +15,78 @@ async function ensureAuth() {
   } catch (_) {}
 }
 
-// === CONFIG PUBS ===
-// → Interstitiel au DÉBUT de la 3e partie (modifier la valeur si besoin)
-const INTERSTITIEL_APRES_X_PARTIES = 3; // Nombre de parties avant pub interstitielle (déclenchée au début de la Xème)
+// === CONFIG GLOBALE ===
+const INTERSTITIEL_APRES_X_PARTIES = 3;  // Interstitiel au DÉBUT de la 3e partie
+const INTER_COOLDOWN_MS = 0;             // Anti-spam interstitiel (ms) — 0 pour off
 
-// Montants de récompense pour les pubs rewarded
-const REWARD_JETONS = 1;                // Jetons gagnés par pub reward
-const REWARD_VCOINS = 300;              // VCoins gagnés par pub reward
-const REWARD_REVIVE = true;             // Activer reward revive fin de partie
+// Récompenses logiques in-game
+const REWARD_JETONS = 1;
+const REWARD_VCOINS = 300;
+const REWARD_REVIVE = true;
 
-// (Optionnel) Anti-spam : cooldown minimal entre deux interstitiels (ms). 0 pour désactiver.
-const INTER_COOLDOWN_MS = 0;
+// Ad Unit IDs (tes blocs)
+const AD_UNIT_ID_INTERSTITIEL = 'ca-app-pub-6837328794080297/9890831605';
+const AD_UNIT_ID_REWARDED     = 'ca-app-pub-6837328794080297/3006407791';
 
+// SSV (server-side verification) — active par défaut (pro & sûr)
+const ENABLE_SSV = true;
+
+// Compteur local parties
 let compteurParties = parseInt(localStorage.getItem("compteurParties") || "0", 10);
 
-// === ID AppLovin MAX ===
-const AD_UNIT_ID_INTERSTITIEL = 'TA_CLE_INTERSTITIEL';
-const AD_UNIT_ID_REWARDED     = 'TA_CLE_REWARDED';
-
 // =============================
-// CONSENTEMENT UTILISATEUR (RGPD / pubs personnalisées)
+// CONSENTEMENT (RGPD / pubs personnalisées)
 // =============================
-
-// Lecture unifiée du consentement depuis le stockage local.
-// On considère personnalisées = TRUE seulement si:
-//  - rgpdConsent == "accept" (si cette clé existe) ET
-//  - adsConsent == "yes"  (nouvelle clé)
-//  (Compat: on accepte aussi adsEnabled == "true")
 function getPersonalizedAdsGranted() {
   const rgpd = localStorage.getItem("rgpdConsent"); // "accept" | "refuse" | null
   const adsConsent = (localStorage.getItem("adsConsent") || "").toLowerCase(); // "yes" | "no" | ""
   const adsEnabled = (localStorage.getItem("adsEnabled") || "").toLowerCase(); // "true" | "false" | ""
 
-  // Si RGPD explicitement refusé → pas de personnalisées
   if (rgpd === "refuse") return false;
-
-  // Si RGPD accepté, on regarde le choix pubs:
   if (rgpd === "accept") {
     if (adsConsent) return adsConsent === "yes";
     if (adsEnabled) return adsEnabled === "true";
     return false;
   }
-
-  // Si pas de clé RGPD, on tombe sur le choix pubs
   if (adsConsent) return adsConsent === "yes";
   if (adsEnabled) return adsEnabled === "true";
-
-  // Par défaut: non-personnalisées
-  return false;
+  return false; // par défaut: non personnalisées
 }
 
-// Appliquer le consentement côté SDK AppLovin MAX
-function applyConsentToAppLovin() {
-  const granted = getPersonalizedAdsGranted();
-  if (window.lovappApplovinmax && typeof window.lovappApplovinmax.setHasUserConsent === "function") {
-    window.lovappApplovinmax.setHasUserConsent(!!granted);
-    console.log("[Consent] AppLovin MAX →", granted ? "PERSONNALISÉES (consent YES)" : "NON-PERSONNALISÉES (consent NO)");
+function buildAdMobRequestConfig() {
+  const personalized = getPersonalizedAdsGranted();
+  return {
+    npa: personalized ? '0' : '1', // "1" = non-personnalisées, "0" = personnalisées
+  };
+}
+
+// =============================
+// INIT AdMob
+// =============================
+(async function initAdMobOnce() {
+  try {
+    if (window.Admob && typeof AdMob.initialize === 'function') {
+      await AdMob.initialize({ initializeForTesting: false });
+      console.log('[AdMob] initialisé');
+    } else {
+      console.log('[AdMob] plugin non détecté (web/dev). Les rewarded sont désactivées ici.');
+      // Option UI: masquer boutons reward sur web
+      document.addEventListener('DOMContentLoaded', () => {
+        if (!isAdmobAvailable()) {
+          document.querySelectorAll('.btn-reward').forEach(el => el.style.display = 'none');
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('[AdMob] Erreur init:', e);
   }
-}
-// Expose pour le toggle paramètres (si tu ne veux pas recharger la page)
-window.refreshAdConsent = applyConsentToAppLovin;
-
-// === Initialisation AppLovin MAX ===
-if (window.lovappApplovinmax && !window._lovapp_applovin_init) {
-  // Appliquer le consentement avant init si possible
-  applyConsentToAppLovin();
-
-  window.lovappApplovinmax.initialize()
-    .then(() => {
-      window._lovapp_applovin_init = true;
-      console.log('[AppLovin] MAX initialisé');
-
-      // Sécurité: ré-appliquer après init (au cas où le SDK réinitialise son état)
-      applyConsentToAppLovin();
-    })
-    .catch((e) => console.warn('[AppLovin] Erreur init:', e));
-} else {
-  // Même sans init MAX (dev), on enregistre l’intention
-  applyConsentToAppLovin();
-}
+})();
 
 // =============================
 // UTILITAIRES UTILISATEUR
 // =============================
 
-// ID unique local (legacy) — conservé pour compat (mais non utilisé pour créditer)
+// ID local legacy (non utilisé pour créditer)
 function getUserId() {
   let id = localStorage.getItem('user_id');
   if (!id) {
@@ -110,10 +97,8 @@ function getUserId() {
 }
 
 // =============================
-// HELPERS RPC SÉCURISÉES
+// RPC sécurisées (Supabase)
 // =============================
-
-// Lecture groupée (vcoins, jetons, themes_possedes, nopub...) via RPC SECURITY DEFINER
 async function __getBalances() {
   await ensureAuth();
   const { data, error } = await sb.rpc('get_balances');
@@ -122,20 +107,12 @@ async function __getBalances() {
   return row || {};
 }
 
-// =============================
-// HELPER NoPub CLOUD (RPC, pas de SELECT par id)
-// =============================
 async function hasNoAds() {
   const b = await __getBalances();
   return !!b?.nopub;
 }
-window.hasNoAds = hasNoAds;
 
-// =============================
-// FONCTIONS SUPABASE (JETONS, VCOINS, ETC.) - 100% RPC
-// =============================
-
-// Ajoute/retire des Jetons (RPC cloud, auth.uid())
+// (Ancien crédit côté client — non utilisé en SSV mais on les garde si besoin ailleurs)
 async function addJetonsSupabase(amount) {
   await ensureAuth();
   const delta = Number(amount) || 0;
@@ -144,8 +121,6 @@ async function addJetonsSupabase(amount) {
   const b = await __getBalances();
   return b?.jetons ?? 0;
 }
-
-// Ajoute/retire des VCoins (RPC cloud, auth.uid())
 async function addVCoinsSupabase(amount) {
   await ensureAuth();
   const delta = Number(amount) || 0;
@@ -156,10 +131,63 @@ async function addVCoinsSupabase(amount) {
 }
 
 // =============================
-// GESTION DES PUBS (AppLovin MAX)
+// Helpers AdMob / SSV
 // =============================
+function isAdmobAvailable() {
+  return !!(window.Capacitor && window.RewardAd && typeof RewardAd.show === 'function');
+}
 
-// Cooldown interstitiel
+async function getSupabaseUserId() {
+  await ensureAuth();
+  const { data } = await sb.auth.getUser();
+  return data?.user?.id; // UUID supabase (auth_id)
+}
+
+async function getSsvToken() {
+  const supabaseUrl = sb?.supabaseUrl || window.SUPABASE_URL;
+  if (!supabaseUrl) throw new Error('SUPABASE_URL manquant');
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch(`${supabaseUrl}/functions/v1/reward-token`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${session?.access_token || ''}` }
+  });
+  if (!res.ok) throw new Error('reward-token failed');
+  const { token } = await res.json();
+  return token;
+}
+
+// >>> NOUVEAU : helper générique pour typer la récompense <<<
+async function showRewardedType(type, amount, onDone) {
+  try {
+    if (!isAdmobAvailable()) {
+      alert("Publicité avec récompense indisponible sur cette plateforme.");
+      onDone?.(false); return;
+    }
+    await ensureAuth();
+    const { data } = await sb.auth.getUser();
+    const ssvUserId = data?.user?.id;
+    if (!ssvUserId) throw new Error("Utilisateur non authentifié");
+
+    const token = await getSsvToken();
+    const customPayload = JSON.stringify({ type, amount, token });
+
+    await RewardAd.prepare({
+      adId: AD_UNIT_ID_REWARDED,
+      ...buildAdMobRequestConfig(),
+      serverSideVerification: { userId: ssvUserId, customData: customPayload }
+    });
+
+    const res = await RewardAd.show();
+    onDone?.(!!res);
+  } catch (e) {
+    console.warn("[RewardedType] erreur:", e);
+    onDone?.(false);
+  }
+}
+
+// =============================
+// Interstitiel
+// =============================
 function canShowInterstitialNow() {
   if (!INTER_COOLDOWN_MS) return true;
   const last = parseInt(localStorage.getItem('lastInterstitialTs') || '0', 10);
@@ -169,9 +197,7 @@ function markInterstitialShownNow() {
   localStorage.setItem('lastInterstitialTs', Date.now().toString());
 }
 
-// Affiche une pub interstitielle
 async function showInterstitial() {
-  // Respecte NoPub depuis la boutique (champ cloud via RPC)
   if (await hasNoAds()) {
     console.log("[PUB] Interstitiel bloquée (NoPub activé)");
     return;
@@ -180,117 +206,92 @@ async function showInterstitial() {
     console.log("[PUB] Interstitiel non affichée (cooldown actif)");
     return;
   }
-
-  if (window.lovappApplovinmax) {
-    return window.lovappApplovinmax.showInterstitialAd({ adUnitId: AD_UNIT_ID_INTERSTITIEL })
-      .then(() => {
-        console.log("[PUB] Interstitiel affichée (prod)");
-        markInterstitialShownNow();
-      })
-      .catch(e => alert("Erreur pub interstitielle: " + (e?.message || e)));
-  }
-
-  // Simulation dev
-  console.log("[PUB] Interstitiel affichée (dev)");
-  markInterstitialShownNow();
-}
-
-// Affiche une pub rewarded (AppLovin)
-// (Remarque: par défaut, NoPub n’affecte PAS les rewarded)
-function showRewarded(callback) {
-  if (window.lovappApplovinmax) {
-    window.lovappApplovinmax.showRewardedAd({ adUnitId: AD_UNIT_ID_REWARDED })
-      .then((result) => {
-        if (typeof callback === "function") callback(!!result?.rewarded);
-      })
-      .catch(e => {
-        alert("Erreur pub rewarded: " + (e?.message || e));
-        if (typeof callback === "function") callback(false);
+  try {
+    if (window.Admob && window.InterstitialAd) {
+      await InterstitialAd.prepare({
+        adId: AD_UNIT_ID_INTERSTITIEL,
+        ...buildAdMobRequestConfig(),
       });
-    return;
+      await InterstitialAd.show();
+      console.log("[PUB] Interstitiel AdMob affichée");
+      markInterstitialShownNow();
+      return;
+    }
+    console.log("[PUB] Interstitiel ignorée : plugin indisponible (web/dev).");
+  } catch (e) {
+    console.warn("Erreur pub interstitielle:", e?.message || e);
   }
-  // Simulation dev
-  console.log("[PUB] Rewarded affichée (dev)");
-  setTimeout(() => {
-    console.log("[PUB] Rewarded terminée (dev)");
-    if (typeof callback === "function") callback(true);
-  }, 3000);
 }
 
-// PUB REWARDED : +1 jeton
+// =============================
+// Cas Rewarded (3 usages)
+// =============================
+
+// 1) Jeton (boutique)
 function showRewardBoutique() {
-  showRewarded(async (ok) => {
-    if (ok) {
+  showRewardedType('jeton', 1, async (ok) => {
+    if (!ok) return;
+    setTimeout(async () => {
       try {
-        const newBal = await addJetonsSupabase(REWARD_JETONS);
-        alert(`+${REWARD_JETONS} jeton ajouté ! (solde: ${newBal})`);
-        if (window.renderThemes) renderThemes();
-      } catch (e) {
-        alert("Erreur lors de l'ajout de jeton: " + (e?.message || e));
-      }
-    }
+        const b = await __getBalances();
+        alert(`Récompense validée ! Jetons: ${b?.jetons ?? '--'}`);
+        renderThemes?.();
+      } catch (_) {}
+    }, 1500);
   });
 }
 
-// PUB REWARDED : +300 VCoins (ou autre montant)
+// 2) VCoins (boutique)
 function showRewardVcoins() {
-  showRewarded(async (ok) => {
-    if (ok) {
+  showRewardedType('vcoin', 300, async (ok) => {
+    if (!ok) return;
+    setTimeout(async () => {
       try {
-        const newBal = await addVCoinsSupabase(REWARD_VCOINS);
-        alert(`+${REWARD_VCOINS} VCoins ajoutés ! (solde: ${newBal})`);
-        if (window.renderThemes) renderThemes();
-      } catch (e) {
-        alert("Erreur lors de l'ajout de VCoins: " + (e?.message || e));
-      }
-    }
+        const b = await __getBalances();
+        alert(`Récompense validée ! VCoins: ${b?.vcoins ?? '--'}`);
+        renderThemes?.();
+      } catch (_) {}
+    }, 1500);
   });
 }
 
-// PUB REWARDED : revive fin de partie
+// 3) Revive (fin de partie)
 function showRewardRevive(callback) {
   if (!REWARD_REVIVE) return;
-  showRewarded((ok) => {
-    if (ok && typeof callback === "function") callback();
+  showRewardedType('revive', 0, (ok) => {
+    if (ok) callback?.(); // ton jeu fait le rewind/reprise ici
   });
 }
 
 // =============================
-// LOGIQUE "DÉBUT DE LA 3ᵉ PARTIE"
+// Début de partie → gérer interstitiel
 // =============================
-
-// Appelle ceci AU DÉMARRAGE d’une partie
 async function partieCommencee() {
   compteurParties++;
   localStorage.setItem("compteurParties", String(compteurParties));
-
-  // Si c'est le début de la Xème (ex: 3ème), on affiche l'interstitiel puis reset.
   if (compteurParties >= INTERSTITIEL_APRES_X_PARTIES) {
-    // Reset compteur avant pour éviter double affichage en cas d’erreur réseau
     compteurParties = 0;
     localStorage.setItem("compteurParties", "0");
     await showInterstitial();
   }
 }
 
-// (Compat) Ancienne logique fin de partie — conservée si tu l’appelles ailleurs
 function partieTerminee() {
   console.log("[Game] Partie terminée.");
 }
 
 // =============================
-// EXPOSER FONCTIONS GLOBALES
+// Exposer global
 // =============================
 window.showInterstitial   = showInterstitial;
-window.showRewarded       = showRewarded;
 window.showRewardBoutique = showRewardBoutique;
 window.showRewardVcoins   = showRewardVcoins;
 window.showRewardRevive   = showRewardRevive;
 
-window.partieCommencee    = partieCommencee; // ← à appeler AU LANCEMENT d’une partie
-window.partieTerminee     = partieTerminee;  // ← gardée pour compat (ne montre pas d’ad)
+window.partieCommencee    = partieCommencee;
+window.partieTerminee     = partieTerminee;
 
 window.addJetonsSupabase  = addJetonsSupabase;
 window.addVCoinsSupabase  = addVCoinsSupabase;
-window.getUserId          = getUserId; // legacy (plus utilisé pour créditer)
+window.getUserId          = getUserId;
 window.hasNoAds           = hasNoAds;

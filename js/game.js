@@ -10,7 +10,7 @@ function fillRectThemeSafe(c, px, py, size) {
     c.fillRect(px - pad, py - pad, size + 2 * pad, size + 2 * pad);
   } else {
     // Important: ne PAS se rappeler soi-même → pas de récursion
-    c.fillRect(px, py, size, size);
+    c.fillRect(px, py, size);
   }
 }
 
@@ -126,6 +126,8 @@ function fillRectThemeSafe(c, px, py, size) {
     const mode = (opts && opts.mode) || 'classic';
     const duelId = opts?.duelId || null;
     const duelPlayerNum = opts?.duelPlayerNum || 1;
+
+    // Séquence commune (persistance et rewind)
     let piecesSequence = null;
     let piecesUsed = 0;
 
@@ -216,6 +218,31 @@ function fillRectThemeSafe(c, px, py, size) {
     let currentThemeIndex = Math.max(0, THEMES.indexOf(currentTheme));
     const blockImages = {};
 
+    // --- utils ---
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    function generateSequenceClassic(bags = 200) {
+      const res = [];
+      for (let b = 0; b < bags; b++) {
+        const bag = [0,1,2,3,4,5,6]; // I,J,L,O,S,T,Z
+        shuffle(bag);
+        res.push(...bag);
+      }
+      return res;
+    }
+    function getNextPieceIdGeneric() {
+      if (!piecesSequence || piecesUsed >= piecesSequence.length) {
+        piecesSequence = (mode === 'duel' && piecesSequence) ? piecesSequence : generateSequenceClassic(200);
+        piecesUsed = 0;
+      }
+      return piecesSequence[piecesUsed++];
+    }
+
     // === Load all images ===
     function loadBlockImages(themeName) {
       const themesWithPNG = ['bubble', 'nature', 'vitraux', 'luxury', 'space', 'angelique', 'cyber'];
@@ -293,6 +320,14 @@ function fillRectThemeSafe(c, px, py, size) {
     let linesCleared = 0;
     let history = [];
 
+    // revive ramp
+    let reviveRampActive = false;
+    let reviveRampStart = 0;
+    const REVIVE_RAMP_MS = 6000;
+    let reviveTargetInterval = 500;
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+
     function saveHistory() {
       history.push({
         board: board.map(row => row.map(cell => cell && typeof cell === 'object' ? { ...cell } : cell)),
@@ -300,8 +335,10 @@ function fillRectThemeSafe(c, px, py, size) {
         nextPiece: JSON.parse(JSON.stringify(nextPiece)),
         heldPiece: heldPiece ? JSON.parse(JSON.stringify(heldPiece)) : null,
         score, combo, linesCleared, dropInterval,
+        piecesSequence: piecesSequence ? piecesSequence.slice() : null,
+        piecesUsed
       });
-      if (history.length > 7) history.shift();
+      if (history.length > 30) history.shift();
     }
 
     async function getJetons() {
@@ -311,14 +348,30 @@ function fillRectThemeSafe(c, px, py, size) {
       const solde = await getJetons();
       if (solde > 0) {
         await userData.addJetons(-1);
+        return true;
       }
+      return false;
+    }
+
+    async function showInterstitial() {
+      // Essaie interstitiel natif si dispo, sinon faux écran 3s
+      try {
+        if (global.showInterstitialAd) {
+          await global.showInterstitialAd();
+          return;
+        }
+      } catch (_) {}
+      await showFakeAd();
     }
 
     function showFakeAd() {
       return new Promise(resolve => {
         const ad = document.createElement('div');
         ad.style = 'position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:2em;';
-        ad.innerHTML = `<div>${t('ad.fake')}<br>${t('ad.wait')}</div>`;
+        ad.innerHTML = `<div style="text-align:center">
+          <div>${tt('ad.fake','Publicité')}</div>
+          <div style="opacity:.9;font-size:.7em;margin-top:.3em">${tt('ad.wait','Veuillez patienter quelques secondes…')}</div>
+        </div>`;
         document.body.appendChild(ad);
         setTimeout(() => { ad.remove(); resolve(); }, 3000);
       });
@@ -333,7 +386,7 @@ function fillRectThemeSafe(c, px, py, size) {
         if (res?.data && res.data.pieces_seq) { data = res.data; break; }
         await new Promise(r => setTimeout(r, 1500));
       }
-      if (!data) throw new Error(t('error.duel_not_found'));
+      if (!data) throw new Error(tt('error.duel_not_found','Duel introuvable'));
       piecesSequence = data.pieces_seq.split(',').map(x => parseInt(x, 10));
       piecesUsed = 0;
     }
@@ -342,34 +395,11 @@ function fillRectThemeSafe(c, px, py, size) {
       if (piecesUsed >= piecesSequence.length) return Math.floor(Math.random() * PIECES.length);
       return piecesSequence[piecesUsed++];
     }
-    async function handleDuelEnd(myScore) {
-      if (!sb) return;
-      let field = (duelPlayerNum === 1) ? 'score1' : 'score2';
-      await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
-      let tries = 0, otherScore = null;
-      while (tries++ < 40) {
-        let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
-        if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
-        if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
-        await new Promise(r => setTimeout(r, 1500));
-      }
-      let msg = `
-        <div style="font-weight:bold;">${tt('duel.finished','Duel terminé')}</div>
-        <div>${tt('duel.yourscore','Votre score')} <b>${myScore}</b></div>
-        <div>${tt('duel.opponentscore',"Score de l'adversaire")} <b>${otherScore != null ? otherScore : tt('duel.waiting','En attente…')}</b></div>
-      `;
-      let div = document.createElement('div');
-      div.id = 'duel-popup';
-      div.style = 'position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;';
-      div.innerHTML = `<div style="background:#23294a;padding:2em 2em 1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;">${msg}</div>`;
-      document.body.appendChild(div);
-    }
-    // -------------------
 
     // =========================
     // AUTOSAVE / RESUME (LOCAL + CLOUD)
     // =========================
-    const SAVE_KEY = `vblocks:autosave:${mode}:v2`; // par mode
+    const SAVE_KEY = `vblocks:autosave:${mode}:v3`; // v3: inclut inProgress + séquence
     const SAVE_TTL_MS = 1000 * 60 * 60 * 48; // 48h
     const CAN_RESUME = (mode !== 'duel'); // Par équité, pas de reprise en duel
 
@@ -386,12 +416,14 @@ function fillRectThemeSafe(c, px, py, size) {
         dropInterval,
         mode,
         theme: currentTheme,
-        ts: Date.now()
+        ts: Date.now(),
+        inProgress: !gameOver && !!currentPiece, // flag clé → pas de popup si false
+        piecesSequence,
+        piecesUsed
       };
     }
     function clearSavedGame() {
       try { localStorage.removeItem(SAVE_KEY); } catch (_e) {}
-      // cloud aussi
       saveStateCloud(null).catch(()=>{});
     }
     function safeParse(json) {
@@ -401,12 +433,11 @@ function fillRectThemeSafe(c, px, py, size) {
     function saveStateNowLocal() {
       if (!CAN_RESUME) return;
       try {
-        const payload = { version: 2, ts: Date.now(), state: getSavableState() };
+        const payload = { version: 3, ts: Date.now(), state: getSavableState() };
         localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
       } catch (_e) {}
     }
     async function saveStateCloud(stateOrNull) {
-      // Optionnel : nécessite table vblocks_saves (user_id uuid, mode text, payload jsonb, updated_at timestamptz default now())
       if (!CAN_RESUME || !sb) return;
       const userId = getUserId();
       if (!userId) return;
@@ -414,7 +445,7 @@ function fillRectThemeSafe(c, px, py, size) {
         if (stateOrNull === null) {
           await sb.from('vblocks_saves').delete().eq('user_id', userId).eq('mode', mode);
         } else {
-          const payload = { version: 2, ts: Date.now(), state: stateOrNull };
+          const payload = { version: 3, ts: Date.now(), state: stateOrNull };
           await sb.from('vblocks_saves').upsert(
             { user_id: userId, mode, payload },
             { onConflict: 'user_id,mode' }
@@ -435,8 +466,11 @@ function fillRectThemeSafe(c, px, py, size) {
           .maybeSingle();
         if (error || !data || !data.payload) return null;
         const p = data.payload;
-        if ((Date.now() - (p.ts || p.state?.ts || 0)) > SAVE_TTL_MS) return null;
-        return p.state || null;
+        const st = p.state || null;
+        if (!st) return null;
+        if ((Date.now() - (p.ts || st.ts || 0)) > SAVE_TTL_MS) return null;
+        if (!st.inProgress) return null; // clé : on ne propose pas si pas en cours
+        return st;
       } catch (_e) { return null; }
     }
     function loadSavedLocal() {
@@ -445,12 +479,14 @@ function fillRectThemeSafe(c, px, py, size) {
       if (!raw) return null;
       const parsed = safeParse(raw);
       if (!parsed || !parsed.state) return null;
-      if ((Date.now() - (parsed.ts || parsed.state.ts || 0)) > SAVE_TTL_MS) {
+      const st = parsed.state;
+      if ((Date.now() - (parsed.ts || st.ts || 0)) > SAVE_TTL_MS) {
         try { localStorage.removeItem(SAVE_KEY); } catch (_e) {}
         return null;
       }
-      if (parsed.state.mode !== mode) return null;
-      return parsed.state;
+      if (st.mode !== mode) return null;
+      if (!st.inProgress) return null;
+      return st;
     }
 
     async function saveStateNow() {
@@ -482,6 +518,13 @@ function fillRectThemeSafe(c, px, py, size) {
         dropInterval = +s.dropInterval || 500;
         gameOver     = false;
         paused       = false;
+
+        if (s.piecesSequence && Array.isArray(s.piecesSequence)) {
+          piecesSequence = s.piecesSequence.slice();
+        }
+        if (Number.isInteger(s.piecesUsed)) {
+          piecesUsed = s.piecesUsed;
+        }
 
         if (s.theme && THEMES.includes(s.theme) && s.theme !== currentTheme) {
           changeTheme(s.theme);
@@ -516,7 +559,7 @@ function fillRectThemeSafe(c, px, py, size) {
     window.addEventListener('pagehide', saveStateNow);
     document.addEventListener('backbutton', saveStateNow, false);
 
-    // Popup de reprise (avec i18n)
+    // Popup de reprise (avec i18n) — n’afficher que si inProgress
     function showResumePopup(savedState) {
       const overlay = document.createElement('div');
       overlay.id = 'resume-popup';
@@ -552,7 +595,7 @@ function fillRectThemeSafe(c, px, py, size) {
       overlay.querySelector('#resume-restart').onclick = () => {
         clearSavedGame();
         overlay.remove();
-        restartGameHard(); // nouveau restart propre
+        restartGameHard(); // restart propre
       };
     }
 
@@ -579,6 +622,7 @@ function fillRectThemeSafe(c, px, py, size) {
       paused = false;
       history = [];
       lastTime = 0;
+      reviveRampActive = false;
 
       // UI
       const scoreEl = document.getElementById('score');
@@ -590,6 +634,12 @@ function fillRectThemeSafe(c, px, py, size) {
       clearSavedGame();
 
       // start new
+      if (mode === 'duel') {
+        // duel séquence déjà set dans setupDuelSequence
+      } else {
+        piecesSequence = generateSequenceClassic(200);
+        piecesUsed = 0;
+      }
       nextPiece = newPiece();
       reset();
       saveHistory();
@@ -599,7 +649,7 @@ function fillRectThemeSafe(c, px, py, size) {
     // Expose facultatif si tu as un bouton "Recommencer" en HUD
     global.restartGameHard = restartGameHard;
 
-    // Nouvelle popup de fin de partie (UNIQUEMENT recommencer/quitter)
+    // Nouvelle popup de fin de partie (+ revive)
     function showEndPopup(points) {
       paused = true;
       stopSoftDrop();
@@ -637,7 +687,7 @@ function fillRectThemeSafe(c, px, py, size) {
         background: rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center;
       `;
       popup.innerHTML = `
-        <div style="background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:240px;max-width:92vw;text-align:center">
+        <div style="background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:260px;max-width:92vw;text-align:center">
           <div style="font-size:1.2em;font-weight:bold;margin-bottom:10px;">
             <span>${tt('end.title','Partie terminée')}</span><br>
             <span>+${points} ${tt('end.points','points')}</span>
@@ -646,25 +696,123 @@ function fillRectThemeSafe(c, px, py, size) {
             ${tt('end.subtitle','Que voulez-vous faire ?')}
           </div>
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-            <button id="end-restart" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#39f;color:#fff;cursor:pointer;">
+            <button id="end-restart" class="btn-primary" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#39f;color:#fff;cursor:pointer;">
               ${tt('end.restart','Recommencer')}
             </button>
-            <button id="end-quit" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#444;color:#fff;cursor:pointer;">
+            <button id="end-quit" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#444;color:#fff;cursor:pointer;">
               ${tt('end.quit','Quitter')}
+            </button>
+            <button id="end-revive-token" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#2a7;color:#fff;cursor:pointer;">
+              ${tt('end.revive.token','Revivre (1 jeton)')}
+            </button>
+            <button id="end-revive-ad" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#a73;color:#fff;cursor:pointer;">
+              ${tt('end.revive.ad','Revivre (pub)')}
             </button>
           </div>
         </div>
       `;
       document.body.appendChild(popup);
 
+      async function doRevive(withAd) {
+        if (withAd) {
+          // ⚠️ CHANGEMENT : rewarded SSV obligatoire pour revivre
+          const ok = await new Promise((resolve) => {
+            if (typeof window.showRewardedType !== 'function') {
+              console.warn('[revive] showRewardedType absent, fallback interstitiel');
+              (async () => { try { await showInterstitial(); resolve(true); } catch { resolve(false); } })();
+              return;
+            }
+            window.showRewardedType('revive', 0, (ok) => resolve(!!ok));
+          });
+          if (!ok) return; // reward pas complétée → pas de revive
+          popup.remove();
+          reviveRewindAndResume();
+          return;
+        }
+        // Jeton classique
+        const ok = await useJeton();
+        if (!ok) {
+          alert(tt('end.revive.no_tokens','Pas assez de jetons.'));
+          return;
+        }
+        popup.remove();
+        reviveRewindAndResume();
+      }
+
       document.getElementById('end-restart').onclick = function () {
         popup.remove();
         restartGameHard();
       };
-
       document.getElementById('end-quit').onclick = function () {
         window.location.href = INDEX_URL;
       };
+      document.getElementById('end-revive-token').onclick = function () {
+        doRevive(false);
+      };
+      document.getElementById('end-revive-ad').onclick = function () {
+        doRevive(true);
+      };
+    }
+
+    function reviveRewindAndResume() {
+      // 1) Reculer de 8 “états” complets (pièces, board, séquence incluse)
+      if (history.length === 0) return;
+      const index = history.length > 8 ? history.length - 8 : 0;
+      const state = history[index];
+      history = history.slice(0, index);
+
+      board = state.board.map(r => r.slice());
+      currentPiece = JSON.parse(JSON.stringify(state.currentPiece));
+      nextPiece = JSON.parse(JSON.stringify(state.nextPiece));
+      heldPiece = state.heldPiece ? JSON.parse(JSON.stringify(state.heldPiece)) : null;
+      score = state.score;
+      combo = state.combo;
+      linesCleared = state.linesCleared;
+      dropInterval = state.dropInterval || 500;
+
+      // Séquence exactement identique
+      if (state.piecesSequence && Array.isArray(state.piecesSequence)) {
+        piecesSequence = state.piecesSequence.slice();
+      }
+      if (Number.isInteger(state.piecesUsed)) {
+        piecesUsed = state.piecesUsed;
+      }
+
+      paused = true;
+      gameOver = false;
+      safeRedraw();
+
+      // 2) Compte à rebours court (i18n)
+      let countdown = 3;
+      const overlay = document.createElement('div');
+      overlay.id = 'countdown-overlay';
+      overlay.style = `
+        position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);
+        color:#fff;display:flex;align-items:center;justify-content:center;font-size:4em;z-index:99998;
+      `;
+      overlay.textContent = tt('revive.count','{n}', { n: countdown });
+      document.body.appendChild(overlay);
+      const tmr = setInterval(() => {
+        countdown--;
+        overlay.textContent = tt('revive.count','{n}', { n: countdown });
+        if (countdown <= 0) {
+          clearInterval(tmr);
+          overlay.remove();
+
+          // 3) Restaure et démarre rampe de vitesse
+          paused = false;
+          gameOver = false;
+
+          // la “vitesse zéro” simulée : on part d’un interval très lent puis on rampe vers la cible
+          reviveTargetInterval = dropInterval || 500;
+          dropInterval = 1200; // très lent au départ
+          reviveRampActive = true;
+          reviveRampStart = performance.now();
+
+          lastTime = performance.now();
+          requestAnimationFrame(update);
+        }
+      }, 1000);
     }
 
     function rewind() {
@@ -681,6 +829,14 @@ function fillRectThemeSafe(c, px, py, size) {
       combo = state.combo;
       linesCleared = state.linesCleared;
       dropInterval = state.dropInterval || 500;
+
+      if (state.piecesSequence && Array.isArray(state.piecesSequence)) {
+        piecesSequence = state.piecesSequence.slice();
+      }
+      if (Number.isInteger(state.piecesUsed)) {
+        piecesUsed = state.piecesUsed;
+      }
+
       paused = true;
       gameOver = false;
       safeRedraw();
@@ -719,7 +875,6 @@ function fillRectThemeSafe(c, px, py, size) {
     setTimeout(() => {
       let btn = document.getElementById('pause-btn');
       if (btn) btn.onclick = (e) => { e.preventDefault(); togglePause(); };
-      // Si tu as un bouton "recommencer" en HUD
       const btnRestart = document.getElementById('restart-btn');
       if (btnRestart) btnRestart.onclick = (e) => { e.preventDefault(); restartGameHard(); };
     }, 200);
@@ -762,6 +917,10 @@ function fillRectThemeSafe(c, px, py, size) {
       lastTime = 0;
 
       if (mode === 'duel') await setupDuelSequence();
+      if (mode !== 'duel') {
+        piecesSequence = generateSequenceClassic(200);
+        piecesUsed = 0;
+      }
       nextPiece = newPiece();
       reset();
       saveHistory();
@@ -772,7 +931,11 @@ function fillRectThemeSafe(c, px, py, size) {
     function newPiece() {
       let typeId;
       if (mode === 'duel') typeId = getDuelNextPieceId();
-      else typeId = Math.floor(Math.random() * PIECES.length);
+      else typeId = getNextPieceIdGeneric();
+
+      if (typeId < 0 || typeId > 6 || Number.isNaN(typeId)) {
+        typeId = Math.floor(Math.random() * PIECES.length);
+      }
 
       let shape = PIECES[typeId];
       let letter = LETTERS[typeId];
@@ -785,10 +948,7 @@ function fillRectThemeSafe(c, px, py, size) {
 
       if (currentTheme === 'space' || currentTheme === 'vitraux') {
         let numbers = [1,2,3,4,5,6];
-        for (let i = numbers.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-        }
+        shuffle(numbers);
         let idx = 0;
         obj.variants = shape.map(row => row.map(val => (val ? numbers[idx++] : null)));
       }
@@ -908,16 +1068,8 @@ function fillRectThemeSafe(c, px, py, size) {
       return JSON.parse(JSON.stringify(p));
     }
 
-    // === HOLD = échange instantané sans remonter, avec petits "kicks" anti-collision ===
-    function tryApplyPieceAt(p, x, y) {
-      const backup = { x: p.x, y: p.y };
-      p.x = x; p.y = y;
-      const ok = !collision(p);
-      if (!ok) { p.x = backup.x; p.y = backup.y; }
-      return ok;
-    }
+    // === HOLD = échange instantané
     function tryKickPlace(p, targetX, targetY) {
-      // ordre de kicks: (0,0), (-1,0), (1,0), (0,-1), (-2,0), (2,0), (0,-2)
       const kicks = [[0,0],[-1,0],[1,0],[0,-1],[-2,0],[2,0],[0,-2]];
       const bx = p.x, by = p.y;
       for (const [kx,ky] of kicks) {
@@ -931,7 +1083,6 @@ function fillRectThemeSafe(c, px, py, size) {
     function holdPieceSwapStay() {
       if (!currentPiece) return;
 
-      // positions actuelles conservées
       const cx = currentPiece.x;
       const cy = currentPiece.y;
       const cshape = currentPiece.shape.map(r=>r.slice());
@@ -939,25 +1090,20 @@ function fillRectThemeSafe(c, px, py, size) {
       const clet   = currentPiece.letter;
 
       if (!heldPiece) {
-        // on met la pièce courante en réserve, et on prend la prochaine SANS remonter
         heldPiece = clonePiece(currentPiece);
         currentPiece = clonePiece(nextPiece);
         nextPiece = newPiece();
       } else {
-        // échange simple
         const tmp = clonePiece(currentPiece);
         currentPiece = clonePiece(heldPiece);
         heldPiece = tmp;
       }
 
-      // garder position/orientation
       currentPiece.x = cx;
       currentPiece.y = cy;
 
-      // petits kicks si collision immédiate
       if (collision(currentPiece)) {
         if (!tryKickPlace(currentPiece, cx, cy)) {
-          // échange impossible → annuler proprement
           if (heldPiece && heldPiece.letter === clet) {
             const tmp = heldPiece;
             heldPiece = currentPiece;
@@ -973,7 +1119,7 @@ function fillRectThemeSafe(c, px, py, size) {
         }
       }
 
-      holdUsed = false; // illimité
+      holdUsed = false;
       drawMiniPiece(holdCtx, heldPiece);
       drawMiniPiece(nextCtx, nextPiece);
       scheduleSave();
@@ -989,13 +1135,13 @@ function fillRectThemeSafe(c, px, py, size) {
       return ghost;
     }
 
-    // === HARD DROP (descente instantanée jusqu'au fantôme) ===
+    // === HARD DROP
     function hardDrop() {
       if (!currentPiece) return;
       const ghost = getGhostPiece();
       if (!ghost) return;
       currentPiece.y = ghost.y;
-      stopSoftDrop(); // au cas où
+      stopSoftDrop();
       merge();
       saveHistory();
       reset();
@@ -1170,6 +1316,17 @@ function fillRectThemeSafe(c, px, py, size) {
 
     function update(now) {
       if (paused || gameOver) return;
+
+      // Rampe de vitesse post-revive
+      if (reviveRampActive) {
+        const elapsed = now - reviveRampStart;
+        const t = Math.min(1, elapsed / REVIVE_RAMP_MS);
+        dropInterval = Math.max(17, Math.round(lerp(1200, reviveTargetInterval, t)));
+        if (t >= 1) {
+          reviveRampActive = false;
+        }
+      }
+
       if (!lastTime) lastTime = now;
       const delta = now - lastTime;
       if (delta > dropInterval) {
@@ -1224,13 +1381,13 @@ function fillRectThemeSafe(c, px, py, size) {
 
     let softDropTimer = null;
     let softDropActive = false;
-    const SOFT_DROP_INTERVAL = 45;   // (aligné) chute rapide sur maintien
+    const SOFT_DROP_INTERVAL = 45;
     const HOLD_ACTIVATION_MS = 180;
     let mustLiftFingerForNextSoftDrop = false;
 
-    // Verrou de geste pour éviter les glissements latéraux
+    // Verrou de geste
     let gestureMode = 'none'; // 'none' | 'horizontal' | 'vertical'
-    const HORIZ_THRESHOLD = 20; // (aligné) latéral plus vif
+    const HORIZ_THRESHOLD = 20;
     const DEAD_ZONE = 10;
     const VERTICAL_LOCK_EARLY_MS = 140;
 
@@ -1250,7 +1407,7 @@ function fillRectThemeSafe(c, px, py, size) {
       if (softDropTimer) clearInterval(softDropTimer);
       softDropTimer = null;
       softDropActive = false;
-      mustLiftFingerForNextSoftDrop = true; // anti “yo-yo”
+      mustLiftFingerForNextSoftDrop = true;
     }
 
     function isQuickSwipeUp(elapsed, dy) {
@@ -1277,7 +1434,7 @@ function fillRectThemeSafe(c, px, py, size) {
       clearTimeout(holdToDropTimeout);
       holdToDropTimeout = setTimeout(() => {
         if (dragging && !softDropActive) {
-          gestureMode = 'vertical';  // lock vertical au moment du drop
+          gestureMode = 'vertical';
           startSoftDrop();
         }
       }, HOLD_ACTIVATION_MS);
@@ -1292,7 +1449,6 @@ function fillRectThemeSafe(c, px, py, size) {
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-      // HARD DROP : flick down rapide → descente instantanée
       if (!softDropActive && isQuickSwipeDown(elapsed, movedY) && !didHardDrop) {
         didHardDrop = true;
         gestureMode = 'vertical';
@@ -1302,7 +1458,6 @@ function fillRectThemeSafe(c, px, py, size) {
         return;
       }
 
-      // si vertical ou soft-drop actif → ignorer horizontal
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';
         if (!softDropActive && isQuickSwipeUp(elapsed, movedY)){
@@ -1314,7 +1469,6 @@ function fillRectThemeSafe(c, px, py, size) {
         return;
       }
 
-      // détection du mode horizontal
       if (gestureMode === 'none') {
         if (Math.abs(movedX) > Math.max(Math.abs(movedY), DEAD_ZONE) && Math.abs(movedX) > HORIZ_THRESHOLD) {
           gestureMode = 'horizontal';
@@ -1322,7 +1476,6 @@ function fillRectThemeSafe(c, px, py, size) {
         }
       }
 
-      // déplacements latéraux (seuil 20px)
       if (gestureMode === 'horizontal') {
         if (movedX > HORIZ_THRESHOLD)  { move(1);  startX = t.clientX; }
         if (movedX < -HORIZ_THRESHOLD) { move(-1); startX = t.clientX; }
@@ -1330,14 +1483,12 @@ function fillRectThemeSafe(c, px, py, size) {
         return;
       }
 
-      // rotation par swipe up rapide
       if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
         rotatePiece();
         touchStartTime = now;
         startY = t.clientY;
       }
 
-      // swipe bas non rapide : drop + éventuellement enclencher soft-drop
       if (movedY > 24 && !didHardDrop) {
         if (!softDropActive) startSoftDrop();
         dropPiece();
@@ -1367,7 +1518,6 @@ function fillRectThemeSafe(c, px, py, size) {
         return;
       }
 
-      // tap court => rotation si pas de drop ni de glissé horizontal
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
       const hasDropped   = Math.abs(movedY) > 18;
@@ -1397,7 +1547,7 @@ function fillRectThemeSafe(c, px, py, size) {
         case 'ArrowRight': move(1);     break;
         case 'ArrowDown':  dropPiece(); break;
         case 'ArrowUp':    rotatePiece(); break;
-        case ' ':          hardDrop(); break; // hard-drop clavier
+        case ' ':          hardDrop(); break;
         case 'c': case 'C': holdPieceSwapStay();  break;
       }
     });
@@ -1430,24 +1580,23 @@ function fillRectThemeSafe(c, px, py, size) {
       return data?.highscore || 0;
     }
 
-    // ===== LANCEMENT avec reprise =====
+    // ===== LANCEMENT avec reprise (seulement si inProgress true) =====
     (async function boot() {
       if (CAN_RESUME) {
-        // priorité au cloud (changement de téléphone) puis local
         const savedCloud = await loadSavedCloud();
-        if (savedCloud) {
+        if (savedCloud && savedCloud.inProgress) {
           paused = true;
           showResumePopup(savedCloud);
           return;
         }
         const savedLocal = loadSavedLocal();
-        if (savedLocal) {
+        if (savedLocal && savedLocal.inProgress) {
           paused = true;
           showResumePopup(savedLocal);
           return;
         }
       }
-      startGame();
+      startGame(); // sinon on démarre direct sans popup
     })();
   }
 
