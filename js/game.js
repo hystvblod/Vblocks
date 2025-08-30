@@ -10,8 +10,9 @@ function fillRectThemeSafe(c, px, py, size) {
     c.fillRect(px - pad, py - pad, size + 2 * pad, size + 2 * pad);
   } else {
     // Important: ne PAS se rappeler soi-même → pas de récursion
-    c.fillRect(px, py, size);
+    c.fillRect(px, py, size, size); // ✅ FIX: width ET height
   }
+
 }
 
 (function (global) {
