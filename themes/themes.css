@@ -174,32 +174,48 @@ body[data-theme="nature"] {
   --btn-shadow: none;
 }
 /* ---- NUIT ---- */
+/* ---- NUIT ---- */
 body[data-theme="nuit"], body[data-theme="dark"] {
-  --body-bg: #111;
+  background: url("nuit/fond.png") center center / cover no-repeat fixed !important;
+
+  /* Couleurs globales */
+  --body-bg: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
   --body-color: #ccc;
   --title-color: #ccc;
-  --canvas-bg: #000;
+  --title-shadow: 0 0 6px rgba(255,255,255,0.3);
+
+  /* Canvas principal translucide */
+  --canvas-bg: rgba(0, 0, 0, 0.7);
   --canvas-border: #444;
-  --canvas-shadow: #222;
-  --panel-bg: #1a1a1a;
+  --canvas-shadow: rgba(0,0,0,0.6);
+
+  /* Panneaux translucides */
+  --panel-bg: rgba(20, 20, 20, 0.65);
   --panel-border: #555;
-  --panel-shadow: #000;
+  --panel-shadow: rgba(0,0,0,0.5);
   --panel-text: #ccc;
-  --canvas-panel-bg: #000;
+
+  /* Hold / Next (mini canvas) translucides aussi */
+  --canvas-panel-bg: rgba(15, 15, 15, 0.7);
   --canvas-panel-border: #555;
+
+  /* Boîtes */
   --box-bg: rgba(40,40,40,0.6);
   --box-border: #666;
+
+  /* Score vert type “matrix” */
   --score-color: #00ff00;
   --score-shadow: 0 0 3px #00ff00;
-  --btn-bg: #222;
+
+  /* Boutons */
+  --btn-bg: rgba(34, 34, 34, 0.85);
   --btn-color: #ccc;
   --btn-border: #ccc;
   --btn-hover-bg: #333;
   --btn-hover-color: #fff;
   --btn-hover-border: #fff;
-  --btn-shadow: none;
-
-    background: url("nuit/fond.png") center center / cover no-repeat fixed !important;
+  --btn-shadow: 0 0 6px rgba(255,255,255,0.2);
+}
 
 }
 /* ---- NEON ---- */
