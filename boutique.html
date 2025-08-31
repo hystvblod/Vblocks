@@ -50,16 +50,18 @@
     /* Prix en blanc pour toutes les cartouches d'achats (hors thèmes) */
     .achats-list .prix-label { color:#fff; font-weight:700; }
 
-    /* ====== AJOUTS DEMANDÉS ====== */
-    /* Nom des thèmes plus grand (n’affecte que la grille des thèmes) */
+    /* ===== AJOUTS demandés ===== */
     .themes-list .theme-card .theme-label{
       font-size: clamp(1.06rem, 1.7vw, 1.32rem);
       line-height: 1.2;
     }
-
-    /* Thème déjà possédé = léger assombrissement + badge */
+    /* Griser visuellement un thème possédé */
     .theme-card.unlocked{
       filter: grayscale(35%) brightness(.92);
+    }
+    /* Masquer le prix si déjà possédé */
+    .theme-card.unlocked .prix-label{
+      display: none !important;
     }
 
     /* Modal */
@@ -179,7 +181,7 @@ const THEMES = [
   { key: "japon", name: "Japon" }
 ];
 
-/* Chaque cartouche a maintenant un productId (même ID que sur Google/Apple) */
+/* Cartouches € / pub */
 const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.points3000",  productId:"points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow', prix:null, amount:3000 },
   { key: "boutique.cartouche.points10000", productId:"points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple', prix:null, amount:10000 },
@@ -261,6 +263,7 @@ async function renderAchats() {
 async function renderThemes() {
   await renderAchats();
 
+  // thèmes possédés (cloud via userData.js → getUnlockedThemes)
   const unlocked = await (window.userData?.getUnlockedThemes?.() || []);
   const $themesList = document.getElementById('themes-list');
 
@@ -398,25 +401,20 @@ function openThemeModal(themeKey) {
 
   renderModalActions(themeKey);
 
-  // ouvrir (access)
+  // ouvrir
   $backdrop.style.display = 'flex';
   $backdrop.removeAttribute('aria-hidden');
   $backdrop.removeAttribute('inert');
-  // focus dans la modale
   $close?.focus();
 
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
 }
 
 function closeThemeModal() {
-  // retirer focus s'il est dans la modale
   if ($backdrop.contains(document.activeElement)) document.activeElement.blur();
-
   $backdrop.setAttribute('aria-hidden', 'true');
   $backdrop.setAttribute('inert', '');
   $backdrop.style.display = 'none';
-
-  // focus de retour
   const opener = document.querySelector("[data-open='themeModal']") || document.getElementById("btnThemes");
   if (opener) opener.focus();
 }
@@ -439,15 +437,12 @@ async function renderModalActions(themeKey) {
     buy.textContent = (t('boutique.modal.acheter') || 'Acheter') + ` (${THEME_PRICE} VCoins)`;
     buy.onclick = async () => {
       try {
-        // assure une session (sinon auth.uid() null côté SQL)
         if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-
-        // ⚡ achat atomique via RPC (débit + ajout dans themes_possedes)
         const ok = await window.userData?.purchaseTheme?.(themeKey, THEME_PRICE);
         if (!ok) return;
 
-        await renderThemes();   // refresh listes + soldes
-        closeThemeModal();      // ferme la popup
+        await renderThemes();   // met à jour la grille (→ carte grisée + prix masqué)
+        closeThemeModal();
         if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
       } catch (e) {
         const msg = (e?.message || "").toLowerCase();

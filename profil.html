@@ -90,7 +90,7 @@
     .popup-box button:last-child { background: #eee; color: #333; }
     #pseudoError { color: #d33; font-size: 0.95em; margin-top: 0.5em; min-height: 1.1em; }
 
-    /* ===== POPUP THÈMES — SIMPLE (liste de noms) ===== */
+    /* ===== POPUP THÈMES ===== */
     .popup-theme-bg { position: fixed; inset: 0; z-index: 1000; background: rgba(24,44,26,0.68);
       display: none; align-items: center; justify-content: center; }
     .popup-theme-bg.active { display: flex; }
@@ -151,13 +151,12 @@
       <span data-i18n="profil.btn.theme">Thèmes</span>
     </button>
 
-    <!-- Bouton "Nos applis" masqué temporairement -->
     <button class="applis-btn-vb" id="applisBtn" style="display:none;">
       <span data-i18n="profil.btn.applis">Nos applis</span>
     </button>
   </div>
 
-  <!-- === POPUP PSEUDO === -->
+  <!-- POPUP PSEUDO -->
   <div class="popup-bg" id="popupPseudo">
     <div class="popup-box">
       <h2 data-i18n="profil.popup.pseudoTitle">Ton nouveau pseudo</h2>
@@ -168,7 +167,7 @@
     </div>
   </div>
 
-  <!-- === POPUP SÉLECTEUR DE THÈME — SIMPLE === -->
+  <!-- POPUP THEMES -->
   <div id="theme-selector-popup" class="popup-theme-bg">
     <div class="popup-theme-vb">
       <h2 data-i18n="theme.popup.title">Choisis ton thème VBlocks</h2>
@@ -188,28 +187,35 @@
     // --- i18n safe ---
     function i18nSafe(key, fb){ try{ const v=(window.i18nGet?.(key)); return (!v||v===key)?fb:v }catch{ return fb } }
 
-    // --- Thème & Pseudo au chargement (client sb + auth v2) ---
+    // --- Thème & Pseudo au chargement ---
     window.addEventListener("DOMContentLoaded", async () => {
-      // Assure-toi que window.sb existe (créé dans userData.js)
       const sb = window.sb;
 
-      // User courant via API v2
+      // Session + ensure_user
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) await sb.auth.signInAnonymously();
+        await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
+      } catch (e) {}
+
+      // UID
       let uid = null;
       try {
         const { data: { user } } = await sb.auth.getUser();
         uid = user?.id || null;
       } catch { uid = null; }
 
-      // Thème initial (cloud si possible, sinon local)
+      // Thème actif (cloud -> local)
       try {
         if (uid) {
           const { data, error } = await sb
             .from('users')
-            .select('theme_vblocks')
-            .eq('id', uid)
+            .select('theme_actif')
+            .or(`id.eq.${uid},auth_id.eq.${uid}`)
+            .limit(1)
             .single();
-          const theme = (!error && data?.theme_vblocks)
-            ? data.theme_vblocks
+          const theme = (!error && data?.theme_actif)
+            ? data.theme_actif
             : (localStorage.getItem('themeVBlocks') || 'neon');
           localStorage.setItem('themeVBlocks', theme);
           document.body.setAttribute('data-theme', theme);
@@ -222,13 +228,14 @@
         document.body.setAttribute('data-theme', theme);
       }
 
-      // Pseudo initial (cloud → fallback local)
+      // Pseudo (cloud -> local)
       try {
         if (uid) {
           const { data, error } = await sb
             .from('users')
             .select('pseudo')
-            .eq('id', uid)
+            .or(`id.eq.${uid},auth_id.eq.${uid}`)
+            .limit(1)
             .single();
           const pseudo = (!error && data?.pseudo)
             ? data.pseudo
@@ -247,12 +254,9 @@
       setupPseudoPopup(sb);
       document.getElementById("changeThemeBtn").onclick = () => openThemePopup(sb);
 
-      // Désactivation explicite du bouton "Nos applis"
+      // Désactiver "Nos applis"
       const btnApplis = document.getElementById("applisBtn");
-      if (btnApplis) {
-        btnApplis.style.display = "none";
-        btnApplis.onclick = null;
-      }
+      if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
     });
 
     // --- Popup pseudo (utilise updatePseudo de userData.js) ---
@@ -277,7 +281,7 @@
         if (!v) { err.textContent = i18nSafe('profil.popup.error.empty','Entre un pseudo.'); return; }
         if (v.length > 20) { err.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
         try {
-          const ok = await (window.updatePseudo?.(v)); // met à jour cloud + local
+          const ok = await (window.updatePseudo?.(v)); // cloud + local
           if (ok) {
             await (window.updatePseudoUI?.());
             document.getElementById("profilPseudo").textContent = v;
@@ -292,29 +296,31 @@
       };
     }
 
-    // --- Popup thèmes simple (cloud si possible) ---
+    // --- Popup thèmes (lit themes_possedes cloud/local, écrit theme_actif) ---
     async function openThemePopup(sb) {
       const popup = document.getElementById('theme-selector-popup');
       const themeList = document.getElementById('themeListVB');
 
-      // Liste des thèmes : window.getAllThemes() si dispo, sinon fallback
-      const FALLBACK_THEMES = ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber", "grece", "japon", "arabic"];
+      // Liste de tous les thèmes (fallback si getAllThemes absent)
+      const FALLBACK_THEMES = ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber","grece","japon","arabic"];
       const ALL_THEMES = (typeof window.getAllThemes === 'function') ? window.getAllThemes() : FALLBACK_THEMES;
 
-      // Thèmes débloqués (cloud si possible, sinon local, sinon 'neon')
+      // UID
       let uid = null;
       try {
         const { data: { user } } = await sb.auth.getUser();
         uid = user?.id || null;
       } catch { uid = null; }
 
-      let unlocked = ["neon"];
+      // Lire les thèmes possédés
+      let unlocked = ["neon"]; // valeur par défaut si rien
       try {
         if (uid) {
           const { data, error } = await sb
             .from('users')
             .select('themes_possedes')
-            .eq('id', uid)
+            .or(`id.eq.${uid},auth_id.eq.${uid}`)
+            .limit(1)
             .single();
           if (!error && data && Array.isArray(data.themes_possedes)) {
             unlocked = data.themes_possedes;
@@ -332,7 +338,7 @@
         if (Array.isArray(lc) && lc.length) unlocked = lc;
       }
 
-      // Build UI
+      // UI des thèmes
       themeList.innerHTML = ALL_THEMES.map(theme => {
         const locked = !unlocked.includes(theme);
         const label = theme.charAt(0).toUpperCase() + theme.slice(1);
@@ -341,13 +347,13 @@
 
       popup.classList.add("active");
 
-      // Sélection courante
+      // Sélection courante (depuis local)
       let selectedTheme = localStorage.getItem("themeVBlocks") || "neon";
       document.querySelectorAll('.theme-choice-vb').forEach(btn => {
         if(btn.dataset.theme === selectedTheme) btn.classList.add('active');
       });
 
-      // Choix
+      // Choisir un thème (débloqué)
       document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn => {
         btn.onclick = () => {
           document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
@@ -359,15 +365,23 @@
       // Valider / Annuler
       document.getElementById('btnValiderTheme').onclick = async () => {
         if (!selectedTheme) return;
+
+        // local
         localStorage.setItem("themeVBlocks", selectedTheme);
         document.body.setAttribute('data-theme', selectedTheme);
+
+        // cloud
         try {
           if (uid) {
-            await sb.from('users').update({ theme_vblocks: selectedTheme }).eq('id', uid);
+            await sb
+              .from('users')
+              .update({ theme_actif: selectedTheme })
+              .or(`id.eq.${uid},auth_id.eq.${uid}`);
           }
         } catch(e) {}
+
         popup.classList.remove('active');
-        location.reload();
+        // Optionnel: location.reload();
       };
       document.getElementById('btnCancelTheme').onclick = () => popup.classList.remove('active');
     }
