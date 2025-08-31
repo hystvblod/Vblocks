@@ -457,7 +457,7 @@ body[data-theme="arabic"] {
   --title-shadow: 0 0 10px rgba(184,134,11,0.45);
 
   /* Canvas principal */
-  --canvas-bg: rgba(255, 248, 220, 0.10); /* MATCH cyber transparency */
+  --canvas-bg: rgba(255, 248, 220, 0.6); /* MATCH cyber transparency */
   --canvas-border: #cd853f;               /* peru */
   --canvas-shadow: rgba(205,133,63,0.45);
 
