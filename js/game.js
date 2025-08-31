@@ -1464,14 +1464,7 @@ document.addEventListener('DOMContentLoaded', () => {
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-      if (!softDropActive && isQuickSwipeDown(elapsed, movedY) && !didHardDrop) {
-        didHardDrop = true;
-        gestureMode = 'vertical';
-        clearTimeout(holdToDropTimeout);
-        hardDrop();
-        dragging = false;
-        return;
-      }
+  
 
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';

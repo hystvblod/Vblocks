@@ -862,16 +862,7 @@ document.addEventListener('DOMContentLoaded', () => {
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-      // HARD DROP : flick down rapide → descente instantanée
-      if (!softDropActive && isQuickSwipeDown(elapsed, movedY) && !didHardDrop) {
-        didHardDrop = true;
-        gestureMode = 'vertical';
-        clearTimeout(holdToDropTimeout);
-        hardDrop();
-        // après hard drop, on termine ce geste
-        dragging = false;
-        return;
-      }
+  
 
       // Si on est en vertical (ou soft drop actif) → ignorer l'horizontal
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
