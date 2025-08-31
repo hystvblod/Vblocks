@@ -187,6 +187,25 @@
     // --- i18n safe ---
     function i18nSafe(key, fb){ try{ const v=(window.i18nGet?.(key)); return (!v||v===key)?fb:v }catch{ return fb } }
 
+    // Fallback local sécurisé pour changer le pseudo si updatePseudoSecure n'est pas exposée par userData.js
+    async function updatePseudoSecureLocal(sb, newPseudo){
+      const np = String(newPseudo || '').trim();
+      if (np.length < 3) throw new Error('Pseudo trop court.');
+
+      // Session + ensure_user (tolérant)
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) await sb.auth.signInAnonymously();
+        await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
+      } catch (e) {}
+
+      const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
+      if (error) throw error;
+
+      localStorage.setItem('pseudo', np);
+      return true;
+    }
+
     // --- Thème & Pseudo au chargement ---
     window.addEventListener("DOMContentLoaded", async () => {
       const sb = window.sb;
@@ -259,7 +278,7 @@
       if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
     });
 
-    // --- Popup pseudo (utilise updatePseudo de userData.js) ---
+    // --- Popup pseudo (corrigée : utilise updatePseudoSecure si dispo, sinon fallback local) ---
     function setupPseudoPopup(sb) {
       const popup = document.getElementById('popupPseudo');
       const btnOpen = document.getElementById('btnChangePseudo');
@@ -281,17 +300,17 @@
         if (!v) { err.textContent = i18nSafe('profil.popup.error.empty','Entre un pseudo.'); return; }
         if (v.length > 20) { err.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
         try {
-          const ok = await (window.updatePseudo?.(v)); // cloud + local
-          if (ok) {
-            await (window.updatePseudoUI?.());
-            document.getElementById("profilPseudo").textContent = v;
-            err.textContent = i18nSafe('profil.popup.success','Pseudo mis à jour.');
-            setTimeout(() => popup.classList.remove('active'), 500);
+          if (typeof window.updatePseudoSecure === 'function') {
+            await window.updatePseudoSecure(v); // via userData.js (recommandé)
           } else {
-            err.textContent = i18nSafe('profil.popup.error.generic','Erreur lors de la mise à jour.');
+            await updatePseudoSecureLocal(sb, v); // fallback
           }
+          document.getElementById("profilPseudo").textContent = v;
+          localStorage.setItem("pseudo", v);
+          err.textContent = i18nSafe('profil.popup.success','Pseudo mis à jour.');
+          setTimeout(() => popup.classList.remove('active'), 500);
         } catch(e) {
-          err.textContent = i18nSafe('profil.popup.error.generic','Erreur lors de la mise à jour.');
+          err.textContent = (e && e.message) ? e.message : i18nSafe('profil.popup.error.generic','Erreur lors de la mise à jour.');
         }
       };
     }
@@ -301,7 +320,6 @@
       const popup = document.getElementById('theme-selector-popup');
       const themeList = document.getElementById('themeListVB');
 
-      // Liste de tous les thèmes (fallback si getAllThemes absent)
       const FALLBACK_THEMES = ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber","grece","japon","arabic"];
       const ALL_THEMES = (typeof window.getAllThemes === 'function') ? window.getAllThemes() : FALLBACK_THEMES;
 
@@ -313,7 +331,7 @@
       } catch { uid = null; }
 
       // Lire les thèmes possédés
-      let unlocked = ["neon"]; // valeur par défaut si rien
+      let unlocked = ["neon", "retro"];
       try {
         if (uid) {
           const { data, error } = await sb
@@ -381,7 +399,6 @@
         } catch(e) {}
 
         popup.classList.remove('active');
-        // Optionnel: location.reload();
       };
       document.getElementById('btnCancelTheme').onclick = () => popup.classList.remove('active');
     }
