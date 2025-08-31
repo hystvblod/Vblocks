@@ -187,7 +187,7 @@
     // --- i18n safe ---
     function i18nSafe(key, fb){ try{ const v=(window.i18nGet?.(key)); return (!v||v===key)?fb:v }catch{ return fb } }
 
-    // Fallback local sécurisé pour changer le pseudo si updatePseudoSecure n'est pas exposée
+    // Fallback local pour le pseudo si aucune API exposée
     async function updatePseudoSecureLocal(sb, newPseudo){
       const np = String(newPseudo || '').trim();
       if (np.length < 3) throw new Error('Pseudo trop court.');
@@ -213,10 +213,10 @@
         await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
       } catch (e) {}
 
-      // ✅ Sync Cloud -> Local (permet au jeu de démarrer/reprendre avec le bon thème)
-      await userData.syncThemeFromCloud?.().catch(()=>{});
+      // ✅ Applique le thème local au boot
+      await userData.syncThemeFromLocal?.().catch(()=>{});
 
-      // Pseudo (cloud -> local) — SANS .limit()
+      // Pseudo (cloud -> local) — sans limit()
       try {
         const { data: { user } } = await sb.auth.getUser();
         const uid = user?.id || null;
@@ -242,14 +242,14 @@
       }
 
       setupPseudoPopup(sb);
-      document.getElementById("changeThemeBtn").onclick = () => openThemePopup(sb);
+      document.getElementById("changeThemeBtn").onclick = () => openThemePopup();
 
       // Désactiver "Nos applis"
       const btnApplis = document.getElementById("applisBtn");
       if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
     });
 
-    // --- Popup pseudo (utilise updatePseudoSecure si dispo, sinon fallback local) ---
+    // --- Popup pseudo (utilise userData.updatePseudoSecure si dispo, sinon fallback) ---
     function setupPseudoPopup(sb) {
       const popup = document.getElementById('popupPseudo');
       const btnOpen = document.getElementById('btnChangePseudo');
@@ -271,10 +271,10 @@
         if (!v) { err.textContent = i18nSafe('profil.popup.error.empty','Entre un pseudo.'); return; }
         if (v.length > 20) { err.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
         try {
-          if (typeof window.updatePseudoSecure === 'function') {
-            await window.updatePseudoSecure(v);
+          if (userData && typeof userData.updatePseudoSecure === 'function') {
+            await userData.updatePseudoSecure(v);
           } else {
-            await updatePseudoSecureLocal(sb, v);
+            await updatePseudoSecureLocal(window.sb, v);
           }
           document.getElementById("profilPseudo").textContent = v;
           localStorage.setItem("pseudo", v);
@@ -286,8 +286,8 @@
       };
     }
 
-    // --- Popup thèmes (lit themes_possedes cloud/local, écrit theme_actif via userData) ---
-    async function openThemePopup(sb) {
+    // --- Popup thèmes (lit themes_possedes cloud/local, applique localement) ---
+    async function openThemePopup() {
       const popup = document.getElementById('theme-selector-popup');
       const themeList = document.getElementById('themeListVB');
 
@@ -337,22 +337,16 @@
       document.getElementById('btnValiderTheme').onclick = async () => {
         if (!selectedTheme) return;
 
+        // ✅ Application locale instantanée (notifie le jeu + autres onglets)
         try {
-          // ✅ Cloud + local (et vérifie qu'une ligne a bien été touchée)
-          await userData.updateThemeActive(selectedTheme);
+          userData.applyLocalTheme(selectedTheme);
 
-          // ✅ Applique tout de suite au profil
-          document.body.setAttribute('data-theme', selectedTheme);
-
-          // ✅ Purge des autosaves pour que la reprise n'impose pas l'ancien thème
+          // Purge des autosaves pour éviter qu'un ancien thème soit forcé
           try {
             Object.keys(localStorage).forEach(k => { if (k.startsWith('vblocks:autosave:')) localStorage.removeItem(k); });
           } catch(_){}
-
-          // ✅ notifie le jeu si présent dans cette page
-          window.dispatchEvent(new CustomEvent('vblocks-theme-changed', { detail: { theme: selectedTheme }}));
         } catch(e) {
-          alert("Impossible de mettre à jour le thème : " + (e?.message || 'Erreur'));
+          alert("Impossible d'appliquer le thème : " + (e?.message || 'Erreur'));
           return;
         }
 

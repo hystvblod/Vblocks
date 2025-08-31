@@ -35,6 +35,27 @@ function setCurrentTheme(theme) {
   localStorage.setItem("themeVBlocks", theme);
 }
 
+// Appliquer un thème local immédiatement + notifier app/onglets
+function applyLocalTheme(themeKey) {
+  const t = normalizeThemeKey(themeKey || 'neon');
+  // cache local
+  setCurrentTheme(t);
+
+  // set data-theme (HTML & body pour compat)
+  try { document.documentElement.setAttribute('data-theme', t); } catch {}
+  try { document.body && document.body.setAttribute('data-theme', t); } catch {}
+
+  // feuille de style dédiée si tu utilises <link id="theme-style">
+  const link = document.getElementById('theme-style');
+  if (link) link.href = `themes/${t}.css`;
+
+  // notifier le jeu (même onglet)
+  try { window.dispatchEvent(new CustomEvent('vblocks-theme-changed', { detail:{ theme: t } })); } catch {}
+
+  // notifier autres onglets
+  try { localStorage.setItem('themeVBlocks', t); } catch {}
+}
+
 // =============================
 // AUTH ANONYME + MIGRATION LEGACY
 // =============================
@@ -171,14 +192,14 @@ async function getProfileSecure() {
     console.warn('[getProfileSecure] RPC get_balances KO, fallback direct:', e?.message || e);
   }
 
-  // 2) Fallback direct sur la table users (id OU auth_id) — inclut theme_actif
+  // 2) Fallback direct sur la table users (id OU auth_id) — (sans theme_actif)
   const uid = await getAuthUserId();
   if (!uid) return {};
 
   try {
     const { data, error } = await sb
       .from('users')
-      .select('id, auth_id, pseudo, lang, vcoins, jetons, highscore, lastscore, themes_possedes, theme_actif')
+      .select('id, auth_id, pseudo, lang, vcoins, jetons, highscore, lastscore, themes_possedes')
       .or(`id.eq.${uid},auth_id.eq.${uid}`)
       .maybeSingle();
 
@@ -247,54 +268,14 @@ async function getJetonsSecure() {
 }
 
 // --- THEMES ---
+// Liste “possédés” reste en base pour les déblocages/achats
 async function getUnlockedThemesCloud() {
   const p = await getProfileSecure();
   const arr = Array.isArray(p?.themes_possedes) ? p.themes_possedes : [];
   return arr.map(normalizeThemeKey);
 }
 
-// ✅ setter officiel : met à jour la colonne users.theme_actif ET garde le localStorage en phase
-async function updateThemeActive(themeKey){
-  await bootstrapAuthAndProfile();
-  const uid = await getAuthUserId();
-  if (!uid) throw new Error('No auth user');
-
-  const theme = normalizeThemeKey(themeKey);
-
-  // 1) tente via auth_id — PAS de select/maybeSingle ici (évite limit/order)
-  const { error: err1 } = await sb
-    .from('users')
-    .update({ theme_actif: theme })
-    .eq('auth_id', uid);
-
-  if (err1) throw err1;
-
-  // 2) tente aussi via id (cas où ta ligne n’a pas auth_id)
-  const { error: err2 } = await sb
-    .from('users')
-    .update({ theme_actif: theme })
-    .eq('id', uid);
-
-  if (err2) throw err2;
-
-  // 3) Vérification propre sur la PK
-  const { data: verify, error: verr } = await sb
-    .from('users')
-    .select('theme_actif')
-    .eq('id', uid)
-    .single();
-
-  if (verr) throw verr;
-  if (!verify || normalizeThemeKey(verify.theme_actif) !== theme) {
-    throw new Error("La mise à jour du thème n'a pas été confirmée.");
-  }
-
-  setCurrentTheme(theme); // mise en cache locale
-  return true;
-}
-
-
-// optionnel : achat etc. (on laisse comme avant)
+// Achat serveur (inchangé)
 async function setUnlockedThemesCloud(themes) {
   await bootstrapAuthAndProfile();
   const { error } = await sb.rpc('set_themes_secure', { themes });
@@ -343,48 +324,20 @@ function updateScoreIfHigher(newScore) {
 }
 
 // =============================
-// SYNC THÈME (Cloud -> Local) + Realtime (live change)
+// SYNC THÈME (Local uniquement)
 // =============================
-async function syncThemeFromCloudOnce() {
+// À appeler au boot d’une page pour appliquer le thème stocké localement
+async function syncThemeFromLocal() {
   try {
-    await bootstrapAuthAndProfile();
-    const prof = await getProfileSecure();
-    const t = normalizeThemeKey(prof?.theme_actif || 'neon');
-    setCurrentTheme(t);
+    const t = normalizeThemeKey(getCurrentTheme() || 'neon');
+    // data-theme et CSS
     document.documentElement.setAttribute('data-theme', t);
+    if (document.body) document.body.setAttribute('data-theme', t);
     const link = document.getElementById('theme-style');
     if (link) link.href = `themes/${t}.css`;
   } catch(e) {
     // silencieux
   }
-}
-
-async function subscribeThemeRealtime(onThemeChange) {
-  try {
-    await bootstrapAuthAndProfile();
-    const me = await getAuthUserId();
-    if (!me) return;
-
-    return sb.channel('theme_actif_for_' + me)
-      .on('postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'users',
-          // écoute la ligne que ce soit par id OU par auth_id
-          filter: `or=(id.eq.${me},auth_id.eq.${me})`
-        },
-        (payload) => {
-          const t = normalizeThemeKey(payload?.new?.theme_actif || 'neon');
-          setCurrentTheme(t);
-          document.documentElement.setAttribute('data-theme', t);
-          const link = document.getElementById('theme-style');
-          if (link) link.href = `themes/${t}.css`;
-          try { onThemeChange && onThemeChange(t); } catch {}
-        }
-      )
-      .subscribe();
-  } catch {}
 }
 
 // =============================
@@ -513,6 +466,10 @@ userData.updateScoreIfHigher = updateScoreIfHigher;
 
 userData.updateLangDirect    = updateLangDirect;
 
+// Thème (nouveau flux 100% local)
+userData.applyLocalTheme     = applyLocalTheme;
+userData.syncThemeFromLocal  = syncThemeFromLocal;
+
 window.updatePseudoUI        = updatePseudoUI;
 window.setupPseudoPopup      = setupPseudoPopup;
 window.bootstrapAuthAndProfile = bootstrapAuthAndProfile;
@@ -521,17 +478,12 @@ window.bootstrapAuthAndProfile = bootstrapAuthAndProfile;
 window.getCurrentTheme       = getCurrentTheme;
 window.setCurrentTheme       = setCurrentTheme;
 
-// Nouveaux exports thème
-userData.updateThemeActive   = updateThemeActive;       // setter officiel
-userData.syncThemeFromCloud  = syncThemeFromCloudOnce;  // Cloud -> Local au boot
-userData.subscribeThemeRealtime = subscribeThemeRealtime; // écoute live (optionnel)
-
 // =============================
 // DEBUG
 // =============================
 window.debugDumpThemes = async function(){
   const prof = await getProfileSecure();
   console.log('[debugDumpThemes] raw themes_possedes =', prof?.themes_possedes);
-  console.log('[debugDumpThemes] theme_actif        =', prof?.theme_actif);
   console.log('[debugDumpThemes] normalized possédés=', (prof?.themes_possedes || []).map(normalizeThemeKey));
+  console.log('[debugDumpThemes] local themeVBlocks  =', getCurrentTheme());
 };
