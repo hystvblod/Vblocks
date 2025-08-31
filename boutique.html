@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
-  <script src="js/userData.js"></script>
-  <script src="js/i18n.js"></script>
   <meta charset="UTF-8">
   <title data-i18n="boutique.titre"></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Librairies / app -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
+  <script src="js/userData.js"></script>
+  <script src="js/i18n.js"></script>
 
   <link rel="stylesheet" href="style/main.css">
   <style>
@@ -48,6 +50,8 @@
       font-size: clamp(1.06rem, 1.7vw, 1.32rem);
       line-height: 1.2;
     }
+
+    /* Effet grisé + masquage prix si possédé */
     .theme-card.unlocked{
       filter: grayscale(35%) brightness(.92);
     }
@@ -55,6 +59,7 @@
       display: none !important;
     }
 
+    /* Modal */
     .modal-backdrop {
       position: fixed; inset: 0;
       background: rgba(0,0,0,.58);
@@ -151,9 +156,10 @@
   </div>
 
 <script>
+/* ---------- i18n helper ---------- */
 function t(key) { return window.i18nGet ? window.i18nGet(key) : key; }
 
-/* --- normalisation clés --- */
+/* ---------- Normalisation clés ---------- */
 function normalizeThemeKey(k){
   return String(k || '')
     .toLowerCase()
@@ -169,6 +175,7 @@ function toKeyLike(x){
   return '';
 }
 
+/* ---------- Données boutique ---------- */
 const THEMES = [
   { key: "neon",   name: "Neon"   },
   { key: "bubble", name: "Bubble" },
@@ -181,8 +188,8 @@ const THEMES = [
   { key: "space",  name: "Space"  },
   { key: "cyber",  name: "Cyber"  },
   { key: "arabic", name: "Arabic" },
-  { key: "grece", name: "Grèce antique" },
-  { key: "japon", name: "Japon" }
+  { key: "grece",  name: "Grèce antique" },
+  { key: "japon",  name: "Japon" }
 ];
 
 const SPECIAL_CARTOUCHES = [
@@ -210,10 +217,11 @@ const THEME_COLOR = {
   space: 'color-yellow',
   cyber: 'color-green',
   arabic : 'color-purple',
-  grece : 'color-yellow',
-  japon : 'color-green'
+  grece  : 'color-yellow',
+  japon  : 'color-green'
 };
 
+/* ---------- Fallback prix IAP (affichage) ---------- */
 async function getStoreProducts(productIds){
   if (window.store && Array.isArray(store.products) && store.products.length) {
     const out = {};
@@ -236,6 +244,43 @@ async function getStoreProducts(productIds){
   }, {});
 }
 
+/* ---------- Helpers auth & lecture des thèmes (id OU auth_id) ---------- */
+async function ensureAuthSafe() {
+  try {
+    const s = await sb.auth.getSession();
+    if (!s?.data?.session) await sb.auth.signInAnonymously();
+  } catch (_) {}
+}
+
+async function getUnlockedThemesNoSQL() {
+  await ensureAuthSafe();
+
+  const { data: { user } } = await sb.auth.getUser();
+  const uid = user?.id;
+  if (!uid) return [];
+
+  try {
+    const { data, error } = await sb
+      .from('users')
+      .select('themes_possedes')
+      .or(`id.eq.${uid},auth_id.eq.${uid}`)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('[boutique] read users error:', error);
+      return [];
+    }
+    const arr = Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
+    const norm = arr.map(normalizeThemeKey);
+    console.log('[Boutique] unlockedRaw=', arr, '→ normalized=', norm);
+    return norm;
+  } catch (e) {
+    console.warn('[boutique] exception read users:', e?.message || e);
+    return [];
+  }
+}
+
+/* ---------- Rendu Achats (IAP, pubs) ---------- */
 async function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
 
@@ -259,28 +304,19 @@ async function renderAchats() {
   });
 }
 
+/* ---------- Rendu Thèmes (avec grisage & masquage prix) ---------- */
 async function renderThemes() {
   await renderAchats();
 
-  /* >>> AUTH/PROFILE avant lecture Supabase <<< */
+  // Auth/profile (si fourni par userData)
   if (typeof window.bootstrapAuthAndProfile === 'function') {
     try { await window.bootstrapAuthAndProfile(); } catch(_) {}
   }
 
-  /* lecture des thèmes possédés + robustification */
-  let unlockedRaw = [];
-  try {
-    unlockedRaw = await (window.userData?.getUnlockedThemes?.() || []);
-  } catch(e) {
-    console.warn('getUnlockedThemes error:', e);
-  }
-  const unlocked = Array.isArray(unlockedRaw) ? unlockedRaw.map(toKeyLike) : [];
-
-  /* DEBUG console si besoin */
-  console.log('[Boutique] unlockedRaw=', unlockedRaw, '→ normalized=', unlocked);
+  // LECTURE FIABLE (id OU auth_id) — pas de dépendance à userData
+  const unlocked = await getUnlockedThemesNoSQL();
 
   const $themesList = document.getElementById('themes-list');
-
   const html = THEMES.map(theme => {
     const isUnlocked = unlocked.includes(normalizeThemeKey(theme.key));
     const color = THEME_COLOR[theme.key] || 'color-blue';
@@ -289,7 +325,9 @@ async function renderThemes() {
            role="button" tabindex="0"
            data-theme="${theme.key}">
         <span class="theme-label">${theme.name}</span>
-        <span class="prix-label">${isUnlocked ? '' : (THEME_PRICE + ' VCoins')}</span>
+        <span class="prix-label" style="${isUnlocked ? 'display:none' : ''}">
+          ${isUnlocked ? '' : (THEME_PRICE + ' VCoins')}
+        </span>
       </div>
     `;
   }).join('');
@@ -301,9 +339,12 @@ async function renderThemes() {
   $themesList.querySelectorAll('.theme-card').forEach(card => {
     const open = () => openThemeModal(card.dataset.theme);
     card.addEventListener('click', open);
-    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
   });
 
+  // Solde vcoins / jetons
   const coins = await window.userData?.getVCoins?.();
   const $soldeCoins = document.querySelector('.vcoins-solde');
   if ($soldeCoins) $soldeCoins.textContent = (typeof coins === "number" ? coins : "--");
@@ -313,6 +354,7 @@ async function renderThemes() {
   if ($soldeJetons) $soldeJetons.textContent = (typeof jetons === "number" ? jetons : "--");
 }
 
+/* ---------- Pubs récompensées (actions locales) ---------- */
 function setupPubCartouches() {
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
@@ -349,6 +391,7 @@ function setupPubCartouches() {
   });
 }
 
+/* ---------- Achats IAP (boutons) ---------- */
 function setupBoutiqueAchats() {
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
@@ -389,6 +432,7 @@ function setupBoutiqueAchats() {
   });
 }
 
+/* ---------- Modal thème ---------- */
 const $backdrop = document.getElementById('themeModalBackdrop');
 const $title    = document.getElementById('themeModalTitle');
 const $img      = document.getElementById('themeModalImage');
@@ -428,12 +472,13 @@ function closeThemeModal() {
 
 async function renderModalActions(themeKey) {
   $actions.innerHTML = '';
+
   if (typeof window.bootstrapAuthAndProfile === 'function') {
     try { await window.bootstrapAuthAndProfile(); } catch(_) {}
   }
-  let unlockedRaw = [];
-  try { unlockedRaw = await (window.userData?.getUnlockedThemes?.() || []); } catch(_) {}
-  const unlocked = Array.isArray(unlockedRaw) ? unlockedRaw.map(toKeyLike) : [];
+
+  // Utilise la même lecture fiable que la grille (id OU auth_id)
+  const unlocked = await getUnlockedThemesNoSQL();
   const isUnlocked = unlocked.includes(normalizeThemeKey(themeKey));
 
   if (isUnlocked) {
@@ -473,10 +518,12 @@ async function renderModalActions(themeKey) {
   $actions.appendChild(closeBtn);
 }
 
+/* ---------- Modal events ---------- */
 $close?.addEventListener('click', closeThemeModal);
 $backdrop.addEventListener('click', (e) => { if (e.target === $backdrop) closeThemeModal(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeThemeModal(); });
 
+/* ---------- Ready ---------- */
 function ready(fn) {
   if (window.i18nReady && typeof window.i18nReady.then === "function") window.i18nReady.then(fn);
   else setTimeout(fn, 0);
