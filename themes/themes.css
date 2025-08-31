@@ -198,6 +198,9 @@ body[data-theme="nuit"], body[data-theme="dark"] {
   --btn-hover-color: #fff;
   --btn-hover-border: #fff;
   --btn-shadow: none;
+
+    background: url("nuit/fond.png") center center / cover no-repeat fixed !important;
+
 }
 /* ---- NEON ---- */
 body[data-theme="neon"] {
