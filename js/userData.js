@@ -8,14 +8,24 @@ if (!window.sb) {
   window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 const sb = window.sb;
+// Expose aussi en global pour les tests console
+if (!window.supabase) window.supabase = sb;
 
 // == THEMES VBLOCKS ==
 const ALL_THEMES = [
-  "neon",   // par défaut, toujours débloqué
+  "neon",   // par défaut, toujours débloqué (UI)
   "nuit", "nature", "bubble", "retro",
-  "vitraux", "angelique", "luxury", "space", "cyber",   "arabic", "grece", "japon" 
+  "vitraux", "angelique", "luxury", "space", "cyber", "arabic", "grece", "japon"
 ];
 window.getAllThemes = function () { return ALL_THEMES; };
+
+// Normalisation des clés de thèmes (évite accents/espaces/majuscules)
+function normalizeThemeKey(k){
+  return String(k || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,'');
+}
 
 // Thème courant (local, purement visuel)
 function getCurrentTheme() {
@@ -152,18 +162,42 @@ async function getAuthUserId() {
 // LECTURES / ÉCRITURES SÉCURISÉES (RPC + direct)
 // =============================
 
-// Regroupe les champs courants du profil
+// Lecture profil : RPC get_balances, sinon fallback direct table `users`
 async function getProfileSecure() {
   await bootstrapAuthAndProfile();
-  const { data, error } = await sb.rpc('get_balances'); // renvoie 1 ligne
-  if (error) throw error;
 
-  const row = (Array.isArray(data) ? data[0] : data) || {};
-  // fallback minimum si table vide (ne devrait pas arriver)
-  if (!row.themes_possedes || !Array.isArray(row.themes_possedes)) {
-    row.themes_possedes = ["neon","retro"]; // ← ajouté retro par défaut
+  // 1) Essayer la RPC
+  try {
+    const { data, error } = await sb.rpc('get_balances'); // renvoie 1 ligne
+    if (error) throw error;
+
+    const row = (Array.isArray(data) ? data[0] : data) || {};
+    // NE PAS réécrire themes_possedes ici : on renvoie tel quel
+    return row;
+  } catch (e) {
+    console.warn('[getProfileSecure] RPC get_balances KO, fallback direct:', e?.message || e);
   }
-  return row;
+
+  // 2) Fallback direct sur la table users (id OU auth_id)
+  const uid = await getAuthUserId();
+  if (!uid) return {};
+
+  try {
+    const { data, error } = await sb
+      .from('users')
+      .select('id, auth_id, pseudo, lang, vcoins, jetons, highscore, lastscore, themes_possedes')
+      .or(`id.eq.${uid},auth_id.eq.${uid}`)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('[getProfileSecure] direct users error:', error);
+      return {};
+    }
+    return data || {};
+  } catch (e) {
+    console.warn('[getProfileSecure] direct users exception:', e?.message || e);
+    return {};
+  }
 }
 
 // --- PSEUDO ---
@@ -183,8 +217,7 @@ async function updateLangDirect(langCode) {
   if (!normalized) throw new Error('Langue invalide');
 
   await bootstrapAuthAndProfile();
-  const { data: { user } } = await sb.auth.getUser();
-  const uid = user?.id;
+  const uid = await getAuthUserId();
   if (!uid) throw new Error('No auth user');
 
   // Met à jour la ligne où id==uid OU auth_id==uid (migration legacy)
@@ -203,11 +236,10 @@ async function addVCoinsSecure(amount) {
   const delta = parseInt(amount, 10) || 0;
   const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
   if (error) throw error;
-  // On relit si besoin via getProfileSecure()
 }
 async function getVCoinsSecure() {
   const p = await getProfileSecure();
-  return p.vcoins || 0;
+  return p?.vcoins || 0;
 }
 
 // --- JETONS ---
@@ -219,17 +251,18 @@ async function addJetonsSecure(amount) {
 }
 async function getJetonsSecure() {
   const p = await getProfileSecure();
-  return p.jetons || 0;
+  return p?.jetons || 0;
 }
 
 // --- THEMES ---
 async function getUnlockedThemesCloud() {
   const p = await getProfileSecure();
-  return Array.isArray(p.themes_possedes) ? p.themes_possedes : ["neon","retro"]; // ← fallback harmonisé
+  const arr = Array.isArray(p?.themes_possedes) ? p.themes_possedes : [];
+  // normalisation locale (tolère accents/espaces/majuscules)
+  return arr.map(normalizeThemeKey);
 }
 async function setUnlockedThemesCloud(themes) {
-  // Normalement on passe par purchase_theme() côté serveur pour les achats.
-  // Si besoin admin/debug: setter sécurisé (optionnel).
+  // setter admin/debug via RPC sécurisée (si exposée)
   await bootstrapAuthAndProfile();
   const { error } = await sb.rpc('set_themes_secure', { themes });
   if (error) throw error;
@@ -237,7 +270,10 @@ async function setUnlockedThemesCloud(themes) {
 }
 async function purchaseThemeSecure(themeKey, price) {
   await bootstrapAuthAndProfile();
-  const { error } = await sb.rpc('purchase_theme', { theme_key: String(themeKey), price: parseInt(price, 10) || 0 });
+  const { error } = await sb.rpc('purchase_theme', {
+    theme_key: String(themeKey),
+    price: parseInt(price, 10) || 0
+  });
   if (error) throw error;
   return true;
 }
@@ -257,7 +293,7 @@ async function setHighScoreSecure(score) {
 }
 async function getHighScoreSecure() {
   const p = await getProfileSecure();
-  return p.highscore || 0;
+  return p?.highscore || 0;
 }
 async function setLastScoreSecure(score) {
   await bootstrapAuthAndProfile();
@@ -386,26 +422,35 @@ async function listenPopupsRealtime() {
 // EXPORTS GLOBAUX
 // =============================
 window.userData = window.userData || {};
-userData.getVCoins         = getVCoinsSecure;
-userData.addVCoins         = addVCoinsSecure;
-userData.getJetons         = getJetonsSecure;
-userData.addJetons         = addJetonsSecure;
-userData.getUnlockedThemes = getUnlockedThemesCloud;
-userData.setUnlockedThemes = setUnlockedThemesCloud; // admin/debug
-userData.purchaseTheme     = purchaseThemeSecure;
+userData.getVCoins           = getVCoinsSecure;
+userData.addVCoins           = addVCoinsSecure;
+userData.getJetons           = getJetonsSecure;
+userData.addJetons           = addJetonsSecure;
+userData.getUnlockedThemes   = getUnlockedThemesCloud;
+userData.setUnlockedThemes   = setUnlockedThemesCloud; // admin/debug
+userData.purchaseTheme       = purchaseThemeSecure;
 
-userData.getHighScore      = getHighScoreSecure;
-userData.setHighScore      = setHighScoreSecure;
-userData.setLastScore      = setLastScoreSecure;
+userData.getHighScore        = getHighScoreSecure;
+userData.setHighScore        = setHighScoreSecure;
+userData.setLastScore        = setLastScoreSecure;
 userData.updateScoreIfHigher = updateScoreIfHigher;
 
 // ⬇️ Export de la mise à jour directe de la langue
-userData.updateLangDirect  = updateLangDirect;
+userData.updateLangDirect    = updateLangDirect;
 
-window.updatePseudoUI      = updatePseudoUI;
-window.setupPseudoPopup    = setupPseudoPopup;
+window.updatePseudoUI        = updatePseudoUI;
+window.setupPseudoPopup      = setupPseudoPopup;
 window.bootstrapAuthAndProfile = bootstrapAuthAndProfile;
 
 // Confort : expose aussi ces helpers
-window.getCurrentTheme     = getCurrentTheme;
-window.setCurrentTheme     = setCurrentTheme;
+window.getCurrentTheme       = getCurrentTheme;
+window.setCurrentTheme       = setCurrentTheme;
+
+// =============================
+// DEBUG (facultatif) : aide à vérifier la lecture DB
+// =============================
+window.debugDumpThemes = async function(){
+  const prof = await getProfileSecure();
+  console.log('[debugDumpThemes] raw themes_possedes =', prof?.themes_possedes);
+  console.log('[debugDumpThemes] normalized        =', (prof?.themes_possedes || []).map(normalizeThemeKey));
+};
