@@ -547,7 +547,7 @@ body[data-theme="japon"] {
   --title-shadow: 0 0 10px rgba(194,24,91,0.35);
 
   /* Canvas principal (washi très léger) */
-  --canvas-bg: rgba(255, 241, 243, 0.72); /* MATCH cyber transparency */
+  --canvas-bg: rgba(255, 241, 243, 0.80); /* MATCH cyber transparency */
   --canvas-border: #ad1457;
   --canvas-shadow: rgba(173,20,87,0.35);
 
@@ -558,7 +558,7 @@ body[data-theme="japon"] {
   --panel-text: #6a0f2b;
 
   /* Hold / Next */
-  --canvas-panel-bg: rgba(255, 241, 243, 0.72);
+  --canvas-panel-bg: rgba(255, 241, 243, 0.80);
   --canvas-panel-border: #c2185b;
   --canvas-panel-shadow: rgba(194,24,91,0.22);
 
