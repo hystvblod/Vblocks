@@ -164,6 +164,14 @@
 /* ===== Helpers i18n ===== */
 function t(key) { return window.i18nGet ? window.i18nGet(key) : key; }
 
+/* ===== Normalisation de clés (AJOUT) ===== */
+function normalizeThemeKey(k){
+  return String(k || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // supprime accents
+    .replace(/\s+/g,''); // supprime espaces
+}
+
 /* ===== Données ===== */
 const THEMES = [
   { key: "neon",   name: "Neon"   },
@@ -263,12 +271,14 @@ async function renderAchats() {
 async function renderThemes() {
   await renderAchats();
 
-  // thèmes possédés (cloud via userData.js → getUnlockedThemes)
-  const unlocked = await (window.userData?.getUnlockedThemes?.() || []);
+  // thèmes possédés (cloud via userData.js → getUnlockedThemes) + NORMALISATION
+  const unlockedRaw = await (window.userData?.getUnlockedThemes?.() || []);
+  const unlocked = unlockedRaw.map(normalizeThemeKey);
+
   const $themesList = document.getElementById('themes-list');
 
   const html = THEMES.map(theme => {
-    const isUnlocked = unlocked.includes(theme.key);
+    const isUnlocked = unlocked.includes(normalizeThemeKey(theme.key));
     const color = THEME_COLOR[theme.key] || 'color-blue';
     return `
       <div class="special-cartouche theme-card ${color} ${isUnlocked ? "unlocked" : "locked"}"
@@ -421,8 +431,10 @@ function closeThemeModal() {
 
 async function renderModalActions(themeKey) {
   $actions.innerHTML = '';
-  const unlocked = await (window.userData?.getUnlockedThemes?.() || []);
-  const isUnlocked = unlocked.includes(themeKey);
+  // NORMALISATION ici aussi
+  const unlockedRaw = await (window.userData?.getUnlockedThemes?.() || []);
+  const unlocked = unlockedRaw.map(normalizeThemeKey);
+  const isUnlocked = unlocked.includes(normalizeThemeKey(themeKey));
 
   if (isUnlocked) {
     const badge = document.createElement('div');
