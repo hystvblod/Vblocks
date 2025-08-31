@@ -457,12 +457,12 @@ body[data-theme="arabic"] {
   --title-shadow: 0 0 10px rgba(184,134,11,0.45);
 
   /* Canvas principal */
-  --canvas-bg: rgba(255, 248, 220, 0.6); /* MATCH cyber transparency */
+  --canvas-bg: rgba(255, 248, 220, 0.5); /* MATCH cyber transparency */
   --canvas-border: #cd853f;               /* peru */
   --canvas-shadow: rgba(205,133,63,0.45);
 
   /* Panneaux / encarts */
-  --panel-bg: rgba(250, 240, 210, 0.9);
+  --panel-bg: rgba(250, 240, 210, 0.6);
   --panel-border: #b8860b;                /* darkgoldenrod */
   --panel-shadow: rgba(184,134,11,0.35);
   --panel-text: #5a3e1b;
