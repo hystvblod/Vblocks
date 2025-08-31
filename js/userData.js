@@ -270,10 +270,13 @@ async function getJetonsSecure() {
 // --- THEMES ---
 // Liste “possédés” reste en base pour les déblocages/achats
 async function getUnlockedThemesCloud() {
-  const p = await getProfileSecure();
+  const p = await getProfileSecure();            // lit get_balances (puis fallback direct)
   const arr = Array.isArray(p?.themes_possedes) ? p.themes_possedes : [];
-  return arr.map(normalizeThemeKey);
+  // normalise + unique + filtre valeurs vides
+  const norm = [...new Set(arr.map(normalizeThemeKey).filter(Boolean))];
+  return norm;
 }
+
 
 // Achat serveur (inchangé)
 async function setUnlockedThemesCloud(themes) {
