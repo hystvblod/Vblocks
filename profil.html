@@ -309,8 +309,11 @@
         if (Array.isArray(owned)) unlocked = owned.map(normalizeThemeKey).filter(Boolean);
       } catch (e) {
         console.warn('[popup theme] getUnlockedThemes a échoué, on n’invente rien:', e?.message || e);
-        unlocked = []; // si DB ko, on n’affirme rien
+        unlocked = [];
       }
+
+      // ✅ Secours : 'neon' toujours jouable (même si DB KO / vide)
+      if (!unlocked.includes('neon')) unlocked.push('neon');
 
       // 3) rendu (comparaison robuste)
       const ownedSet = new Set(unlocked);
