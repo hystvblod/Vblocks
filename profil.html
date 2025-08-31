@@ -295,19 +295,23 @@
       const ALL_THEMES = (typeof window.getAllThemes === 'function') ? window.getAllThemes() : FALLBACK_THEMES;
 
       // Lire les thèmes possédés
-      let unlocked = ["neon", "retro"];
-      try {
-        const owned = await userData.getUnlockedThemes?.();
-        if (Array.isArray(owned) && owned.length) unlocked = owned;
-        else {
-          const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
-          if (Array.isArray(lc) && lc.length) unlocked = lc;
-        }
-        localStorage.setItem('unlockedVBlocksThemes', JSON.stringify(unlocked));
-      } catch {
-        const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
-        if (Array.isArray(lc) && lc.length) unlocked = lc;
-      }
+      // Lire les thèmes possédés
+let unlocked = ["neon", "retro"];
+try {
+  const owned = await userData.getUnlockedThemes?.();
+  if (Array.isArray(owned)) {
+    unlocked = owned; // ⚠️ même si [], on respecte la DB
+  } else {
+    const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
+    if (Array.isArray(lc)) unlocked = lc;
+  }
+  // sync cache avec la vérité DB / fallback
+  localStorage.setItem('unlockedVBlocksThemes', JSON.stringify(unlocked));
+} catch {
+  const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
+  if (Array.isArray(lc)) unlocked = lc;
+}
+
 
       // UI des thèmes
       themeList.innerHTML = ALL_THEMES.map(theme => {

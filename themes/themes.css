@@ -174,48 +174,31 @@ body[data-theme="nature"] {
   --btn-shadow: none;
 }
 /* ---- NUIT ---- */
-/* ---- NUIT ---- */
 body[data-theme="nuit"], body[data-theme="dark"] {
-  background: url("nuit/fond.png") center center / cover no-repeat fixed !important;
-
-  /* Couleurs globales */
-  --body-bg: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+  --body-bg: #111;
   --body-color: #ccc;
   --title-color: #ccc;
-  --title-shadow: 0 0 6px rgba(255,255,255,0.3);
-
-  /* Canvas principal translucide */
-  --canvas-bg: rgba(0, 0, 0, 0.7);
+  --canvas-bg: #000;
   --canvas-border: #444;
-  --canvas-shadow: rgba(0,0,0,0.6);
-
-  /* Panneaux translucides */
-  --panel-bg: rgba(20, 20, 20, 0.65);
+  --canvas-shadow: #222;
+  --panel-bg: #1a1a1a;
   --panel-border: #555;
-  --panel-shadow: rgba(0,0,0,0.5);
+  --panel-shadow: #000;
   --panel-text: #ccc;
-
-  /* Hold / Next (mini canvas) translucides aussi */
-  --canvas-panel-bg: rgba(15, 15, 15, 0.7);
+  --canvas-panel-bg: #000;
   --canvas-panel-border: #555;
-
-  /* Boîtes */
   --box-bg: rgba(40,40,40,0.6);
   --box-border: #666;
-
-  /* Score vert type “matrix” */
   --score-color: #00ff00;
   --score-shadow: 0 0 3px #00ff00;
-
-  /* Boutons */
-  --btn-bg: rgba(34, 34, 34, 0.85);
+  --btn-bg: #222;
   --btn-color: #ccc;
   --btn-border: #ccc;
   --btn-hover-bg: #333;
   --btn-hover-color: #fff;
   --btn-hover-border: #fff;
-  --btn-shadow: 0 0 6px rgba(255,255,255,0.2);
-
+  --btn-shadow: none;
+  
 }
 /* ---- NEON ---- */
 body[data-theme="neon"] {
@@ -376,23 +359,30 @@ body[data-theme="luxury"] {
 }
 body[data-theme="space"] {
   background: transparent !important;
+
   --body-bg: radial-gradient(ellipse at 70% 40%, #362e60 0%, #0b0924 80%);
   --body-color: #13eaff;
   --title-color: #13eaff;
   --title-shadow: 0 0 10px #362e60;
-  --canvas-bg: #0b0924;
+
+  --canvas-bg: rgba(11, 9, 36, 0.72);  /* ⬅️ rendu translucide */
   --canvas-border: #00e6ff;
   --canvas-shadow: #362e60;
-  --panel-bg: #181e2b;
+
+  --panel-bg: rgba(24, 30, 43, 0.75);  /* ⬅️ translucide */
   --panel-border: none;
   --panel-shadow: #362e60;
   --panel-text: #13eaff;
-  --canvas-panel-bg: #181e2b;
+
+  --canvas-panel-bg: rgba(24, 30, 43, 0.72); /* ⬅️ mini canvas translucides */
   --canvas-panel-border: #13eaff;
-  --box-bg: rgba(16,16,64,0.75);
+
+  --box-bg: rgba(16,16,64,0.65);
   --box-border: #00e6ff;
+
   --score-color: #13eaff;
   --score-shadow: 0 0 2px #13eaff;
+
   --btn-bg: #262653;
   --btn-color: #fff;
   --btn-border: #00e6ff;
@@ -400,6 +390,7 @@ body[data-theme="space"] {
   --btn-hover-color: #13eaff;
   --btn-hover-border: #fff;
   --btn-shadow: 0 0 10px #00e6ff;
+  background: url('space/fond.png') center center / cover no-repeat !important;
 
 }
 /* ---- CYBER ---- */
