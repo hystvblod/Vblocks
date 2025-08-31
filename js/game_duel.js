@@ -1,5 +1,20 @@
+// --- PATCH anti-lignes (ne s'applique qu'au thème "nuit") ---
+function fillRectThemeSafe(c, px, py, size) {
+  const theme =
+    (typeof getCurrentTheme === 'function'
+      ? getCurrentTheme()
+      : (localStorage.getItem('themeVBlocks') || 'neon'));
+  if (theme === 'nuit') {
+    const pad = 0.5;
+    c.fillRect(px - pad, py - pad, size + 2 * pad, size + 2 * pad);
+  } else {
+    // Important: ne PAS se rappeler soi-même → pas de récursion
+    c.fillRect(px, py, size, size); // ✅ width & height
+  }
+}
+
 // --- FILE: game_duel.js ---
-(function(global){
+(function (global) {
   'use strict';
 
   // === IMPORTANT : alias sécurisé sur le client Supabase ===
@@ -11,6 +26,7 @@
   // ==== GESTION MUSIQUE UNIFIÉE ==== //
   const music = document.getElementById('music');
   if (music) music.volume = 0.45;
+
   function isMusicAlwaysMuted() {
     return localStorage.getItem('alwaysMuteMusic') === 'true';
   }
@@ -20,7 +36,7 @@
       music.play().then(() => {
         window.musicStarted = true;
         refreshMusicBtn();
-      }).catch(()=>{});
+      }).catch(() => {});
     }
   }
   function pauseMusic() {
@@ -31,36 +47,25 @@
   function refreshMusicBtn() {
     const btn = document.getElementById('music-btn');
     if (!btn) return;
-
     const muted = isMusicAlwaysMuted() || (music && music.paused);
     const icon = muted ? 'volume-x' : 'volume-2';
-
     btn.innerHTML = `<img src="assets/icons/${icon}.svg" alt="${muted ? 'Muet' : 'Actif'}" class="music-btn-img">`;
   }
-  window.setMusicAlwaysMuted = function(val) {
+  window.setMusicAlwaysMuted = function (val) {
     localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
-    if (val) {
-      pauseMusic();
-    } else {
-      playMusicAuto();   // démarre immédiatement après unmute
-    }
+    if (val) pauseMusic(); else playMusicAuto();
     refreshMusicBtn();
   };
-
-  window.startMusicForGame = function() {
+  window.startMusicForGame = function () {
     if (!music) return;
-    if (isMusicAlwaysMuted()) {
-      pauseMusic();
-      return;
-    }
+    if (isMusicAlwaysMuted()) { pauseMusic(); return; }
     music.currentTime = 0;
     playMusicAuto();
-  }
-  window.addEventListener("storage", (e) => {
-    if (e.key === "alwaysMuteMusic") {
+  };
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'alwaysMuteMusic') {
       refreshMusicBtn();
-      if (isMusicAlwaysMuted()) pauseMusic();
-      else playMusicAuto();
+      if (isMusicAlwaysMuted()) pauseMusic(); else playMusicAuto();
     }
   });
   if (window.Capacitor || window.cordova) {
@@ -77,133 +82,191 @@
   document.addEventListener('DOMContentLoaded', () => {
     const btnMusic = document.getElementById('music-btn');
     if (!btnMusic) return;
-
     btnMusic.onclick = () => {
       const currentlyMuted = isMusicAlwaysMuted() || (music && music.paused);
       const nextMute = !currentlyMuted;
-
       if (typeof window.setMusicAlwaysMuted === 'function') {
-        window.setMusicAlwaysMuted(nextMute); // met aussi à jour localStorage côté jeu
+        window.setMusicAlwaysMuted(nextMute);
       } else {
         localStorage.setItem('alwaysMuteMusic', nextMute ? 'true' : 'false');
-        if (music) {
-          if (nextMute) music.pause();
-          else music.play().catch(()=>{});
-        }
+        if (music) { if (nextMute) music.pause(); else music.play().catch(()=>{}); }
       }
       refreshMusicBtn();
     };
-
     refreshMusicBtn();
   });
-
   // ==== FIN MUSIQUE ====
 
 
-  // Fonction i18n de traduction
+  // ==== i18n minimal ====
   function t(key, params) {
     if (window.i18nGet) {
-      let str = window.i18nGet(key);
-      if(params) Object.keys(params).forEach(k => {
-        str = str.replace(`{${k}}`, params[k]);
-      });
+      let str = window.i18nGet(key) ?? key;
+      if (params) Object.keys(params).forEach(k => { str = str.replace(`{${k}}`, params[k]); });
       return str;
     }
     if (window.I18N_MAP && window.I18N_MAP[key]) {
       let str = window.I18N_MAP[key];
-      if(params) Object.keys(params).forEach(k => {
-        str = str.replace(`{${k}}`, params[k]);
-      });
+      if (params) Object.keys(params).forEach(k => { str = str.replace(`{${k}}`, params[k]); });
       return str;
     }
     return key;
   }
 
-  function initGame(opts){
-    console.log("[initGame] opts=", opts);
+  // === THEMES: helpers ===
+  const THEMES = ['nuit','neon','nature','bubble','retro','space','vitraux','luxury','grece','arabic'];
+  function isVariantTheme(name) {
+    const tname = name || (localStorage.getItem('themeVBlocks') || 'neon');
+    return tname === 'space' || tname === 'vitraux' || tname === 'luxury';
+  }
 
+  function initGame(opts) {
     const mode = 'duel';
     const duelId = opts?.duelId || null;
     const duelPlayerNum = opts?.duelPlayerNum || 1;
+
+    // ====== Séquence DUEL ======
     let piecesSequence = null;
     let piecesUsed = 0;
 
+    // ====== Ghost toggle (persisté) ======
     let ghostPieceEnabled = localStorage.getItem('ghostPiece') !== 'false';
-    global.toggleGhostPiece = function(enabled) {
+    global.toggleGhostPiece = function (enabled) {
       ghostPieceEnabled = !!enabled;
       localStorage.setItem('ghostPiece', ghostPieceEnabled ? 'true' : 'false');
-      drawBoard();
+      safeRedraw();
     };
 
+    // ====== CANVAS + DPR ======
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const holdCanvas = document.getElementById('holdCanvas');
-    const holdCtx = holdCanvas.getContext('2d');
+    const holdCtx = holdCanvas ? holdCanvas.getContext('2d') : null;
     const nextCanvas = document.getElementById('nextCanvas');
-    const nextCtx = nextCanvas.getContext('2d');
-    const scoreEl = document.getElementById('score'); // <-- UI score
+    const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
+    const scoreEl = document.getElementById('score');
+
     const COLS = 10, ROWS = 20;
-    let BLOCK_SIZE = 30;
-    canvas.width = COLS * BLOCK_SIZE;
-    canvas.height = ROWS * BLOCK_SIZE;
+    let BLOCK_SIZE = 30; // en px CSS
+    const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+    ctx.imageSmoothingEnabled = false;
+    if (holdCtx) holdCtx.imageSmoothingEnabled = false;
+    if (nextCtx) nextCtx.imageSmoothingEnabled = false;
 
-    canvas.style.touchAction = 'none';
-    canvas.style.userSelect  = 'none';
+    function clearCanvas(c2d, cnv) {
+      c2d.save();
+      c2d.setTransform(1, 0, 0, 1, 0, 0);
+      c2d.clearRect(0, 0, cnv.width, cnv.height);
+      c2d.restore();
+    }
 
-    const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space', 'vitraux'];
+    function fitCanvasToCSS() {
+      const rect = canvas.getBoundingClientRect();
+      const cssW = Math.round(rect.width);
+      BLOCK_SIZE = cssW / COLS;
+      const usedW = BLOCK_SIZE * COLS;
+      const usedH = BLOCK_SIZE * ROWS;
+
+      canvas.style.height = usedH + 'px';
+      canvas.width  = Math.round(usedW * DPR);
+      canvas.height = Math.round(usedH * DPR);
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    function boardOffsets() {
+      const cssW = canvas.width / DPR;
+      const cssH = canvas.height / DPR;
+      const usedW = BLOCK_SIZE * COLS;
+      const usedH = BLOCK_SIZE * ROWS;
+      return { x: (cssW - usedW) / 2, y: (cssH - usedH) / 2 };
+    }
+    function sizeMiniCanvas(cnv, c2d, target = 48) {
+      if (!cnv || !c2d) return;
+      cnv.style.width = target + 'px';
+      cnv.style.height = target + 'px';
+      cnv.width = Math.round(target * DPR);
+      cnv.height = Math.round(target * DPR);
+      c2d.setTransform(DPR, 0, 0, DPR, 0, 0);
+      c2d.imageSmoothingEnabled = false;
+    }
+
+    fitCanvasToCSS();
+    sizeMiniCanvas(holdCanvas, holdCtx, 48);
+    sizeMiniCanvas(nextCanvas, nextCtx, 48);
+    window.addEventListener('resize', () => {
+      fitCanvasToCSS();
+      sizeMiniCanvas(holdCanvas, holdCtx, 48);
+      sizeMiniCanvas(nextCanvas, nextCtx, 48);
+      safeRedraw();
+    });
+
+    // ====== Thèmes & assets ======
     let currentTheme = localStorage.getItem('themeVBlocks') || 'neon';
-    let currentThemeIndex = THEMES.indexOf(currentTheme);
+    let currentThemeIndex = Math.max(0, THEMES.indexOf(currentTheme));
     const blockImages = {};
-    function loadBlockImages(themeName){
-      console.log("[loadBlockImages] themeName=", themeName);
-      const themesWithPNG = ['bubble', 'nature', 'vitraux', 'luxury', 'space', 'angelique', 'cyber', 'japon', 'arabic', 'grece', 'nuit'];
-      if(themeName === 'space' || themeName === 'vitraux') {
+
+    function loadBlockImages(themeName) {
+      const themesWithPNG = ['bubble','nature','vitraux','luxury','space','angelique','cyber','japon','arabic','grece'];
+
+      if (isVariantTheme(themeName)) {
+        // Plusieurs variantes 1..6
         blockImages[themeName] = [];
-        let imagesToLoad = 6, imagesLoaded = 0;
-        for (let i=1; i<=6; i++) {
+        let left = 6;
+        for (let i = 1; i <= 6; i++) {
           const img = new Image();
-          img.onload = () => {
-            imagesLoaded++;
-            if(imagesLoaded === imagesToLoad) drawBoard();
-          };
+          img.onload = () => { if (--left === 0) safeRedraw(); };
+          img.onerror = () => { if (--left === 0) safeRedraw(); };
           img.src = `themes/${themeName}/${i}.png`;
           blockImages[themeName].push(img);
         }
-        ['I','J','L','O','S','T','Z'].forEach(l => {
-          blockImages[l] = null;
-        });
+        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = null; });
+      } else if (themeName === 'grece' || themeName === 'arabic') {
+        // Une seule image pour toutes les pièces
+        const img = new Image();
+        img.onload = () => { safeRedraw(); };
+        img.onerror = () => {};
+        img.src = `themes/${themeName}/block.png`;
+        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = img; });
       } else {
+        // PNG par lettre (ou fallback dessin)
         ['I','J','L','O','S','T','Z'].forEach(l => {
-          if(themesWithPNG.includes(themeName)){
+          if (themesWithPNG.includes(themeName)) {
             const img = new Image();
-            img.onload = () => { drawBoard(); };
+            img.onload = () => { safeRedraw(); };
+            img.onerror = () => {};
             img.src = `themes/${themeName}/${l}.png`;
             blockImages[l] = img;
-          }else{
+          } else {
             blockImages[l] = null;
           }
         });
       }
+
       currentTheme = themeName;
-      if(themeName === 'retro'){
-        global.currentColors = {I:'#00f0ff',J:'#0044ff',L:'#ff6600',O:'#ffff33',S:'#00ff44',T:'#ff00cc',Z:'#ff0033'};
-      }else if(themeName === 'neon'){
-        global.currentColors = {I:'#00ffff',J:'#007bff',L:'#ff8800',O:'#ffff00',S:'#00ff00',T:'#ff00ff',Z:'#ff0033'};
-      }else if(themeName === 'nuit'){
-        global.currentColors = {I:'#ccc',J:'#ccc',L:'#ccc',O:'#ccc',S:'#ccc',T:'#ccc',Z:'#ccc'};
-      }else{
-        global.currentColors = {I:'#5cb85c',J:'#388e3c',L:'#7bb661',O:'#cddc39',S:'#a2d149',T:'#558b2f',Z:'#9ccc65'};
+      if (themeName === 'retro') {
+        global.currentColors = { I:'#00f0ff', J:'#0044ff', L:'#ff6600', O:'#ffff33', S:'#00ff44', T:'#ff00cc', Z:'#ff0033' };
+      } else if (themeName === 'neon') {
+        global.currentColors = { I:'#00ffff', J:'#007bff', L:'#ff8800', O:'#ffff00', S:'#00ff00', T:'#ff00ff', Z:'#ff0033' };
+      } else if (themeName === 'nuit') {
+        global.currentColors = { I:'#ccc', J:'#ccc', L:'#ccc', O:'#ccc', S:'#ccc', T:'#ccc', Z:'#ccc' };
+      } else {
+        global.currentColors = { I:'#5cb85c', J:'#388e3c', L:'#7bb661', O:'#cddc39', S:'#a2d149', T:'#558b2f', Z:'#9ccc65' };
       }
     }
-    function changeTheme(themeName){
+    function changeTheme(themeName) {
       document.body.setAttribute('data-theme', themeName);
-      const style = document.getElementById('theme-style');
-      if(style) style.href = `themes/${themeName}.css`;
-      setTimeout(() => loadBlockImages(themeName), 100);
-      currentThemeIndex = THEMES.indexOf(themeName);
+      const link = document.getElementById('theme-style');
+      if (link) link.href = `themes/${themeName}.css`;
+      loadBlockImages(themeName);
+      currentThemeIndex = Math.max(0, THEMES.indexOf(themeName));
+      safeRedraw();
     }
     loadBlockImages(currentTheme);
+    window.addEventListener('vblocks-theme-changed', (e) => {
+      const tname = (e?.detail?.theme) || localStorage.getItem('themeVBlocks') || 'neon';
+      if (tname) changeTheme(tname);
+    });
 
+    // ====== Pièces ======
     const PIECES = [
       [[1,1,1,1]],
       [[1,0,0],[1,1,1]],
@@ -215,11 +278,12 @@
     ];
     const LETTERS = ['I','J','L','O','S','T','Z'];
 
-    let board = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+    // ====== État ======
+    let board = Array.from({ length: ROWS }, () => Array(COLS).fill(''));
     let currentPiece = null;
     let nextPiece = null;
     let heldPiece = null;
-    let holdUsed = false;
+    let holdUsed = false; // ignoré pour compat — échanges illimités ici
     let score = 0;
     let dropInterval = 500;
     let lastTime = 0;
@@ -229,231 +293,137 @@
     let linesCleared = 0;
     let history = [];
 
-    function updateScoreUI(){
-      if (scoreEl) scoreEl.textContent = String(score);
-    }
-
-    function saveHistory() {
-      history.push({
-        board: board.map(row => row.map(cell => cell && typeof cell === "object" ? {...cell} : cell)),
-        currentPiece: JSON.parse(JSON.stringify(currentPiece)),
-        nextPiece: JSON.parse(JSON.stringify(nextPiece)),
-        heldPiece: heldPiece ? JSON.parse(JSON.stringify(heldPiece)) : null,
-        score,
-        combo,
-        linesCleared,
-        dropInterval,
-      });
-      if (history.length > 7) history.shift();
-      console.log("[saveHistory] history.length=", history.length);
-    }
-
-    // ==== DUEL ONLY ==== //
-    async function setupDuelSequence() {
-      console.log("[setupDuelSequence] called, duelId=", duelId);
-      if (!duelId) {
-        console.warn("[setupDuelSequence] PAS de duelId, fallback SOLO MODE");
-        piecesSequence = Array.from({length: 1000}, () => Math.floor(Math.random() * 7));
-        piecesUsed = 0;
-        return;
-      }
-      let tries = 0, data = null;
-      while (tries++ < 20) {
-        let res = await sb.from('duels').select('*').eq('id', duelId).single();
-        console.log(`[setupDuelSequence] Try ${tries}, res=`, res);
-        if (res?.data && res.data.pieces_seq) { data = res.data; break; }
-        await new Promise(r=>setTimeout(r,1500));
-      }
-      if (!data) {
-        console.error("[setupDuelSequence] ERREUR: aucune data reçue pour ce duelId=", duelId);
-        throw new Error(t("error.duel_not_found"));
-      }
-      console.log("[setupDuelSequence] data from BDD =", data);
-      piecesSequence = data.pieces_seq.split(',').map(x=>parseInt(x));
-      piecesUsed = 0;
-      console.log("[setupDuelSequence] piecesSequence loaded:", piecesSequence);
-    }
-
-    function getDuelNextPieceId() {
-      if (!piecesSequence) {
-        const rnd = Math.floor(Math.random()*PIECES.length);
-        console.log("[getDuelNextPieceId] Fallback rnd:", rnd);
-        return rnd;
-      }
-      if (piecesUsed >= piecesSequence.length) {
-        const rnd = Math.floor(Math.random()*PIECES.length);
-        console.log("[getDuelNextPieceId] End of sequence, fallback:", rnd);
-        return rnd;
-      }
-      console.log("[getDuelNextPieceId] From seq idx", piecesUsed, "->", piecesSequence[piecesUsed]);
-      return piecesSequence[piecesUsed++];
-    }
-
-    async function handleDuelEnd(myScore) {
-      console.log("[handleDuelEnd] called, myScore=", myScore);
-      let field = (duelPlayerNum === 1) ? "score1" : "score2";
-      await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
-      let tries = 0, otherScore = null;
-      while(tries++ < 40) {
-        let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
-        if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
-        if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
-        await new Promise(r=>setTimeout(r,1500));
-      }
-      let msg = `
-        <div style="font-weight:bold;">${t("duel.finished")}</div>
-        <div>${t("duel.yourscore")} <b>${myScore}</b></div>
-        <div>${t("duel.opponentscore")} <b>${otherScore != null ? otherScore : t("duel.waiting")}</b></div>
-        <br>
-        <button style="padding:0.4em 1em;font-size:0.9em;border-radius:0.5em;
-                       border:none;background:#444;color:#fff;cursor:pointer;"
-                onclick="window.location.href='index.html'">
-          ${t("button.back")}
-        </button>
-      `;
-      let div = document.createElement("div");
-      div.id = "duel-popup";
-      div.style = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;";
-      div.innerHTML = `<div style="background:#23294a;padding:2em 2em 1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;">${msg}</div>`;
-      document.body.appendChild(div);
-    }
-    // ==== FIN DUEL ==== //
-
-
-    function showEndPopup(points) {
-      paused = true;
-      stopSoftDrop();
-      drawBoard();
-      handleDuelEnd(points);
-      console.log("[showEndPopup] FIN de partie !");
-    }
-
-    function rewind() {
-      if (history.length === 0) return;
-      const index = history.length > 8 ? history.length - 8 : 0;
-      const state = history[index];
-      history = history.slice(0, index);
-
-      board = state.board.map(r => r.slice());
-      currentPiece = JSON.parse(JSON.stringify(state.currentPiece));
-      nextPiece = JSON.parse(JSON.stringify(state.nextPiece));
-      heldPiece = state.heldPiece ? JSON.parse(JSON.stringify(state.heldPiece)) : null;
-      score = state.score;
-      combo = state.combo;
-      linesCleared = state.linesCleared;
-      dropInterval = state.dropInterval || 500;
-      paused = true;
-      gameOver = false;
-      drawBoard();
-
-      let countdown = 5;
-      const overlay = document.createElement('div');
-      overlay.id = "countdown-overlay";
-      overlay.style = `
-        position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);
-        color:#fff;display:flex;align-items:center;justify-content:center;font-size:4em;z-index:99998;
-      `;
-      overlay.textContent = countdown;
-      document.body.appendChild(overlay);
-      let tmr = setInterval(()=>{
-        countdown--;
-        overlay.textContent = countdown;
-        if (countdown <= 0) {
-          clearInterval(tmr);
-          overlay.remove();
-          paused = false;
-          gameOver = false;
-          lastTime = performance.now();
-          requestAnimationFrame(update);
-        }
-      },1000);
-      console.log("[rewind] rewind state=", state);
-    }
-
-    function togglePause() {
-      paused = !paused;
-      if (paused) stopSoftDrop();
-      drawBoard();
-      if (!paused && !gameOver) {
-        requestAnimationFrame(update);
-      }
-      console.log("[togglePause]", paused ? "PAUSED" : "UNPAUSED");
-    }
-    global.togglePause = togglePause;
-
-    setTimeout(()=>{
-      let btn = document.getElementById('pause-btn');
-      if(btn) btn.onclick = (e)=>{ e.preventDefault(); togglePause(); };
-    }, 200);
-
     const SPEED_TABLE = [
       800, 720, 630, 550, 470, 380, 300, 220, 130, 100,
        83,  83,  83,  67,  67,  67,  50,   50,  50,  33,
        33,  33,  33,  33,  33,  33,  33,  33,  17
     ];
 
-    function computeScore(lines){
+    function updateScoreUI() { if (scoreEl) scoreEl.textContent = String(score); }
+
+    function saveHistory() {
+      history.push({
+        board: board.map(row => row.map(cell => cell && typeof cell === 'object' ? { ...cell } : cell)),
+        currentPiece: JSON.parse(JSON.stringify(currentPiece)),
+        nextPiece: JSON.parse(JSON.stringify(nextPiece)),
+        heldPiece: heldPiece ? JSON.parse(JSON.stringify(heldPiece)) : null,
+        score, combo, linesCleared, dropInterval,
+        piecesSequence: piecesSequence ? piecesSequence.slice() : null,
+        piecesUsed
+      });
+      if (history.length > 30) history.shift();
+    }
+
+    // ====== DUEL: séquence partagée depuis BDD ======
+    async function setupDuelSequence() {
+      if (!duelId || !sb) {
+        // fallback solo/random si pas d’ID (démo locale)
+        piecesSequence = Array.from({ length: 1000 }, () => Math.floor(Math.random() * 7));
+        piecesUsed = 0;
+        return;
+      }
+      let tries = 0, data = null;
+      while (tries++ < 20) {
+        const res = await sb.from('duels').select('*').eq('id', duelId).single();
+        if (res?.data && res.data.pieces_seq) { data = res.data; break; }
+        await new Promise(r => setTimeout(r, 1500));
+      }
+      if (!data) throw new Error(t('error.duel_not_found'));
+      piecesSequence = data.pieces_seq.split(',').map(x => parseInt(x, 10));
+      piecesUsed = 0;
+    }
+    function getDuelNextPieceId() {
+      if (!piecesSequence) return Math.floor(Math.random() * PIECES.length);
+      if (piecesUsed >= piecesSequence.length) return Math.floor(Math.random() * PIECES.length);
+      return piecesSequence[piecesUsed++];
+    }
+
+    async function handleDuelEnd(myScore) {
+      const field = (duelPlayerNum === 1) ? 'score1' : 'score2';
+      await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
+      let tries = 0, otherScore = null;
+      while (tries++ < 40) {
+        let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
+        if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
+        if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
+        await new Promise(r => setTimeout(r, 1500));
+      }
+      const msg = `
+        <div style="font-weight:bold;">${t('duel.finished')}</div>
+        <div>${t('duel.yourscore')} <b>${myScore}</b></div>
+        <div>${t('duel.opponentscore')} <b>${otherScore != null ? otherScore : t('duel.waiting')}</b></div>
+        <br>
+        <button style="padding:0.4em 1em;font-size:0.9em;border-radius:0.5em;border:none;background:#444;color:#fff;cursor:pointer;"
+                onclick="window.location.href='index.html'">
+          ${t('button.back')}
+        </button>
+      `;
+      const div = document.createElement('div');
+      div.id = 'duel-popup';
+      div.style = 'position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;';
+      div.innerHTML = `<div style="background:#23294a;padding:2em 2em 1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;">${msg}</div>`;
+      document.body.appendChild(div);
+    }
+
+    function showEndPopup(points) {
+      paused = true;
+      stopSoftDrop();
+      safeRedraw();
+      handleDuelEnd(points);
+    }
+
+    // ====== Gameplay ======
+    function computeScore(lines) {
       let pts = 0;
-      switch(lines){
+      switch (lines) {
         case 1: pts = 10; break;
         case 2: pts = 30; break;
         case 3: pts = 50; break;
         case 4: pts = 80; break;
         default: pts = 0;
       }
-      if(combo > 1 && lines > 0) pts += (combo-1)*5;
+      if (combo > 1 && lines > 0) pts += (combo - 1) * 5;
       return pts;
     }
 
-    async function startGame(){
-      console.log("[startGame] called");
+    async function startGame() {
       await setupDuelSequence();
-      console.log("[startGame] setupDuelSequence ok");
       nextPiece = newPiece();
-      console.log("[startGame] nextPiece:", nextPiece);
       reset();
-      console.log("[startGame] after reset: currentPiece=", currentPiece, "nextPiece=", nextPiece, "board=", board);
       saveHistory();
       updateScoreUI();
-      window.startMusicForGame();
+      window.startMusicForGame?.();
       requestAnimationFrame(update);
     }
 
-    function newPiece(){
+    function newPiece() {
       let typeId = getDuelNextPieceId();
-      if (isNaN(typeId) || typeId < 0 || typeId > 6) {
-        console.warn("[newPiece] typeId invalid, fallback to 3", typeId);
-        typeId = 3;
-      }
-      let shape = PIECES[typeId];
-      let letter = LETTERS[typeId];
-      let obj = {
-        shape: shape,
-        letter: letter,
-        x: Math.floor((COLS - shape[0].length)/2),
+      if (Number.isNaN(typeId) || typeId < 0 || typeId > 6) typeId = 3;
+      const shape = PIECES[typeId];
+      const letter = LETTERS[typeId];
+      const obj = {
+        shape,
+        letter,
+        x: Math.floor((COLS - shape[0].length) / 2),
         y: 0
       };
-      if(currentTheme === 'space' || currentTheme === 'vitraux'){
-        let numbers = [1,2,3,4,5,6];
-        for(let i = numbers.length - 1; i > 0; i--) {
+      if (isVariantTheme(currentTheme)) {
+        const numbers = [1,2,3,4,5,6];
+        for (let i = numbers.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
         }
         let idx = 0;
-        obj.variants = shape.map(row => row.map(val => val ? numbers[idx++] : null));
+        obj.variants = shape.map(row => row.map(val => (val ? numbers[idx++] : null)));
       }
-      console.log("[newPiece] created:", obj);
       return obj;
     }
 
-    function collision(p = currentPiece){
-      if (!p) {
-        console.warn("[collision] called with null piece!", p);
-        return false;
-      }
+    function collision(p = currentPiece) {
+      if (!p || !p.shape) return false;
       return p.shape.some((row, dy) =>
         row.some((val, dx) => {
-          if(!val) return false;
+          if (!val) return false;
           const x = p.x + dx;
           const y = p.y + dy;
           return x < 0 || x >= COLS || y >= ROWS || (y >= 0 && board[y][x]);
@@ -461,19 +431,17 @@
       );
     }
 
-    function merge(){
-      console.log("[merge] currentPiece", currentPiece);
+    function merge() {
       currentPiece.shape.forEach((row, dy) =>
         row.forEach((val, dx) => {
-          if(val){
-            const x = currentPiece.x + dx;
-            const y = currentPiece.y + dy;
-            if(y >= 0){
-              if(currentTheme === 'space' || currentTheme === 'vitraux'){
-                board[y][x] = { letter: currentPiece.letter, variant: currentPiece.variants?.[dy]?.[dx] ?? 0 };
-              } else {
-                board[y][x] = currentPiece.letter;
-              }
+          if (!val) return;
+          const x = currentPiece.x + dx;
+          const y = currentPiece.y + dy;
+          if (y >= 0) {
+            if (isVariantTheme(currentTheme)) {
+              board[y][x] = { letter: currentPiece.letter, variant: currentPiece.variants?.[dy]?.[dx] ?? 0 };
+            } else {
+              board[y][x] = currentPiece.letter;
             }
           }
         })
@@ -484,40 +452,38 @@
     function clearLines() {
       let lines = 0;
       board = board.filter(row => {
-        if(row.every(cell => cell !== '')){ lines++; return false; }
+        if (row.every(cell => cell !== '')) { lines++; return false; }
         return true;
       });
-      while(board.length < ROWS) board.unshift(Array(COLS).fill(''));
-      if(lines > 0){
-        if(window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
+      while (board.length < ROWS) board.unshift(Array(COLS).fill(''));
+      if (lines > 0) {
+        if (window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
         combo++;
         linesCleared += lines;
-        let pts = computeScore(lines, combo);
-        score += pts;
+        score += computeScore(lines);
         let level = Math.floor(linesCleared / 7);
         if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
         dropInterval = SPEED_TABLE[level];
         updateScoreUI();
-        console.log("[clearLines] lines:", lines, "score:", score, "level:", level);
       } else {
         combo = 0;
       }
     }
 
-    function move(offset){
-      if (!currentPiece) { console.warn("[move] no currentPiece!"); return; }
+    function move(offset) {
+      if (!currentPiece) return;
       currentPiece.x += offset;
-      if(collision()) currentPiece.x -= offset;
-      console.log("[move] moved piece, offset=", offset, "currentPiece=", currentPiece);
+      if (collision()) currentPiece.x -= offset;
     }
 
     function dropPiece() {
-      if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
-
+      if (!currentPiece) return;
       currentPiece.y++;
-
       if (collision()) {
         currentPiece.y--;
+        stopSoftDrop();
+        mustLiftFingerForNextSoftDrop = true;
+
         merge();
         saveHistory();
         reset();
@@ -527,13 +493,87 @@
           showEndPopup(score);
           gameOver = true;
         }
+      }
+    }
 
-        if (!gameOver && !paused) {
-          requestAnimationFrame(update);
+    function rotatePiece() {
+      if (!currentPiece) return;
+      const shape = currentPiece.shape;
+      let oldVariants = null;
+      if (isVariantTheme(currentTheme)) oldVariants = currentPiece.variants ? JSON.parse(JSON.stringify(currentPiece.variants)) : null;
+
+      currentPiece.shape = shape[0].map((_, i) => shape.map(r => r[i])).reverse();
+      if (isVariantTheme(currentTheme) && oldVariants && oldVariants[0]) {
+        const before = oldVariants;
+        currentPiece.variants = before[0].map((_, i) => before.map(r => r[i])).reverse();
+      }
+
+      if (collision()) {
+        currentPiece.shape = shape;
+        if (isVariantTheme(currentTheme)) currentPiece.variants = oldVariants;
+      }
+    }
+
+    // === HOLD: échange illimité + tentative de placement/kick autour de la même position
+    function tryKickPlace(p, targetX, targetY) {
+      const kicks = [[0,0],[-1,0],[1,0],[0,-1],[-2,0],[2,0],[0,-2]];
+      const bx = p.x, by = p.y;
+      for (const [kx, ky] of kicks) {
+        p.x = targetX + kx; p.y = targetY + ky;
+        if (!collision(p)) return true;
+      }
+      p.x = bx; p.y = by;
+      return false;
+    }
+    function holdPieceSwapStay() {
+      if (!currentPiece) return;
+      const cx = currentPiece.x;
+      const cy = currentPiece.y;
+      const cshape = currentPiece.shape.map(r => r.slice());
+      const cvars  = currentPiece.variants ? currentPiece.variants.map(r => r.slice()) : null;
+      const clet   = currentPiece.letter;
+
+      if (!heldPiece) {
+        heldPiece = JSON.parse(JSON.stringify(currentPiece));
+        currentPiece = JSON.parse(JSON.stringify(nextPiece));
+        nextPiece = newPiece();
+      } else {
+        const tmp = JSON.parse(JSON.stringify(currentPiece));
+        currentPiece = JSON.parse(JSON.stringify(heldPiece));
+        heldPiece = tmp;
+      }
+
+      currentPiece.x = cx;
+      currentPiece.y = cy;
+
+      if (collision(currentPiece)) {
+        if (!tryKickPlace(currentPiece, cx, cy)) {
+          if (heldPiece && heldPiece.letter === clet) {
+            const tmp = heldPiece;
+            heldPiece = currentPiece;
+            currentPiece = tmp;
+          } else {
+            currentPiece.shape = cshape;
+            currentPiece.letter = clet;
+            currentPiece.variants = cvars;
+            currentPiece.x = cx;
+            currentPiece.y = cy;
+          }
+          return;
         }
       }
 
-      console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
+      drawMiniPiece(holdCtx, heldPiece);
+      drawMiniPiece(nextCtx, nextPiece);
+      safeRedraw();
+    }
+
+    function getGhostPiece() {
+      if (!ghostPieceEnabled || !currentPiece || !currentPiece.shape) return null;
+      const ghost = JSON.parse(JSON.stringify(currentPiece));
+      while (!collision(ghost)) { ghost.y++; }
+      ghost.y--;
+      return ghost;
     }
 
     function hardDrop() {
@@ -553,228 +593,178 @@
       if (!gameOver && !paused) requestAnimationFrame(update);
     }
 
-    function rotatePiece(){
-      if (!currentPiece) { console.warn("[rotatePiece] no currentPiece!"); return; }
-      const shape = currentPiece.shape;
-
-      let oldVariants = null;
-      if(currentTheme === 'space' || currentTheme === 'vitraux'){
-        oldVariants = currentPiece.variants ? JSON.parse(JSON.stringify(currentPiece.variants)) : null;
-      }
-
-      currentPiece.shape = shape[0].map((_,i)=>shape.map(r=>r[i])).reverse();
-      if(currentTheme === 'space' || currentTheme === 'vitraux'){
-        const before = currentPiece.variants || [];
-        currentPiece.variants = before[0].map((_,i)=>before.map(r=>r[i])).reverse();
-      }
-
-      if(collision()) {
-        currentPiece.shape = shape;
-        if((currentTheme === 'space' || currentTheme === 'vitraux') && oldVariants){
-          currentPiece.variants = oldVariants;
-        }
-      }
-      console.log("[rotatePiece] currentPiece=", currentPiece);
-    }
-
-    function holdPiece() {
-      if (holdUsed) return;
-      const deep = o => JSON.parse(JSON.stringify(o));
-      if (!heldPiece) {
-        heldPiece = deep(currentPiece);
-        reset();
-      } else {
-        const tmp = deep(currentPiece);
-        currentPiece = deep(heldPiece);
-        heldPiece = tmp;
-      }
-      holdUsed = true;
-      drawMiniPiece(holdCtx, heldPiece);
-      console.log("[holdPiece] heldPiece=", heldPiece, "currentPiece=", currentPiece);
-    }
-
-    function getGhostPiece(){
-      if(!ghostPieceEnabled) return null;
-      let ghost = JSON.parse(JSON.stringify(currentPiece));
-      let ct = 0;
-      while(!collision(ghost) && ct < 30){ ghost.y++; ct++; }
-      ghost.y--;
-      return ghost;
-    }
-
-    function drawBlockCustom(c, x, y, letter, size=BLOCK_SIZE, ghost=false, variant=0){
+    // ====== Rendu ======
+    function drawBlockCustom(c, x, y, letter, size = BLOCK_SIZE, ghost = false, variant = 0) {
       let img = blockImages[letter];
-      const px = x*size, py = y*size;
-      if(ghost){
-        c.globalAlpha = 0.33;
-      }
-      if((currentTheme === 'space' || currentTheme === 'vitraux') && blockImages[currentTheme]) {
+      const px = x * size, py = y * size;
+      if (ghost) c.globalAlpha = 0.33;
+
+      if (isVariantTheme(currentTheme) && blockImages[currentTheme]) {
         let v = variant ?? 0;
-        if (typeof letter === "object" && letter.letter) {
+        if (typeof letter === 'object' && letter.letter) {
           v = letter.variant ?? 0;
           letter = letter.letter;
         }
         const arr = blockImages[currentTheme];
         img = arr[v % arr.length];
       }
-      if(img && img.complete && img.naturalWidth > 0){
+
+      if (img && img.complete && img.naturalWidth > 0) {
         c.drawImage(img, px, py, size, size);
-      }else{
-        if(currentTheme === 'nuit'){
+      } else {
+        if (currentTheme === 'nuit') {
           c.fillStyle = '#ccc';
-          c.fillRect(px, py, size, size);
-        }else if(currentTheme === 'neon'){
+          fillRectThemeSafe(c, px, py, size);
+        } else if (currentTheme === 'neon') {
           const color = global.currentColors?.[letter] || '#fff';
           c.fillStyle = '#111';
-          c.fillRect(px, py, size, size);
+          fillRectThemeSafe(c, px, py, size);
           c.shadowColor = color;
           c.shadowBlur = ghost ? 3 : 15;
           c.strokeStyle = color;
           c.lineWidth = 2;
-          c.strokeRect(px+1, py+1, size-2, size-2);
+          c.strokeRect(px + 1, py + 1, size - 2, size - 2);
           c.shadowBlur = 0;
-        }else if(currentTheme === 'retro'){
+        } else if (currentTheme === 'retro') {
           const color = global.currentColors?.[letter] || '#fff';
           c.fillStyle = color;
-          c.fillRect(px, py, size, size);
+          fillRectThemeSafe(c, px, py, size);
           c.strokeStyle = '#000';
           c.lineWidth = 1;
           c.strokeRect(px, py, size, size);
-        }else{
+        } else {
           const fb = global.currentColors?.[letter] || '#999';
           c.fillStyle = fb;
-          c.fillRect(px, py, size, size);
+          fillRectThemeSafe(c, px, py, size);
           c.strokeStyle = '#333';
           c.strokeRect(px, py, size, size);
         }
       }
-      if(ghost){
-        c.globalAlpha = 1.0;
-      }
+      if (ghost) c.globalAlpha = 1.0;
     }
 
-    function drawBoard(){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      if (!currentPiece || !currentPiece.shape) {
-        console.warn("[drawBoard] Rien à dessiner !", {currentPiece, board});
-        return;
-      }
+    function drawBoard() {
+      clearCanvas(ctx, canvas);
+      const { x: OX, y: OY } = boardOffsets();
+      ctx.save();
+      ctx.translate(OX, OY);
+
       const ghost = getGhostPiece();
-      if(ghost){
-        ghost.shape.forEach((row,dy)=>
-          row.forEach((val,dx)=>{
-            if(val) drawBlockCustom(ctx,ghost.x+dx,ghost.y+dy,ghost.letter,BLOCK_SIZE,true,
-              (currentTheme === 'space' || currentTheme === 'vitraux') ? ghost.variants?.[dy]?.[dx] : 0
+      if (ghost) {
+        ghost.shape.forEach((row, dy) =>
+          row.forEach((val, dx) => {
+            if (val) drawBlockCustom(
+              ctx, ghost.x + dx, ghost.y + dy, ghost.letter, BLOCK_SIZE, true,
+              isVariantTheme(currentTheme) ? ghost.variants?.[dy]?.[dx] : 0
             );
           })
         );
       }
-      board.forEach((row,y)=>
-        row.forEach((cell,x)=>{
-          if(cell) {
-            if(currentTheme === 'space' || currentTheme === 'vitraux'){
-              drawBlockCustom(ctx,x,y,cell.letter||cell, BLOCK_SIZE, false, cell.variant||0);
-            } else {
-              drawBlockCustom(ctx,x,y,cell);
-            }
+
+      board.forEach((row, y) =>
+        row.forEach((cell, x) => {
+          if (!cell) return;
+          if (isVariantTheme(currentTheme)) {
+            drawBlockCustom(ctx, x, y, cell.letter || cell, BLOCK_SIZE, false, cell.variant || 0);
+          } else {
+            drawBlockCustom(ctx, x, y, cell);
           }
         })
       );
-      if(currentPiece && currentPiece.shape){
-        currentPiece.shape.forEach((row,dy)=>
-          row.forEach((val,dx)=>{
-            if(val) drawBlockCustom(ctx,currentPiece.x+dx,currentPiece.y+dy,currentPiece.letter,BLOCK_SIZE,false,
-              (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
+
+      if (currentPiece && currentPiece.shape) {
+        currentPiece.shape.forEach((row, dy) =>
+          row.forEach((val, dx) => {
+            if (!val) return;
+            drawBlockCustom(
+              ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter, BLOCK_SIZE, false,
+              isVariantTheme(currentTheme) ? currentPiece.variants?.[dy]?.[dx] : 0
             );
           })
         );
       }
-      console.log("[drawBoard] OK, currentPiece:", currentPiece, "board:", board);
+
+      ctx.restore();
     }
+    function safeRedraw() { try { drawBoard(); } catch (_) {} }
 
     function drawMiniPiece(c, piece) {
-      c.clearRect(0, 0, c.canvas.width, c.canvas.height);
+      if (!c) return;
+      clearCanvas(c, c.canvas);
       if (!piece) return;
+
+      const cssW = c.canvas.width / DPR;
+      const cssH = c.canvas.height / DPR;
+
       const shape = piece.shape;
-      let minX = 10, minY = 10, maxX = -10, maxY = -10;
-      shape.forEach((row, y) => {
-        row.forEach((val, x) => {
-          if (val) {
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-          }
-        });
-      });
+      let minX = 99, minY = 99, maxX = -99, maxY = -99;
+      shape.forEach((row, y) => row.forEach((val, x) => {
+        if (val) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }));
       const w = maxX - minX + 1;
       const h = maxY - minY + 1;
+
       const PAD = 6;
-      const cellSize = Math.min(
-        (c.canvas.width - 2 * PAD) / w,
-        (c.canvas.height - 2 * PAD) / h
-      );
-      const offsetX = (c.canvas.width - (w * cellSize)) / 2 - minX * cellSize;
-      const offsetY = (c.canvas.height - (h * cellSize)) / 2 - minY * cellSize;
-      shape.forEach((row, y) => {
-        row.forEach((val, x) => {
-          if (val) {
-            c.save();
-            c.translate(offsetX, offsetY);
-            drawBlockCustom(
-              c,
-              x,
-              y,
-              piece.letter,
-              cellSize,
-              false,
-              (currentTheme === 'space' || currentTheme === 'vitraux') ? piece.variants?.[y]?.[x] : 0
-            );
-            c.restore();
-          }
-        });
-      });
+      const cellSize = Math.min((cssW - 2 * PAD) / w, (cssH - 2 * PAD) / h);
+      const offsetX = (cssW - (w * cellSize)) / 2 - minX * cellSize;
+      const offsetY = (cssH - (h * cellSize)) / 2 - minY * cellSize;
+
+      c.save();
+      c.translate(offsetX, offsetY);
+      shape.forEach((row, y) => row.forEach((val, x) => {
+        if (!val) return;
+        drawBlockCustom(
+          c, x, y, piece.letter, cellSize, false,
+          isVariantTheme(currentTheme) ? piece.variants?.[y]?.[x] : 0
+        );
+      }));
+      c.restore();
     }
 
-    function reset(){
+    function reset() {
       currentPiece = nextPiece;
       nextPiece = newPiece();
-      holdUsed = false;
+      holdUsed = false; // (compat)
       drawMiniPiece(nextCtx, nextPiece);
       drawMiniPiece(holdCtx, heldPiece);
-      console.log("[reset] currentPiece=", currentPiece, "nextPiece=", nextPiece);
     }
 
     function update(now) {
-      if (paused || gameOver) {
-        return;
-      }
+      if (paused || gameOver) return;
       if (!lastTime) lastTime = now;
       const delta = now - lastTime;
       if (delta > dropInterval) {
         dropPiece();
         lastTime = now;
       }
-      drawBoard();
+      safeRedraw();
       requestAnimationFrame(update);
     }
 
-    document.addEventListener('DOMContentLoaded', ()=>{
+    document.addEventListener('DOMContentLoaded', () => {
       const btnTheme = document.getElementById('theme-btn');
-      if(btnTheme){
-        btnTheme.addEventListener('click', ()=>{
-          currentThemeIndex = (currentThemeIndex+1)%THEMES.length;
+      if (btnTheme) {
+        btnTheme.addEventListener('click', () => {
+          currentThemeIndex = (currentThemeIndex + 1) % THEMES.length;
           changeTheme(THEMES[currentThemeIndex]);
         });
       }
     });
 
-    // --- SOFT DROP (tactile) — rapide + verrou de geste ---
+    // ====== Contrôles tactiles & clavier ======
+    canvas.style.touchAction = 'none';
+    canvas.style.userSelect = 'none';
+
+    // Soft drop (tactile)
     let softDropTimer = null;
     let softDropActive = false;
     const SOFT_DROP_INTERVAL = 45;
     const HOLD_ACTIVATION_MS = 180;
-
     let mustLiftFingerForNextSoftDrop = false;
 
     function startSoftDrop() {
@@ -793,35 +783,26 @@
       mustLiftFingerForNextSoftDrop = true;
     }
 
-    // --- TOUCH CONTROLS & CLAVIER ---
+    // Gestuelle
     let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
     let holdToDropTimeout = null;
-
-    let gestureMode = 'none';
+    let gestureMode = 'none'; // 'none' | 'horizontal' | 'vertical'
     const HORIZ_THRESHOLD = 20;
     const DEAD_ZONE = 10;
     const VERTICAL_LOCK_EARLY_MS = 140;
 
-    let didHardDrop = false;
+    function isQuickSwipeUp(elapsed, dy)  { return (elapsed < 220) && (dy < -42); }
+    function isQuickSwipeDown(elapsed, dy){ return (elapsed < 220) && (dy > 42); }
 
-    function isQuickSwipeUp(elapsed, dy) {
-      return (elapsed < 220) && (dy < -42);
-    }
-    function isQuickSwipeDown(elapsed, dy) {
-      return (elapsed < 220) && (dy > 42);
-    }
-
-    canvas.addEventListener('touchstart', function(e){
-      if(gameOver) return;
-      if(e.touches.length !== 1) return;
+    canvas.addEventListener('touchstart', (e) => {
+      if (gameOver) return;
+      if (e.touches.length !== 1) return;
       const t = e.touches[0];
-      startX = t.clientX;
-      startY = t.clientY;
+      startX = t.clientX; startY = t.clientY;
       movedX = 0; movedY = 0;
       dragging = true;
       touchStartTime = Date.now();
       gestureMode = 'none';
-      didHardDrop = false;
 
       clearTimeout(holdToDropTimeout);
       holdToDropTimeout = setTimeout(() => {
@@ -830,12 +811,10 @@
           startSoftDrop();
         }
       }, HOLD_ACTIVATION_MS);
-
-      console.log("[touchstart]");
     }, { passive: true });
 
-    canvas.addEventListener('touchmove', function(e){
-      if(!dragging) return;
+    canvas.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
       const t = e.touches[0];
       const now = Date.now();
       const elapsed = now - touchStartTime;
@@ -845,7 +824,7 @@
 
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';
-        if (!softDropActive && isQuickSwipeUp(elapsed, movedY)){
+        if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
           rotatePiece();
           touchStartTime = now;
           startY = t.clientY;
@@ -874,7 +853,7 @@
         startY = t.clientY;
       }
 
-      if (movedY > 24 && !didHardDrop) {
+      if (movedY > 24) {
         if (!softDropActive) startSoftDrop();
         dropPiece();
         startY = t.clientY;
@@ -883,12 +862,9 @@
       if (Math.abs(movedX) > 18 || movedY < -18) {
         clearTimeout(holdToDropTimeout);
       }
-
-      console.log("[touchmove] movedX:", movedX, "movedY:", movedY);
     }, { passive: true });
 
-    canvas.addEventListener('touchend', function(){
-      const wasHard = didHardDrop;
+    canvas.addEventListener('touchend', () => {
       dragging = false;
       clearTimeout(holdToDropTimeout);
 
@@ -899,60 +875,69 @@
         return;
       }
 
-      if (wasHard) {
-        didHardDrop = false;
-        gestureMode = 'none';
-        return;
-      }
-
+      // Tap court => rotation (si pas geste horizontal / pas drop)
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
-      const hasDropped = Math.abs(movedY) > 18;
+      const hasDropped   = Math.abs(movedY) > 18;
       if (gestureMode !== 'horizontal' && isShortPress && !hasDropped && Math.abs(movedX) < 10) {
         rotatePiece();
       }
 
       mustLiftFingerForNextSoftDrop = false;
       gestureMode = 'none';
-
-      console.log("[touchend]");
     }, { passive: true });
 
-    canvas.addEventListener('touchcancel', function(){
+    canvas.addEventListener('touchcancel', () => {
       dragging = false;
       clearTimeout(holdToDropTimeout);
       if (softDropActive) stopSoftDrop();
       mustLiftFingerForNextSoftDrop = false;
       gestureMode = 'none';
-      didHardDrop = false;
     }, { passive: true });
 
     if (holdCanvas) {
-      holdCanvas.addEventListener('touchstart', function(){ holdPiece(); console.log("[holdCanvas touchstart]"); }, { passive: true });
-      holdCanvas.addEventListener('click', function(){ holdPiece(); console.log("[holdCanvas click]"); });
+      let lastHoldTs = 0;
+      const triggerHold = (e) => {
+        e.preventDefault?.();
+        const now = Date.now();
+        if (now - lastHoldTs < 180) return; // anti double déclenchement
+        lastHoldTs = now;
+        holdPieceSwapStay();
+      };
+      holdCanvas.addEventListener('click', triggerHold, { passive: false });
+      holdCanvas.addEventListener('touchstart', triggerHold, { passive: false });
+      holdCanvas.style.cursor = 'pointer';
     }
 
     document.addEventListener('keydown', e => {
-      if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
-      if(e.key==='p' || e.key==='P'){ togglePause(); return; }
-      if(gameOver || paused) return;
-      switch(e.key){
-        case 'ArrowLeft': move(-1); break;
-        case 'ArrowRight': move(1); break;
-        case 'ArrowDown': dropPiece(); break;
-        case 'ArrowUp': rotatePiece(); break;
-        case ' ':
-          e.preventDefault();
-          hardDrop();
-          break;
-        case 'c': case 'C': holdPiece(); break;
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+      if (e.key === 'p' || e.key === 'P') { togglePause(); return; }
+      if (gameOver || paused) return;
+      switch (e.key) {
+        case 'ArrowLeft':  move(-1);    break;
+        case 'ArrowRight': move(1);     break;
+        case 'ArrowDown':  dropPiece(); break;
+        case 'ArrowUp':    rotatePiece(); break;
+        case ' ':          hardDrop(); break;
+        case 'c': case 'C': holdPieceSwapStay(); break;
       }
-      console.log("[keydown]", e.key);
     });
+
+    function togglePause() {
+      paused = !paused;
+      if (paused) stopSoftDrop();
+      safeRedraw();
+      if (!paused && !gameOver) requestAnimationFrame(update);
+    }
+    global.togglePause = togglePause;
+    setTimeout(() => {
+      const btn = document.getElementById('pause-btn');
+      if (btn) btn.onclick = (e) => { e.preventDefault(); togglePause(); };
+    }, 200);
 
     window.addEventListener('blur', () => { if (softDropActive) stopSoftDrop(); });
 
-    // ==== LANCEMENT ====
+    // ==== GO ====
     startGame();
   }
 
