@@ -27,30 +27,6 @@ function normalizeThemeKey(k){
     .replace(/\s+/g,'');
 }
 
-// Helpers cache local pour themes_possedes
-function normalizeThemes(input) {
-  let arr = [];
-  try {
-    if (!input) arr = [];
-    else if (Array.isArray(input)) arr = input;
-    else if (typeof input === "string") arr = JSON.parse(input);
-  } catch { arr = []; }
-
-  const uniq = [...new Set(arr.map(normalizeThemeKey))]
-    .filter(t => ALL_THEMES.includes(t));
-
-  if (!uniq.includes("neon")) uniq.unshift("neon");
-  return uniq; // on retourne un Array (pas un Set) pour compat UI
-}
-function loadThemesLocal() {
-  try { return normalizeThemes(localStorage.getItem("themes_possedes")); }
-  catch { return ["neon"]; }
-}
-function saveThemesLocal(list) {
-  try { localStorage.setItem("themes_possedes", JSON.stringify(normalizeThemes(list))); }
-  catch {}
-}
-
 // Thème courant (local, purement visuel)
 function getCurrentTheme() {
   return localStorage.getItem("themeVBlocks") || "neon";
@@ -202,7 +178,8 @@ async function getAuthUserId() {
 // LECTURES / ÉCRITURES SÉCURISÉES (RPC + direct)
 // =============================
 
-// Lecture profil : RPC get_balances, sinon fallback direct table `users`
+// Lecture profil : RPC get_balances, sinon fallback direct table `users`.
+// + Si la RPC ne renvoie PAS themes_possedes, on complète par un SELECT direct.
 async function getProfileSecure() {
   await bootstrapAuthAndProfile();
 
@@ -211,12 +188,25 @@ async function getProfileSecure() {
     const { data, error } = await sb.rpc('get_balances'); // renvoie 1 ligne
     if (error) throw error;
     const row = (Array.isArray(data) ? data[0] : data) || {};
+
+    // PATCH: si la RPC ne renvoie pas themes_possedes, select direct
+    if (typeof row.themes_possedes === 'undefined') {
+      const uid = await getAuthUserId();
+      if (uid) {
+        const { data: direct, error: e2 } = await sb
+          .from('users')
+          .select('themes_possedes')
+          .or(`id.eq.${uid},auth_id.eq.${uid}`)
+          .maybeSingle();
+        if (!e2 && direct) row.themes_possedes = direct.themes_possedes;
+      }
+    }
     return row;
   } catch (e) {
     console.warn('[getProfileSecure] RPC get_balances KO, fallback direct:', e?.message || e);
   }
 
-  // 2) Fallback direct sur la table users (id OU auth_id) — (sans theme_actif)
+  // 2) Fallback direct sur la table users (id OU auth_id)
   const uid = await getAuthUserId();
   if (!uid) return {};
 
@@ -292,47 +282,65 @@ async function getJetonsSecure() {
 }
 
 // --- THEMES ---
-// getUnlockedThemes = robuste (RPC -> direct -> cache local) + 'neon' garanti
-async function getUnlockedThemes() {
-  await bootstrapAuthAndProfile();
+// Liste “possédés” reste en base pour les déblocages/achats
+async function getUnlockedThemesCloud() {
+  const p = await getProfileSecure(); // lit get_balances (puis fallback direct)
+  let arr = [];
 
-  // 1) Tente le cloud via RPC
-  try {
-    const { data, error } = await sb.rpc('get_balances');
-    if (!error && data) {
-      const row = Array.isArray(data) ? data[0] : data;
-      if (row && row.themes_possedes !== undefined) {
-        const list = normalizeThemes(row.themes_possedes);
-        saveThemesLocal(list);             // on met en cache
-        return list;
-      }
+  const raw = p?.themes_possedes;
+
+  // 1) Déjà un tableau JS -> OK
+  if (Array.isArray(raw)) {
+    arr = raw;
+
+  // 2) JSON string -> parse
+  } else if (typeof raw === 'string' && raw.trim()) {
+    let parsed = null;
+    try {
+      parsed = JSON.parse(raw); // ex: '["retro","neon"]'
+    } catch { /* ignore */ }
+
+    if (Array.isArray(parsed)) {
+      arr = parsed;
+    } else {
+      // 3) Fallback CSV / text[] aplati -> split
+      // enlève { } éventuels (format Postgres array), puis split virgules/espaces
+      const cleaned = raw.replace(/[{}]/g, '');
+      arr = cleaned.split(/[,\s]+/).map(s => s.replace(/^"(.*)"$/, '$1')).filter(Boolean);
     }
-  } catch (_) {}
+  }
 
-  // 2) Fallback direct sur la table
-  try {
-    const uid = await getAuthUserId();
-    if (uid) {
-      const { data, error } = await sb
-        .from('users')
-        .select('themes_possedes')
-        .or(`id.eq.${uid},auth_id.eq.${uid}`)
-        .maybeSingle();
-      if (!error && data) {
-        const list = normalizeThemes(data.themes_possedes);
-        saveThemesLocal(list);
-        return list;
+  // 2bis) Si on a toujours rien, on force un SELECT ciblé 'themes_possedes'
+  if (!arr || arr.length === 0) {
+    try {
+      const uid = await getAuthUserId();
+      if (uid) {
+        const { data: d2, error: e2 } = await sb
+          .from('users')
+          .select('themes_possedes')
+          .or(`id.eq.${uid},auth_id.eq.${uid}`)
+          .maybeSingle();
+        if (!e2 && d2) {
+          const r2 = d2.themes_possedes;
+          if (Array.isArray(r2)) arr = r2;
+          else if (typeof r2 === 'string' && r2.trim()) {
+            try { const p2 = JSON.parse(r2); if (Array.isArray(p2)) arr = p2; } catch {
+              const cleaned2 = r2.replace(/[{}]/g, '');
+              arr = cleaned2.split(/[,\s]+/).map(s => s.replace(/^"(.*)"$/, '$1')).filter(Boolean);
+            }
+          }
+        }
       }
-    }
-  } catch (_) {}
+    } catch {}
+  }
 
-  // 3) Cache local si cloud bloqué
-  const cached = loadThemesLocal();
-  if (cached?.length) return cached;
+  // 3) Normalise + unique
+  const norm = [...new Set((arr || []).map(normalizeThemeKey).filter(Boolean))];
 
-  // 4) Dernier recours
-  saveThemesLocal(["neon"]);
-  return ["neon"];
+  // 4) Sécurité UI : 'neon' toujours utilisable si rien ne remonte
+  if (!norm.includes('neon')) norm.push('neon');
+
+  return norm;
 }
 
 // Achat serveur (inchangé)
@@ -340,8 +348,6 @@ async function setUnlockedThemesCloud(themes) {
   await bootstrapAuthAndProfile();
   const { error } = await sb.rpc('set_themes_secure', { themes });
   if (error) throw error;
-  // on synchronise le cache local pour l'UI immédiate
-  saveThemesLocal(themes);
   return true;
 }
 async function purchaseThemeSecure(themeKey, price) {
@@ -351,12 +357,6 @@ async function purchaseThemeSecure(themeKey, price) {
     price: parseInt(price, 10) || 0
   });
   if (error) throw error;
-
-  // MàJ immédiate du cache local pour l'UI
-  const now = loadThemesLocal();
-  const key = normalizeThemeKey(themeKey);
-  if (!now.includes(key)) now.push(key);
-  saveThemesLocal(now);
   return true;
 }
 
@@ -523,8 +523,8 @@ userData.getVCoins           = getVCoinsSecure;
 userData.addVCoins           = addVCoinsSecure;
 userData.getJetons           = getJetonsSecure;
 userData.addJetons           = addJetonsSecure;
-userData.getUnlockedThemes   = getUnlockedThemes;       // <<=== nouveau robuste
-userData.setUnlockedThemes   = setUnlockedThemesCloud;  // admin/debug
+userData.getUnlockedThemes   = getUnlockedThemesCloud;
+userData.setUnlockedThemes   = setUnlockedThemesCloud; // admin/debug
 userData.purchaseTheme       = purchaseThemeSecure;
 
 userData.getHighScore        = getHighScoreSecure;
@@ -552,6 +552,11 @@ window.setCurrentTheme       = setCurrentTheme;
 window.debugDumpThemes = async function(){
   const prof = await getProfileSecure();
   console.log('[debugDumpThemes] raw themes_possedes =', prof?.themes_possedes);
-  console.log('[debugDumpThemes] normalized local cache =', loadThemesLocal());
+  try {
+    const norm = Array.isArray(prof?.themes_possedes)
+      ? prof.themes_possedes.map(normalizeThemeKey)
+      : [];
+    console.log('[debugDumpThemes] normalized possédés=', norm);
+  } catch {}
   console.log('[debugDumpThemes] local themeVBlocks  =', getCurrentTheme());
 };
