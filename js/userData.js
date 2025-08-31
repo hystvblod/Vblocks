@@ -260,19 +260,34 @@ async function updateThemeActive(themeKey){
   if (!uid) throw new Error('No auth user');
 
   const theme = normalizeThemeKey(themeKey);
-  const { data, error } = await sb
+
+  // 1) tente via auth_id
+  let { data, error } = await sb
     .from('users')
     .update({ theme_actif: theme })
-    .or(`id.eq.${uid},auth_id.eq.${uid}`)
-    .select('id') // permet de vérifier l’affectation d’au moins 1 ligne
-    .limit(1);
+    .eq('auth_id', uid)
+    .select('id')
+    .maybeSingle(); // pas de limit()
 
   if (error) throw error;
-  if (!data || !data.length) throw new Error("Aucune ligne mise à jour (id/auth_id ne match pas).");
 
-  setCurrentTheme(theme); // Cloud -> cache local
+  // 2) si rien n'a été touché, tente via id
+  if (!data) {
+    const res2 = await sb
+      .from('users')
+      .update({ theme_actif: theme })
+      .eq('id', uid)
+      .select('id')
+      .maybeSingle();
+
+    if (res2.error) throw res2.error;
+    if (!res2.data) throw new Error("Aucune ligne mise à jour (id/auth_id ne match pas).");
+  }
+
+  setCurrentTheme(theme); // mise en cache locale
   return true;
 }
+
 
 // optionnel : achat etc. (on laisse comme avant)
 async function setUnlockedThemesCloud(themes) {
