@@ -187,7 +187,7 @@
     // --- i18n safe ---
     function i18nSafe(key, fb){ try{ const v=(window.i18nGet?.(key)); return (!v||v===key)?fb:v }catch{ return fb } }
 
-    // Fallback local sécurisé pour changer le pseudo si updatePseudoSecure n'est pas exposée par userData.js
+    // Fallback local sécurisé pour changer le pseudo si updatePseudoSecure n'est pas exposée
     async function updatePseudoSecureLocal(sb, newPseudo){
       const np = String(newPseudo || '').trim();
       if (np.length < 3) throw new Error('Pseudo trop court.');
@@ -216,7 +216,7 @@
       // ✅ Sync Cloud -> Local (permet au jeu de démarrer/reprendre avec le bon thème)
       await userData.syncThemeFromCloud?.().catch(()=>{});
 
-      // Pseudo (cloud -> local)
+      // Pseudo (cloud -> local) — SANS .limit()
       try {
         const { data: { user } } = await sb.auth.getUser();
         const uid = user?.id || null;
@@ -225,8 +225,8 @@
             .from('users')
             .select('pseudo')
             .or(`id.eq.${uid},auth_id.eq.${uid}`)
-            .limit(1)
-            .single();
+            .maybeSingle();
+
           const pseudo = (!error && data?.pseudo)
             ? data.pseudo
             : (localStorage.getItem("pseudo") || "MonPseudo");

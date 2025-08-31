@@ -261,27 +261,32 @@ async function updateThemeActive(themeKey){
 
   const theme = normalizeThemeKey(themeKey);
 
-  // 1) tente via auth_id
-  let { data, error } = await sb
+  // 1) tente via auth_id — PAS de select/maybeSingle ici (évite limit/order)
+  const { error: err1 } = await sb
     .from('users')
     .update({ theme_actif: theme })
-    .eq('auth_id', uid)
-    .select('id')
-    .maybeSingle(); // pas de limit()
+    .eq('auth_id', uid);
 
-  if (error) throw error;
+  if (err1) throw err1;
 
-  // 2) si rien n'a été touché, tente via id
-  if (!data) {
-    const res2 = await sb
-      .from('users')
-      .update({ theme_actif: theme })
-      .eq('id', uid)
-      .select('id')
-      .maybeSingle();
+  // 2) tente aussi via id (cas où ta ligne n’a pas auth_id)
+  const { error: err2 } = await sb
+    .from('users')
+    .update({ theme_actif: theme })
+    .eq('id', uid);
 
-    if (res2.error) throw res2.error;
-    if (!res2.data) throw new Error("Aucune ligne mise à jour (id/auth_id ne match pas).");
+  if (err2) throw err2;
+
+  // 3) Vérification propre sur la PK
+  const { data: verify, error: verr } = await sb
+    .from('users')
+    .select('theme_actif')
+    .eq('id', uid)
+    .single();
+
+  if (verr) throw verr;
+  if (!verify || normalizeThemeKey(verify.theme_actif) !== theme) {
+    throw new Error("La mise à jour du thème n'a pas été confirmée.");
   }
 
   setCurrentTheme(theme); // mise en cache locale
@@ -362,7 +367,13 @@ async function subscribeThemeRealtime(onThemeChange) {
 
     return sb.channel('theme_actif_for_' + me)
       .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${me}` },
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          // écoute la ligne que ce soit par id OU par auth_id
+          filter: `or=(id.eq.${me},auth_id.eq.${me})`
+        },
         (payload) => {
           const t = normalizeThemeKey(payload?.new?.theme_actif || 'neon');
           setCurrentTheme(t);
@@ -511,8 +522,8 @@ window.getCurrentTheme       = getCurrentTheme;
 window.setCurrentTheme       = setCurrentTheme;
 
 // Nouveaux exports thème
-userData.updateThemeActive   = updateThemeActive;     // setter officiel
-userData.syncThemeFromCloud  = syncThemeFromCloudOnce; // Cloud -> Local au boot
+userData.updateThemeActive   = updateThemeActive;       // setter officiel
+userData.syncThemeFromCloud  = syncThemeFromCloudOnce;  // Cloud -> Local au boot
 userData.subscribeThemeRealtime = subscribeThemeRealtime; // écoute live (optionnel)
 
 // =============================
