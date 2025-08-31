@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const blockImages = {};
     function loadBlockImages(themeName){
       console.log("[loadBlockImages] themeName=", themeName);
-      const themesWithPNG = ['bubble','nature', "vitraux", "luxury", 'space', "angelique", "cyber"];
+      const themesWithPNG = ['bubble', 'nature', 'vitraux', 'luxury', 'space', 'angelique', 'cyber', 'japon', 'arabic', 'grece'];
       if(themeName === 'space' || themeName === 'vitraux') {
         blockImages[themeName] = [];
         let imagesToLoad = 6, imagesLoaded = 0;
