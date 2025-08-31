@@ -10,13 +10,11 @@
 
   <link rel="stylesheet" href="style/main.css">
   <style>
-    /* Scroll autorisé */
     html, body { height:auto; min-height:100%; overflow:auto; }
     body { overscroll-behavior-y:auto; }
 
     .container-boutique { padding-bottom: 80px; }
 
-    /* Grilles: 2 par ligne */
     .achats-list, .themes-list {
       display: grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
@@ -24,7 +22,6 @@
     }
     .themes-list { margin-top: .5rem; }
 
-    /* Cartouches de thèmes (même style que haut) */
     .theme-card.special-cartouche {
       cursor: pointer;
       transition: transform .06s ease, box-shadow .2s ease;
@@ -35,10 +32,8 @@
     }
     .theme-card.special-cartouche:hover { transform: translateY(-1px); }
 
-    /* Icône/image dans cartouche — MASQUÉ pour les thèmes */
     .theme-card .theme-ico{ display: none !important; }
 
-    /* Texte en BLANC pour les thèmes */
     .theme-card .theme-label,
     .theme-card .prix-label { color: #fff !important; }
 
@@ -47,24 +42,19 @@
     .theme-card.unlocked { opacity: 1; }
     .theme-card.locked   { opacity: .95; }
 
-    /* Prix en blanc pour toutes les cartouches d'achats (hors thèmes) */
     .achats-list .prix-label { color:#fff; font-weight:700; }
 
-    /* ===== AJOUTS demandés ===== */
     .themes-list .theme-card .theme-label{
       font-size: clamp(1.06rem, 1.7vw, 1.32rem);
       line-height: 1.2;
     }
-    /* Griser visuellement un thème possédé */
     .theme-card.unlocked{
       filter: grayscale(35%) brightness(.92);
     }
-    /* Masquer le prix si déjà possédé */
     .theme-card.unlocked .prix-label{
       display: none !important;
     }
 
-    /* Modal */
     .modal-backdrop {
       position: fixed; inset: 0;
       background: rgba(0,0,0,.58);
@@ -161,18 +151,24 @@
   </div>
 
 <script>
-/* ===== Helpers i18n ===== */
 function t(key) { return window.i18nGet ? window.i18nGet(key) : key; }
 
-/* ===== Normalisation de clés (AJOUT) ===== */
+/* --- normalisation clés --- */
 function normalizeThemeKey(k){
   return String(k || '')
     .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // supprime accents
-    .replace(/\s+/g,''); // supprime espaces
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,'');
+}
+/* accepte string ou objet {theme_key}/{key}/{name} */
+function toKeyLike(x){
+  if (typeof x === 'string') return normalizeThemeKey(x);
+  if (x && typeof x === 'object') {
+    return normalizeThemeKey(x.theme_key || x.key || x.name || '');
+  }
+  return '';
 }
 
-/* ===== Données ===== */
 const THEMES = [
   { key: "neon",   name: "Neon"   },
   { key: "bubble", name: "Bubble" },
@@ -189,7 +185,6 @@ const THEMES = [
   { key: "japon", name: "Japon" }
 ];
 
-/* Cartouches € / pub */
 const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.points3000",  productId:"points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow', prix:null, amount:3000 },
   { key: "boutique.cartouche.points10000", productId:"points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple', prix:null, amount:10000 },
@@ -201,10 +196,8 @@ const SPECIAL_CARTOUCHES = [
 ];
 
 const THEME_PRICE = 5000;
-/* Valeur par défaut si non définie ailleurs */
 const REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
 
-/* Couleurs cartouches (thèmes) */
 const THEME_COLOR = {
   neon: 'color-purple',
   bubble: 'color-blue',
@@ -221,7 +214,6 @@ const THEME_COLOR = {
   japon : 'color-green'
 };
 
-/* ========= Store Bridge (fallback web) ========= */
 async function getStoreProducts(productIds){
   if (window.store && Array.isArray(store.products) && store.products.length) {
     const out = {};
@@ -244,7 +236,6 @@ async function getStoreProducts(productIds){
   }, {});
 }
 
-/* ===== Rendus ===== */
 async function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
 
@@ -271,9 +262,22 @@ async function renderAchats() {
 async function renderThemes() {
   await renderAchats();
 
-  // thèmes possédés (cloud via userData.js → getUnlockedThemes) + NORMALISATION
-  const unlockedRaw = await (window.userData?.getUnlockedThemes?.() || []);
-  const unlocked = unlockedRaw.map(normalizeThemeKey);
+  /* >>> AUTH/PROFILE avant lecture Supabase <<< */
+  if (typeof window.bootstrapAuthAndProfile === 'function') {
+    try { await window.bootstrapAuthAndProfile(); } catch(_) {}
+  }
+
+  /* lecture des thèmes possédés + robustification */
+  let unlockedRaw = [];
+  try {
+    unlockedRaw = await (window.userData?.getUnlockedThemes?.() || []);
+  } catch(e) {
+    console.warn('getUnlockedThemes error:', e);
+  }
+  const unlocked = Array.isArray(unlockedRaw) ? unlockedRaw.map(toKeyLike) : [];
+
+  /* DEBUG console si besoin */
+  console.log('[Boutique] unlockedRaw=', unlockedRaw, '→ normalized=', unlocked);
 
   const $themesList = document.getElementById('themes-list');
 
@@ -294,14 +298,12 @@ async function renderThemes() {
   setupBoutiqueAchats();
   setupPubCartouches();
 
-  // Ouvrir popup
   $themesList.querySelectorAll('.theme-card').forEach(card => {
     const open = () => openThemeModal(card.dataset.theme);
     card.addEventListener('click', open);
     card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
   });
 
-  // Soldes
   const coins = await window.userData?.getVCoins?.();
   const $soldeCoins = document.querySelector('.vcoins-solde');
   if ($soldeCoins) $soldeCoins.textContent = (typeof coins === "number" ? coins : "--");
@@ -311,7 +313,6 @@ async function renderThemes() {
   if ($soldeJetons) $soldeJetons.textContent = (typeof jetons === "number" ? jetons : "--");
 }
 
-/* Pub (récompenses) — on ne cible que la liste achats */
 function setupPubCartouches() {
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
@@ -348,7 +349,6 @@ function setupPubCartouches() {
   });
 }
 
-/* Achats € — on ne cible que la liste achats */
 function setupBoutiqueAchats() {
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
@@ -389,7 +389,6 @@ function setupBoutiqueAchats() {
   });
 }
 
-/* ===== Popup thème ===== */
 const $backdrop = document.getElementById('themeModalBackdrop');
 const $title    = document.getElementById('themeModalTitle');
 const $img      = document.getElementById('themeModalImage');
@@ -402,7 +401,6 @@ function openThemeModal(themeKey) {
   const base = t("boutique.modal.titre");
   $title.textContent = (theSpecific !== specificKey ? theSpecific : `${base} ${themeKey}`);
 
-  // Image avec fallback PNG
   const webp = `assets/modes/${themeKey}.webp`;
   const png  = `assets/modes/${themeKey}.png`;
   $img.src = webp;
@@ -411,7 +409,6 @@ function openThemeModal(themeKey) {
 
   renderModalActions(themeKey);
 
-  // ouvrir
   $backdrop.style.display = 'flex';
   $backdrop.removeAttribute('aria-hidden');
   $backdrop.removeAttribute('inert');
@@ -431,9 +428,12 @@ function closeThemeModal() {
 
 async function renderModalActions(themeKey) {
   $actions.innerHTML = '';
-  // NORMALISATION ici aussi
-  const unlockedRaw = await (window.userData?.getUnlockedThemes?.() || []);
-  const unlocked = unlockedRaw.map(normalizeThemeKey);
+  if (typeof window.bootstrapAuthAndProfile === 'function') {
+    try { await window.bootstrapAuthAndProfile(); } catch(_) {}
+  }
+  let unlockedRaw = [];
+  try { unlockedRaw = await (window.userData?.getUnlockedThemes?.() || []); } catch(_) {}
+  const unlocked = Array.isArray(unlockedRaw) ? unlockedRaw.map(toKeyLike) : [];
   const isUnlocked = unlocked.includes(normalizeThemeKey(themeKey));
 
   if (isUnlocked) {
@@ -453,7 +453,7 @@ async function renderModalActions(themeKey) {
         const ok = await window.userData?.purchaseTheme?.(themeKey, THEME_PRICE);
         if (!ok) return;
 
-        await renderThemes();   // met à jour la grille (→ carte grisée + prix masqué)
+        await renderThemes();
         closeThemeModal();
         if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
       } catch (e) {
@@ -473,7 +473,6 @@ async function renderModalActions(themeKey) {
   $actions.appendChild(closeBtn);
 }
 
-/* ===== Init ===== */
 $close?.addEventListener('click', closeThemeModal);
 $backdrop.addEventListener('click', (e) => { if (e.target === $backdrop) closeThemeModal(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeThemeModal(); });
@@ -483,7 +482,7 @@ function ready(fn) {
   else setTimeout(fn, 0);
 }
 ready(async () => {
-  await renderThemes();           // => renderAchats() inclus
+  await renderThemes();
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
   if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
 });
