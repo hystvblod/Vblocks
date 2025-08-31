@@ -468,7 +468,7 @@ body[data-theme="arabic"] {
   --panel-text: #5a3e1b;
 
   /* Hold / Next (mini canvas) */
-  --canvas-panel-bg: rgba(255, 248, 220, 0.72);
+  --canvas-panel-bg: rgba(255, 248, 220, 0.60);
   --canvas-panel-border: #b8860b;
   --canvas-panel-shadow: rgba(184,134,11,0.25);
 
@@ -513,7 +513,7 @@ body[data-theme="grece"] {
   --panel-text: #0d2a5b;
 
   /* Hold / Next */
-  --canvas-panel-bg: rgba(245, 248, 255, 0.72);
+  --canvas-panel-bg: rgba(245, 248, 255, 0.60);
   --canvas-panel-border: #1f5fbf;
   --canvas-panel-shadow: rgba(31,95,191,0.2);
 
@@ -558,7 +558,7 @@ body[data-theme="japon"] {
   --panel-text: #6a0f2b;
 
   /* Hold / Next */
-  --canvas-panel-bg: rgba(255, 241, 243, 0.72);
+  --canvas-panel-bg: rgba(255, 241, 243, 0.60);
   --canvas-panel-border: #c2185b;
   --canvas-panel-shadow: rgba(194,24,91,0.22);
 
