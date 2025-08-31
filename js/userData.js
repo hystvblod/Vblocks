@@ -45,7 +45,7 @@ function getLegacyLocalUserId() {
   return localStorage.getItem('user_id') || null;
 }
 
-// Pseudo local (cache UI, on passe ensuite par RPC sécurisée pour écrire)
+// Pseudo local
 function getPseudoLocal() {
   let pseudo = localStorage.getItem('pseudo');
   if (!pseudo) {
@@ -58,7 +58,7 @@ function setPseudoLocal(pseudo) {
   localStorage.setItem('pseudo', pseudo);
 }
 
-// Langue — alignée sur i18n.js (mêmes clés)
+// Langue
 function normalizeLangForCloud(code) {
   if (!code) return null;
   const c = String(code).toUpperCase();
@@ -101,7 +101,6 @@ async function ensureAuth() {
   try {
     const { data: { session }, error } = await sb.auth.getSession();
     if (error) console.warn('[auth.getSession] warn:', error?.message);
-
     if (!session) {
       const { error: errAnon } = await sb.auth.signInAnonymously();
       if (errAnon) throw errAnon;
@@ -121,11 +120,8 @@ async function linkLegacyIfNeeded() {
   if (already === '1') return;
 
   try {
-    // lie auth.uid() -> users.auth_id = me pour l'ancienne ligne id = legacy
     const { error } = await sb.rpc('link_auth_to_legacy', { legacy_id: legacy });
-    if (!error) {
-      localStorage.setItem('legacy_linked', '1');
-    }
+    if (!error) localStorage.setItem('legacy_linked', '1');
   } catch (e) {
     console.warn('[linkLegacyIfNeeded] non bloquant:', e?.message || e);
   }
@@ -136,7 +132,6 @@ async function ensureUserRow() {
   try {
     const lang = getLang();
     const pseudoFallback = getPseudoLocal();
-    // crée le profil si inexistant (id = auth.uid() OU déjà mappé via auth_id)
     await sb.rpc('ensure_user', { default_lang: lang, default_pseudo: pseudoFallback });
   } catch (e) {
     console.warn('[ensureUserRow] non bloquant:', e?.message || e);
@@ -170,22 +165,20 @@ async function getProfileSecure() {
   try {
     const { data, error } = await sb.rpc('get_balances'); // renvoie 1 ligne
     if (error) throw error;
-
     const row = (Array.isArray(data) ? data[0] : data) || {};
-    // NE PAS réécrire themes_possedes ici : on renvoie tel quel
     return row;
   } catch (e) {
     console.warn('[getProfileSecure] RPC get_balances KO, fallback direct:', e?.message || e);
   }
 
-  // 2) Fallback direct sur la table users (id OU auth_id)
+  // 2) Fallback direct sur la table users (id OU auth_id) — inclut theme_actif
   const uid = await getAuthUserId();
   if (!uid) return {};
 
   try {
     const { data, error } = await sb
       .from('users')
-      .select('id, auth_id, pseudo, lang, vcoins, jetons, highscore, lastscore, themes_possedes')
+      .select('id, auth_id, pseudo, lang, vcoins, jetons, highscore, lastscore, themes_possedes, theme_actif')
       .or(`id.eq.${uid},auth_id.eq.${uid}`)
       .maybeSingle();
 
@@ -207,7 +200,7 @@ async function updatePseudoSecure(newPseudo) {
   if (np.length < 3) throw new Error('Pseudo trop court.');
   const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
   if (error) throw error;
-  setPseudoLocal(np); // garde le cache visuel en phase
+  setPseudoLocal(np);
   return true;
 }
 
@@ -220,7 +213,6 @@ async function updateLangDirect(langCode) {
   const uid = await getAuthUserId();
   if (!uid) throw new Error('No auth user');
 
-  // Met à jour la ligne où id==uid OU auth_id==uid (migration legacy)
   const { error } = await sb
     .from('users')
     .update({ lang: normalized })
@@ -258,11 +250,32 @@ async function getJetonsSecure() {
 async function getUnlockedThemesCloud() {
   const p = await getProfileSecure();
   const arr = Array.isArray(p?.themes_possedes) ? p.themes_possedes : [];
-  // normalisation locale (tolère accents/espaces/majuscules)
   return arr.map(normalizeThemeKey);
 }
+
+// ✅ setter officiel : met à jour la colonne users.theme_actif ET garde le localStorage en phase
+async function updateThemeActive(themeKey){
+  await bootstrapAuthAndProfile();
+  const uid = await getAuthUserId();
+  if (!uid) throw new Error('No auth user');
+
+  const theme = normalizeThemeKey(themeKey);
+  const { data, error } = await sb
+    .from('users')
+    .update({ theme_actif: theme })
+    .or(`id.eq.${uid},auth_id.eq.${uid}`)
+    .select('id') // permet de vérifier l’affectation d’au moins 1 ligne
+    .limit(1);
+
+  if (error) throw error;
+  if (!data || !data.length) throw new Error("Aucune ligne mise à jour (id/auth_id ne match pas).");
+
+  setCurrentTheme(theme); // Cloud -> cache local
+  return true;
+}
+
+// optionnel : achat etc. (on laisse comme avant)
 async function setUnlockedThemesCloud(themes) {
-  // setter admin/debug via RPC sécurisée (si exposée)
   await bootstrapAuthAndProfile();
   const { error } = await sb.rpc('set_themes_secure', { themes });
   if (error) throw error;
@@ -305,9 +318,47 @@ function updateScoreIfHigher(newScore) {
   const current = getLocalHighScore();
   if (newScore > current) {
     setLocalHighScore(newScore);
-    // on ne bloque pas sur l’async
     setHighScoreSecure(newScore).catch(() => {});
   }
+}
+
+// =============================
+// SYNC THÈME (Cloud -> Local) + Realtime (live change)
+// =============================
+async function syncThemeFromCloudOnce() {
+  try {
+    await bootstrapAuthAndProfile();
+    const prof = await getProfileSecure();
+    const t = normalizeThemeKey(prof?.theme_actif || 'neon');
+    setCurrentTheme(t);
+    document.documentElement.setAttribute('data-theme', t);
+    const link = document.getElementById('theme-style');
+    if (link) link.href = `themes/${t}.css`;
+  } catch(e) {
+    // silencieux
+  }
+}
+
+async function subscribeThemeRealtime(onThemeChange) {
+  try {
+    await bootstrapAuthAndProfile();
+    const me = await getAuthUserId();
+    if (!me) return;
+
+    return sb.channel('theme_actif_for_' + me)
+      .on('postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${me}` },
+        (payload) => {
+          const t = normalizeThemeKey(payload?.new?.theme_actif || 'neon');
+          setCurrentTheme(t);
+          document.documentElement.setAttribute('data-theme', t);
+          const link = document.getElementById('theme-style');
+          if (link) link.href = `themes/${t}.css`;
+          try { onThemeChange && onThemeChange(t); } catch {}
+        }
+      )
+      .subscribe();
+  } catch {}
 }
 
 // =============================
@@ -374,8 +425,7 @@ async function checkConcoursStatus() {
   } catch {}
 }
 
-// Popups ciblées (table messages_popup.userid = auth.uid())
-// + marquage "vue"
+// Popups ciblées
 async function checkAndShowPopupOnce() {
   try {
     await bootstrapAuthAndProfile();
@@ -392,7 +442,7 @@ async function checkAndShowPopupOnce() {
 
     const msg = data[0];
     if (!msg.vue) {
-      alert(msg.message); // remplace par ta modale custom si besoin
+      alert(msg.message);
       await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
     }
   } catch {}
@@ -435,7 +485,6 @@ userData.setHighScore        = setHighScoreSecure;
 userData.setLastScore        = setLastScoreSecure;
 userData.updateScoreIfHigher = updateScoreIfHigher;
 
-// ⬇️ Export de la mise à jour directe de la langue
 userData.updateLangDirect    = updateLangDirect;
 
 window.updatePseudoUI        = updatePseudoUI;
@@ -446,11 +495,17 @@ window.bootstrapAuthAndProfile = bootstrapAuthAndProfile;
 window.getCurrentTheme       = getCurrentTheme;
 window.setCurrentTheme       = setCurrentTheme;
 
+// Nouveaux exports thème
+userData.updateThemeActive   = updateThemeActive;     // setter officiel
+userData.syncThemeFromCloud  = syncThemeFromCloudOnce; // Cloud -> Local au boot
+userData.subscribeThemeRealtime = subscribeThemeRealtime; // écoute live (optionnel)
+
 // =============================
-// DEBUG (facultatif) : aide à vérifier la lecture DB
+// DEBUG
 // =============================
 window.debugDumpThemes = async function(){
   const prof = await getProfileSecure();
   console.log('[debugDumpThemes] raw themes_possedes =', prof?.themes_possedes);
-  console.log('[debugDumpThemes] normalized        =', (prof?.themes_possedes || []).map(normalizeThemeKey));
+  console.log('[debugDumpThemes] theme_actif        =', prof?.theme_actif);
+  console.log('[debugDumpThemes] normalized possédés=', (prof?.themes_possedes || []).map(normalizeThemeKey));
 };

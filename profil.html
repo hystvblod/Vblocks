@@ -191,17 +191,13 @@
     async function updatePseudoSecureLocal(sb, newPseudo){
       const np = String(newPseudo || '').trim();
       if (np.length < 3) throw new Error('Pseudo trop court.');
-
-      // Session + ensure_user (tolérant)
       try {
         const { data: { session } } = await sb.auth.getSession();
         if (!session) await sb.auth.signInAnonymously();
         await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
       } catch (e) {}
-
       const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
       if (error) throw error;
-
       localStorage.setItem('pseudo', np);
       return true;
     }
@@ -210,45 +206,20 @@
     window.addEventListener("DOMContentLoaded", async () => {
       const sb = window.sb;
 
-      // Session + ensure_user
+      // Auth + ensure_user
       try {
         const { data: { session } } = await sb.auth.getSession();
         if (!session) await sb.auth.signInAnonymously();
         await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
       } catch (e) {}
 
-      // UID
-      let uid = null;
-      try {
-        const { data: { user } } = await sb.auth.getUser();
-        uid = user?.id || null;
-      } catch { uid = null; }
-
-      // Thème actif (cloud -> local)
-      try {
-        if (uid) {
-          const { data, error } = await sb
-            .from('users')
-            .select('theme_actif')
-            .or(`id.eq.${uid},auth_id.eq.${uid}`)
-            .limit(1)
-            .single();
-          const theme = (!error && data?.theme_actif)
-            ? data.theme_actif
-            : (localStorage.getItem('themeVBlocks') || 'neon');
-          localStorage.setItem('themeVBlocks', theme);
-          document.body.setAttribute('data-theme', theme);
-        } else {
-          const theme = localStorage.getItem('themeVBlocks') || 'neon';
-          document.body.setAttribute('data-theme', theme);
-        }
-      } catch {
-        const theme = localStorage.getItem('themeVBlocks') || 'neon';
-        document.body.setAttribute('data-theme', theme);
-      }
+      // ✅ Sync Cloud -> Local (permet au jeu de démarrer/reprendre avec le bon thème)
+      await userData.syncThemeFromCloud?.().catch(()=>{});
 
       // Pseudo (cloud -> local)
       try {
+        const { data: { user } } = await sb.auth.getUser();
+        const uid = user?.id || null;
         if (uid) {
           const { data, error } = await sb
             .from('users')
@@ -278,7 +249,7 @@
       if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
     });
 
-    // --- Popup pseudo (corrigée : utilise updatePseudoSecure si dispo, sinon fallback local) ---
+    // --- Popup pseudo (utilise updatePseudoSecure si dispo, sinon fallback local) ---
     function setupPseudoPopup(sb) {
       const popup = document.getElementById('popupPseudo');
       const btnOpen = document.getElementById('btnChangePseudo');
@@ -301,9 +272,9 @@
         if (v.length > 20) { err.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
         try {
           if (typeof window.updatePseudoSecure === 'function') {
-            await window.updatePseudoSecure(v); // via userData.js (recommandé)
+            await window.updatePseudoSecure(v);
           } else {
-            await updatePseudoSecureLocal(sb, v); // fallback
+            await updatePseudoSecureLocal(sb, v);
           }
           document.getElementById("profilPseudo").textContent = v;
           localStorage.setItem("pseudo", v);
@@ -315,7 +286,7 @@
       };
     }
 
-    // --- Popup thèmes (lit themes_possedes cloud/local, écrit theme_actif) ---
+    // --- Popup thèmes (lit themes_possedes cloud/local, écrit theme_actif via userData) ---
     async function openThemePopup(sb) {
       const popup = document.getElementById('theme-selector-popup');
       const themeList = document.getElementById('themeListVB');
@@ -323,34 +294,16 @@
       const FALLBACK_THEMES = ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber","grece","japon","arabic"];
       const ALL_THEMES = (typeof window.getAllThemes === 'function') ? window.getAllThemes() : FALLBACK_THEMES;
 
-      // UID
-      let uid = null;
-      try {
-        const { data: { user } } = await sb.auth.getUser();
-        uid = user?.id || null;
-      } catch { uid = null; }
-
       // Lire les thèmes possédés
       let unlocked = ["neon", "retro"];
       try {
-        if (uid) {
-          const { data, error } = await sb
-            .from('users')
-            .select('themes_possedes')
-            .or(`id.eq.${uid},auth_id.eq.${uid}`)
-            .limit(1)
-            .single();
-          if (!error && data && Array.isArray(data.themes_possedes)) {
-            unlocked = data.themes_possedes;
-            localStorage.setItem("unlockedVBlocksThemes", JSON.stringify(unlocked));
-          } else {
-            const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
-            if (Array.isArray(lc) && lc.length) unlocked = lc;
-          }
-        } else {
+        const owned = await userData.getUnlockedThemes?.();
+        if (Array.isArray(owned) && owned.length) unlocked = owned;
+        else {
           const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
           if (Array.isArray(lc) && lc.length) unlocked = lc;
         }
+        localStorage.setItem('unlockedVBlocksThemes', JSON.stringify(unlocked));
       } catch {
         const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
         if (Array.isArray(lc) && lc.length) unlocked = lc;
@@ -365,7 +318,7 @@
 
       popup.classList.add("active");
 
-      // Sélection courante (depuis local)
+      // Sélection courante
       let selectedTheme = localStorage.getItem("themeVBlocks") || "neon";
       document.querySelectorAll('.theme-choice-vb').forEach(btn => {
         if(btn.dataset.theme === selectedTheme) btn.classList.add('active');
@@ -384,19 +337,24 @@
       document.getElementById('btnValiderTheme').onclick = async () => {
         if (!selectedTheme) return;
 
-        // local
-        localStorage.setItem("themeVBlocks", selectedTheme);
-        document.body.setAttribute('data-theme', selectedTheme);
-
-        // cloud
         try {
-          if (uid) {
-            await sb
-              .from('users')
-              .update({ theme_actif: selectedTheme })
-              .or(`id.eq.${uid},auth_id.eq.${uid}`);
-          }
-        } catch(e) {}
+          // ✅ Cloud + local (et vérifie qu'une ligne a bien été touchée)
+          await userData.updateThemeActive(selectedTheme);
+
+          // ✅ Applique tout de suite au profil
+          document.body.setAttribute('data-theme', selectedTheme);
+
+          // ✅ Purge des autosaves pour que la reprise n'impose pas l'ancien thème
+          try {
+            Object.keys(localStorage).forEach(k => { if (k.startsWith('vblocks:autosave:')) localStorage.removeItem(k); });
+          } catch(_){}
+
+          // ✅ notifie le jeu si présent dans cette page
+          window.dispatchEvent(new CustomEvent('vblocks-theme-changed', { detail: { theme: selectedTheme }}));
+        } catch(e) {
+          alert("Impossible de mettre à jour le thème : " + (e?.message || 'Erreur'));
+          return;
+        }
 
         popup.classList.remove('active');
       };
