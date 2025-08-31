@@ -269,13 +269,44 @@ async function getJetonsSecure() {
 
 // --- THEMES ---
 // Liste “possédés” reste en base pour les déblocages/achats
+// --- THEMES ---
+// Liste “possédés” reste en base pour les déblocages/achats
 async function getUnlockedThemesCloud() {
-  const p = await getProfileSecure();            // lit get_balances (puis fallback direct)
-  const arr = Array.isArray(p?.themes_possedes) ? p.themes_possedes : [];
-  // normalise + unique + filtre valeurs vides
-  const norm = [...new Set(arr.map(normalizeThemeKey).filter(Boolean))];
+  const p = await getProfileSecure(); // lit get_balances (puis fallback direct)
+  let arr = [];
+
+  const raw = p?.themes_possedes;
+
+  // 1) Déjà un tableau JS -> OK
+  if (Array.isArray(raw)) {
+    arr = raw;
+
+  // 2) JSON string -> parse
+  } else if (typeof raw === 'string' && raw.trim()) {
+    let parsed = null;
+    try {
+      parsed = JSON.parse(raw); // ex: '["retro","neon"]'
+    } catch { /* ignore */ }
+
+    if (Array.isArray(parsed)) {
+      arr = parsed;
+    } else {
+      // 3) Fallback CSV / text[] aplati -> split
+      // enlève { } éventuels (format Postgres array), puis split virgules/espaces
+      const cleaned = raw.replace(/[{}]/g, '');
+      arr = cleaned.split(/[,\s]+/).map(s => s.replace(/^"(.*)"$/, '$1')).filter(Boolean);
+    }
+  }
+
+  // 4) Normalise + unique
+  const norm = [...new Set((arr || []).map(normalizeThemeKey).filter(Boolean))];
+
+  // 5) Sécurité UI : 'neon' toujours utilisable si rien ne remonte
+  if (!norm.includes('neon')) norm.push('neon');
+
   return norm;
 }
+
 
 
 // Achat serveur (inchangé)
