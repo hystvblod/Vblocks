@@ -249,6 +249,63 @@
       if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
     });
 
+    // util normalisation (même algo que userData.js)
+    function normalizeThemeKey(k){
+      return String(k || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'');
+    }
+
+    // ---- LECTURE DIRECTE DB : users.themes_possedes (sans RPC) ----
+    async function fetchThemesDirectFromDB() {
+      const sb = window.sb;
+      // 1) être loggé anonyme
+      try {
+        const { data: { session } } = await sb.auth.getSession();
+        if (!session) await sb.auth.signInAnonymously();
+      } catch {}
+
+      // 2) id auth
+      let uid = null;
+      try {
+        const { data: { user } } = await sb.auth.getUser();
+        uid = user?.id || null;
+      } catch {}
+      if (!uid) return [];
+
+      // 3) SELECT direct sur la table users
+      try {
+        const { data, error } = await sb
+          .from('users')
+          .select('themes_possedes')
+          .or(`id.eq.${uid},auth_id.eq.${uid}`)
+          .maybeSingle();
+
+        if (error || !data) return [];
+
+        const raw = data.themes_possedes;
+        let arr = [];
+
+        if (Array.isArray(raw)) {
+          arr = raw;
+        } else if (typeof raw === 'string' && raw.trim()) {
+          try {
+            arr = JSON.parse(raw); // cas jsonb renvoyé en string
+          } catch {
+            // cas text[] → on nettoie {…} et on split
+            const cleaned = raw.replace(/[{}]/g, '');
+            arr = cleaned.split(/[,\s]+/)
+              .map(s => s.replace(/^"(.*)"$/, '$1'))
+              .filter(Boolean);
+          }
+        }
+
+        // normalise (minuscules, sans accents) + unicité
+        const norm = [...new Set(arr.map(normalizeThemeKey).filter(Boolean))];
+        return norm;
+      } catch {
+        return [];
+      }
+    }
+
     // --- Popup pseudo (utilise userData.updatePseudoSecure si dispo, sinon fallback) ---
     function setupPseudoPopup(sb) {
       const popup = document.getElementById('popupPseudo');
@@ -286,12 +343,7 @@
       };
     }
 
-    // util normalisation (même algo que userData.js)
-    function normalizeThemeKey(k){
-      return String(k || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'');
-    }
-
-    // --- Popup thèmes : lit UNIQUEMENT la DB et rend en conséquence ---
+    // --- Popup thèmes : LIT UNIQUEMENT LA DB DIRECTE et rend en conséquence ---
     async function openThemePopup() {
       const popup = document.getElementById('theme-selector-popup');
       const themeList = document.getElementById('themeListVB');
@@ -302,17 +354,11 @@
         : ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber","grece","japon","arabic"];
       const ALL_THEMES = RAW_ALL.map(normalizeThemeKey).filter(Boolean);
 
-      // 2) lire la DB (via userData.getUnlockedThemes -> get_balances)
+      // 2) lire DIRECTEMENT la colonne users.themes_possedes
       let unlocked = [];
-      try {
-        const owned = await userData.getUnlockedThemes?.();
-        if (Array.isArray(owned)) unlocked = owned.map(normalizeThemeKey).filter(Boolean);
-      } catch (e) {
-        console.warn('[popup theme] getUnlockedThemes a échoué, on n’invente rien:', e?.message || e);
-        unlocked = [];
-      }
+      unlocked = await fetchThemesDirectFromDB();
 
-      // ✅ Secours : 'neon' toujours jouable (même si DB KO / vide)
+      // sécurité : 'neon' toujours jouable
       if (!unlocked.includes('neon')) unlocked.push('neon');
 
       // 3) rendu (comparaison robuste)
