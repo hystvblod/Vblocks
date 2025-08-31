@@ -213,10 +213,10 @@
         await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
       } catch (e) {}
 
-      // ✅ Applique le thème local au boot
+      // ✅ Applique le thème local au boot (visuel uniquement)
       await userData.syncThemeFromLocal?.().catch(()=>{});
 
-      // Pseudo (cloud -> local) — sans limit()
+      // Pseudo (cloud -> local)
       try {
         const { data: { user } } = await sb.auth.getUser();
         const uid = user?.id || null;
@@ -286,66 +286,67 @@
       };
     }
 
-    // --- Popup thèmes (lit themes_possedes cloud/local, applique localement) ---
+    // util normalisation (même algo que userData.js)
+    function normalizeThemeKey(k){
+      return String(k || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'');
+    }
+
+    // --- Popup thèmes : lit UNIQUEMENT la DB et rend en conséquence ---
     async function openThemePopup() {
       const popup = document.getElementById('theme-selector-popup');
       const themeList = document.getElementById('themeListVB');
 
-      const FALLBACK_THEMES = ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber","grece","japon","arabic"];
-      const ALL_THEMES = (typeof window.getAllThemes === 'function') ? window.getAllThemes() : FALLBACK_THEMES;
+      // 1) liste de référence (normalisée)
+      const RAW_ALL = (typeof window.getAllThemes === 'function')
+        ? window.getAllThemes()
+        : ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber","grece","japon","arabic"];
+      const ALL_THEMES = RAW_ALL.map(normalizeThemeKey).filter(Boolean);
 
-      // Lire les thèmes possédés
-      // Lire les thèmes possédés
-let unlocked = ["neon", "retro"];
-try {
-  const owned = await userData.getUnlockedThemes?.();
-  if (Array.isArray(owned)) {
-    unlocked = owned; // ⚠️ même si [], on respecte la DB
-  } else {
-    const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
-    if (Array.isArray(lc)) unlocked = lc;
-  }
-  // sync cache avec la vérité DB / fallback
-  localStorage.setItem('unlockedVBlocksThemes', JSON.stringify(unlocked));
-} catch {
-  const lc = JSON.parse(localStorage.getItem('unlockedVBlocksThemes') || '[]');
-  if (Array.isArray(lc)) unlocked = lc;
-}
+      // 2) lire la DB (via userData.getUnlockedThemes -> get_balances)
+      let unlocked = [];
+      try {
+        const owned = await userData.getUnlockedThemes?.();
+        if (Array.isArray(owned)) unlocked = owned.map(normalizeThemeKey).filter(Boolean);
+      } catch (e) {
+        console.warn('[popup theme] getUnlockedThemes a échoué, on n’invente rien:', e?.message || e);
+        unlocked = []; // si DB ko, on n’affirme rien
+      }
 
-
-      // UI des thèmes
+      // 3) rendu (comparaison robuste)
+      const ownedSet = new Set(unlocked);
       themeList.innerHTML = ALL_THEMES.map(theme => {
-        const locked = !unlocked.includes(theme);
+        const locked = !ownedSet.has(theme);
         const label = theme.charAt(0).toUpperCase() + theme.slice(1);
-        return `<button class="theme-choice-vb${locked ? ' locked' : ''}" data-theme="${theme}" ${locked ? 'disabled' : ''}>${label}${locked ? ' 🔒' : ''}</button>`;
+        return `<button class="theme-choice-vb${locked ? ' locked' : ''}"
+                        data-theme="${theme}" ${locked ? 'disabled' : ''}>
+                  ${label}${locked ? ' 🔒' : ''}
+                </button>`;
       }).join('');
 
       popup.classList.add("active");
 
-      // Sélection courante
+      // sélection courante
       let selectedTheme = localStorage.getItem("themeVBlocks") || "neon";
+      selectedTheme = normalizeThemeKey(selectedTheme);
       document.querySelectorAll('.theme-choice-vb').forEach(btn => {
-        if(btn.dataset.theme === selectedTheme) btn.classList.add('active');
+        if (normalizeThemeKey(btn.dataset.theme) === selectedTheme) btn.classList.add('active');
       });
 
-      // Choisir un thème (débloqué)
+      // on ne permet le click que sur les débloqués
       document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn => {
         btn.onclick = () => {
           document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
           btn.classList.add('active');
-          selectedTheme = btn.dataset.theme;
+          selectedTheme = normalizeThemeKey(btn.dataset.theme);
         };
       });
 
       // Valider / Annuler
       document.getElementById('btnValiderTheme').onclick = async () => {
         if (!selectedTheme) return;
-
-        // ✅ Application locale instantanée (notifie le jeu + autres onglets)
         try {
           userData.applyLocalTheme(selectedTheme);
-
-          // Purge des autosaves pour éviter qu'un ancien thème soit forcé
+          // purge des autosaves éventuelles
           try {
             Object.keys(localStorage).forEach(k => { if (k.startsWith('vblocks:autosave:')) localStorage.removeItem(k); });
           } catch(_){}
@@ -353,7 +354,6 @@ try {
           alert("Impossible d'appliquer le thème : " + (e?.message || 'Erreur'));
           return;
         }
-
         popup.classList.remove('active');
       };
       document.getElementById('btnCancelTheme').onclick = () => popup.classList.remove('active');

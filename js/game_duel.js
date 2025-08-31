@@ -1,3 +1,4 @@
+// --- FILE: game_duel.js ---
 (function(global){
   'use strict';
 
@@ -27,25 +28,24 @@
     window.musicStarted = false;
     refreshMusicBtn();
   }
-function refreshMusicBtn() {
-  const btn = document.getElementById('music-btn');
-  if (!btn) return;
+  function refreshMusicBtn() {
+    const btn = document.getElementById('music-btn');
+    if (!btn) return;
 
-  const muted = isMusicAlwaysMuted() || (music && music.paused);
-  const icon = muted ? 'volume-x' : 'volume-2';
+    const muted = isMusicAlwaysMuted() || (music && music.paused);
+    const icon = muted ? 'volume-x' : 'volume-2';
 
-  btn.innerHTML = `<img src="assets/icons/${icon}.svg" alt="${muted ? 'Muet' : 'Actif'}" class="music-btn-img">`;
-
+    btn.innerHTML = `<img src="assets/icons/${icon}.svg" alt="${muted ? 'Muet' : 'Actif'}" class="music-btn-img">`;
   }
-window.setMusicAlwaysMuted = function(val) {
-  localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
-  if (val) {
-    pauseMusic();
-  } else {
-    playMusicAuto();   // démarre immédiatement après unmute
-  }
-  refreshMusicBtn();
-};
+  window.setMusicAlwaysMuted = function(val) {
+    localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
+    if (val) {
+      pauseMusic();
+    } else {
+      playMusicAuto();   // démarre immédiatement après unmute
+    }
+    refreshMusicBtn();
+  };
 
   window.startMusicForGame = function() {
     if (!music) return;
@@ -74,28 +74,28 @@ window.setMusicAlwaysMuted = function(val) {
     }, { once: true });
   }
   setTimeout(refreshMusicBtn, 200);
-document.addEventListener('DOMContentLoaded', () => {
-  const btnMusic = document.getElementById('music-btn');
-  if (!btnMusic) return;
+  document.addEventListener('DOMContentLoaded', () => {
+    const btnMusic = document.getElementById('music-btn');
+    if (!btnMusic) return;
 
-  btnMusic.onclick = () => {
-    const currentlyMuted = isMusicAlwaysMuted() || (music && music.paused);
-    const nextMute = !currentlyMuted;
+    btnMusic.onclick = () => {
+      const currentlyMuted = isMusicAlwaysMuted() || (music && music.paused);
+      const nextMute = !currentlyMuted;
 
-    if (typeof window.setMusicAlwaysMuted === 'function') {
-      window.setMusicAlwaysMuted(nextMute); // met aussi à jour localStorage côté jeu
-    } else {
-      localStorage.setItem('alwaysMuteMusic', nextMute ? 'true' : 'false');
-      if (music) {
-        if (nextMute) music.pause();
-        else music.play().catch(()=>{});
+      if (typeof window.setMusicAlwaysMuted === 'function') {
+        window.setMusicAlwaysMuted(nextMute); // met aussi à jour localStorage côté jeu
+      } else {
+        localStorage.setItem('alwaysMuteMusic', nextMute ? 'true' : 'false');
+        if (music) {
+          if (nextMute) music.pause();
+          else music.play().catch(()=>{});
+        }
       }
-    }
-    refreshMusicBtn();
-  };
+      refreshMusicBtn();
+    };
 
-  refreshMusicBtn();
-});
+    refreshMusicBtn();
+  });
 
   // ==== FIN MUSIQUE ====
 
@@ -147,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.width = COLS * BLOCK_SIZE;
     canvas.height = ROWS * BLOCK_SIZE;
 
-    // Désactive gestes système/sélection sur le canvas (évite scroll/zoom/texte)
     canvas.style.touchAction = 'none';
     canvas.style.userSelect  = 'none';
 
@@ -230,7 +229,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let linesCleared = 0;
     let history = [];
 
-    // --- UI SCORE ---
     function updateScoreUI(){
       if (scoreEl) scoreEl.textContent = String(score);
     }
@@ -324,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showEndPopup(points) {
       paused = true;
-      stopSoftDrop(); // coupe le soft drop si actif
+      stopSoftDrop();
       drawBoard();
       handleDuelEnd(points);
       console.log("[showEndPopup] FIN de partie !");
@@ -374,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function togglePause() {
       paused = !paused;
-      if (paused) stopSoftDrop(); // coupe le soft drop quand on met en pause
+      if (paused) stopSoftDrop();
       drawBoard();
       if (!paused && !gameOver) {
         requestAnimationFrame(update);
@@ -416,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
       reset();
       console.log("[startGame] after reset: currentPiece=", currentPiece, "nextPiece=", nextPiece, "board=", board);
       saveHistory();
-      updateScoreUI(); // init affichage score
+      updateScoreUI();
       window.startMusicForGame();
       requestAnimationFrame(update);
     }
@@ -499,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let level = Math.floor(linesCleared / 7);
         if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
         dropInterval = SPEED_TABLE[level];
-        updateScoreUI(); // MAJ LIVE du score
+        updateScoreUI();
         console.log("[clearLines] lines:", lines, "score:", score, "level:", level);
       } else {
         combo = 0;
@@ -516,24 +514,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function dropPiece() {
       if (!currentPiece) { console.warn("[dropPiece] no currentPiece!"); return; }
 
-      // Descend d'une ligne
       currentPiece.y++;
 
-      // Si on heurte le bas ou une brique, on verrouille immédiatement
       if (collision()) {
-        currentPiece.y--;          // revient à la dernière position valide
-        merge();                    // colle la pièce au board
+        currentPiece.y--;
+        merge();
         saveHistory();
-        reset();                    // spawn de la suivante
-        lastTime = performance.now(); // reset du timer
+        reset();
+        lastTime = performance.now();
 
-        // Si la nouvelle pièce est bloquée au spawn → fin
         if (collision()) {
           showEndPopup(score);
           gameOver = true;
         }
 
-        // Relance propre de la boucle si on continue
         if (!gameOver && !paused) {
           requestAnimationFrame(update);
         }
@@ -542,14 +536,12 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log("[dropPiece] called, currentPiece=", currentPiece, "gameOver?", gameOver);
     }
 
-    // === HARD DROP (descente instantanée jusqu'au fantôme) ===
     function hardDrop() {
       if (!currentPiece) return;
       const ghost = getGhostPiece();
       if (!ghost) return;
-      // placer directement au y fantôme
       currentPiece.y = ghost.y;
-      stopSoftDrop(); // au cas où
+      stopSoftDrop();
       merge();
       saveHistory();
       reset();
@@ -561,25 +553,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!gameOver && !paused) requestAnimationFrame(update);
     }
 
-    // === ROTATION corrigée (scope 'oldVariants' sécurisé) ===
     function rotatePiece(){
       if (!currentPiece) { console.warn("[rotatePiece] no currentPiece!"); return; }
       const shape = currentPiece.shape;
 
-      // préparer 'oldVariants' pour rollback
       let oldVariants = null;
       if(currentTheme === 'space' || currentTheme === 'vitraux'){
         oldVariants = currentPiece.variants ? JSON.parse(JSON.stringify(currentPiece.variants)) : null;
       }
 
-      // rotation
       currentPiece.shape = shape[0].map((_,i)=>shape.map(r=>r[i])).reverse();
       if(currentTheme === 'space' || currentTheme === 'vitraux'){
         const before = currentPiece.variants || [];
         currentPiece.variants = before[0].map((_,i)=>before.map(r=>r[i])).reverse();
       }
 
-      // test collisions → rollback si besoin
       if(collision()) {
         currentPiece.shape = shape;
         if((currentTheme === 'space' || currentTheme === 'vitraux') && oldVariants){
@@ -591,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function holdPiece() {
       if (holdUsed) return;
-      const deep = o => JSON.parse(JSON.stringify(o)); // deep copy
+      const deep = o => JSON.parse(JSON.stringify(o));
       if (!heldPiece) {
         heldPiece = deep(currentPiece);
         reset();
@@ -784,17 +772,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- SOFT DROP (tactile) — rapide + verrou de geste ---
     let softDropTimer = null;
     let softDropActive = false;
-    const SOFT_DROP_INTERVAL = 45;   // vitesse de chute pendant maintien (rapide)
-    const HOLD_ACTIVATION_MS = 180;  // durée d'appui avant d'activer la chute rapide (court)
+    const SOFT_DROP_INTERVAL = 45;
+    const HOLD_ACTIVATION_MS = 180;
 
-    // Nouveau : anti “yo-yo” du soft drop (il faut relever le doigt entre 2 drops maintenus)
     let mustLiftFingerForNextSoftDrop = false;
 
     function startSoftDrop() {
       if (softDropActive || paused || gameOver) return;
       if (mustLiftFingerForNextSoftDrop) return;
       softDropActive = true;
-      // évite un "double drop" avec le loop principal
       lastTime = performance.now();
       softDropTimer = setInterval(() => {
         if (!paused && !gameOver) dropPiece();
@@ -804,7 +790,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (softDropTimer) clearInterval(softDropTimer);
       softDropTimer = null;
       softDropActive = false;
-      // on exige un relâchement avant un nouveau maintien
       mustLiftFingerForNextSoftDrop = true;
     }
 
@@ -812,13 +797,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
     let holdToDropTimeout = null;
 
-    // Verrou de geste (comme Classic) pour éviter les micro-accrocs latéraux
-    let gestureMode = 'none'; // 'none' | 'horizontal' | 'vertical'
-    const HORIZ_THRESHOLD = 20; // seuil latéral plus vif (20 px)
-    const DEAD_ZONE = 10;       // petite zone neutre
-    const VERTICAL_LOCK_EARLY_MS = 140; // on “lock” vertical peu avant le drop
+    let gestureMode = 'none';
+    const HORIZ_THRESHOLD = 20;
+    const DEAD_ZONE = 10;
+    const VERTICAL_LOCK_EARLY_MS = 140;
 
-    // flags de swipe
     let didHardDrop = false;
 
     function isQuickSwipeUp(elapsed, dy) {
@@ -840,11 +823,9 @@ document.addEventListener('DOMContentLoaded', () => {
       gestureMode = 'none';
       didHardDrop = false;
 
-      // Armer le maintien pour soft drop
       clearTimeout(holdToDropTimeout);
       holdToDropTimeout = setTimeout(() => {
         if (dragging && !softDropActive) {
-          // lock vertical à l'activation du drop pour éviter tout jitter latéral
           gestureMode = 'vertical';
           startSoftDrop();
         }
@@ -862,14 +843,10 @@ document.addEventListener('DOMContentLoaded', () => {
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-  
-
-      // Si on est en vertical (ou soft drop actif) → ignorer l'horizontal
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';
         if (!softDropActive && isQuickSwipeUp(elapsed, movedY)){
           rotatePiece();
-          // anti-rotations multiples
           touchStartTime = now;
           startY = t.clientY;
         }
@@ -877,38 +854,32 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Si aucun mode fixé, on détecte l'horizontal clair
       if (gestureMode === 'none') {
         if (Math.abs(movedX) > Math.max(Math.abs(movedY), DEAD_ZONE) && Math.abs(movedX) > HORIZ_THRESHOLD) {
           gestureMode = 'horizontal';
-          clearTimeout(holdToDropTimeout); // un vrai swipe horizontal annule le futur soft drop
+          clearTimeout(holdToDropTimeout);
         }
       }
 
-      // Mode horizontal : déplacements à seuil 20 px
       if (gestureMode === 'horizontal') {
         if (movedX > HORIZ_THRESHOLD)  { move(1);  startX = t.clientX; }
         if (movedX < -HORIZ_THRESHOLD) { move(-1); startX = t.clientX; }
-        // éviter que le hold démarre si on a déjà bien bougé
         if (Math.abs(movedX) > 18) clearTimeout(holdToDropTimeout);
         return;
       }
 
-      // Sinon (mode encore 'none'): on autorise la rotation par "swipe up" rapide
       if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
         rotatePiece();
         touchStartTime = now;
         startY = t.clientY;
       }
 
-      // Swipe bas ponctuel (lent) : drop + éventuellement enclenchement du soft drop
       if (movedY > 24 && !didHardDrop) {
-        if (!softDropActive) startSoftDrop(); // swipe bas peut enclencher le mode rapide
+        if (!softDropActive) startSoftDrop();
         dropPiece();
         startY = t.clientY;
       }
 
-      // Mouvement significatif latéral/haut => on annule l’armement
       if (Math.abs(movedX) > 18 || movedY < -18) {
         clearTimeout(holdToDropTimeout);
       }
@@ -928,14 +899,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Si hard drop a été fait dans ce geste, on n'applique rien d'autre
       if (wasHard) {
         didHardDrop = false;
         gestureMode = 'none';
         return;
       }
 
-      // tap court => rotation (si pas de chute et pas de gros mouvement)
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
       const hasDropped = Math.abs(movedY) > 18;
@@ -970,9 +939,8 @@ document.addEventListener('DOMContentLoaded', () => {
       switch(e.key){
         case 'ArrowLeft': move(-1); break;
         case 'ArrowRight': move(1); break;
-        case 'ArrowDown': dropPiece(); break; // maintien via key repeat
+        case 'ArrowDown': dropPiece(); break;
         case 'ArrowUp': rotatePiece(); break;
-        // Optionnel: touche Espace en hard drop
         case ' ':
           e.preventDefault();
           hardDrop();
@@ -982,7 +950,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log("[keydown]", e.key);
     });
 
-    // sécurité : perte de focus => coupe le soft drop
     window.addEventListener('blur', () => { if (softDropActive) stopSoftDrop(); });
 
     // ==== LANCEMENT ====
