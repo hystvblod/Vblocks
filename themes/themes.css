@@ -457,7 +457,7 @@ body[data-theme="arabic"] {
   --title-shadow: 0 0 10px rgba(184,134,11,0.45);
 
   /* Canvas principal */
-  --canvas-bg: rgba(255, 248, 220, 0.72); /* MATCH cyber transparency */
+  --canvas-bg: rgba(255, 248, 220, 0.6); /* MATCH cyber transparency */
   --canvas-border: #cd853f;               /* peru */
   --canvas-shadow: rgba(205,133,63,0.45);
 
@@ -502,7 +502,7 @@ body[data-theme="grece"] {
   --title-shadow: 0 0 8px rgba(10,61,145,0.35);
 
   /* Canvas principal (marbre clair) */
-  --canvas-bg: rgba(255, 255, 255, 0.72); /* MATCH cyber transparency */
+  --canvas-bg: rgba(255, 255, 255, 0.60); /* MATCH cyber transparency */
   --canvas-border: #0a3d91;
   --canvas-shadow: rgba(10,61,145,0.35);
 
@@ -547,7 +547,7 @@ body[data-theme="japon"] {
   --title-shadow: 0 0 10px rgba(194,24,91,0.35);
 
   /* Canvas principal (washi très léger) */
-  --canvas-bg: rgba(255, 241, 243, 0.72); /* MATCH cyber transparency */
+  --canvas-bg: rgba(255, 241, 243, 0.60); /* MATCH cyber transparency */
   --canvas-border: #ad1457;
   --canvas-shadow: rgba(173,20,87,0.35);
 
