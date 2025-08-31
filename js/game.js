@@ -39,25 +39,24 @@ function fillRectThemeSafe(c, px, py, size) {
     window.musicStarted = false;
     refreshMusicBtn();
   }
-function refreshMusicBtn() {
-  const btn = document.getElementById('music-btn');
-  if (!btn) return;
+  function refreshMusicBtn() {
+    const btn = document.getElementById('music-btn');
+    if (!btn) return;
 
-  const muted = isMusicAlwaysMuted() || (music && music.paused);
-  const icon = muted ? 'volume-x' : 'volume-2';
+    const muted = isMusicAlwaysMuted() || (music && music.paused);
+    const icon = muted ? 'volume-x' : 'volume-2';
 
-  btn.innerHTML = `<img src="assets/icons/${icon}.svg" alt="${muted ? 'Muet' : 'Actif'}" class="music-btn-img">`;
-
+    btn.innerHTML = `<img src="assets/icons/${icon}.svg" alt="${muted ? 'Muet' : 'Actif'}" class="music-btn-img">`;
   }
- window.setMusicAlwaysMuted = function (val) {
-  localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
-  if (val) {
-    pauseMusic();
-  } else {
-    playMusicAuto();   // <-- ajoute ceci
-  }
-  refreshMusicBtn();
-};
+  window.setMusicAlwaysMuted = function (val) {
+    localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
+    if (val) {
+      pauseMusic();
+    } else {
+      playMusicAuto();   // <-- ajoute ceci
+    }
+    refreshMusicBtn();
+  };
 
   window.startMusicForGame = function () {
     if (!music) return;
@@ -86,28 +85,28 @@ function refreshMusicBtn() {
     }, { once: true });
   }
   setTimeout(refreshMusicBtn, 200);
-document.addEventListener('DOMContentLoaded', () => {
-  const btnMusic = document.getElementById('music-btn');
-  if (!btnMusic) return;
+  document.addEventListener('DOMContentLoaded', () => {
+    const btnMusic = document.getElementById('music-btn');
+    if (!btnMusic) return;
 
-  btnMusic.onclick = () => {
-    const currentlyMuted = isMusicAlwaysMuted() || (music && music.paused);
-    const nextMute = !currentlyMuted;
+    btnMusic.onclick = () => {
+      const currentlyMuted = isMusicAlwaysMuted() || (music && music.paused);
+      const nextMute = !currentlyMuted;
 
-    if (typeof window.setMusicAlwaysMuted === 'function') {
-      window.setMusicAlwaysMuted(nextMute); // met aussi à jour localStorage côté jeu
-    } else {
-      localStorage.setItem('alwaysMuteMusic', nextMute ? 'true' : 'false');
-      if (music) {
-        if (nextMute) music.pause();
-        else music.play().catch(()=>{});
+      if (typeof window.setMusicAlwaysMuted === 'function') {
+        window.setMusicAlwaysMuted(nextMute); // met aussi à jour localStorage côté jeu
+      } else {
+        localStorage.setItem('alwaysMuteMusic', nextMute ? 'true' : 'false');
+        if (music) {
+          if (nextMute) music.pause();
+          else music.play().catch(()=>{});
+        }
       }
-    }
-    refreshMusicBtn();
-  };
+      refreshMusicBtn();
+    };
 
-  refreshMusicBtn();
-});
+    refreshMusicBtn();
+  });
 
   // ==== FIN MUSIQUE ====
 
@@ -260,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === Load all images ===
     function loadBlockImages(themeName) {
-      const themesWithPNG = ['bubble', 'nature', 'vitraux', 'luxury', 'space', 'angelique', 'cyber', 'japon', 'arabic', 'grece', 'nuit'];
+      const themesWithPNG = ['bubble', 'nature', 'vitraux', 'luxury', 'space', 'angelique', 'cyber', 'japon', 'arabic', 'grece', 'space'];
       if (themeName === 'space' || themeName === 'vitraux') {
         blockImages[themeName] = [];
         let imagesToLoad = 6, imagesLoaded = 0;
@@ -308,6 +307,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     loadBlockImages(currentTheme);
+    // --- Suit le thème choisi dans le profil (évènement envoyé par profil.html)
+    window.addEventListener('vblocks-theme-changed', (e) => {
+      const t = (e?.detail?.theme) || localStorage.getItem('themeVBlocks') || 'neon';
+      if (t) changeTheme(t);
+    });
+
 
     const PIECES = [
       [[1,1,1,1]],
@@ -454,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     async function saveStateCloud(stateOrNull) {
       if (!CAN_RESUME || !sb) return;
-      const userId = getUserId();
+      const userId = await getUserId(); // ✅ await
       if (!userId) return;
       try {
         if (stateOrNull === null) {
@@ -470,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     async function loadSavedCloud() {
       if (!CAN_RESUME || !sb) return null;
-      const userId = getUserId();
+      const userId = await getUserId(); // ✅ await
       if (!userId) return null;
       try {
         const { data, error } = await sb
@@ -1464,8 +1469,6 @@ document.addEventListener('DOMContentLoaded', () => {
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-  
-
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';
         if (!softDropActive && isQuickSwipeUp(elapsed, movedY)){
@@ -1563,25 +1566,39 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('blur', stopSoftDrop);
 
     // === SUPABASE Fonctions ===
-    function getUserId() {
-      if (typeof userData !== 'undefined' && userData.getUserId) return userData.getUserId();
+    async function getUserId() {
+      try {
+        if (typeof userData !== 'undefined' && userData.getUserId) {
+          const maybe = await userData.getUserId();
+          if (maybe) return maybe;
+        }
+      } catch {}
+
+      try {
+        if (sb?.auth?.getUser) {
+          const { data: { user } } = await sb.auth.getUser();
+          if (user?.id) return user.id;
+        }
+      } catch {}
+
       return (window.sbUser && window.sbUser.id) || null;
     }
+
     async function setLastScoreSupabase(score) {
       if (!sb) return;
-      const userId = getUserId();
+      const userId = await getUserId(); // ✅ await
       if (!userId) return;
       await sb.from('users').update({ score }).eq('id', userId);
     }
     async function setHighScoreSupabase(score) {
       if (!sb) return;
-      const userId = getUserId();
+      const userId = await getUserId(); // ✅ await
       if (!userId) return;
       await sb.from('users').update({ highscore: score }).eq('id', userId);
     }
     async function getHighScoreSupabase() {
       if (!sb) return 0;
-      const userId = getUserId();
+      const userId = await getUserId(); // ✅ await
       if (!userId) return 0;
       const { data, error } = await sb.from('users').select('highscore').eq('id', userId).single();
       if (error) return 0;
