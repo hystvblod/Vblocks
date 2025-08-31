@@ -12,7 +12,6 @@ function fillRectThemeSafe(c, px, py, size) {
     // Important: ne PAS se rappeler soi-même → pas de récursion
     c.fillRect(px, py, size, size); // ✅ FIX: width ET height
   }
-
 }
 
 (function (global) {
@@ -53,7 +52,7 @@ function fillRectThemeSafe(c, px, py, size) {
     if (val) {
       pauseMusic();
     } else {
-      playMusicAuto();   // <-- ajoute ceci
+      playMusicAuto();
     }
     refreshMusicBtn();
   };
@@ -94,7 +93,7 @@ function fillRectThemeSafe(c, px, py, size) {
       const nextMute = !currentlyMuted;
 
       if (typeof window.setMusicAlwaysMuted === 'function') {
-        window.setMusicAlwaysMuted(nextMute); // met aussi à jour localStorage côté jeu
+        window.setMusicAlwaysMuted(nextMute);
       } else {
         localStorage.setItem('alwaysMuteMusic', nextMute ? 'true' : 'false');
         if (music) {
@@ -134,6 +133,14 @@ function fillRectThemeSafe(c, px, py, size) {
   function tt(key, fallback, params) {
     const val = t(key, params);
     return (val === key ? fallback : val);
+  }
+
+  // === THEMES à variantes (multicarrés random) ===
+  function isVariantTheme(name) {
+    const t = name || (typeof getCurrentTheme === 'function'
+      ? getCurrentTheme()
+      : (localStorage.getItem('themeVBlocks') || 'neon'));
+    return t === 'space' || t === 'vitraux' || t === 'luxury';
   }
 
   function initGame(opts) {
@@ -227,7 +234,7 @@ function fillRectThemeSafe(c, px, py, size) {
       safeRedraw();
     });
 
-    const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space', 'vitraux'];
+    const THEMES = ['nuit', 'neon', 'nature', 'bubble', 'retro', 'space', 'vitraux', 'luxury', 'grece', 'arabic'];
     let currentTheme = localStorage.getItem('themeVBlocks') || 'neon';
     let currentThemeIndex = Math.max(0, THEMES.indexOf(currentTheme));
     const blockImages = {};
@@ -258,53 +265,54 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     // === Load all images ===
-   function loadBlockImages(themeName) {
-  const themesWithPNG = ['bubble', 'nature', 'vitraux', 'luxury', 'space', 'angelique', 'cyber', 'japon', 'arabic', 'grece'];
+    function loadBlockImages(themeName) {
+      const themesWithPNG = ['bubble','nature','vitraux','luxury','space','angelique','cyber','japon','arabic','grece'];
 
-  if (themeName === 'space' || themeName === 'vitraux' || themeName === 'luxury') {
-    // === MODE MULTI VARIANTS ===
-    blockImages[themeName] = [];
-    let imagesToLoad = 6, imagesLoaded = 0;
-    for (let i = 1; i <= 6; i++) {
-      const img = new Image();
-      img.onload  = () => { if (++imagesLoaded === imagesToLoad) safeRedraw(); };
-      img.onerror = () => { if (++imagesLoaded === imagesToLoad) safeRedraw(); };
-      img.src = `themes/${themeName}/${i}.png`;
-      blockImages[themeName].push(img);
-    }
-    ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = null; });
-  }
-  else if (themeName === 'grece' || themeName === 'arabic') {
-    // === UN SEUL PNG POUR TOUTES LES PIÈCES ===
-    const img = new Image();
-    img.onload  = () => { safeRedraw(); };
-    img.onerror = () => {};
-    img.src = `themes/${themeName}/block.png`;
-    ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = img; });
-  }
-  else {
-    // === CAS NORMAL (1 fichier par lettre) ===
-    ['I','J','L','O','S','T','Z'].forEach(l => {
-      if (themesWithPNG.includes(themeName)) {
+      if (isVariantTheme(themeName)) {
+        // === MODE VARIANTES (6 carrés tirés aléatoirement) ===
+        blockImages[themeName] = [];
+        let imagesToLoad = 6, imagesLoaded = 0;
+        for (let i = 1; i <= 6; i++) {
+          const img = new Image();
+          img.onload  = () => { if (++imagesLoaded === imagesToLoad) safeRedraw(); };
+          img.onerror = () => { if (++imagesLoaded === imagesToLoad) safeRedraw(); };
+          img.src = `themes/${themeName}/${i}.png`;
+          blockImages[themeName].push(img);
+        }
+        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = null; });
+      }
+      else if (themeName === 'grece' || themeName === 'arabic') {
+        // === UNE SEULE IMAGE POUR TOUTES LES PIÈCES ===
         const img = new Image();
         img.onload  = () => { safeRedraw(); };
         img.onerror = () => {};
-        img.src = `themes/${themeName}/${l}.png`;
-        blockImages[l] = img;
-      } else {
-        blockImages[l] = null;
+        img.src = `themes/${themeName}/block.png`;
+        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = img; });
       }
-    });
-  }
+      else {
+        // === CAS NORMAL (1 fichier par lettre) ===
+        ['I','J','L','O','S','T','Z'].forEach(l => {
+          if (themesWithPNG.includes(themeName)) {
+            const img = new Image();
+            img.onload  = () => { safeRedraw(); };
+            img.onerror = () => {};
+            img.src = `themes/${themeName}/${l}.png`;
+            blockImages[l] = img;
+          } else {
+            blockImages[l] = null;
+          }
+        });
+      }
+
       currentTheme = themeName;
       if (themeName === 'retro') {
-        global.currentColors = { I: '#00f0ff', J: '#0044ff', L: '#ff6600', O: '#ffff33', S: '#00ff44', T: '#ff00cc', Z: '#ff0033' };
+        global.currentColors = { I:'#00f0ff', J:'#0044ff', L:'#ff6600', O:'#ffff33', S:'#00ff44', T:'#ff00cc', Z:'#ff0033' };
       } else if (themeName === 'neon') {
-        global.currentColors = { I: '#00ffff', J: '#007bff', L: '#ff8800', O: '#ffff00', S: '#00ff00', T: '#ff00ff', Z: '#ff0033' };
+        global.currentColors = { I:'#00ffff', J:'#007bff', L:'#ff8800', O:'#ffff00', S:'#00ff00', T:'#ff00ff', Z:'#ff0033' };
       } else if (themeName === 'nuit') {
-        global.currentColors = { I: '#ccc', J: '#ccc', L: '#ccc', O: '#ccc', S: '#ccc', T: '#ccc', Z: '#ccc' };
+        global.currentColors = { I:'#ccc', J:'#ccc', L:'#ccc', O:'#ccc', S:'#ccc', T:'#ccc', Z:'#ccc' };
       } else {
-        global.currentColors = { I: '#5cb85c', J: '#388e3c', L: '#7bb661', O: '#cddc39', S: '#a2d149', T: '#558b2f', Z: '#9ccc65' };
+        global.currentColors = { I:'#5cb85c', J:'#388e3c', L:'#7bb661', O:'#cddc39', S:'#a2d149', T:'#558b2f', Z:'#9ccc65' };
       }
     }
 
@@ -978,7 +986,7 @@ function fillRectThemeSafe(c, px, py, size) {
         y: 0
       };
 
-      if (currentTheme === 'space' || currentTheme === 'vitraux') {
+      if (isVariantTheme(currentTheme)) {
         let numbers = [1,2,3,4,5,6];
         shuffle(numbers);
         let idx = 0;
@@ -1006,7 +1014,7 @@ function fillRectThemeSafe(c, px, py, size) {
             const x = currentPiece.x + dx;
             const y = currentPiece.y + dy;
             if (y >= 0) {
-              if (currentTheme === 'space' || currentTheme === 'vitraux') {
+              if (isVariantTheme(currentTheme)) {
                 board[y][x] = { letter: currentPiece.letter, variant: currentPiece.variants?.[dy]?.[dx] ?? 0 };
               } else {
                 board[y][x] = currentPiece.letter;
@@ -1079,10 +1087,10 @@ function fillRectThemeSafe(c, px, py, size) {
     function rotatePiece() {
       const shape = currentPiece.shape;
       let oldVariants = null;
-      if (currentTheme === 'space' || currentTheme === 'vitraux') oldVariants = currentPiece.variants;
+      if (isVariantTheme(currentTheme)) oldVariants = currentPiece.variants;
 
       currentPiece.shape = shape[0].map((_, i) => shape.map(r => r[i])).reverse();
-      if (currentTheme === 'space' || currentTheme === 'vitraux') {
+      if (isVariantTheme(currentTheme)) {
         if (oldVariants && oldVariants[0]) {
           currentPiece.variants = oldVariants[0].map((_, i) => oldVariants.map(r => r[i])).reverse();
         }
@@ -1090,7 +1098,7 @@ function fillRectThemeSafe(c, px, py, size) {
 
       if (collision()) {
         currentPiece.shape = shape;
-        if (currentTheme === 'space' || currentTheme === 'vitraux') currentPiece.variants = oldVariants;
+        if (isVariantTheme(currentTheme)) currentPiece.variants = oldVariants;
       } else {
         scheduleSave();
       }
@@ -1190,7 +1198,7 @@ function fillRectThemeSafe(c, px, py, size) {
       const px = x * size, py = y * size;
       if (ghost) c.globalAlpha = 0.33;
 
-      if ((currentTheme === 'space' || currentTheme === 'vitraux') && blockImages[currentTheme]) {
+      if (isVariantTheme(currentTheme) && blockImages[currentTheme]) {
         let v = variant ?? 0;
         if (typeof letter === 'object' && letter.letter) {
           v = letter.variant ?? 0;
@@ -1211,7 +1219,7 @@ function fillRectThemeSafe(c, px, py, size) {
           c.fillStyle = '#111';
           fillRectThemeSafe(c, px, py, size);
           c.shadowColor = color;
-          c.shadowBlur = ghost ? 3 : 15;
+          c.shadowBlur = (ghost ? 3 : 15);
           c.strokeStyle = color;
           c.lineWidth = 2;
           c.strokeRect(px + 1, py + 1, size - 2, size - 2);
@@ -1247,7 +1255,7 @@ function fillRectThemeSafe(c, px, py, size) {
           row.forEach((val, dx) => {
             if (val) drawBlockCustom(
               ctx, ghost.x + dx, ghost.y + dy, ghost.letter, BLOCK_SIZE, true,
-              (currentTheme === 'space' || currentTheme === 'vitraux') ? ghost.variants?.[dy]?.[dx] : 0
+              (currentTheme && isVariantTheme(currentTheme)) ? ghost.variants?.[dy]?.[dx] : 0
             );
           })
         );
@@ -1256,7 +1264,7 @@ function fillRectThemeSafe(c, px, py, size) {
       board.forEach((row, y) =>
         row.forEach((cell, x) => {
           if (!cell) return;
-          if (currentTheme === 'space' || currentTheme === 'vitraux') {
+          if (isVariantTheme(currentTheme)) {
             drawBlockCustom(ctx, x, y, cell.letter || cell, BLOCK_SIZE, false, cell.variant || 0);
           } else {
             drawBlockCustom(ctx, x, y, cell);
@@ -1270,7 +1278,7 @@ function fillRectThemeSafe(c, px, py, size) {
             if (!val) return;
             drawBlockCustom(
               ctx, currentPiece.x + dx, currentPiece.y + dy, currentPiece.letter, BLOCK_SIZE, false,
-              (currentTheme === 'space' || currentTheme === 'vitraux') ? currentPiece.variants?.[dy]?.[dx] : 0
+              (currentTheme && isVariantTheme(currentTheme)) ? currentPiece.variants?.[dy]?.[dx] : 0
             );
           })
         );
@@ -1327,7 +1335,7 @@ function fillRectThemeSafe(c, px, py, size) {
             piece.letter,
             cellSize,
             false,
-            (currentTheme === 'space' || currentTheme === 'vitraux') ? piece.variants?.[y]?.[x] : 0
+            (currentTheme && isVariantTheme(currentTheme)) ? piece.variants?.[y]?.[x] : 0
           );
         });
       });
