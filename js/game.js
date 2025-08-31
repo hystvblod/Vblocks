@@ -258,32 +258,44 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     // === Load all images ===
-    function loadBlockImages(themeName) {
-      const themesWithPNG = ['bubble', 'nature', 'vitraux', 'luxury', 'space', 'angelique', 'cyber', 'japon', 'arabic', 'grece', 'space'];
-      if (themeName === 'space' || themeName === 'vitraux') {
-        blockImages[themeName] = [];
-        let imagesToLoad = 6, imagesLoaded = 0;
-        for (let i = 1; i <= 6; i++) {
-          const img = new Image();
-          img.onload  = () => { imagesLoaded++; if (imagesLoaded === imagesToLoad) safeRedraw(); };
-          img.onerror = () => { imagesLoaded++; if (imagesLoaded === imagesToLoad) safeRedraw(); };
-          img.src = `themes/${themeName}/${i}.png`;
-          blockImages[themeName].push(img);
-        }
-        ['I', 'J', 'L', 'O', 'S', 'T', 'Z'].forEach(l => { blockImages[l] = null; });
+   function loadBlockImages(themeName) {
+  const themesWithPNG = ['bubble', 'nature', 'vitraux', 'luxury', 'space', 'angelique', 'cyber', 'japon', 'arabic', 'grece'];
+
+  if (themeName === 'space' || themeName === 'vitraux' || themeName === 'luxury') {
+    // === MODE MULTI VARIANTS ===
+    blockImages[themeName] = [];
+    let imagesToLoad = 6, imagesLoaded = 0;
+    for (let i = 1; i <= 6; i++) {
+      const img = new Image();
+      img.onload  = () => { if (++imagesLoaded === imagesToLoad) safeRedraw(); };
+      img.onerror = () => { if (++imagesLoaded === imagesToLoad) safeRedraw(); };
+      img.src = `themes/${themeName}/${i}.png`;
+      blockImages[themeName].push(img);
+    }
+    ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = null; });
+  }
+  else if (themeName === 'grece' || themeName === 'arabic') {
+    // === UN SEUL PNG POUR TOUTES LES PIÈCES ===
+    const img = new Image();
+    img.onload  = () => { safeRedraw(); };
+    img.onerror = () => {};
+    img.src = `themes/${themeName}/block.png`;
+    ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = img; });
+  }
+  else {
+    // === CAS NORMAL (1 fichier par lettre) ===
+    ['I','J','L','O','S','T','Z'].forEach(l => {
+      if (themesWithPNG.includes(themeName)) {
+        const img = new Image();
+        img.onload  = () => { safeRedraw(); };
+        img.onerror = () => {};
+        img.src = `themes/${themeName}/${l}.png`;
+        blockImages[l] = img;
       } else {
-        ['I', 'J', 'L', 'O', 'S', 'T', 'Z'].forEach(l => {
-          if (themesWithPNG.includes(themeName)) {
-            const img = new Image();
-            img.onload  = () => { safeRedraw(); };
-            img.onerror = () => {};
-            img.src = `themes/${themeName}/${l}.png`;
-            blockImages[l] = img;
-          } else {
-            blockImages[l] = null;
-          }
-        });
+        blockImages[l] = null;
       }
+    });
+  }
       currentTheme = themeName;
       if (themeName === 'retro') {
         global.currentColors = { I: '#00f0ff', J: '#0044ff', L: '#ff6600', O: '#ffff33', S: '#00ff44', T: '#ff00cc', Z: '#ff0033' };
