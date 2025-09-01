@@ -393,15 +393,19 @@ function fillRectThemeSafe(c, px, py, size) {
       return false;
     }
 
+    // === AJUSTEMENT #1 : interstitiel centralisé (pub.js) ===
     async function showInterstitial() {
-      // Essaie interstitiel natif si dispo, sinon faux écran 3s
       try {
-        if (global.showInterstitialAd) {
+        if (typeof window.showInterstitial === 'function') {
+          await window.showInterstitial(); // AdMob via pub.js
+          return;
+        }
+        if (global.showInterstitialAd) { // vieux wrapper éventuel
           await global.showInterstitialAd();
           return;
         }
       } catch (_) {}
-      await showFakeAd();
+      await showFakeAd(); // fallback web/dev
     }
 
     function showFakeAd() {
@@ -691,6 +695,9 @@ function fillRectThemeSafe(c, px, py, size) {
 
     // Nouvelle popup de fin de partie (+ revive)
     function showEndPopup(points) {
+      // === AJUSTEMENT #3c : notifier la fin au gestionnaire de pubs
+      try { window.partieTerminee?.(); } catch(_){}
+
       paused = true;
       stopSoftDrop();
       safeRedraw();
@@ -755,16 +762,20 @@ function fillRectThemeSafe(c, px, py, size) {
 
       async function doRevive(withAd) {
         if (withAd) {
-          // ⚠️ CHANGEMENT : rewarded SSV obligatoire pour revivre
-          const ok = await new Promise((resolve) => {
-            if (typeof window.showRewardedType !== 'function') {
-              console.warn('[revive] showRewardedType absent, fallback interstitiel');
-              (async () => { try { await showInterstitial(); resolve(true); } catch { resolve(false); } })();
-              return;
-            }
-            window.showRewardedType('revive', 0, (ok) => resolve(!!ok));
-          });
-          if (!ok) return; // reward pas complétée → pas de revive
+          // === AJUSTEMENT #2 : rewarded SSV via pub.js
+          if (typeof window.showRewardRevive === 'function') {
+            let ok = false;
+            await new Promise(resolve => {
+              window.showRewardRevive(() => { ok = true; resolve(); });
+              setTimeout(resolve, 2000); // garde-fou
+            });
+            if (!ok) return; // reward non validée → pas de revive
+            popup.remove();
+            reviveRewindAndResume();
+            return;
+          }
+          // Fallback dev : interstitiel
+          await showInterstitial();
           popup.remove();
           reviveRewindAndResume();
           return;
@@ -843,13 +854,16 @@ function fillRectThemeSafe(c, px, py, size) {
           paused = false;
           gameOver = false;
 
-          // la “vitesse zéro” simulée : on part d’un interval très lent puis on rampe vers la cible
           reviveTargetInterval = dropInterval || 500;
           dropInterval = 1200; // très lent au départ
           reviveRampActive = true;
           reviveRampStart = performance.now();
 
           lastTime = performance.now();
+
+          // === AJUSTEMENT #3b : notifier une "reprise" (revive)
+          try { window.partieReprisee?.(mode); } catch(_){}
+
           requestAnimationFrame(update);
         }
       }, 1000);
@@ -952,6 +966,9 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     async function startGame() {
+      // === AJUSTEMENT #3a : notifier une nouvelle partie
+      try { window.partieCommencee?.(mode); } catch(_){}
+
       paused = false;
       gameOver = false;
       lastTime = 0;
