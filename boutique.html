@@ -208,7 +208,9 @@ const SPECIAL_CARTOUCHES = [
 ];
 
 const THEME_PRICE = 5000;
-const REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
+// Ne pas redéclarer const
+window.REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
+
 
 const THEME_COLOR = {
   neon: 'color-purple',
