@@ -1,6 +1,8 @@
 // =============================
-// INIT SUPABASE (création unique, mode Capacitor / Web)
+// userData.js — Version durcie (anti-429 / anti-409)
 // =============================
+
+// ---------- INIT SUPABASE (création unique) ----------
 const SUPABASE_URL = 'https://youhealyblgbwjhsskca.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
 
@@ -8,18 +10,24 @@ if (!window.sb) {
   window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 const sb = window.sb;
-// Expose aussi en global pour les tests console
+
+// expose pour les fetch() manuels (Edge Functions, etc.)
+if (!window.SUPABASE_URL) window.SUPABASE_URL = SUPABASE_URL;
+if (!window.SUPABASE_ANON_KEY) window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+// confort console
 if (!window.supabase) window.supabase = sb;
 
-// == THEMES VBLOCKS ==
-const ALL_THEMES = [
-  "neon",   // par défaut, toujours débloqué (UI)
-  "nuit", "nature", "bubble", "retro",
-  "vitraux", "angelique", "luxury", "space", "cyber", "arabic", "grece", "japon"
-];
-window.getAllThemes = function () { return ALL_THEMES; };
 
-// Normalisation des clés de thèmes (évite accents/espaces/majuscules)
+// =============================
+// THEMES VBLOCKS
+// =============================
+const ALL_THEMES = [
+  'neon', // toujours débloqué côté UI
+  'nuit','nature','bubble','retro',
+  'vitraux','angelique','luxury','space','cyber','arabic','grece','japon'
+];
+window.getAllThemes = () => ALL_THEMES;
+
 function normalizeThemeKey(k){
   return String(k || '')
     .toLowerCase()
@@ -27,46 +35,34 @@ function normalizeThemeKey(k){
     .replace(/\s+/g,'');
 }
 
-// Thème courant (local, purement visuel)
 function getCurrentTheme() {
-  return localStorage.getItem("themeVBlocks") || "neon";
+  return localStorage.getItem('themeVBlocks') || 'neon';
 }
 function setCurrentTheme(theme) {
-  localStorage.setItem("themeVBlocks", theme);
+  localStorage.setItem('themeVBlocks', theme);
 }
 
-// Appliquer un thème local immédiatement + notifier app/onglets
 function applyLocalTheme(themeKey) {
   const t = normalizeThemeKey(themeKey || 'neon');
-  // cache local
   setCurrentTheme(t);
-
-  // set data-theme (HTML & body pour compat)
   try { document.documentElement.setAttribute('data-theme', t); } catch {}
   try { document.body && document.body.setAttribute('data-theme', t); } catch {}
-
-  // feuille de style dédiée si tu utilises <link id="theme-style">
   const link = document.getElementById('theme-style');
   if (link) link.href = `themes/${t}.css`;
-
-  // notifier le jeu (même onglet)
   try { window.dispatchEvent(new CustomEvent('vblocks-theme-changed', { detail:{ theme: t } })); } catch {}
-
-  // notifier autres onglets
   try { localStorage.setItem('themeVBlocks', t); } catch {}
 }
+
 
 // =============================
 // AUTH ANONYME + MIGRATION LEGACY
 // =============================
 
-// (legacy) ID local historique — on ne s’en sert plus pour écrire,
-// mais on l’utilise 1x pour lier l’ancien profil à l’auth anonyme
 function getLegacyLocalUserId() {
   return localStorage.getItem('user_id') || null;
 }
 
-// Pseudo local
+// pseudo local
 function getPseudoLocal() {
   let pseudo = localStorage.getItem('pseudo');
   if (!pseudo) {
@@ -79,36 +75,36 @@ function setPseudoLocal(pseudo) {
   localStorage.setItem('pseudo', pseudo);
 }
 
-// Langue
+// langue
 function normalizeLangForCloud(code) {
   if (!code) return null;
   const c = String(code).toUpperCase();
-  if (["FR","EN","ES","DE","IT","PT","PT-BR","NL","AR","IDN","JP","KO"].includes(c)) return c;
+  if (['FR','EN','ES','DE','IT','PT','PT-BR','NL','AR','IDN','JP','KO'].includes(c)) return c;
 
   const lower = c.toLowerCase();
-  if (lower.startsWith("pt-br")) return "PT-BR";
-  if (lower.startsWith("pt"))    return "PT";
-  if (lower.startsWith("en"))    return "EN";
-  if (lower.startsWith("fr"))    return "FR";
-  if (lower.startsWith("de"))    return "DE";
-  if (lower.startsWith("es"))    return "ES";
-  if (lower.startsWith("it"))    return "IT";
-  if (lower.startsWith("nl"))    return "NL";
-  if (lower === "ar" || lower.startsWith("ar-")) return "AR";
-  if (lower === "id" || lower.startsWith("id-")) return "IDN";
-  if (lower === "ja" || lower.startsWith("ja-")) return "JP";
-  if (lower === "ko" || lower.startsWith("ko-")) return "KO";
+  if (lower.startsWith('pt-br')) return 'PT-BR';
+  if (lower.startsWith('pt'))    return 'PT';
+  if (lower.startsWith('en'))    return 'EN';
+  if (lower.startsWith('fr'))    return 'FR';
+  if (lower.startsWith('de'))    return 'DE';
+  if (lower.startsWith('es'))    return 'ES';
+  if (lower.startsWith('it'))    return 'IT';
+  if (lower.startsWith('nl'))    return 'NL';
+  if (lower === 'ar' || lower.startsWith('ar-')) return 'AR';
+  if (lower === 'id' || lower.startsWith('id-')) return 'IDN';
+  if (lower === 'ja' || lower.startsWith('ja-')) return 'JP';
+  if (lower === 'ko' || lower.startsWith('ko-')) return 'KO';
   return null;
 }
 function detectPreferredLangForCloud() {
-  const list = Array.isArray(navigator.languages) && navigator.languages.length
+  const list = (Array.isArray(navigator.languages) && navigator.languages.length)
     ? navigator.languages
     : [navigator.language || navigator.userLanguage];
   for (const c of list) {
     const n = normalizeLangForCloud(c);
     if (n) return n;
   }
-  return "EN";
+  return 'EN';
 }
 function getLang() {
   const stored = localStorage.getItem('langue');
@@ -117,8 +113,8 @@ function getLang() {
   return detectPreferredLangForCloud();
 }
 
-// --- 1) S’assurer qu’on a une session anonyme ---
-// LOCK pour éviter plusieurs signInAnonymously() concurrents
+
+// ---------- AUTH: lock fort contre les rafales ----------
 let ensureAuthPromise = null;
 async function ensureAuth() {
   if (ensureAuthPromise) return ensureAuthPromise;
@@ -129,20 +125,19 @@ async function ensureAuth() {
       if (!session) {
         const { error: errAnon } = await sb.auth.signInAnonymously();
         if (errAnon) throw errAnon;
-        // Petite marge : on relit la session pour stabiliser l'état en mémoire
+        // petite marge : relit session pour stabiliser l’état
         await sb.auth.getSession().catch(()=>{});
       }
     } catch (e) {
       console.error('[ensureAuth] échec auth anonyme:', e?.message || e);
-      // reset le lock si ça a échoué pour permettre un retry propre
-      ensureAuthPromise = null;
+      ensureAuthPromise = null; // reset lock si échec, pour retry propre
       throw e;
     }
   })();
   return ensureAuthPromise;
 }
 
-// --- 2) Lier l’auth anonyme à l’ancien profil local (si existant) ---
+// lier ancien profil local → auth anonyme
 async function linkLegacyIfNeeded() {
   const legacy = getLegacyLocalUserId();
   if (!legacy) return;
@@ -158,19 +153,66 @@ async function linkLegacyIfNeeded() {
   }
 }
 
-// --- 3) Créer la ligne user si besoin (via RPC sécurisée) ---
+
+// ---------- ensure_user: anti-409 + anti-429 ----------
 async function ensureUserRow() {
   try {
+    const { data: { user } } = await sb.auth.getUser();
+    const uid = user?.id;
+    if (!uid) return;
+
+    const flagKey = `ud:ensured:${uid}`;
+
+    // si déjà fait (dans cette session ou une précédente récente), on sort
+    if (sessionStorage.getItem(flagKey) === '1' || localStorage.getItem(flagKey) === '1') {
+      return;
+    }
+
     const lang = getLang();
     const pseudoFallback = getPseudoLocal();
-    await sb.rpc('ensure_user', { default_lang: lang, default_pseudo: pseudoFallback });
+
+    const { error } = await sb.rpc('ensure_user', {
+      default_lang: lang,
+      default_pseudo: pseudoFallback
+    });
+
+    if (!error) {
+      sessionStorage.setItem(flagKey, '1');
+      localStorage.setItem(flagKey, '1');
+      return;
+    }
+
+    const code = String(error?.code || error?.status || '');
+    const msg  = String(error?.message || '').toLowerCase();
+
+    // Conflit d'unicité → l'utilisateur existe déjà (appel concurrent) ⇒ on marque OK
+    if (code === '409' || msg.includes('conflict') || msg.includes('duplicate')) {
+      sessionStorage.setItem(flagKey, '1');
+      localStorage.setItem(flagKey, '1');
+      return;
+    }
+
+    // Rate limit → backoff très court et 1 retry
+    if (code === '429' || msg.includes('too many')) {
+      await new Promise(r => setTimeout(r, 500));
+      const again = await sb.rpc('ensure_user', {
+        default_lang: lang,
+        default_pseudo: pseudoFallback
+      });
+      if (!again.error) {
+        sessionStorage.setItem(flagKey, '1');
+        localStorage.setItem(flagKey, '1');
+      }
+      return;
+    }
+
+    console.warn('[ensureUserRow] non bloquant:', error?.message || error);
   } catch (e) {
-    console.warn('[ensureUserRow] non bloquant:', e?.message || e);
+    console.warn('[ensureUserRow] exception:', e?.message || e);
   }
 }
 
-// --- 4) Bootstrap global à appeler au démarrage de l’app ---
-// LOCK pour éviter plusieurs bootstraps complets simultanés
+// ---------- bootstrap global (le SEUL point d’entrée côté pages) ----------
 let bootstrapAuthAndProfilePromise = null;
 async function bootstrapAuthAndProfile() {
   if (bootstrapAuthAndProfilePromise) return bootstrapAuthAndProfilePromise;
@@ -182,7 +224,6 @@ async function bootstrapAuthAndProfile() {
   return bootstrapAuthAndProfilePromise;
 }
 
-// Récup id auth courant
 async function getAuthUserId() {
   try {
     const { data: { user } } = await sb.auth.getUser();
@@ -190,22 +231,20 @@ async function getAuthUserId() {
   } catch { return null; }
 }
 
-// =============================
-// LECTURES / ÉCRITURES SÉCURISÉES (RPC + direct)
-// =============================
 
-// Lecture profil : RPC get_balances, sinon fallback direct table `users`.
-// + Si la RPC ne renvoie PAS themes_possedes, on complète par un SELECT direct.
+// =============================
+// LECTURES / ÉCRITURES (RPC + fallback direct)
+// =============================
 async function getProfileSecure() {
   await bootstrapAuthAndProfile();
 
-  // 1) Essayer la RPC
+  // 1) RPC
   try {
-    const { data, error } = await sb.rpc('get_balances'); // renvoie 1 ligne
+    const { data, error } = await sb.rpc('get_balances');
     if (error) throw error;
     const row = (Array.isArray(data) ? data[0] : data) || {};
 
-    // PATCH: si la RPC ne renvoie pas themes_possedes, select direct
+    // compléter themes_possedes si absent
     if (typeof row.themes_possedes === 'undefined') {
       const uid = await getAuthUserId();
       if (uid) {
@@ -222,17 +261,15 @@ async function getProfileSecure() {
     console.warn('[getProfileSecure] RPC get_balances KO, fallback direct:', e?.message || e);
   }
 
-  // 2) Fallback direct sur la table users (id OU auth_id)
+  // 2) Fallback direct
   const uid = await getAuthUserId();
   if (!uid) return {};
-
   try {
     const { data, error } = await sb
       .from('users')
       .select('id, auth_id, pseudo, lang, vcoins, jetons, highscore, lastscore, themes_possedes')
       .or(`id.eq.${uid},auth_id.eq.${uid}`)
       .maybeSingle();
-
     if (error) {
       console.warn('[getProfileSecure] direct users error:', error);
       return {};
@@ -255,7 +292,7 @@ async function updatePseudoSecure(newPseudo) {
   return true;
 }
 
-// --- LANG (update direct, sans RPC) ---
+// --- LANG (update direct) ---
 async function updateLangDirect(langCode) {
   const normalized = normalizeLangForCloud(langCode);
   if (!normalized) throw new Error('Langue invalide');
@@ -268,7 +305,6 @@ async function updateLangDirect(langCode) {
     .from('users')
     .update({ lang: normalized })
     .or(`id.eq.${uid},auth_id.eq.${uid}`);
-
   if (error) throw error;
   return true;
 }
@@ -298,35 +334,25 @@ async function getJetonsSecure() {
 }
 
 // --- THEMES ---
-// Liste “possédés” reste en base pour les déblocages/achats
 async function getUnlockedThemesCloud() {
-  const p = await getProfileSecure(); // lit get_balances (puis fallback direct)
+  const p = await getProfileSecure();
   let arr = [];
-
   const raw = p?.themes_possedes;
 
-  // 1) Déjà un tableau JS -> OK
   if (Array.isArray(raw)) {
     arr = raw;
-
-  // 2) JSON string -> parse
   } else if (typeof raw === 'string' && raw.trim()) {
     let parsed = null;
-    try {
-      parsed = JSON.parse(raw); // ex: '["retro","neon"]'
-    } catch { /* ignore */ }
-
+    try { parsed = JSON.parse(raw); } catch {}
     if (Array.isArray(parsed)) {
       arr = parsed;
     } else {
-      // 3) Fallback CSV / text[] aplati -> split
-      // enlève { } éventuels (format Postgres array), puis split virgules/espaces
       const cleaned = raw.replace(/[{}]/g, '');
       arr = cleaned.split(/[,\s]+/).map(s => s.replace(/^"(.*)"$/, '$1')).filter(Boolean);
     }
   }
 
-  // 2bis) Si on a toujours rien, on force un SELECT ciblé 'themes_possedes'
+  // si rien, reselect ciblé
   if (!arr || arr.length === 0) {
     try {
       const uid = await getAuthUserId();
@@ -340,7 +366,8 @@ async function getUnlockedThemesCloud() {
           const r2 = d2.themes_possedes;
           if (Array.isArray(r2)) arr = r2;
           else if (typeof r2 === 'string' && r2.trim()) {
-            try { const p2 = JSON.parse(r2); if (Array.isArray(p2)) arr = p2; } catch {
+            try { const p2 = JSON.parse(r2); if (Array.isArray(p2)) arr = p2; }
+            catch {
               const cleaned2 = r2.replace(/[{}]/g, '');
               arr = cleaned2.split(/[,\s]+/).map(s => s.replace(/^"(.*)"$/, '$1')).filter(Boolean);
             }
@@ -350,16 +377,11 @@ async function getUnlockedThemesCloud() {
     } catch {}
   }
 
-  // 3) Normalise + unique
   const norm = [...new Set((arr || []).map(normalizeThemeKey).filter(Boolean))];
-
-  // 4) Sécurité UI : 'neon' toujours utilisable si rien ne remonte
-  if (!norm.includes('neon')) norm.push('neon');
-
+  if (!norm.includes('neon')) norm.push('neon'); // sécurité UI
   return norm;
 }
 
-// Achat serveur (inchangé)
 async function setUnlockedThemesCloud(themes) {
   await bootstrapAuthAndProfile();
   const { error } = await sb.rpc('set_themes_secure', { themes });
@@ -410,70 +432,61 @@ function updateScoreIfHigher(newScore) {
 // =============================
 // SYNC THÈME (Local uniquement)
 // =============================
-// À appeler au boot d’une page pour appliquer le thème stocké localement
 async function syncThemeFromLocal() {
   try {
     const t = normalizeThemeKey(getCurrentTheme() || 'neon');
-    // data-theme et CSS
     document.documentElement.setAttribute('data-theme', t);
     if (document.body) document.body.setAttribute('data-theme', t);
     const link = document.getElementById('theme-style');
     if (link) link.href = `themes/${t}.css`;
-  } catch(e) {
-    // silencieux
-  }
+  } catch(e) { /* silencieux */ }
 }
 
 // =============================
-// UI HELPERS (profil / pseudo / concours / popups)
+// UI HELPERS
 // =============================
 async function updatePseudoUI() {
   try {
     const prof = await getProfileSecure();
     const pseudo = prof?.pseudo || getPseudoLocal();
     setPseudoLocal(pseudo);
-    const el = document.getElementById("profilPseudo");
+    const el = document.getElementById('profilPseudo');
     if (el) el.textContent = pseudo;
   } catch {
-    const el = document.getElementById("profilPseudo");
+    const el = document.getElementById('profilPseudo');
     if (el) el.textContent = getPseudoLocal();
   }
 }
 
 function setupPseudoPopup() {
-  const popup = document.getElementById("popupPseudo");
-  const input = document.getElementById("newPseudo");
-  const errorDiv = document.getElementById("pseudoError");
-  const btnChange = document.getElementById("btnChangePseudo");
-  const btnSave = document.getElementById("btnSavePseudo");
-  const btnCancel = document.getElementById("btnCancelPseudo");
+  const popup = document.getElementById('popupPseudo');
+  const input = document.getElementById('newPseudo');
+  const errorDiv = document.getElementById('pseudoError');
+  const btnChange = document.getElementById('btnChangePseudo');
+  const btnSave = document.getElementById('btnSavePseudo');
+  const btnCancel = document.getElementById('btnCancelPseudo');
   if (!popup || !btnChange || !btnSave || !btnCancel) return;
 
   btnChange.onclick = () => {
-    popup.classList.add("active");
-    errorDiv.textContent = "";
+    popup.classList.add('active');
+    errorDiv.textContent = '';
     input.value = getPseudoLocal();
   };
-  btnCancel.onclick = () => {
-    popup.classList.remove("active");
-  };
+  btnCancel.onclick = () => { popup.classList.remove('active'); };
   btnSave.onclick = async () => {
-    const pseudo = input.value.trim();
-    if (pseudo.length < 3) {
-      errorDiv.textContent = "Pseudo trop court.";
-      return;
-    }
+    const pseudo = (input.value || '').trim();
+    if (pseudo.length < 3) { errorDiv.textContent = 'Pseudo trop court.'; return; }
     try {
       await updatePseudoSecure(pseudo);
       await updatePseudoUI();
-      popup.classList.remove("active");
+      popup.classList.remove('active');
     } catch (e) {
-      errorDiv.textContent = e?.message || "Erreur";
+      errorDiv.textContent = e?.message || 'Erreur';
     }
   };
 }
 
-// Bouton concours affiché selon config
+// bouton concours
 async function checkConcoursStatus() {
   try {
     const { data, error } = await sb
@@ -482,13 +495,13 @@ async function checkConcoursStatus() {
       .eq('id', 'global')
       .single();
     if (!error) {
-      const el = document.getElementById("btnConcours");
-      if (el) el.style.display = data?.concours_enabled ? "block" : "none";
+      const el = document.getElementById('btnConcours');
+      if (el) el.style.display = data?.concours_enabled ? 'block' : 'none';
     }
   } catch {}
 }
 
-// Popups ciblées
+// popups ciblées
 async function checkAndShowPopupOnce() {
   try {
     await bootstrapAuthAndProfile();
@@ -511,7 +524,7 @@ async function checkAndShowPopupOnce() {
   } catch {}
 }
 
-// Realtime popups
+// realtime popups
 async function listenPopupsRealtime() {
   try {
     await bootstrapAuthAndProfile();
@@ -530,6 +543,7 @@ async function listenPopupsRealtime() {
       .subscribe();
   } catch {}
 }
+
 
 // =============================
 // EXPORTS GLOBAUX
@@ -550,7 +564,7 @@ userData.updateScoreIfHigher = updateScoreIfHigher;
 
 userData.updateLangDirect    = updateLangDirect;
 
-// Thème (nouveau flux 100% local)
+// thème (100% local)
 userData.applyLocalTheme     = applyLocalTheme;
 userData.syncThemeFromLocal  = syncThemeFromLocal;
 
@@ -558,7 +572,7 @@ window.updatePseudoUI        = updatePseudoUI;
 window.setupPseudoPopup      = setupPseudoPopup;
 window.bootstrapAuthAndProfile = bootstrapAuthAndProfile;
 
-// Confort : expose aussi ces helpers
+// confort
 window.getCurrentTheme       = getCurrentTheme;
 window.setCurrentTheme       = setCurrentTheme;
 
@@ -572,7 +586,7 @@ window.debugDumpThemes = async function(){
     const norm = Array.isArray(prof?.themes_possedes)
       ? prof.themes_possedes.map(normalizeThemeKey)
       : [];
-    console.log('[debugDumpThemes] normalized possédés=', norm);
+    console.log('[debugDumpThemes] normalized possédés =', norm);
   } catch {}
-  console.log('[debugDumpThemes] local themeVBlocks  =', getCurrentTheme());
+  console.log('[debugDumpThemes] local themeVBlocks =', getCurrentTheme());
 };
