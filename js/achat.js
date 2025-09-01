@@ -2,7 +2,7 @@
    achat.js (confirmation + achat générique)
    =========================== */
 
-// Utilise la même map que boutique.html (exposée en global par ton init IAP)
+// Map produits (utilise celle fournie au boot si présente)
 const _PRODUCT_IDS = (window.PRODUCT_IDS) || {
   points3000:  'points3000',
   points10000: 'points10000',
@@ -29,7 +29,7 @@ function _getLocalizedPrice(alias) {
   if (_iapAvailable()) {
     let p = store.get(alias);
     if (p && p.price) return p.price;
-    // 3) Lecture store par id réel (si tu as enregistré avec l'id)
+    // 3) Lecture store par id réel (si enregistré avec l'id)
     p = store.get(_pid(alias));
     if (p && p.price) return p.price;
   }
@@ -61,9 +61,7 @@ window.lancerPaiement = async function(alias) {
 };
 
 // --- Wiring PRICES_BY_ALIAS (optionnel, protégé) -------------------
-if (!_iapAvailable()) {
-  // rien à faire en web/dev
-} else if (!window.__IAP_PRICES_WIRED__) {
+if (_iapAvailable() && !window.__IAP_PRICES_WIRED__) {
   window.__IAP_PRICES_WIRED__ = true;
   window.PRICES_BY_ALIAS = window.PRICES_BY_ALIAS || {};
   try {
@@ -85,7 +83,15 @@ if (!_iapAvailable()) {
 // --- Achat central ------------------------------------------------
 let __orderBusy = false;
 
+async function __ensureAuthOnce() {
+  // Auth centralisée → on passe par le bootstrap si dispo
+  if (typeof window.bootstrapAuthAndProfile === 'function') {
+    try { await window.bootstrapAuthAndProfile(); } catch(_) {}
+  }
+}
+
 window.accordeAchat = async function(type) {
+  const sb = window.sb; // peut être undefined si la lib n'a pas chargé
   // Cas “mal appelé” pour les rewarded → redirige proprement
   if (type === "pub1jeton") {
     if (typeof window.showRewardBoutique === 'function') {
@@ -120,7 +126,7 @@ window.accordeAchat = async function(type) {
       // Tente d’abord par alias (si register avec alias), sinon par id réel
       try { await store.order(type); }
       catch { await store.order(_pid(type)); }
-      // Crédit = dans tes listeners IAP (approved/verified + finish)
+      // Crédit = à faire dans tes listeners IAP (approved/verified + finish)
     } catch (e) {
       console.warn('[IAP] order failed:', e?.message || e);
       alert("Achat non abouti.");
@@ -130,15 +136,18 @@ window.accordeAchat = async function(type) {
   } else {
     // Fallback web/dev: simulateur (utile en dev sans plugin)
     try {
+      await __ensureAuthOnce();
       if (typeof acheterProduitVercel === 'function') {
         await acheterProduitVercel(type);
-      } else {
+      } else if (sb && sb.rpc) {
         // Crédit côté Supabase pour une simulation manuelle
         if (type === "points3000")   await sb.rpc('ajouter_vcoins', { montant: 3000 });
         if (type === "points10000")  await sb.rpc('ajouter_vcoins', { montant: 10000 });
         if (type === "jetons12")     await sb.rpc('ajouter_jetons', { montant: 12 });
         if (type === "jetons50")     await sb.rpc('ajouter_jetons', { montant: 50 });
         if (type === "nopub")        await sb.rpc('ajouter_nopub');
+      } else {
+        alert("Achat indisponible (store et Supabase non disponibles).");
       }
       try { await window.renderThemes?.(); } catch(_) {}
     } catch (e) {
