@@ -183,23 +183,16 @@
     })();
   </script>
 
-  <!-- ========= Supabase client + Helpers POPUP ========= -->
+  <!-- ========= Helpers POPUP (utilise window.sb fourni par userData.js) ========= -->
   <script>
-    (function ensureSbClientOnce(){
-      const SB_URL  = 'https://youhealyblgbwjhsskca.supabase.co';
-      const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
-      if (!window.sb) window.sb = supabase.createClient(SB_URL, SB_ANON);
-    })();
-    const sb = window.sb;
-
     async function getUsersTableIdForCurrentAuth() {
-      const { data: { user } } = await sb.auth.getUser();
+      const { data: { user } } = await window.sb.auth.getUser();
       const authId = user?.id || null;
       if (!authId) return null;
 
-      let { data, error } = await sb.from('users').select('id').eq('auth_id', authId).maybeSingle();
+      let { data, error } = await window.sb.from('users').select('id').eq('auth_id', authId).maybeSingle();
       if (!error && data?.id) return data.id;
-      ({ data, error } = await sb.from('users').select('id').eq('id', authId).maybeSingle());
+      ({ data, error } = await window.sb.from('users').select('id').eq('id', authId).maybeSingle());
       if (!error && data?.id) return data.id;
       console.warn('[popup] users.id introuvable pour auth_id', authId);
       return null;
@@ -208,7 +201,7 @@
     async function checkAndShowPopupOnce() {
       const usersTableId = await getUsersTableIdForCurrentAuth();
       if (!usersTableId) return;
-      const { data, error } = await sb
+      const { data, error } = await window.sb
         .from('messages_popup')
         .select('id,message,vue,created_at,userid')
         .eq('userid', usersTableId)
@@ -218,7 +211,7 @@
         const msg = data[0];
         if (!msg.vue) {
           alert(msg.message);
-          await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
+          await window.sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
         }
       }
     }
@@ -226,19 +219,19 @@
     async function listenPopupsRealtime() {
       const usersTableId = await getUsersTableIdForCurrentAuth();
       if (!usersTableId) return;
-      sb.channel('popups_for_' + usersTableId)
+      window.sb.channel('popups_for_' + usersTableId)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages_popup', filter: `userid=eq.${usersTableId}` },
           async (payload) => {
             const m = payload.new;
             alert(m.message);
-            await sb.from('messages_popup').update({ vue: true }).eq('id', m.id);
+            await window.sb.from('messages_popup').update({ vue: true }).eq('id', m.id);
           }
         ).subscribe();
     }
 
     async function checkConcoursStatusFixed() {
       try {
-        const { data, error } = await sb
+        const { data, error } = await window.sb
           .from('config').select('concours_enabled')
           .eq('id', 'global').single();
         if (!error) {

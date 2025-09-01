@@ -653,6 +653,7 @@ function fillRectThemeSafe(c, px, py, size) {
     function restartGameHard() {
       // stop timers
       stopSoftDrop();
+      stopHorizontalRepeat(); // ✅ stop auto-repeat si actif
       if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
 
       // reset state
@@ -704,6 +705,8 @@ function fillRectThemeSafe(c, px, py, size) {
 
       paused = true;
       stopSoftDrop();
+      stopHorizontalRepeat(); // ✅
+
       safeRedraw();
 
       // on efface ttes sauvegardes → pas de "reprendre"
@@ -927,7 +930,10 @@ function fillRectThemeSafe(c, px, py, size) {
 
     function togglePause() {
       paused = !paused;
-      if (paused) stopSoftDrop();
+      if (paused) {
+        stopSoftDrop();
+        stopHorizontalRepeat(); // ✅
+      }
       safeRedraw();
       if (!paused && !gameOver) requestAnimationFrame(update);
     }
@@ -1456,6 +1462,31 @@ function fillRectThemeSafe(c, px, py, size) {
     const DEAD_ZONE = 10;
     const VERTICAL_LOCK_EARLY_MS = 140;
 
+    // === AUTO-REPEAT HORIZONTAL (NOUVEAU) ===
+    const INITIAL_REPEAT_DELAY = 180; // délai avant répétition (ms)
+    const REPEAT_INTERVAL = 60;       // cadence pendant maintien (ms)
+    let horizDir = 0;                 // -1 gauche, 1 droite, 0 neutre
+    let repeatKickoff = null;
+    let repeatTicker = null;
+    function startHorizontalRepeat(dir) {
+      if (paused || gameOver) return;
+      if (dir !== -1 && dir !== 1) return;
+      if (horizDir === dir && (repeatKickoff || repeatTicker)) return; // déjà en cours même sens
+      stopHorizontalRepeat();
+      horizDir = dir;
+      repeatKickoff = setTimeout(() => {
+        repeatKickoff = null;
+        repeatTicker = setInterval(() => {
+          if (!paused && !gameOver) move(horizDir);
+        }, REPEAT_INTERVAL);
+      }, INITIAL_REPEAT_DELAY);
+    }
+    function stopHorizontalRepeat() {
+      if (repeatKickoff) { clearTimeout(repeatKickoff); repeatKickoff = null; }
+      if (repeatTicker)  { clearInterval(repeatTicker); repeatTicker = null; }
+      horizDir = 0;
+    }
+
     // flags de swipe
     let didHardDrop = false;
 
@@ -1496,11 +1527,14 @@ function fillRectThemeSafe(c, px, py, size) {
       gestureMode = 'none';
       didHardDrop = false;
 
+      stopHorizontalRepeat(); // ✅ reset dès le début
+
       clearTimeout(holdToDropTimeout);
       holdToDropTimeout = setTimeout(() => {
         if (dragging && !softDropActive) {
           gestureMode = 'vertical';
           startSoftDrop();
+          stopHorizontalRepeat(); // sécurité
         }
       }, HOLD_ACTIVATION_MS);
     }, { passive: true });
@@ -1511,11 +1545,15 @@ function fillRectThemeSafe(c, px, py, size) {
       const now = Date.now();
       const elapsed = now - touchStartTime;
 
-      movedX = t.clientX - startX;
-      movedY = t.clientY - startY;
+      const newMovedX = t.clientX - startX;
+      const newMovedY = t.clientY - startY;
+      movedX = newMovedX;
+      movedY = newMovedY;
 
+      // Si on passe en vertical (soft drop / rotation), on coupe la répétition horizontale.
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';
+        stopHorizontalRepeat();
         if (!softDropActive && isQuickSwipeUp(elapsed, movedY)){
           rotatePiece();
           touchStartTime = now;
@@ -1525,6 +1563,7 @@ function fillRectThemeSafe(c, px, py, size) {
         return;
       }
 
+      // Détection du mode horizontal
       if (gestureMode === 'none') {
         if (Math.abs(movedX) > Math.max(Math.abs(movedY), DEAD_ZONE) && Math.abs(movedX) > HORIZ_THRESHOLD) {
           gestureMode = 'horizontal';
@@ -1533,12 +1572,28 @@ function fillRectThemeSafe(c, px, py, size) {
       }
 
       if (gestureMode === 'horizontal') {
-        if (movedX > HORIZ_THRESHOLD)  { move(1);  startX = t.clientX; }
-        if (movedX < -HORIZ_THRESHOLD) { move(-1); startX = t.clientX; }
+        // premier cran (comme avant)
+        if (movedX > HORIZ_THRESHOLD)  {
+          move(1);
+          startX = t.clientX;
+          startHorizontalRepeat(1);   // ✅ enclenche l'auto-repeat à droite
+        } else if (movedX < -HORIZ_THRESHOLD) {
+          move(-1);
+          startX = t.clientX;
+          startHorizontalRepeat(-1);  // ✅ enclenche l'auto-repeat à gauche
+        }
+
+        // si on revient proche du point (pas de direction claire), stop repeat
+        if (Math.abs(movedX) <= HORIZ_THRESHOLD) {
+          stopHorizontalRepeat();
+        }
+
+        // toute activité horizontale coupe le hold-to-drop
         if (Math.abs(movedX) > 18) clearTimeout(holdToDropTimeout);
         return;
       }
 
+      // gestes complémentaires (tant qu'on n'est pas en horizontal)
       if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
         rotatePiece();
         touchStartTime = now;
@@ -1560,6 +1615,9 @@ function fillRectThemeSafe(c, px, py, size) {
       const wasHard = didHardDrop;
       dragging = false;
       clearTimeout(holdToDropTimeout);
+
+      // on coupe toutes répétitions
+      stopHorizontalRepeat();
 
       if (softDropActive) {
         stopSoftDrop();
@@ -1588,6 +1646,7 @@ function fillRectThemeSafe(c, px, py, size) {
     canvas.addEventListener('touchcancel', function () {
       dragging = false;
       clearTimeout(holdToDropTimeout);
+      stopHorizontalRepeat(); // ✅
       if (softDropActive) stopSoftDrop();
       mustLiftFingerForNextSoftDrop = false;
       gestureMode = 'none';
@@ -1608,7 +1667,10 @@ function fillRectThemeSafe(c, px, py, size) {
       }
     });
 
-    window.addEventListener('blur', stopSoftDrop);
+    window.addEventListener('blur', () => {
+      stopSoftDrop();
+      stopHorizontalRepeat(); // ✅
+    });
 
     // === SUPABASE Fonctions ===
     async function getUserId() {
