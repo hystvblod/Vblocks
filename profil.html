@@ -6,54 +6,134 @@
   <title>VBlocks - Profil</title>
   <link rel="stylesheet" href="style/main.css"/>
   <style>
-    body{margin:0;min-height:100vh;font-family:'Quicksand',Arial,sans-serif;background:radial-gradient(ellipse at 60% 40%,#7061e8 0%,#5db9e3 55%,#483070 100%)}
-    .top-bar{width:100%;display:flex;justify-content:space-between;align-items:center;position:absolute;top:0;left:0;right:0;height:65px;z-index:30;padding:0 12px;box-sizing:border-box;pointer-events:none}
-    .top-left,.top-right{display:flex;align-items:center;pointer-events:all}
-    .top-left{flex:1}.top-right{gap:20px}
-    .btn-back{display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;background:none;border:none;transition:background .14s;margin-left:-8px;cursor:pointer;padding:0}
-    .btn-back svg{width:32px;height:32px;display:block}.btn-back:hover{background:#23236028}
-    .btn-icon{background:none;border:none;display:flex;align-items:center;justify-content:center;padding:6px;cursor:pointer;border-radius:50%;transition:background .15s;width:44px;height:44px}
-    .btn-icon img{width:26px;height:26px;display:block;filter:drop-shadow(0 1px 2px #2228)}.btn-icon:hover{background:#23236022}
-    .profil-content{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;padding-top:6.2em;gap:1.8em}
-    .profil-logo{width:94px;margin-bottom:.3em;margin-top:-1.1em;filter:drop-shadow(0 5px 18px #a3c8fd44);border-radius:1.1em;user-select:none;pointer-events:none}
-    .profil-title{font-size:2em;font-weight:900;color:#fff;letter-spacing:.03em;text-align:center;margin-bottom:.3em;text-shadow:0 3px 16px #2e6ead44,0 1px 1px #fff7}
-    .profil-id{font-size:1.13em;color:#d6ffe6;font-weight:800;letter-spacing:.09em;background:rgba(55,192,120,.17);padding:.36em 1.1em;border-radius:1.3em;box-shadow:0 2px 12px #0ae58c20;text-shadow:0 1px 2px #2223}
-    .profil-change-pseudo{background:none;border:2px dashed #b8ffdb88;color:#ffffffee;border-radius:1.3em;padding:.4em 1em;font-size:.95em;font-weight:700;cursor:pointer;box-shadow:0 2px 8px #0ae58c33;transition:background .15s,transform .13s}
-    .profil-change-pseudo:hover{background:rgba(255,255,255,.1);transform:scale(1.03)}
-    .theme-btn-vb,.applis-btn-vb{width:98%;margin:.5em auto 0;background:linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%);color:#246133;border:none;border-radius:1.2em;font-size:1.13em;font-weight:900;padding:.94em 0;cursor:pointer;box-shadow:0 2px 16px #b7ffe644;transition:background .15s,color .13s,transform .14s;outline:none;letter-spacing:.04em;display:flex;align-items:center;justify-content:center;gap:.67em;text-align:center}
-    .theme-btn-vb:active,.applis-btn-vb:active{background:linear-gradient(90deg,#47bcd3 0%,#a6f382 100%);color:#143e1a}
-    @media (max-width:520px){.profil-title{font-size:1.18em}.profil-logo{width:68px;margin-top:.1em}.profil-content{padding-top:3.7em}.top-bar{padding-left:2px;padding-right:2px}}
-    .popup-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;justify-content:center;align-items:center;z-index:5000}
-    .popup-bg.active{display:flex}
-    .popup-box{background:#fff;border-radius:16px;padding:2em 1.4em;width:90%;max-width:350px;text-align:center;box-shadow:0 8px 36px #0003}
-    .popup-box input{width:90%;padding:.7em;font-size:1.05em;border:1px solid #ccc;border-radius:8px;margin-top:1em}
-    .popup-box button{margin-top:1.2em;margin-right:.4em;padding:.6em 1.4em;border-radius:8px;font-weight:700;border:none;cursor:pointer;background:#38a75f;color:#fff}
-    .popup-box button:last-child{background:#eee;color:#333}
-    #pseudoError{color:#d33;font-size:.95em;margin-top:.5em;min-height:1.1em}
-    .popup-theme-bg{position:fixed;inset:0;z-index:1000;background:rgba(24,44,26,.68);display:none;align-items:center;justify-content:center}
-    .popup-theme-bg.active{display:flex}
-    .popup-theme-vb{background:#fff;border-radius:2em;padding:2em 1.1em;box-shadow:0 8px 38px #82e7bc22;text-align:center;max-width:370px;width:93vw;animation:popupfade .18s}
-    .theme-list-vb{display:flex;flex-wrap:wrap;gap:1.2em;justify-content:center;margin-bottom:.5em}
-    .theme-choice-vb{border:none;border-radius:1em;padding:.67em 1.3em;font-size:1.05em;font-weight:800;background:#e6f6ea;color:#156c31;cursor:pointer;box-shadow:0 2px 10px #a2dcd220;transition:background .13s,color .13s,transform .13s;margin:0;outline:none}
-    .theme-choice-vb.active,.theme-choice-vb:active{background:linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%);color:#0e4b26;transform:scale(1.05)}
-    .theme-choice-vb.locked{filter:grayscale(1);opacity:.6;cursor:not-allowed}
-    .popup-actions{margin-top:1.7em}
-    .vb-btn-validate,.vb-btn-cancel{padding:.67em 1.7em;border-radius:1em;font-weight:800;border:none;font-size:1.03em;cursor:pointer;margin:0 .7em}
-    .vb-btn-validate{background:#59e7aa;color:#093c1c}.vb-btn-validate:active{background:#2ad680}
-    .vb-btn-cancel{background:#eee;color:#6d787a}.vb-btn-cancel:active{background:#c7c7c7}
-    @keyframes popupfade{from{opacity:0;transform:translateY(38px) scale(.96)}to{opacity:1;transform:none}}
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Quicksand', Arial, sans-serif;
+      background: radial-gradient(ellipse at 60% 40%, #7061e8 0%, #5db9e3 55%, #483070 100%);
+    }
+    .top-bar {
+      width: 100%;
+      display: flex; justify-content: space-between; align-items: center;
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 65px; z-index: 30; padding: 0 12px; box-sizing: border-box;
+      pointer-events: none;
+    }
+    .top-left, .top-right { display: flex; align-items: center; pointer-events: all; }
+    .top-left { flex: 1; }
+    .top-right { gap: 20px; }
+    .btn-back { display: flex; align-items: center; justify-content: center;
+      width: 48px; height: 48px; border-radius: 50%;
+      background: none; border: none; transition: background 0.14s;
+      margin-left: -8px; cursor: pointer; padding: 0; }
+    .btn-back svg { width: 32px; height: 32px; display: block; }
+    .btn-back:hover { background: #23236028; }
+    .btn-icon { background: none; border: none; display: flex; align-items: center; justify-content: center;
+      padding: 6px; cursor: pointer; border-radius: 50%; transition: background 0.15s; width: 44px; height: 44px; }
+    .btn-icon img { width: 26px; height: 26px; display: block; filter: drop-shadow(0 1px 2px #2228); }
+    .btn-icon:hover { background: #23236022; }
+
+    .profil-content {
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      min-height: 100vh; padding-top: 6.2em; gap: 1.8em;
+    }
+    .profil-logo {
+      width: 94px; margin-bottom: 0.3em; margin-top: -1.1em;
+      filter: drop-shadow(0 5px 18px #a3c8fd44);
+      border-radius: 1.1em; user-select: none; pointer-events: none;
+    }
+    .profil-title {
+      font-size: 2em; font-weight: 900; color: #fff; letter-spacing: 0.03em;
+      text-align: center; margin-bottom: 0.3em;
+      text-shadow: 0 3px 16px #2e6ead44, 0 1px 1px #fff7;
+    }
+    .profil-id {
+      font-size: 1.13em; color: #d6ffe6; font-weight: 800; letter-spacing: 0.09em;
+      background: rgba(55,192,120,0.17);
+      padding: 0.36em 1.1em; border-radius: 1.3em;
+      box-shadow: 0 2px 12px #0ae58c20; text-shadow: 0 1px 2px #2223;
+    }
+    .profil-change-pseudo {
+      background: none; border: 2px dashed #b8ffdb88; color: #ffffffee; border-radius: 1.3em;
+      padding: 0.4em 1em; font-size: 0.95em; font-weight: 700; cursor: pointer;
+      box-shadow: 0 2px 8px #0ae58c33; transition: background 0.15s, transform 0.13s;
+    }
+    .profil-change-pseudo:hover { background: rgba(255,255,255,0.1); transform: scale(1.03); }
+
+    .theme-btn-vb, .applis-btn-vb {
+      width: 98%; margin: 0.5em auto 0 auto;
+      background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%); color: #246133;
+      border: none; border-radius: 1.2em; font-size: 1.13em; font-weight: 900; padding: 0.94em 0;
+      cursor: pointer; box-shadow: 0 2px 16px #b7ffe644; transition: background 0.15s, color 0.13s, transform 0.14s;
+      outline: none; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: center; gap: 0.67em; text-align: center;
+    }
+    .theme-btn-vb:active, .applis-btn-vb:active { background: linear-gradient(90deg,#47bcd3 0%,#a6f382 100%); color: #143e1a; }
+
+    @media (max-width: 520px) {
+      .profil-title { font-size: 1.18em;}
+      .profil-logo { width: 68px; margin-top: 0.1em;}
+      .profil-content { padding-top: 3.7em; }
+      .top-bar { padding-left: 2px; padding-right: 2px; }
+    }
+
+    /* ===== POPUP PSEUDO ===== */
+    .popup-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: none; justify-content: center; align-items: center; z-index: 5000; }
+    .popup-bg.active { display: flex; }
+    .popup-box { background: #fff; border-radius: 16px; padding: 2em 1.4em;
+      width: 90%; max-width: 350px; text-align: center; box-shadow: 0 8px 36px #0003; }
+    .popup-box input { width: 90%; padding: 0.7em; font-size: 1.05em;
+      border: 1px solid #ccc; border-radius: 8px; margin-top: 1em; }
+    .popup-box button { margin-top: 1.2em; margin-right: 0.4em; padding: 0.6em 1.4em;
+      border-radius: 8px; font-weight: 700; border: none; cursor: pointer;
+      background: #38a75f; color: #fff; }
+    .popup-box button:last-child { background: #eee; color: #333; }
+    #pseudoError { color: #d33; font-size: 0.95em; margin-top: 0.5em; min-height: 1.1em; }
+
+    /* ===== POPUP THÈMES ===== */
+    .popup-theme-bg { position: fixed; inset: 0; z-index: 1000; background: rgba(24,44,26,0.68);
+      display: none; align-items: center; justify-content: center; }
+    .popup-theme-bg.active { display: flex; }
+    .popup-theme-vb {
+      background: #fff; border-radius: 2em; padding: 2em 1.1em;
+      box-shadow: 0 8px 38px #82e7bc22; text-align: center; max-width: 370px; width: 93vw;
+      animation: popupfade 0.18s;
+    }
+    .theme-list-vb { display: flex; flex-wrap: wrap; gap: 1.2em; justify-content: center; margin-bottom: 0.5em;}
+    .theme-choice-vb {
+      border: none; border-radius: 1em; padding: 0.67em 1.3em; font-size: 1.05em; font-weight: 800;
+      background: #e6f6ea; color: #156c31; cursor: pointer; box-shadow: 0 2px 10px #a2dcd220;
+      transition: background 0.13s, color 0.13s, transform 0.13s; margin: 0; outline: none;
+    }
+    .theme-choice-vb.active, .theme-choice-vb:active {
+      background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%);
+      color: #0e4b26; transform: scale(1.05);
+    }
+    .theme-choice-vb.locked { filter: grayscale(1); opacity: .6; cursor: not-allowed; }
+    .popup-actions { margin-top: 1.7em; }
+    .vb-btn-validate, .vb-btn-cancel { padding:.67em 1.7em; border-radius:1em; font-weight:800; border:none; font-size:1.03em; cursor:pointer; margin:0 .7em; }
+    .vb-btn-validate { background:#59e7aa; color:#093c1c; } .vb-btn-validate:active{ background:#2ad680; }
+    .vb-btn-cancel { background:#eee; color:#6d787a; } .vb-btn-cancel:active{ background:#c7c7c7; }
+
+    @keyframes popupfade { from { opacity:0; transform: translateY(38px) scale(.96);} to { opacity:1; transform:none; } }
   </style>
 </head>
 <body>
   <div class="top-bar">
     <div class="top-left">
       <a href="index.html" class="btn-back" title="Retour" tabindex="0">
-        <svg viewBox="0 0 36 36" fill="none"><path d="M23.5 28L15 19.5L23.5 11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 36 36" fill="none">
+          <path d="M23.5 28L15 19.5L23.5 11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </a>
     </div>
     <div class="top-right">
-      <a href="profil.html" class="btn-icon" title="Profil"><img src="assets/icons/user.svg" alt="Profil"/></a>
-      <a href="parametres.html" class="btn-icon" title="Paramètres"><img src="assets/icons/settings.svg" alt="Paramètres"/></a>
+      <a href="profil.html" class="btn-icon" title="Profil">
+        <img src="assets/icons/user.svg" alt="Profil" />
+      </a>
+      <a href="parametres.html" class="btn-icon" title="Paramètres">
+        <img src="assets/icons/settings.svg" alt="Paramètres" />
+      </a>
     </div>
   </div>
 
@@ -63,9 +143,17 @@
 
     <div class="profil-id" id="profilPseudo">MonPseudo</div>
 
-    <button class="profil-change-pseudo" id="btnChangePseudo"><span data-i18n="profil.btn.changePseudo">Modifier mon pseudo</span></button>
-    <button class="theme-btn-vb" id="changeThemeBtn"><span data-i18n="profil.btn.theme">Thèmes</span></button>
-    <button class="applis-btn-vb" id="applisBtn" style="display:none;"><span data-i18n="profil.btn.applis">Nos applis</span></button>
+    <button class="profil-change-pseudo" id="btnChangePseudo">
+      <span data-i18n="profil.btn.changePseudo">Modifier mon pseudo</span>
+    </button>
+
+    <button class="theme-btn-vb" id="changeThemeBtn">
+      <span data-i18n="profil.btn.theme">Thèmes</span>
+    </button>
+
+    <button class="applis-btn-vb" id="applisBtn" style="display:none;">
+      <span data-i18n="profil.btn.applis">Nos applis</span>
+    </button>
   </div>
 
   <!-- POPUP PSEUDO -->
@@ -91,16 +179,17 @@
     </div>
   </div>
 
-  <!-- libs -->
+  <!-- Ordre: supabase -> i18n -> userData (auth unique) -> pub -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/userData.js"></script>
   <script src="js/pub.js"></script>
 
   <script>
+    // i18n helper
     function i18nSafe(key, fb){ try{ const v=(window.i18nGet?.(key)); return (!v||v===key)?fb:v }catch{ return fb } }
 
-    // --- Fallbacks robustes (nouveaux joueurs) ---
+    // --- Helpers robustes (nouveaux joueurs) ---
     async function ensureAuthAndProfileFallback(){
       const sb = window.sb;
       try{
@@ -120,56 +209,77 @@
       const { data:{ user } } = await window.sb.auth.getUser();
       const uid = user?.id;
       if(!uid) throw new Error('no uid');
+
       for(let i=0;i<maxTries;i++){
         const { data, error } = await window.sb
           .from('users')
-          .select('pseudo,themes_possedes')
+          .select('pseudo, themes_possedes')
           .eq('auth_id', uid)
           .maybeSingle();
+
         if(!error && data) return data;
+
         await ensureAuthAndProfileFallback().catch(()=>{});
-        await new Promise(r=>setTimeout(r, 200*(i+1)));
+        await new Promise(r=>setTimeout(r, 200*(i+1))); // backoff léger
       }
       return null;
     }
 
+    // Fallback si userData.updatePseudoSecure indispo
     async function updatePseudoSecureLocal(sb, newPseudo){
-      const np = String(newPseudo||'').trim();
-      if(np.length<3) throw new Error('Pseudo trop court.');
-      if(window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+      const np = String(newPseudo || '').trim();
+      if (np.length < 3) throw new Error('Pseudo trop court.');
+      if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
       const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
-      if(error) throw error;
+      if (error) throw error;
       localStorage.setItem('pseudo', np);
       return true;
     }
 
+    // Normalisation thème
     function normalizeThemeKey(k){
-      return String(k||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'');
+      return String(k || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/\s+/g,'');
     }
 
-    async function fetchThemesDirectFromDB(){
+    // SELECT direct des thèmes (auth déjà faite)
+    async function fetchThemesDirectFromDB() {
       const sb = window.sb;
       let uid = null;
-      try{ const { data:{ user } } = await sb.auth.getUser(); uid = user?.id||null; }catch{}
-      if(!uid) return [];
-      try{
-        const { data, error } = await sb.from('users').select('themes_possedes').eq('auth_id', uid).single();
-        if(error || !data) return [];
+      try {
+        const { data: { user } } = await sb.auth.getUser();
+        uid = user?.id || null;
+      } catch {}
+      if (!uid) return [];
+      try {
+        const { data, error } = await sb
+          .from('users')
+          .select('themes_possedes')
+          .eq('auth_id', uid)
+          .single();
+
+        if (error || !data) return [];
         const raw = data.themes_possedes;
         let arr = [];
-        if(Array.isArray(raw)) arr = raw;
-        else if(typeof raw==='string' && raw.trim()){
+
+        if (Array.isArray(raw)) {
+          arr = raw;
+        } else if (typeof raw === 'string' && raw.trim()) {
           try { arr = JSON.parse(raw); }
-          catch{
-            const cleaned = raw.replace(/[{}]/g,'');
-            arr = cleaned.split(/[,\s]+/).map(s=>s.replace(/^"(.*)"$/,'$1')).filter(Boolean);
+          catch {
+            const cleaned = raw.replace(/[{}]/g, '');
+            arr = cleaned.split(/[,\s]+/)
+              .map(s => s.replace(/^"(.*)"$/, '$1'))
+              .filter(Boolean);
           }
         }
         return [...new Set(arr.map(normalizeThemeKey).filter(Boolean))];
-      }catch{ return []; }
+      } catch { return []; }
     }
 
-    function setupPseudoPopup(sb){
+    // Popup pseudo
+    function setupPseudoPopup(sb) {
       const popup = document.getElementById('popupPseudo');
       const btnOpen = document.getElementById('btnChangePseudo');
       const btnSave = document.getElementById('btnSavePseudo');
@@ -181,104 +291,122 @@
         err.textContent = '';
         input.value = localStorage.getItem("pseudo") || '';
         popup.classList.add('active');
-        setTimeout(()=>input.focus(),50);
+        setTimeout(()=>input.focus(), 50);
       };
       btnCancel.onclick = () => popup.classList.remove('active');
 
       btnSave.onclick = async () => {
-        const v = (input.value||'').trim();
-        if(!v){ err.textContent = i18nSafe('profil.popup.error.empty','Entre un pseudo.'); return; }
-        if(v.length>20){ err.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
-        try{
-          if(window.userData?.updatePseudoSecure) await window.userData.updatePseudoSecure(v);
-          else await updatePseudoSecureLocal(window.sb, v);
+        const v = (input.value || '').trim();
+        if (!v) { err.textContent = i18nSafe('profil.popup.error.empty','Entre un pseudo.'); return; }
+        if (v.length > 20) { err.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
+        try {
+          if (window.userData?.updatePseudoSecure) {
+            await window.userData.updatePseudoSecure(v);
+          } else {
+            await updatePseudoSecureLocal(window.sb, v);
+          }
           document.getElementById("profilPseudo").textContent = v;
           localStorage.setItem("pseudo", v);
           err.textContent = i18nSafe('profil.popup.success','Pseudo mis à jour.');
-          setTimeout(()=>popup.classList.remove('active'),500);
-        }catch(e){
-          err.textContent = (e&&e.message)? e.message : i18nSafe('profil.popup.error.generic','Erreur lors de la mise à jour.');
+          setTimeout(() => popup.classList.remove('active'), 500);
+        } catch(e) {
+          err.textContent = (e && e.message) ? e.message : i18nSafe('profil.popup.error.generic','Erreur lors de la mise à jour.');
         }
       };
     }
 
-    async function openThemePopup(){
+    // Popup thèmes
+    async function openThemePopup() {
       const popup = document.getElementById('theme-selector-popup');
       const themeList = document.getElementById('themeListVB');
 
+      // Ouvre immédiatement + placeholder
       popup.classList.add("active");
       themeList.innerHTML = '<div style="opacity:.7;padding:12px">Chargement…</div>';
 
+      // Assure la création du profil pour les nouveaux
       await getProfileEnsured().catch(()=>{});
 
-      const RAW_ALL = (typeof window.getAllThemes==='function')
+      const RAW_ALL = (typeof window.getAllThemes === 'function')
         ? window.getAllThemes()
         : ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber","grece","japon","arabic"];
       const ALL_THEMES = RAW_ALL.map(normalizeThemeKey).filter(Boolean);
 
       let unlocked = await fetchThemesDirectFromDB();
-      if(!unlocked.includes('neon')) unlocked.push('neon');
+      if (!unlocked.includes('neon')) unlocked.push('neon');
 
       const ownedSet = new Set(unlocked);
-      themeList.innerHTML = ALL_THEMES.map(theme=>{
+      themeList.innerHTML = ALL_THEMES.map(theme => {
         const locked = !ownedSet.has(theme);
-        const label = theme.charAt(0).toUpperCase()+theme.slice(1);
-        return `<button class="theme-choice-vb${locked?' locked':''}" data-theme="${theme}" ${locked?'disabled':''}>${label}${locked?' 🔒':''}</button>`;
+        const label = theme.charAt(0).toUpperCase() + theme.slice(1);
+        return `<button class="theme-choice-vb${locked ? ' locked' : ''}"
+                        data-theme="${theme}" ${locked ? 'disabled' : ''}>
+                  ${label}${locked ? ' 🔒' : ''}
+                </button>`;
       }).join('');
 
       let selectedTheme = normalizeThemeKey(localStorage.getItem("themeVBlocks") || "neon");
-      document.querySelectorAll('.theme-choice-vb').forEach(btn=>{
-        if(normalizeThemeKey(btn.dataset.theme)===selectedTheme) btn.classList.add('active');
+      document.querySelectorAll('.theme-choice-vb').forEach(btn => {
+        if (normalizeThemeKey(btn.dataset.theme) === selectedTheme) btn.classList.add('active');
       });
 
-      document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn=>{
-        btn.onclick = ()=>{
+      document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn => {
+        btn.onclick = () => {
           document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
           btn.classList.add('active');
           selectedTheme = normalizeThemeKey(btn.dataset.theme);
         };
       });
 
-      document.getElementById('btnValiderTheme').onclick = async ()=>{
-        if(!selectedTheme) return;
-        try{
+      document.getElementById('btnValiderTheme').onclick = async () => {
+        if (!selectedTheme) return;
+        try {
           window.userData?.applyLocalTheme(selectedTheme);
-          try{ Object.keys(localStorage).forEach(k=>{ if(k.startsWith('vblocks:autosave:')) localStorage.removeItem(k); }); }catch(_){}
-        }catch(e){
-          alert("Impossible d'appliquer le thème : "+(e?.message||'Erreur')); return;
+          try {
+            Object.keys(localStorage).forEach(k => { if (k.startsWith('vblocks:autosave:')) localStorage.removeItem(k); });
+          } catch(_){}
+        } catch(e) {
+          alert("Impossible d'appliquer le thème : " + (e?.message || 'Erreur'));
+          return;
         }
         popup.classList.remove('active');
       };
-      document.getElementById('btnCancelTheme').onclick = ()=>popup.classList.remove('active');
+      document.getElementById('btnCancelTheme').onclick = () => popup.classList.remove('active');
     }
 
-    // --- Boot de la page (avec fallback) ---
-    window.addEventListener("DOMContentLoaded", async ()=>{
-      try{
-        if(window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-        else await ensureAuthAndProfileFallback();
-      }catch(e){
-        console.warn('[Profil bootstrap]', e?.message||e);
+    // Boot de la page — auth unique via userData.js (avec fallback et lecture assurée)
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        if (window.bootstrapAuthAndProfile) {
+          await window.bootstrapAuthAndProfile();
+        } else {
+          await ensureAuthAndProfileFallback();
+        }
+      } catch(e) {
+        console.warn('[Profil bootstrap]', e?.message || e);
         await ensureAuthAndProfileFallback();
       }
 
+      // Thème visuel local
       await window.userData?.syncThemeFromLocal?.().catch(()=>{});
 
-      try{
+      // Pseudo (cloud -> local) — lecture assurée
+      try {
         const prof = await getProfileEnsured();
         const pseudo = prof?.pseudo || localStorage.getItem("pseudo") || "MonPseudo";
         localStorage.setItem("pseudo", pseudo);
         document.getElementById("profilPseudo").textContent = pseudo;
-      }catch{
+      } catch {
         const p = localStorage.getItem("pseudo") || "MonPseudo";
         document.getElementById("profilPseudo").textContent = p;
       }
 
       setupPseudoPopup(window.sb);
-      document.getElementById("changeThemeBtn").onclick = ()=>openThemePopup();
+      document.getElementById("changeThemeBtn").onclick = () => openThemePopup();
 
+      // "Nos applis" désactivé
       const btnApplis = document.getElementById("applisBtn");
-      if(btnApplis){ btnApplis.style.display="none"; btnApplis.onclick=null; }
+      if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
     });
   </script>
 </body>
