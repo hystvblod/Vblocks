@@ -13,20 +13,20 @@
     .prix-blanc { color: white; font-size: 0.9em; display: block; margin-top: 5px; }
   </style>
 
-  <!-- Lib Supabase (une seule fois, version fixée) -->
+  <!-- Lib Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
 
-  <!-- App utils (peuvent dépendre de sb mais exécutent surtout au DOMContentLoaded) -->
+  <!-- App utils -->
   <script src="js/userData.js"></script>
   <script src="js/i18n.js"></script>
 
-  <!-- Pubs (AdMob + SSV) puis IAP helpers -->
+  <!-- Ads + IAP -->
   <script src="js/pub.js"></script>
   <script src="js/achat.js"></script>
 </head>
 
 <body>
-  <!-- Boutons top-bar (profil, paramètres uniquement) -->
+  <!-- Boutons top-bar -->
   <div class="top-buttons top-buttons-home">
     <a href="profil.html" class="btn-icon" title="Profil">
       <img src="assets/icons/user.svg" alt="Profil" />
@@ -44,19 +44,15 @@
       <h2 data-i18n="index.rgpd.title">Confidentialité & Publicités</h2>
       <p data-i18n="index.rgpd.body1">
         VBlocks utilise des identifiants publicitaires pour diffuser des pubs personnalisées.<br>
-        Tu peux refuser ou accepter la personnalisation et choisir si tu veux recevoir des notifications (FCM).
+        Tu peux refuser ou accepter la personnalisation.
       </p>
       <small data-i18n="index.rgpd.body2">(Tu peux changer d'avis plus tard dans les paramètres)</small>
 
-      <!-- ✅ Choix détaillés -->
+      <!-- ✅ Choix publicités uniquement -->
       <div style="text-align:left;margin-top:.75rem">
         <label style="display:flex;gap:.5em;align-items:center;margin:.25rem 0">
           <input id="consent-ads" type="checkbox" checked>
           <span data-i18n="index.rgpd.ads">Publicités personnalisées</span>
-        </label>
-        <label style="display:flex;gap:.5em;align-items:center;margin:.25rem 0">
-          <input id="consent-notif" type="checkbox">
-          <span data-i18n="index.rgpd.notif">Notifications (FCM)</span>
         </label>
       </div>
 
@@ -145,8 +141,7 @@
     (function(){
       const CONSENT_KEY = "rgpdConsent";
       const ADS_KEY     = "adsConsent";
-      const NOTIF_KEY   = "notifConsent";
-      const ADS_ENABLED = "adsEnabled"; // compat avec pub.js
+      const ADS_ENABLED = "adsEnabled";
 
       function showConsentIfNeeded() {
         const consent = localStorage.getItem(CONSENT_KEY);
@@ -159,13 +154,8 @@
       function applyConsentFromStorage() {
         const consent = localStorage.getItem(CONSENT_KEY);
         const ads  = localStorage.getItem(ADS_KEY) === "yes";
-        const notif= localStorage.getItem(NOTIF_KEY) === "yes";
-        // initAds est optionnel; pub.js lit directement les clés (NPA)
         if (consent === "accept" && ads && typeof window.initAds === "function") {
           try { window.initAds(); } catch(e){}
-        }
-        if (consent === "accept" && notif) {
-          try { window.__initPushOnce && window.__initPushOnce(); } catch(e){}
         }
       }
       window.addEventListener("DOMContentLoaded", function() {
@@ -173,14 +163,11 @@
         const btnAccept = document.getElementById("consent-accept");
         const btnRefuse = document.getElementById("consent-refuse");
         const cbAds   = document.getElementById("consent-ads");
-        const cbNotif = document.getElementById("consent-notif");
         showConsentIfNeeded();
 
         btnAccept.onclick = function() {
           localStorage.setItem(CONSENT_KEY, "accept");
           localStorage.setItem(ADS_KEY,   cbAds.checked   ? "yes" : "no");
-          localStorage.setItem(NOTIF_KEY, cbNotif.checked ? "yes" : "no");
-          // compat pub.js
           localStorage.setItem(ADS_ENABLED, cbAds.checked ? "true" : "false");
           popup.style.display = "none";
           applyConsentFromStorage();
@@ -188,8 +175,6 @@
         btnRefuse.onclick = function() {
           localStorage.setItem(CONSENT_KEY, "refuse");
           localStorage.setItem(ADS_KEY,   "no");
-          localStorage.setItem(NOTIF_KEY, "no");
-          // compat pub.js
           localStorage.setItem(ADS_ENABLED, "false");
           popup.style.display = "none";
         };
@@ -198,66 +183,20 @@
     })();
   </script>
 
-  <!-- ========= Supabase client + Auth Anonyme + Migration Legacy + Popups ========= -->
+  <!-- ========= Supabase client + Helpers POPUP ========= -->
   <script>
-    // Client Supabase réutilisable dans toute l'app
-    const SB_URL  = 'https://youhealyblgbwjhsskca.supabase.co';
-    const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
-    window.sb = window.sb || supabase.createClient(SB_URL, SB_ANON);
+    (function ensureSbClientOnce(){
+      const SB_URL  = 'https://youhealyblgbwjhsskca.supabase.co';
+      const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
+      if (!window.sb) window.sb = supabase.createClient(SB_URL, SB_ANON);
+    })();
+    const sb = window.sb;
 
-    // --------------------------
-    // CAS 1 : anciens joueurs "local only"
-    // --------------------------
-    function getLegacyLocalUserId() { return localStorage.getItem('user_id') || null; }
-    function getPseudoLocal() {
-      let p = localStorage.getItem('pseudo');
-      if (!p) { p = 'Player_' + Math.random().toString(36).substring(2, 8); localStorage.setItem('pseudo', p); }
-      return p;
-    }
-    function getLangLocal() { return localStorage.getItem('langue') || 'FR'; }
-
-    // 1) S’assurer d’une session anonyme
-    async function ensureAuth() {
-      const { data: { session } } = await sb.auth.getSession();
-      if (!session) {
-        const { error } = await sb.auth.signInAnonymously();
-        if (error) throw error;
-      }
-    }
-    // 2) Lier l'UID anonyme à l'ancien profil (une seule fois)
-    async function linkLegacyIfNeeded() {
-      const legacy = getLegacyLocalUserId();
-      if (!legacy) return;
-      if (localStorage.getItem('legacy_linked') === '1') return;
-      try {
-        const { error } = await sb.rpc('link_auth_to_legacy', { legacy_id: legacy });
-        if (!error) localStorage.setItem('legacy_linked', '1');
-      } catch (e) { console.warn('[linkLegacyIfNeeded]', e?.message || e); }
-    }
-    // 3) S’assurer qu’une ligne user existe (création si besoin)
-    async function ensureUserRow() {
-      const pseudo = getPseudoLocal();
-      const lang   = getLangLocal();
-      try { await sb.rpc('ensure_user', { default_lang: lang, default_pseudo: pseudo }); }
-      catch (e) { console.warn('[ensureUserRow]', e?.message || e); }
-    }
-    // 4) Bootstrap global pour les anciens joueurs locaux
-    async function bootstrapAuthForLegacy() {
-      await ensureAuth(); await linkLegacyIfNeeded(); await ensureUserRow();
-    }
-
-    // Utilisateur courant (UID auth)
-    async function getCurrentUserId() {
-      await ensureAuth();
-      const { data: { user } } = await sb.auth.getUser();
-      return user?.id || null;
-    }
-
-    // ===== Helper: traduire auth.uid -> users.id =====
     async function getUsersTableIdForCurrentAuth() {
-      await ensureAuth();
       const { data: { user } } = await sb.auth.getUser();
-      const authId = user?.id || null; if (!authId) return null;
+      const authId = user?.id || null;
+      if (!authId) return null;
+
       let { data, error } = await sb.from('users').select('id').eq('auth_id', authId).maybeSingle();
       if (!error && data?.id) return data.id;
       ({ data, error } = await sb.from('users').select('id').eq('id', authId).maybeSingle());
@@ -266,7 +205,6 @@
       return null;
     }
 
-    // --------- Popups ciblées ---------
     async function checkAndShowPopupOnce() {
       const usersTableId = await getUsersTableIdForCurrentAuth();
       if (!usersTableId) return;
@@ -284,6 +222,7 @@
         }
       }
     }
+
     async function listenPopupsRealtime() {
       const usersTableId = await getUsersTableIdForCurrentAuth();
       if (!usersTableId) return;
@@ -297,7 +236,6 @@
         ).subscribe();
     }
 
-    // --------- Concours (version fix) ---------
     async function checkConcoursStatusFixed() {
       try {
         const { data, error } = await sb
@@ -309,36 +247,24 @@
       } catch(e) {}
     }
 
-    // --------- userData : appels RPC sécurisés ---------
-    window.userData = window.userData || {};
-    async function __getBalances() {
-      const { data, error } = await sb.rpc('get_balances');
-      if (error) throw error;
-      const row = Array.isArray(data) ? data[0] : data;
-      return row || {};
-    }
-    userData.getVCoins = async () => { const b = await __getBalances(); return b?.vcoins ?? 0; };
-    userData.addVCoins = async (n) => { const delta = parseInt(n, 10) || 0; const { error } = await sb.rpc('ajouter_vcoins', { montant: delta }); if (error) throw error; return true; };
-    userData.getJetons = async () => { const b = await __getBalances(); return b?.jetons ?? 0; };
-    userData.addJetons = async (n) => { const delta = parseInt(n, 10) || 0; const { error } = await sb.rpc('ajouter_jetons', { montant: delta }); if (error) throw error; return true; };
-    userData.getUnlockedThemes = async () => { const b = await __getBalances(); return Array.isArray(b?.themes_possedes) ? b.themes_possedes : ['neon']; };
-    userData.setUnlockedThemes = async (themes) => { const { error } = await sb.rpc('set_themes_secure', { themes }); if (error) throw error; return true; };
-    userData.purchaseTheme = async (key, price) => { const { error } = await sb.rpc('purchase_theme', { theme_key: String(key), price: parseInt(price,10) || 0 }); if (error) throw error; return true; };
-
-    // Démarrage : bootstrap legacy + UI
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        await bootstrapAuthForLegacy();
+        if (window.bootstrapAuthAndProfile) {
+          await window.bootstrapAuthAndProfile();
+        }
         await checkConcoursStatusFixed();
         await checkAndShowPopupOnce();
         await listenPopupsRealtime();
+
         if (window.i18nTranslateAll) window.i18nTranslateAll();
         if (typeof window.applyConsentFromStorage === 'function') window.applyConsentFromStorage();
-      } catch (e) { console.warn('[INDEX bootstrap]', e?.message || e); }
+      } catch (e) {
+        console.warn('[INDEX bootstrap]', e?.message || e);
+      }
     });
   </script>
 
-  <!-- Push (Capacitor FCM) -->
+  <!-- Push (FCM) : gardé mais n’est plus relié à la popup -->
   <script>
     (function () {
       const DEBUG_PUSH = false;
