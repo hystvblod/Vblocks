@@ -223,5 +223,8 @@
 "error.duel_not_found":"대결을 찾을 수 없습니다",
   "theme.arabic": "아라비안",
   "theme.grece":  "고대 그리스",
-  "theme.japon":  "일본"
+  "theme.japon":  "일본",
+  "settings.music.label": "음악:",
+"settings.music.on": "켜짐",
+"settings.music.off": "꺼짐"
 }

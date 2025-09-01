@@ -223,5 +223,9 @@
   "error.duel_not_found": "Duel not found",
     "theme.arabic": "Arabic",
   "theme.grece":  "Ancient Greece",
-  "theme.japon":  "Japan"
+  "theme.japon":  "Japan",
+  "settings.music.label": "Music:",
+"settings.music.on": "On",
+"settings.music.off": "Off"
+
 }

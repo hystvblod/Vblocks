@@ -223,5 +223,8 @@
 "error.duel_not_found":"المبارزة غير موجودة",
   "theme.arabic": "عربي",
   "theme.grece":  "اليونان القديمة",
-  "theme.japon":  "اليابان"
+  "theme.japon":  "اليابان",
+  "settings.music.label": "الموسيقى:",
+"settings.music.on": "مفعلة",
+"settings.music.off": "متوقفة"
 }

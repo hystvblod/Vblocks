@@ -223,5 +223,8 @@
 "error.duel_not_found":"Duelo no encontrado",
  "theme.arabic": "Árabe",
   "theme.grece":  "Grecia antigua",
-  "theme.japon":  "Japón"
+  "theme.japon":  "Japón",
+  "settings.music.label": "Música:",
+"settings.music.on": "Activada",
+"settings.music.off": "Desactivada"
 }

@@ -223,5 +223,8 @@
 "error.duel_not_found":"Duel tidak ditemukan",
   "theme.arabic": "Arab",
   "theme.grece":  "Yunani Kuno",
-  "theme.japon":  "Jepang"
+  "theme.japon":  "Jepang",
+  "settings.music.label": "Musik:",
+"settings.music.on": "Aktif",
+"settings.music.off": "Mati"
 }
