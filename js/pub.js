@@ -56,7 +56,7 @@ function buildAdMobRequestConfig() {
 // --- Init AdMob (silencieux sur web/dev)
 (async function initAdMobOnce() {
   try {
-    if (window.Admob && typeof AdMob.initialize === 'function') {
+    if (window.AdMob && typeof AdMob.initialize === 'function') {
       await AdMob.initialize({ initializeForTesting: false });
       console.log('[AdMob] initialisé');
     } else {
@@ -86,18 +86,20 @@ async function hasNoAds() {
 // --- AdMob helpers
 function isAdmobAvailable() { return !!(window.RewardAd && typeof RewardAd.show === 'function'); }
 
-async function getSsvToken() {
+// === SSV: récupère un token signé côté serveur
+async function getSsvToken(type, amount) {
   const sb = window.sb;
-  const supabaseUrl =
-    (sb && (sb.supabaseUrl || sb.restUrl)) ||
-    window.SUPABASE_URL ||
-    (typeof SB_URL !== 'undefined' ? SB_URL : '');
+  const supabaseUrl = window.SUPABASE_URL || (typeof SB_URL !== 'undefined' ? SB_URL : '');
   if (!supabaseUrl) throw new Error('SUPABASE_URL manquant');
 
   const { data: { session } } = await sb.auth.getSession();
   const res = await fetch(`${supabaseUrl}/functions/v1/reward-token`, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${session?.access_token || ''}` }
+    headers: {
+      'Authorization': `Bearer ${session?.access_token || ''}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ type, amount })
   });
   if (!res.ok) throw new Error('reward-token failed');
   const { token } = await res.json();
@@ -115,7 +117,7 @@ async function showRewardedType(type, amount, onDone) {
     const ssvUserId = data?.user?.id;
     if (!ssvUserId) throw new Error("Utilisateur non authentifié");
 
-    const token = ENABLE_SSV ? await getSsvToken() : null;
+    const token = ENABLE_SSV ? await getSsvToken(type, amount) : null;
     const customPayload = ENABLE_SSV ? JSON.stringify({ type, amount, token }) : undefined;
 
     await RewardAd.prepare({
