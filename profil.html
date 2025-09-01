@@ -179,99 +179,44 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <!-- Ordre: supabase -> i18n -> userData (auth unique) -> pub -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/userData.js"></script>
   <script src="js/pub.js"></script>
+
   <script>
-    // --- i18n safe ---
+    // i18n helper
     function i18nSafe(key, fb){ try{ const v=(window.i18nGet?.(key)); return (!v||v===key)?fb:v }catch{ return fb } }
 
-    // Fallback local pour le pseudo si aucune API exposée
+    // Fallback si userData.updatePseudoSecure indispo (utilise le bootstrap commun)
     async function updatePseudoSecureLocal(sb, newPseudo){
       const np = String(newPseudo || '').trim();
       if (np.length < 3) throw new Error('Pseudo trop court.');
-      try {
-        const { data: { session } } = await sb.auth.getSession();
-        if (!session) await sb.auth.signInAnonymously();
-        await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
-      } catch (e) {}
+      // Auth unique centralisée (pas de signInAnonymously ici)
+      if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
       const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
       if (error) throw error;
       localStorage.setItem('pseudo', np);
       return true;
     }
 
-    // --- Thème & Pseudo au chargement ---
-    window.addEventListener("DOMContentLoaded", async () => {
-      const sb = window.sb;
-
-      // Auth + ensure_user
-      try {
-        const { data: { session } } = await sb.auth.getSession();
-        if (!session) await sb.auth.signInAnonymously();
-        await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
-      } catch (e) {}
-
-      // ✅ Applique le thème local au boot (visuel uniquement)
-      await userData.syncThemeFromLocal?.().catch(()=>{});
-
-      // Pseudo (cloud -> local)
-      try {
-        const { data: { user } } = await sb.auth.getUser();
-        const uid = user?.id || null;
-        if (uid) {
-          const { data, error } = await sb
-            .from('users')
-            .select('pseudo')
-            .or(`id.eq.${uid},auth_id.eq.${uid}`)
-            .maybeSingle();
-
-          const pseudo = (!error && data?.pseudo)
-            ? data.pseudo
-            : (localStorage.getItem("pseudo") || "MonPseudo");
-          localStorage.setItem("pseudo", pseudo);
-          document.getElementById("profilPseudo").textContent = pseudo;
-        } else {
-          const p = localStorage.getItem("pseudo") || "MonPseudo";
-          document.getElementById("profilPseudo").textContent = p;
-        }
-      } catch {
-        const p = localStorage.getItem("pseudo") || "MonPseudo";
-        document.getElementById("profilPseudo").textContent = p;
-      }
-
-      setupPseudoPopup(sb);
-      document.getElementById("changeThemeBtn").onclick = () => openThemePopup();
-
-      // Désactiver "Nos applis"
-      const btnApplis = document.getElementById("applisBtn");
-      if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
-    });
-
-    // util normalisation (même algo que userData.js)
+    // Normalisation thème
     function normalizeThemeKey(k){
-      return String(k || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'');
+      return String(k || '').toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/\s+/g,'');
     }
 
-    // ---- LECTURE DIRECTE DB : users.themes_possedes (sans RPC) ----
+    // SELECT direct des thèmes (on suppose auth déjà faite par bootstrap)
     async function fetchThemesDirectFromDB() {
       const sb = window.sb;
-      // 1) être loggé anonyme
-      try {
-        const { data: { session } } = await sb.auth.getSession();
-        if (!session) await sb.auth.signInAnonymously();
-      } catch {}
-
-      // 2) id auth
       let uid = null;
       try {
         const { data: { user } } = await sb.auth.getUser();
         uid = user?.id || null;
       } catch {}
       if (!uid) return [];
-
-      // 3) SELECT direct sur la table users
       try {
         const { data, error } = await sb
           .from('users')
@@ -280,33 +225,25 @@
           .maybeSingle();
 
         if (error || !data) return [];
-
         const raw = data.themes_possedes;
         let arr = [];
 
         if (Array.isArray(raw)) {
           arr = raw;
         } else if (typeof raw === 'string' && raw.trim()) {
-          try {
-            arr = JSON.parse(raw); // cas jsonb renvoyé en string
-          } catch {
-            // cas text[] → on nettoie {…} et on split
+          try { arr = JSON.parse(raw); }
+          catch {
             const cleaned = raw.replace(/[{}]/g, '');
             arr = cleaned.split(/[,\s]+/)
               .map(s => s.replace(/^"(.*)"$/, '$1'))
               .filter(Boolean);
           }
         }
-
-        // normalise (minuscules, sans accents) + unicité
-        const norm = [...new Set(arr.map(normalizeThemeKey).filter(Boolean))];
-        return norm;
-      } catch {
-        return [];
-      }
+        return [...new Set(arr.map(normalizeThemeKey).filter(Boolean))];
+      } catch { return []; }
     }
 
-    // --- Popup pseudo (utilise userData.updatePseudoSecure si dispo, sinon fallback) ---
+    // Popup pseudo (prend d’abord la version sécurisée de userData)
     function setupPseudoPopup(sb) {
       const popup = document.getElementById('popupPseudo');
       const btnOpen = document.getElementById('btnChangePseudo');
@@ -328,8 +265,8 @@
         if (!v) { err.textContent = i18nSafe('profil.popup.error.empty','Entre un pseudo.'); return; }
         if (v.length > 20) { err.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
         try {
-          if (userData && typeof userData.updatePseudoSecure === 'function') {
-            await userData.updatePseudoSecure(v);
+          if (window.userData?.updatePseudoSecure) {
+            await window.userData.updatePseudoSecure(v);
           } else {
             await updatePseudoSecureLocal(window.sb, v);
           }
@@ -343,25 +280,19 @@
       };
     }
 
-    // --- Popup thèmes : LIT UNIQUEMENT LA DB DIRECTE et rend en conséquence ---
+    // Popup thèmes (lit users.themes_possedes puis applique localement)
     async function openThemePopup() {
       const popup = document.getElementById('theme-selector-popup');
       const themeList = document.getElementById('themeListVB');
 
-      // 1) liste de référence (normalisée)
       const RAW_ALL = (typeof window.getAllThemes === 'function')
         ? window.getAllThemes()
         : ["neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","cyber","grece","japon","arabic"];
       const ALL_THEMES = RAW_ALL.map(normalizeThemeKey).filter(Boolean);
 
-      // 2) lire DIRECTEMENT la colonne users.themes_possedes
-      let unlocked = [];
-      unlocked = await fetchThemesDirectFromDB();
-
-      // sécurité : 'neon' toujours jouable
+      let unlocked = await fetchThemesDirectFromDB();
       if (!unlocked.includes('neon')) unlocked.push('neon');
 
-      // 3) rendu (comparaison robuste)
       const ownedSet = new Set(unlocked);
       themeList.innerHTML = ALL_THEMES.map(theme => {
         const locked = !ownedSet.has(theme);
@@ -374,14 +305,11 @@
 
       popup.classList.add("active");
 
-      // sélection courante
-      let selectedTheme = localStorage.getItem("themeVBlocks") || "neon";
-      selectedTheme = normalizeThemeKey(selectedTheme);
+      let selectedTheme = normalizeThemeKey(localStorage.getItem("themeVBlocks") || "neon");
       document.querySelectorAll('.theme-choice-vb').forEach(btn => {
         if (normalizeThemeKey(btn.dataset.theme) === selectedTheme) btn.classList.add('active');
       });
 
-      // on ne permet le click que sur les débloqués
       document.querySelectorAll('.theme-choice-vb:not(.locked)').forEach(btn => {
         btn.onclick = () => {
           document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
@@ -390,12 +318,10 @@
         };
       });
 
-      // Valider / Annuler
       document.getElementById('btnValiderTheme').onclick = async () => {
         if (!selectedTheme) return;
         try {
-          userData.applyLocalTheme(selectedTheme);
-          // purge des autosaves éventuelles
+          window.userData?.applyLocalTheme(selectedTheme);
           try {
             Object.keys(localStorage).forEach(k => { if (k.startsWith('vblocks:autosave:')) localStorage.removeItem(k); });
           } catch(_){}
@@ -407,6 +333,52 @@
       };
       document.getElementById('btnCancelTheme').onclick = () => popup.classList.remove('active');
     }
+
+    // Boot de la page — auth unique via userData.js
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        if (window.bootstrapAuthAndProfile) {
+          await window.bootstrapAuthAndProfile();
+        }
+      } catch(e) {
+        console.warn('[Profil bootstrap]', e?.message || e);
+      }
+
+      // Thème visuel local
+      await window.userData?.syncThemeFromLocal?.().catch(()=>{});
+
+      // Pseudo (cloud -> local)
+      try {
+        const { data: { user } } = await window.sb.auth.getUser();
+        const uid = user?.id || null;
+        if (uid) {
+          const { data, error } = await window.sb
+            .from('users')
+            .select('pseudo')
+            .or(`id.eq.${uid},auth_id.eq.${uid}`)
+            .maybeSingle();
+
+          const pseudo = (!error && data?.pseudo)
+            ? data.pseudo
+            : (localStorage.getItem("pseudo") || "MonPseudo");
+          localStorage.setItem("pseudo", pseudo);
+          document.getElementById("profilPseudo").textContent = pseudo;
+        } else {
+          const p = localStorage.getItem("pseudo") || "MonPseudo";
+          document.getElementById("profilPseudo").textContent = p;
+        }
+      } catch {
+        const p = localStorage.getItem("pseudo") || "MonPseudo";
+        document.getElementById("profilPseudo").textContent = p;
+      }
+
+      setupPseudoPopup(window.sb);
+      document.getElementById("changeThemeBtn").onclick = () => openThemePopup();
+
+      // "Nos applis" désactivé
+      const btnApplis = document.getElementById("applisBtn");
+      if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
+    });
   </script>
 </body>
 </html>
