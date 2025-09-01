@@ -192,8 +192,10 @@
     </div>
   </div>
 
-  <!-- ⚠️ IMPORTANT : charger le JS qui contient Supabase + updateLangDirect -->
-  <!-- Adapte le chemin si besoin (ex: js/userData.js) -->
+  <!-- ⚠️ IMPORTANT : charger le SDK Supabase AVANT userData.js -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <!-- Script qui utilise supabase -->
   <script src="js/userData.js"></script>
 
   <script>
