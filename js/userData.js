@@ -118,18 +118,28 @@ function getLang() {
 }
 
 // --- 1) S’assurer qu’on a une session anonyme ---
+// LOCK pour éviter plusieurs signInAnonymously() concurrents
+let ensureAuthPromise = null;
 async function ensureAuth() {
-  try {
-    const { data: { session }, error } = await sb.auth.getSession();
-    if (error) console.warn('[auth.getSession] warn:', error?.message);
-    if (!session) {
-      const { error: errAnon } = await sb.auth.signInAnonymously();
-      if (errAnon) throw errAnon;
+  if (ensureAuthPromise) return ensureAuthPromise;
+  ensureAuthPromise = (async () => {
+    try {
+      const { data: { session }, error } = await sb.auth.getSession();
+      if (error) console.warn('[auth.getSession] warn:', error?.message);
+      if (!session) {
+        const { error: errAnon } = await sb.auth.signInAnonymously();
+        if (errAnon) throw errAnon;
+        // Petite marge : on relit la session pour stabiliser l'état en mémoire
+        await sb.auth.getSession().catch(()=>{});
+      }
+    } catch (e) {
+      console.error('[ensureAuth] échec auth anonyme:', e?.message || e);
+      // reset le lock si ça a échoué pour permettre un retry propre
+      ensureAuthPromise = null;
+      throw e;
     }
-  } catch (e) {
-    console.error('[ensureAuth] échec auth anonyme:', e?.message || e);
-    throw e;
-  }
+  })();
+  return ensureAuthPromise;
 }
 
 // --- 2) Lier l’auth anonyme à l’ancien profil local (si existant) ---
@@ -160,10 +170,16 @@ async function ensureUserRow() {
 }
 
 // --- 4) Bootstrap global à appeler au démarrage de l’app ---
+// LOCK pour éviter plusieurs bootstraps complets simultanés
+let bootstrapAuthAndProfilePromise = null;
 async function bootstrapAuthAndProfile() {
-  await ensureAuth();
-  await linkLegacyIfNeeded();
-  await ensureUserRow();
+  if (bootstrapAuthAndProfilePromise) return bootstrapAuthAndProfilePromise;
+  bootstrapAuthAndProfilePromise = (async () => {
+    await ensureAuth();
+    await linkLegacyIfNeeded();
+    await ensureUserRow();
+  })();
+  return bootstrapAuthAndProfilePromise;
 }
 
 // Récup id auth courant
