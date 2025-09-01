@@ -174,14 +174,14 @@
 
       <!-- Musique -->
       <div class="param-group">
-        <label>Musique :</label>
+        <label data-i18n="settings.music.label">Musique :</label>
         <div class="switch" style="gap:0.6em;">
           <button id="music-toggle-btn" aria-label="Musique"
             style="background:none;border:none;cursor:pointer;padding:0;">
             <img id="music-toggle-img" src="assets/icons/volume-2.svg" alt="Musique activée"
               class="music-btn-img">
           </button>
-          <span id="music-toggle-label">Activée</span>
+          <span id="music-toggle-label" data-i18n="settings.music.on">Activée</span>
         </div>
       </div>
 
@@ -192,13 +192,27 @@
     </div>
   </div>
 
-  <!-- ⚠️ IMPORTANT : charger le SDK Supabase AVANT userData.js -->
+  <!-- SDK Supabase AVANT userData.js -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-  <!-- Script qui utilise supabase -->
+  <!-- Script qui utilise Supabase -->
   <script src="js/userData.js"></script>
+  <!-- Charger i18n AVANT le script inline pour pouvoir l'appeler -->
+  <script src="js/i18n.js"></script>
 
   <script>
+    // Appliquer la traduction immédiatement si dispo
+    if (window.i18nTranslateAll) window.i18nTranslateAll();
+    // Et en fallback à la fin du chargement
+    window.addEventListener("load", () => {
+      if (window.i18nTranslateAll) window.i18nTranslateAll();
+      // S'assurer que <title> est traduit aussi si ton i18n ne le fait pas automatiquement
+      const titleNode = document.querySelector('title[data-i18n]');
+      if (titleNode && window.i18n) {
+        const key = titleNode.getAttribute('data-i18n');
+        try { document.title = window.i18n(key) || document.title; } catch(_) {}
+      }
+    });
+
     document.addEventListener("DOMContentLoaded", function() {
       const btnBack = document.getElementById('btn-back');
       if (btnBack) {
@@ -245,7 +259,7 @@
         opt.classList.add('selected');
         if (window.setLang) window.setLang(l.code);
 
-        // ⬇️ Envoi en base (mise à jour users.lang)
+        // Mise à jour en base (users.lang)
         try {
           if (window.userData?.updateLangDirect) {
             await window.userData.updateLangDirect(l.code);
@@ -286,11 +300,12 @@
     const ghostLabel = document.getElementById("ghost-label");
     ghostToggle.checked = localStorage.getItem("ghostPiece") !== "false";
     ghostLabel.setAttribute("data-i18n", ghostToggle.checked ? "settings.ghost.on" : "settings.ghost.off");
-    ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
+    ghostLabel.textContent = "Activée";
     ghostToggle.addEventListener("change", () => {
       localStorage.setItem("ghostPiece", ghostToggle.checked ? "true" : "false");
       ghostLabel.setAttribute("data-i18n", ghostToggle.checked ? "settings.ghost.on" : "settings.ghost.off");
       ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
+      if (window.i18nTranslateAll) window.i18nTranslateAll();
     });
 
     // === MUSIQUE : respecte vraiment le mute global du jeu ===
@@ -320,11 +335,14 @@
         musicToggleImg.src = "assets/icons/volume-x.svg";
         musicToggleImg.alt = "Musique coupée";
         musicToggleLabel.textContent = "Coupée";
+        musicToggleLabel.setAttribute("data-i18n", "settings.music.off");
       } else {
         musicToggleImg.src = "assets/icons/volume-2.svg";
         musicToggleImg.alt = "Musique activée";
         musicToggleLabel.textContent = "Activée";
+        musicToggleLabel.setAttribute("data-i18n", "settings.music.on");
       }
+      if (window.i18nTranslateAll) window.i18nTranslateAll();
     }
     refreshMusicUI();
 
@@ -333,12 +351,9 @@
       setAlwaysMuted(next);
       refreshMusicUI();
     });
-
-    window.addEventListener("DOMContentLoaded", () => {
-      if (window.i18nTranslateAll) window.i18nTranslateAll();
-    });
   </script>
-  <script src="js/i18n.js"></script>
+
+  <!-- Autres scripts UI -->
   <script src="js/pub.js"></script>
 </body>
 </html>
