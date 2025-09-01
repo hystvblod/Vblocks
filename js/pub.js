@@ -2,13 +2,14 @@
 // PUB.JS — AdMob (Capacitor) + SSV Supabase
 // =============================
 
-// On suppose que `sb` (client supabase) est déjà créé globalement.
+// On suppose que `window.sb` (client supabase) a été créé par userData.js (auth centralisée).
 
-// --- Auth anonyme si besoin
+// --- Auth centralisée (pas de signInAnonymously ici)
 async function ensureAuth() {
   try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) await sb.auth.signInAnonymously();
+    if (typeof window.bootstrapAuthAndProfile === 'function') {
+      await window.bootstrapAuthAndProfile(); // lock interne -> pas de doublons
+    }
   } catch (_) {}
 }
 
@@ -17,9 +18,10 @@ const INTERSTITIEL_APRES_X_PARTIES = 3;          // 3 nouvelles parties (Infini 
 const INTERSTITIEL_APRES_X_REPRISES_INF = 3;     // 3 reprises (Infini uniquement)
 const INTER_COOLDOWN_MS = 0;                     // anti-spam (0 = off)
 
-const REWARD_JETONS = 1;
-const REWARD_VCOINS = 300;
-const REWARD_REVIVE = true;
+// Récompenses: valeurs par défaut sans redéclaration de const (évite collisions)
+window.REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
+window.REWARD_VCOINS = typeof window.REWARD_VCOINS === 'number' ? window.REWARD_VCOINS : 300;
+window.REWARD_REVIVE = typeof window.REWARD_REVIVE === 'boolean' ? window.REWARD_REVIVE : true;
 
 // Tes Ad Units
 const AD_UNIT_ID_INTERSTITIEL = 'ca-app-pub-6837328794080297/9890831605';
@@ -70,6 +72,7 @@ function buildAdMobRequestConfig() {
 // --- Balances / NoAds (NoPub bloque UNIQUEMENT les interstitiels)
 async function __getBalances() {
   await ensureAuth();
+  const sb = window.sb;
   const { data, error } = await sb.rpc('get_balances');
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
@@ -84,6 +87,7 @@ async function hasNoAds() {
 function isAdmobAvailable() { return !!(window.RewardAd && typeof RewardAd.show === 'function'); }
 
 async function getSsvToken() {
+  const sb = window.sb;
   const supabaseUrl =
     (sb && (sb.supabaseUrl || sb.restUrl)) ||
     window.SUPABASE_URL ||
@@ -102,12 +106,15 @@ async function getSsvToken() {
 
 // --- Rewarded générique (type = 'jeton' | 'vcoin' | 'revive')
 async function showRewardedType(type, amount, onDone) {
+  const sb = window.sb;
   try {
     if (!isAdmobAvailable()) { alert("Publicité récompensée indisponible."); onDone?.(false); return; }
     await ensureAuth();
+
     const { data } = await sb.auth.getUser();
     const ssvUserId = data?.user?.id;
     if (!ssvUserId) throw new Error("Utilisateur non authentifié");
+
     const token = ENABLE_SSV ? await getSsvToken() : null;
     const customPayload = ENABLE_SSV ? JSON.stringify({ type, amount, token }) : undefined;
 
@@ -152,7 +159,7 @@ async function showInterstitial() {
 // --- Rewarded (promises)
 function showRewardBoutique() {
   return new Promise((resolve) => {
-    showRewardedType('jeton', REWARD_JETONS, async (ok) => {
+    showRewardedType('jeton', window.REWARD_JETONS, async (ok) => {
       if (!ok) return resolve(false);
       setTimeout(async () => {
         try { const b = await __getBalances(); alert(`Récompense validée ! Jetons: ${b?.jetons ?? '--'}`); } catch(_) {}
@@ -163,7 +170,7 @@ function showRewardBoutique() {
 }
 function showRewardVcoins() {
   return new Promise((resolve) => {
-    showRewardedType('vcoin', REWARD_VCOINS, async (ok) => {
+    showRewardedType('vcoin', window.REWARD_VCOINS, async (ok) => {
       if (!ok) return resolve(false);
       setTimeout(async () => {
         try { const b = await __getBalances(); alert(`Récompense validée ! VCoins: ${b?.vcoins ?? '--'}`); } catch(_) {}
@@ -173,7 +180,7 @@ function showRewardVcoins() {
   });
 }
 function showRewardRevive(callback) {
-  if (!REWARD_REVIVE) return;
+  if (!window.REWARD_REVIVE) return;
   showRewardedType('revive', 0, (ok) => { if (ok) callback?.(); });
 }
 
