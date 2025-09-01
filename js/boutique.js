@@ -1,59 +1,67 @@
 /* ===========================
-   boutique.js (IAP + UI boutique) — version sécurisée RPC
+   boutique.js (IAP + UI boutique) — version sécurisée & alignée
    =========================== */
 
 // --- Helper i18n universel
 function t(key) {
+  if (typeof window.i18nGet === 'function') {
+    const v = window.i18nGet(key);
+    return v && v !== key ? v : key;
+  }
   if (window.i18n && window.i18n[key]) return window.i18n[key];
   return key;
 }
 
-// --- Liste des thèmes/cadres possibles
-const THEMES = [
-  { key: "bubble" }, { key: "nature" }, { key: "nuit" }, { key: "luxury" },
-  { key: "space" }, { key: "angelique" }, { key: "cyber" }, { key: "vitraux" },
-  { key: "pixel" }, { key: "halloween" },
-  { key: "arabic", name: "Arabic" },
-  { key: "grece",  name: "Grèce antique" },
-  { key: "japon",  name: "Japon" }
-];
+// --- Normalisation clés
+function normalizeThemeKey(k){
+  return String(k || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,'');
+}
 
-// --- Cartouches d’achats spéciaux
-const SPECIAL_CARTOUCHES = [
-  { key: "boutique.cartouche.points3000",  icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "", amount: 3000 },
-  { key: "boutique.cartouche.points10000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-purple', prix: "", amount: 10000 },
-  { key: "boutique.cartouche.jetons12",    icon: '<img src="assets/images/jeton.webp" alt="jeton">',  color: 'color-blue',   prix: "", amount: 12 },
-  { key: "boutique.cartouche.jetons50",    icon: '<img src="assets/images/jeton.webp" alt="jeton">',  color: 'color-purple', prix: "", amount: 50 },
-  { key: "boutique.cartouche.nopub",       icon: '<img src="assets/images/ads.png" alt="No Ads">',    color: 'color-yellow', prix: "" },
-  { key: "boutique.cartouche.pub1jeton",   icon: '<img src="assets/images/jeton.webp" alt="Pub">',    color: 'color-green' },
-  { key: "boutique.cartouche.pub300points",icon: '<img src="assets/images/vcoin.webp" alt="Pub">',    color: 'color-blue' }
+// --- Liste des thèmes/cadres possibles (noms optionnels pour fallback)
+const THEMES = [
+  { key: "bubble",     name: "Bubble" },
+  { key: "nature",     name: "Nature" },
+  { key: "nuit",       name: "Nuit" },
+  { key: "luxury",     name: "Luxury" },
+  { key: "space",      name: "Space" },
+  { key: "angelique",  name: "Angélique" },
+  { key: "cyber",      name: "Cyber" },
+  { key: "vitraux",    name: "Vitraux" },
+  { key: "pixel",      name: "Pixel" },
+  { key: "halloween",  name: "Halloween" },
+  { key: "arabic",     name: "Arabic" },
+  { key: "grece",      name: "Grèce antique" },
+  { key: "japon",      name: "Japon" }
 ];
 
 const THEME_PRICE = 5000;
 
-// --- IDs des produits (Google Play / iOS) — UNIFIÉS
-// (disponible globalement → window.PRODUCT_IDS)
-const PRODUCT_IDS = window.PRODUCT_IDS = window.PRODUCT_IDS || {
+/* ===========================
+   Produits IAP (unifiés)
+   =========================== */
+const PRODUCT_IDS = (window.PRODUCT_IDS = window.PRODUCT_IDS || {
   points3000:  'points3000',
   points10000: 'points10000',
   jetons12:    'jetons12',
   jetons50:    'jetons50',
   nopub:       'nopub'
-};
+});
 
-// --- Mémo des prix localisés (rempli par IAP.ready/product.updated)
-const PRICES_BY_ALIAS = window.PRICES_BY_ALIAS = window.PRICES_BY_ALIAS || {};
+// Mémo des prix localisés
+const PRICES_BY_ALIAS = (window.PRICES_BY_ALIAS = window.PRICES_BY_ALIAS || {});
 // { alias: { price: "€0,99", currency: "EUR", micros: 990000 } }
 
-// --- Utilitaires
-function getUserId() {
-  return localStorage.getItem('user_id') || "";
-}
-
+/* ===========================
+   Auth centralisée (pas de signInAnonymously ici)
+   =========================== */
 async function ensureAuthSafe() {
   try {
-    const s = await sb.auth.getSession();
-    if (!s?.data?.session) await sb.auth.signInAnonymously();
+    if (typeof window.bootstrapAuthAndProfile === 'function') {
+      await window.bootstrapAuthAndProfile(); // lock interne
+    }
   } catch (_) {}
 }
 
@@ -63,13 +71,14 @@ async function ensureAuthSafe() {
 
 async function __getBalances() {
   await ensureAuthSafe();
+  const sb = window.sb;
   const { data, error } = await sb.rpc('get_balances');
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
   return row || {};
 }
 
-// --- VCoins & Jetons (100% RPC sécurisées)
+// VCoins & Jetons
 async function getVCoinsSupabase() {
   const b = await __getBalances();
   return b?.vcoins ?? 0;
@@ -77,7 +86,7 @@ async function getVCoinsSupabase() {
 async function addVCoinsSupabase(amount) {
   await ensureAuthSafe();
   const delta = Number(amount) || 0;
-  const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
+  const { error } = await window.sb.rpc('ajouter_vcoins', { montant: delta });
   if (error) throw error;
   const b = await __getBalances();
   return b?.vcoins ?? 0;
@@ -89,20 +98,41 @@ async function getJetonsSupabase() {
 async function addJetonsSupabase(amount) {
   await ensureAuthSafe();
   const delta = Number(amount) || 0;
-  const { error } = await sb.rpc('ajouter_jetons', { montant: delta });
+  const { error } = await window.sb.rpc('ajouter_jetons', { montant: delta });
   if (error) throw error;
   const b = await __getBalances();
   return b?.jetons ?? 0;
 }
 
-// --- Themes/cadres POSSEDES (lecture via RPC, setter sécurisé optionnel)
+// Thèmes possédés (lecture robuste)
 async function getUnlockedThemesCloud() {
   const b = await __getBalances();
-  return Array.isArray(b?.themes_possedes) ? b.themes_possedes : [];
+  let raw = b?.themes_possedes;
+  let arr = [];
+
+  if (Array.isArray(raw)) {
+    arr = raw;
+  } else if (typeof raw === 'string' && raw.trim()) {
+    // tente JSON puis fallback Postgres text[]
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) arr = parsed;
+    } catch {
+      const cleaned = raw.replace(/[{}]/g, '');
+      arr = cleaned.split(/[,\s]+/).map(s => s.replace(/^"(.*)"$/, '$1')).filter(Boolean);
+    }
+  }
+
+  // normalise + unique
+  const norm = [...new Set(arr.map(normalizeThemeKey).filter(Boolean))];
+  if (!norm.includes('neon')) norm.push('neon'); // “neon” toujours utilisable
+  return norm;
 }
+
+// Setter (admin/debug)
 async function setUnlockedThemesCloud(newThemes) {
   await ensureAuthSafe();
-  const { error } = await sb.rpc('set_themes_secure', { themes: newThemes });
+  const { error } = await window.sb.rpc('set_themes_secure', { themes: newThemes });
   if (error) throw error;
 }
 
@@ -137,13 +167,11 @@ function closeThemeModal() {
 
 async function acheterTheme(themeKey, prix) {
   try {
-    if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-
-    const { data, error } = await sb.rpc('purchase_theme', {
+    await ensureAuthSafe();
+    const { error } = await window.sb.rpc('purchase_theme', {
       theme_key: String(themeKey),
       price: Number(prix) || 0
     });
-
     if (error) {
       const msg = (error.message || "").toLowerCase();
       if (msg.includes("not enough vcoins")) {
@@ -153,7 +181,6 @@ async function acheterTheme(themeKey, prix) {
       alert("Erreur: " + error.message);
       return false;
     }
-
     await renderThemes();
     closeThemeModal();
     alert(t("theme.debloque") || "Thème débloqué !");
@@ -168,18 +195,24 @@ async function acheterTheme(themeKey, prix) {
    UI
    =========================== */
 
-// --- Activation (localStorage)
+// Activation locale + application immédiate
 function getCurrentTheme() { return localStorage.getItem('themeVBlocks') || "neon"; }
-function setCurrentTheme(theme) { localStorage.setItem('themeVBlocks', theme); }
+function setCurrentTheme(theme) {
+  localStorage.setItem('themeVBlocks', theme);
+  // Applique visuellement si disponible
+  if (window.userData?.applyLocalTheme) {
+    try { window.userData.applyLocalTheme(theme); } catch {}
+  }
+}
 
-// --- Branche Achats + Pub
+// Achats / Pubs (⚠️ rebind après chaque render)
 function setupBoutiqueAchats() {
   document.querySelectorAll('.special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
     if (!label) return;
     const key = label.dataset.i18n || label.textContent;
 
-    // Achats via Store (alias = dernière partie de la clé i18n)
+    // Achats via Store
     const alias = key?.split('.').pop();
     const pid = PRODUCT_IDS[alias];
 
@@ -189,12 +222,13 @@ function setupBoutiqueAchats() {
         const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
         if (IAP) {
           const ok = await (window.lancerPaiement ? window.lancerPaiement(alias) : Promise.resolve(true));
-          if (ok) IAP.order(pid);
+          if (ok) {
+            try { await IAP.order(pid); } catch(e){ alert("Achat non abouti."); }
+          }
         } else {
           alert("Achat via Store indisponible ici. Ouvre l’app installée depuis le Store.");
-          // // Pour autoriser l’achat côté web, décommente :
-          // await acheterProduitVercel(alias);
-          // await renderThemes(); setupPubCartouches?.(); setupBoutiqueAchats?.();
+          // // Pour autoriser un achat côté Web (dev uniquement), décommente:
+          // await acheterProduitVercel(alias); await renderThemes();
         }
       };
     }
@@ -202,69 +236,107 @@ function setupBoutiqueAchats() {
     // PUB Reward
     if (key === 'boutique.cartouche.pub1jeton') {
       cartouche.style.cursor = 'pointer';
-      cartouche.onclick = () => (typeof showRewardBoutique === 'function' ? showRewardBoutique() : alert("Pub non disponible."));
+      cartouche.onclick = () => (typeof window.showRewardBoutique === 'function' ? window.showRewardBoutique() : alert("Pub non disponible."));
     }
     if (key === 'boutique.cartouche.pub300points') {
       cartouche.style.cursor = 'pointer';
-      cartouche.onclick = () => (typeof showRewardVcoins === 'function' ? showRewardVcoins() : alert("Pub non disponible."));
+      cartouche.onclick = () => (typeof window.showRewardVcoins === 'function' ? window.showRewardVcoins() : alert("Pub non disponible."));
     }
   });
 }
 
-// --- UI Achats (⚠️ rebind après chaque render)
+// Prix localisés -> injecte dans DOM
 function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
   if (!$achatsList) return;
-  const achatsHtml = SPECIAL_CARTOUCHES.map(c => `
-    <div class="special-cartouche ${c.color}">
-      <span class="theme-ico">${c.icon}</span>
-      <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      <span class="prix-label">${c.prix || "…"}</span>
-    </div>
-  `).join('');
-  $achatsList.innerHTML = achatsHtml;
 
+  const html = ([
+    { key: "boutique.cartouche.points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow' },
+    { key: "boutique.cartouche.points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple' },
+    { key: "boutique.cartouche.jetons12",    icon:'<img src="assets/images/jeton.webp" alt="jeton">',  color:'color-blue' },
+    { key: "boutique.cartouche.jetons50",    icon:'<img src="assets/images/jeton.webp" alt="jeton">',  color:'color-purple' },
+    { key: "boutique.cartouche.nopub",       icon:'<img src="assets/images/ads.png"   alt="No Ads">',  color:'color-yellow' },
+    { key: "boutique.cartouche.pub1jeton",   icon:'<img src="assets/images/jeton.webp" alt="Pub">',    color:'color-green' },
+    { key: "boutique.cartouche.pub300points",icon:'<img src="assets/images/vcoin.webp" alt="Pub">',    color:'color-blue' }
+  ]).map(c => {
+    const alias = c.key.split('.').pop();
+    const price = PRICES_BY_ALIAS[alias]?.price || "…";
+    return `
+      <div class="special-cartouche ${c.color}">
+        <span class="theme-ico">${c.icon}</span>
+        <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
+        <span class="prix-label">${price}</span>
+      </div>
+    `;
+  }).join('');
+
+  $achatsList.innerHTML = html;
   setupBoutiqueAchats();
 }
 
-// --- UI Themes
+// UI Thèmes
 async function renderThemes() {
   renderAchats();
+
   const list = document.getElementById('themes-list');
   if (!list) return;
   list.innerHTML = "";
+
   const unlocked = await getUnlockedThemesCloud();
-  const current = getCurrentTheme();
+  const current = normalizeThemeKey(getCurrentTheme());
 
   THEMES.forEach(theme => {
-    const isUnlocked = unlocked.includes(theme.key);
+    const keyNorm = normalizeThemeKey(theme.key);
+    const isUnlocked = unlocked.includes(keyNorm);
+    const label = (t("theme." + theme.key) !== "theme." + theme.key) ? t("theme." + theme.key) : (theme.name || theme.key);
+
     const card = document.createElement('div');
-    card.className = 'theme-card' + (current === theme.key ? " selected" : "") + (isUnlocked ? "" : " locked");
+    card.className = 'theme-card' + (current === keyNorm ? " selected" : "") + (isUnlocked ? "" : " locked");
     card.innerHTML = `
-      <div class="theme-name">${t("theme." + theme.key)}</div>
+      <div class="theme-name">${label}</div>
       <img class="theme-img" src="img/theme_${theme.key}.png" alt="" loading="lazy">
     `;
+
     if (isUnlocked) {
-      card.innerHTML += (current === theme.key)
-        ? `<button class="theme-btn selected" disabled>${t("boutique.btn.selectionne")}</button>`
-        : `<button class="theme-btn" onclick="setCurrentTheme('${theme.key}');renderThemes();">${t("boutique.btn.utiliser")}</button>`;
+      card.innerHTML += (current === keyNorm)
+        ? `<button class="theme-btn selected" disabled>${t("boutique.btn.selectionne") || "Sélectionné"}</button>`
+        : `<button class="theme-btn">${t("boutique.btn.utiliser") || "Utiliser"}</button>`;
     } else {
-      card.innerHTML += `<button class="theme-btn locked" onclick="acheterTheme('${theme.key}', ${THEME_PRICE})">${t("boutique.btn.debloquer").replace("{PRICE}", THEME_PRICE)}</button>`;
+      const prixTxt = (t("boutique.btn.debloquer") || "Débloquer ({PRICE})").replace("{PRICE}", THEME_PRICE);
+      card.innerHTML += `<button class="theme-btn locked">${prixTxt}</button>`;
     }
+
+    const btn = card.querySelector('.theme-btn');
+    if (btn) {
+      if (isUnlocked) {
+        btn.addEventListener('click', () => {
+          setCurrentTheme(keyNorm);
+          renderThemes();
+        });
+      } else {
+        btn.addEventListener('click', () => acheterTheme(keyNorm, THEME_PRICE));
+      }
+    }
+
     list.appendChild(card);
   });
 
+  // Solde à jour
   const soldeEls = document.querySelectorAll('.vcoins-solde');
-  if (soldeEls[0]) soldeEls[0].textContent = await getVCoinsSupabase();
-  if (soldeEls[1]) soldeEls[1].textContent = await getJetonsSupabase();
+  try { if (soldeEls[0]) soldeEls[0].textContent = await getVCoinsSupabase(); } catch {}
+  try { if (soldeEls[1]) soldeEls[1].textContent = await getJetonsSupabase(); } catch {}
 }
 
-// --- Init DOM
+/* ===========================
+   Init DOM
+   =========================== */
 document.addEventListener("DOMContentLoaded", function() {
   renderThemes();
 });
 
-// --- Store init Cordova Purchase
+/* ===========================
+   Store init (Cordova Purchase)
+   =========================== */
 document.addEventListener('deviceready', function() {
   const IAP = (window.store && typeof window.store.register === 'function') ? window.store : null;
   if (!IAP) {
@@ -289,14 +361,8 @@ document.addEventListener('deviceready', function() {
           micros:   p.priceMicros || 0
         };
       }
-      // Mets à jour l’affichage des prix si la boutique est ouverte
-      try {
-        SPECIAL_CARTOUCHES.forEach(c => {
-          const a = c.key?.split('.').pop();
-          if (a && PRICES_BY_ALIAS[a]?.price) c.prix = PRICES_BY_ALIAS[a].price;
-        });
-        renderAchats();
-      } catch (_) {}
+      // MAJ visuelle des prix si la boutique est ouverte
+      try { renderAchats(); } catch (_) {}
     });
   } catch (_) {}
 
@@ -304,19 +370,19 @@ document.addEventListener('deviceready', function() {
   Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
     IAP.when(id).approved(async (p) => {
       try {
-        if (typeof acheterProduitVercel === 'function') {
-          await acheterProduitVercel(alias);
+        // Idéalement: validation côté serveur (backend) puis crédit
+        if (typeof window.acheterProduitVercel === 'function') {
+          await window.acheterProduitVercel(alias);
         } else {
-          // Fallback crédit direct Supabase (à utiliser seulement si pas de backend de validation)
-          if (alias === 'points3000')   await sb.rpc('ajouter_vcoins', { montant: 3000 });
-          if (alias === 'points10000')  await sb.rpc('ajouter_vcoins', { montant: 10000 });
-          if (alias === 'jetons12')     await sb.rpc('ajouter_jetons', { montant: 12 });
-          if (alias === 'jetons50')     await sb.rpc('ajouter_jetons', { montant: 50 });
-          if (alias === 'nopub')        await sb.rpc('ajouter_nopub');
+          // Fallback direct Supabase (dev/test seulement)
+          if (alias === 'points3000')   await window.sb.rpc('ajouter_vcoins', { montant: 3000 });
+          if (alias === 'points10000')  await window.sb.rpc('ajouter_vcoins', { montant: 10000 });
+          if (alias === 'jetons12')     await window.sb.rpc('ajouter_jetons', { montant: 12 });
+          if (alias === 'jetons50')     await window.sb.rpc('ajouter_jetons', { montant: 50 });
+          if (alias === 'nopub')        await window.sb.rpc('ajouter_nopub');
         }
-
         p.finish();
-        await renderThemes?.();
+        await renderThemes();
         alert("Achat réussi !");
       } catch (e) {
         console.warn("[IAP] post-achat erreur:", e);
@@ -327,7 +393,7 @@ document.addEventListener('deviceready', function() {
   });
 
   IAP.ready(function() {
-    // Première passe: mémorise les prix + alimente les cartouches
+    // Première passe: mémorise les prix + MAJ cartouches
     IAP.products.forEach(prod => {
       const foundAlias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === prod.id) || prod.alias;
       if (foundAlias) {
@@ -336,14 +402,10 @@ document.addEventListener('deviceready', function() {
           currency: prod.currency || "",
           micros:   prod.priceMicros || 0
         };
-        // MAJ cartouche affichée
-        const c = SPECIAL_CARTOUCHES.find(x => x.key?.endsWith(foundAlias));
-        if (c) c.prix = prod.price || c.prix || "…";
       }
     });
-
-    renderAchats();        // met à jour le DOM avec les prix localisés
-    setupBoutiqueAchats(); // rebind sécurité
+    renderAchats();
+    setupBoutiqueAchats(); // rebind
   });
 
   IAP.error(e => console.warn('[IAP] error:', e));
