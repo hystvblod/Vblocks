@@ -82,9 +82,14 @@ async function hasNoAds() {
 
 // --- AdMob helpers
 function isAdmobAvailable() { return !!(window.RewardAd && typeof RewardAd.show === 'function'); }
+
 async function getSsvToken() {
-  const supabaseUrl = sb?.supabaseUrl || window.SUPABASE_URL;
+  const supabaseUrl =
+    (sb && (sb.supabaseUrl || sb.restUrl)) ||
+    window.SUPABASE_URL ||
+    (typeof SB_URL !== 'undefined' ? SB_URL : '');
   if (!supabaseUrl) throw new Error('SUPABASE_URL manquant');
+
   const { data: { session } } = await sb.auth.getSession();
   const res = await fetch(`${supabaseUrl}/functions/v1/reward-token`, {
     method: 'POST',
@@ -123,18 +128,25 @@ function canShowInterstitialNow() {
   return (Date.now() - last) >= INTER_COOLDOWN_MS;
 }
 function markInterstitialShownNow() { localStorage.setItem('lastInterstitialTs', Date.now().toString()); }
+
 async function showInterstitial() {
   try {
-    if (await hasNoAds()) { console.log("[PUB] Interstitiel bloquée (NoPub)"); return; }
-    if (!canShowInterstitialNow()) { console.log("[PUB] Interstitiel cooldown"); return; }
-    if (window.InterstitialAd && typeof InterstitialAd.show === 'function') {
-      await InterstitialAd.prepare({ adId: AD_UNIT_ID_INTERSTITIEL, ...buildAdMobRequestConfig() });
-      await InterstitialAd.show();
-      markInterstitialShownNow();
-    } else {
+    if (await hasNoAds()) { console.log("[PUB] Interstitiel bloqué (NoPub)"); return false; }
+    if (!canShowInterstitialNow()) { console.log("[PUB] Interstitiel cooldown"); return false; }
+
+    if (!(window.InterstitialAd && typeof InterstitialAd.show === 'function')) {
       console.log("[PUB] Interstitiel indisponible (web/dev).");
+      return false;
     }
-  } catch (e) { console.warn("Interstitiel:", e?.message || e); }
+
+    await InterstitialAd.prepare({ adId: AD_UNIT_ID_INTERSTITIEL, ...buildAdMobRequestConfig() });
+    const res = await InterstitialAd.show();
+    if (res !== false) { markInterstitialShownNow(); return true; }
+    return false;
+  } catch (e) {
+    console.warn("Interstitiel:", e?.message || e);
+    return false;
+  }
 }
 
 // --- Rewarded (promises)
@@ -207,3 +219,7 @@ window.partieReprisee  = partieReprisee;
 window.partieTerminee  = partieTerminee;
 
 window.hasNoAds = hasNoAds;
+
+// --- Alias attendus par le jeu (compat)
+window.showInterstitialAd = showInterstitial;
+window.showRewardedType   = showRewardedType;
