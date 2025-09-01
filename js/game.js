@@ -366,6 +366,9 @@ function fillRectThemeSafe(c, px, py, size) {
     const REVIVE_RAMP_MS = 6000;
     let reviveTargetInterval = 500;
 
+    // ✅ Limitation: 1 seul revive par partie (pub OU jeton)
+    let reviveUsed = false;
+
     function lerp(a, b, t) { return a + (b - a) * t; }
 
     function saveHistory() {
@@ -667,6 +670,7 @@ function fillRectThemeSafe(c, px, py, size) {
       history = [];
       lastTime = 0;
       reviveRampActive = false;
+      reviveUsed = false; // ✅ on ré-autorise 1 revive pour la nouvelle partie
 
       // UI
       const scoreEl = document.getElementById('score');
@@ -727,6 +731,7 @@ function fillRectThemeSafe(c, px, py, size) {
         return;
       }
 
+      const canRevive = !reviveUsed; // ✅ une seule fois
       const popup = document.createElement('div');
       popup.id = 'gameover-popup';
       popup.style = `
@@ -749,10 +754,10 @@ function fillRectThemeSafe(c, px, py, size) {
             <button id="end-quit" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#444;color:#fff;cursor:pointer;">
               ${tt('end.quit','Quitter')}
             </button>
-            <button id="end-revive-token" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#2a7;color:#fff;cursor:pointer;">
+            <button id="end-revive-token" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#2a7;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}">
               ${tt('end.revive.token','Revivre (1 jeton)')}
             </button>
-            <button id="end-revive-ad" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#a73;color:#fff;cursor:pointer;">
+            <button id="end-revive-ad" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#a73;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}">
               ${tt('end.revive.ad','Revivre (pub)')}
             </button>
           </div>
@@ -761,6 +766,7 @@ function fillRectThemeSafe(c, px, py, size) {
       document.body.appendChild(popup);
 
       async function doRevive(withAd) {
+        if (!canRevive) return; // sécurité UI
         if (withAd) {
           // === AJUSTEMENT #2 : rewarded SSV via pub.js
           if (typeof window.showRewardRevive === 'function') {
@@ -770,12 +776,14 @@ function fillRectThemeSafe(c, px, py, size) {
               setTimeout(resolve, 2000); // garde-fou
             });
             if (!ok) return; // reward non validée → pas de revive
+            reviveUsed = true;          // ✅ consomme l’unique revive
             popup.remove();
             reviveRewindAndResume();
             return;
           }
           // Fallback dev : interstitiel
           await showInterstitial();
+          reviveUsed = true;            // ✅ consomme l’unique revive
           popup.remove();
           reviveRewindAndResume();
           return;
@@ -786,6 +794,7 @@ function fillRectThemeSafe(c, px, py, size) {
           alert(tt('end.revive.no_tokens','Pas assez de jetons.'));
           return;
         }
+        reviveUsed = true;              // ✅ consomme l’unique revive
         popup.remove();
         reviveRewindAndResume();
       }
@@ -797,12 +806,10 @@ function fillRectThemeSafe(c, px, py, size) {
       document.getElementById('end-quit').onclick = function () {
         window.location.href = INDEX_URL;
       };
-      document.getElementById('end-revive-token').onclick = function () {
-        doRevive(false);
-      };
-      document.getElementById('end-revive-ad').onclick = function () {
-        doRevive(true);
-      };
+      const btnTok = document.getElementById('end-revive-token');
+      const btnAd  = document.getElementById('end-revive-ad');
+      if (btnTok) btnTok.onclick = function () { doRevive(false); };
+      if (btnAd)  btnAd.onclick  = function () { doRevive(true);  };
     }
 
     function reviveRewindAndResume() {
@@ -972,6 +979,7 @@ function fillRectThemeSafe(c, px, py, size) {
       paused = false;
       gameOver = false;
       lastTime = 0;
+      reviveUsed = false; // ✅ nouvelle partie → on réautorise 1 revive
 
       if (mode === 'duel') await setupDuelSequence();
       if (mode !== 'duel') {
