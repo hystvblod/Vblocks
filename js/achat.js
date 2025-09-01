@@ -2,7 +2,7 @@
    achat.js (confirmation + achat générique)
    =========================== */
 
-// Utilise la même map que boutique.js (exposée en global)
+// Utilise la même map que boutique.html (exposée en global par ton init IAP)
 const _PRODUCT_IDS = (window.PRODUCT_IDS) || {
   points3000:  'points3000',
   points10000: 'points10000',
@@ -11,25 +11,37 @@ const _PRODUCT_IDS = (window.PRODUCT_IDS) || {
   nopub:       'nopub'
 };
 
-// Récupère un prix localisé depuis le Store si possible
+// --- Helpers store ------------------------------------------------
+function _iapAvailable() {
+  return !!(window.store && typeof window.store.get === 'function' && typeof window.store.order === 'function');
+}
+function _pid(alias) {
+  return _PRODUCT_IDS[alias] || alias;
+}
+
+// --- Prix localisés (jamais en dur) -------------------------------
 function _getLocalizedPrice(alias) {
-  // Priorité 1 : cache rempli par boutique.js
+  // 1) Cache du boot (PRICES_BY_ALIAS)
   if (window.PRICES_BY_ALIAS && window.PRICES_BY_ALIAS[alias]?.price) {
     return window.PRICES_BY_ALIAS[alias].price;
   }
-  // Priorité 2 : lire directement depuis le plugin
-  const IAP = (window.store && typeof window.store.get === 'function') ? window.store : null;
-  const pid = _PRODUCT_IDS[alias] || alias;
-  if (IAP) {
-    const p = IAP.get(pid);
-    if (p && p.price) return p.price; // déjà localisé: "€0,99", "US$0.99", ...
+  // 2) Lecture store par alias
+  if (_iapAvailable()) {
+    let p = store.get(alias);
+    if (p && p.price) return p.price;
+    // 3) Lecture store par id réel (si tu as enregistré avec l'id)
+    p = store.get(_pid(alias));
+    if (p && p.price) return p.price;
   }
-  return ""; // inconnu
+  return ""; // inconnu → l’UI affichera "…"
 }
 
-// Fonction générique de confirmation (pas de "€" en dur)
-window.lancerPaiement = async function(type) {
-  const priceStr = _getLocalizedPrice(type);
+function _getProductTitle(alias) {
+  if (_iapAvailable()) {
+    let p = store.get(alias);
+    if (!p || !p.title) p = store.get(_pid(alias));
+    if (p && p.title) return p.title;
+  }
   const labelMap = {
     jetons12:     "12 jetons",
     jetons50:     "50 jetons",
@@ -37,53 +49,101 @@ window.lancerPaiement = async function(type) {
     points3000:   "3000 points",
     points10000:  "10 000 points"
   };
-  const item = labelMap[type] || type;
+  return labelMap[alias] || alias;
+}
+
+// --- Confirmation (sans prix codé) --------------------------------
+window.lancerPaiement = async function(alias) {
+  const priceStr = _getLocalizedPrice(alias);
+  const item = _getProductTitle(alias);
   const message = priceStr ? `${item} pour ${priceStr} ?` : `Valider l'achat : ${item} ?`;
   return confirm(message);
 };
 
-// Handler central pour tous les achats “boutique” déclenchés ailleurs dans l’app
-window.accordeAchat = async function(type) {
-  const isPaidItem =
-    type === "jetons12" ||
-    type === "jetons50" ||
-    type === "points3000" ||
-    type === "points10000" ||
-    type === "nopub";
-
-  if (isPaidItem) {
-    const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
-    const ok = await window.lancerPaiement(type);
-    if (!ok) return;
-
-    if (IAP) {
-      // Achats in-app (pop-up Google Play)
-      const pid = _PRODUCT_IDS[type] || type;
-      IAP.order(pid);
-    } else {
-      // Fallback serveur (web / plugin absent)
-      await acheterProduitVercel(type);
-      if (type === "nopub") {
-        await sb.rpc('ajouter_nopub');
+// --- Wiring PRICES_BY_ALIAS (optionnel, protégé) -------------------
+if (!_iapAvailable()) {
+  // rien à faire en web/dev
+} else if (!window.__IAP_PRICES_WIRED__) {
+  window.__IAP_PRICES_WIRED__ = true;
+  window.PRICES_BY_ALIAS = window.PRICES_BY_ALIAS || {};
+  try {
+    // Remplit/MAJ PRICES_BY_ALIAS dès que le store connaît un produit
+    store.when('product').updated((p) => {
+      const alias = p.alias || p.id;
+      if (p && p.price) {
+        window.PRICES_BY_ALIAS[alias] = { price: p.price, title: p.title || alias };
       }
-      await renderThemes?.();
-      setupPubCartouches?.();
-      setupBoutiqueAchats?.();
+    });
+    if (typeof store.ready === 'function') {
+      store.ready(() => {
+        try { window.refreshDisplayedPrices?.(); } catch(_) {}
+      });
+    }
+  } catch(_) {}
+}
+
+// --- Achat central ------------------------------------------------
+let __orderBusy = false;
+
+window.accordeAchat = async function(type) {
+  // Cas “mal appelé” pour les rewarded → redirige proprement
+  if (type === "pub1jeton") {
+    if (typeof window.showRewardBoutique === 'function') {
+      await window.showRewardBoutique();
+      try { await window.renderThemes?.(); } catch(_) {}
+    } else {
+      alert("Pub non disponible.");
+    }
+    return;
+  }
+  if (type === "pub300points") {
+    if (typeof window.showRewardVcoins === 'function') {
+      await window.showRewardVcoins();
+      try { await window.renderThemes?.(); } catch(_) {}
+    } else {
+      alert("Pub non disponible.");
     }
     return;
   }
 
-  // Gains gratuits (pub reward, bonus)
-  if (type === "pub1jeton") {
-    await userData.addJetons(1);
-    alert("+1 jeton ajouté !");
-  } else if (type === "pub300points") {
-    await userData.addVCoins(300);
-    alert("+300 points ajoutés !");
-  }
+  // Produits payants (IAP)
+  const isPaidItem = ['jetons12','jetons50','points3000','points10000','nopub'].includes(type);
+  if (!isPaidItem) return;
 
-  // MAJ UI
-  await renderThemes?.();
-  setupPubCartouches?.();
-  setupBoutiqueAchats?.();
+  const ok = await window.lancerPaiement(type);
+  if (!ok) return;
+
+  if (_iapAvailable()) {
+    if (__orderBusy) return;
+    __orderBusy = true;
+    try {
+      // Tente d’abord par alias (si register avec alias), sinon par id réel
+      try { await store.order(type); }
+      catch { await store.order(_pid(type)); }
+      // Crédit = dans tes listeners IAP (approved/verified + finish)
+    } catch (e) {
+      console.warn('[IAP] order failed:', e?.message || e);
+      alert("Achat non abouti.");
+    } finally {
+      __orderBusy = false;
+    }
+  } else {
+    // Fallback web/dev: simulateur (utile en dev sans plugin)
+    try {
+      if (typeof acheterProduitVercel === 'function') {
+        await acheterProduitVercel(type);
+      } else {
+        // Crédit côté Supabase pour une simulation manuelle
+        if (type === "points3000")   await sb.rpc('ajouter_vcoins', { montant: 3000 });
+        if (type === "points10000")  await sb.rpc('ajouter_vcoins', { montant: 10000 });
+        if (type === "jetons12")     await sb.rpc('ajouter_jetons', { montant: 12 });
+        if (type === "jetons50")     await sb.rpc('ajouter_jetons', { montant: 50 });
+        if (type === "nopub")        await sb.rpc('ajouter_nopub');
+      }
+      try { await window.renderThemes?.(); } catch(_) {}
+    } catch (e) {
+      console.warn('[IAP] fallback web error:', e?.message || e);
+      alert("Achat indisponible sans le store natif.");
+    }
+  }
 };

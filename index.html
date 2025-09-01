@@ -4,13 +4,27 @@
   <meta charset="UTF-8">
   <title>VBlocks - Accueil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Styles -->
   <link rel="stylesheet" href="style/main.css" />
   <style>
-    .menu-btn.green { background: #72eb63 !important; color: #ffffff !important; box-shadow: 0 3px 15px #2fd7b144; }
+    .menu-btn.green  { background: #72eb63 !important; color: #ffffff !important; box-shadow: 0 3px 15px #2fd7b144; }
     .menu-btn.orange { background: #f0d642  !important; color: #fff !important; box-shadow: 0 3px 15px #2fd7b144; }
     .prix-blanc { color: white; font-size: 0.9em; display: block; margin-top: 5px; }
   </style>
+
+  <!-- Lib Supabase (une seule fois, version fixée) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
+
+  <!-- App utils (peuvent dépendre de sb mais exécutent surtout au DOMContentLoaded) -->
+  <script src="js/userData.js"></script>
+  <script src="js/i18n.js"></script>
+
+  <!-- Pubs (AdMob + SSV) puis IAP helpers -->
+  <script src="js/pub.js"></script>
+  <script src="js/achat.js"></script>
 </head>
+
 <body>
   <!-- Boutons top-bar (profil, paramètres uniquement) -->
   <div class="top-buttons top-buttons-home">
@@ -50,6 +64,7 @@
         <button id="consent-accept" class="btn-accept" data-i18n="index.rgpd.accept">Accepter</button>
         <button id="consent-refuse" class="btn-refuse" data-i18n="index.rgpd.refuse">Refuser</button>
       </div>
+
       <div style="margin-top:0.75rem;text-align:center;">
         <a href="publicite_accords.html" class="link-accords" data-i18n="index.rgpd.manage">Gérer les accords publicitaires</a>
       </div>
@@ -131,6 +146,7 @@
       const CONSENT_KEY = "rgpdConsent";
       const ADS_KEY     = "adsConsent";
       const NOTIF_KEY   = "notifConsent";
+      const ADS_ENABLED = "adsEnabled"; // compat avec pub.js
 
       function showConsentIfNeeded() {
         const consent = localStorage.getItem(CONSENT_KEY);
@@ -140,12 +156,11 @@
           applyConsentFromStorage();
         }
       }
-
       function applyConsentFromStorage() {
         const consent = localStorage.getItem(CONSENT_KEY);
-        const ads = localStorage.getItem(ADS_KEY) === "yes";
-        const notif = localStorage.getItem(NOTIF_KEY) === "yes";
-
+        const ads  = localStorage.getItem(ADS_KEY) === "yes";
+        const notif= localStorage.getItem(NOTIF_KEY) === "yes";
+        // initAds est optionnel; pub.js lit directement les clés (NPA)
         if (consent === "accept" && ads && typeof window.initAds === "function") {
           try { window.initAds(); } catch(e){}
         }
@@ -153,20 +168,20 @@
           try { window.__initPushOnce && window.__initPushOnce(); } catch(e){}
         }
       }
-
       window.addEventListener("DOMContentLoaded", function() {
         const popup = document.getElementById("popup-consent");
         const btnAccept = document.getElementById("consent-accept");
         const btnRefuse = document.getElementById("consent-refuse");
         const cbAds   = document.getElementById("consent-ads");
         const cbNotif = document.getElementById("consent-notif");
-
         showConsentIfNeeded();
 
         btnAccept.onclick = function() {
           localStorage.setItem(CONSENT_KEY, "accept");
           localStorage.setItem(ADS_KEY,   cbAds.checked   ? "yes" : "no");
           localStorage.setItem(NOTIF_KEY, cbNotif.checked ? "yes" : "no");
+          // compat pub.js
+          localStorage.setItem(ADS_ENABLED, cbAds.checked ? "true" : "false");
           popup.style.display = "none";
           applyConsentFromStorage();
         };
@@ -174,100 +189,12 @@
           localStorage.setItem(CONSENT_KEY, "refuse");
           localStorage.setItem(ADS_KEY,   "no");
           localStorage.setItem(NOTIF_KEY, "no");
+          // compat pub.js
+          localStorage.setItem(ADS_ENABLED, "false");
           popup.style.display = "none";
         };
       });
-
       window.applyConsentFromStorage = applyConsentFromStorage;
-    })();
-
-    // --------- Concours via Supabase ---------
-    async function checkConcoursStatus() {
-      try {
-        const sb = (window.supabase || window.sb);
-        if (!sb) return;
-        const { data, error } = await sb
-          .from('config')
-          .select('concours_enabled')
-          .eq('id', 'global')
-          .single();
-        if (!error) {
-          document.getElementById("btnConcours").style.display = data?.concours_enabled ? "block" : "none";
-        }
-      } catch(e) {}
-    }
-    window.addEventListener("DOMContentLoaded", () => {
-      checkConcoursStatus();
-      if (window.i18nTranslateAll) window.i18nTranslateAll();
-    });
-  </script>
-
-  <!-- libs -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="js/userData.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/pub.js"></script>
-
-  <!-- IAP sécurisé -->
-  <script>
-    document.addEventListener('deviceready', function () {
-      const IAP = (window.store && typeof window.store.register === 'function') ? window.store : null;
-      if (!IAP) {
-        console.warn("[IAP] Plugin indisponible ici (web/localhost ?). On saute l’init IAP.");
-        return;
-      }
-      IAP.verbosity = IAP.DEBUG;
-      IAP.register({ id: "points3000",  alias: "points3000",  type: IAP.CONSUMABLE });
-      IAP.register({ id: "points10000", alias: "points10000", type: IAP.CONSUMABLE });
-      IAP.register({ id: "jetons12",    alias: "jetons12",    type: IAP.CONSUMABLE });
-      IAP.register({ id: "jetons50",    alias: "jetons50",    type: IAP.CONSUMABLE });
-      IAP.register({ id: "nopub",       alias: "nopub",       type: IAP.NON_CONSUMABLE });
-      IAP.ready(function () {
-        IAP.products.forEach(p => {
-          const el = document.querySelector(`[data-product-id="${p.id}"]`);
-          if (el && p.price) el.textContent = p.price;
-        });
-      });
-      IAP.refresh();
-    }, false);
-    function acheterProduit(id) {
-      const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
-      if (IAP) IAP.order(id);
-      else alert("Achat non disponible dans ce contexte.");
-    }
-  </script>
-
-  <!-- Push (Capacitor FCM) -->
-  <script>
-    (function () {
-      const DEBUG_PUSH = false;
-      let inited = false;
-      function isNative() {
-        try { return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web'; }
-        catch(e){ return false; }
-      }
-      async function initPush() {
-        if (inited) return;
-        inited = true;
-        if (!isNative()) return;
-        const Push = window.Capacitor?.Plugins?.PushNotifications;
-        if (!Push) return;
-        try {
-          const perm = await Push.requestPermissions();
-          if (perm.receive !== 'granted') return;
-          await Push.register();
-          Push.addListener('registration', (token) => {
-            localStorage.setItem('fcmToken', token.value || '');
-            if (DEBUG_PUSH) console.log('[Push] FCM token:', token.value);
-          });
-        } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
-      }
-      window.__initPushOnce = initPush;
-      document.addEventListener('DOMContentLoaded', function() {
-        if (typeof window.applyConsentFromStorage === 'function') {
-          window.applyConsentFromStorage();
-        }
-      });
     })();
   </script>
 
@@ -281,7 +208,6 @@
     // --------------------------
     // CAS 1 : anciens joueurs "local only"
     // --------------------------
-
     function getLegacyLocalUserId() { return localStorage.getItem('user_id') || null; }
     function getPseudoLocal() {
       let p = localStorage.getItem('pseudo');
@@ -298,7 +224,6 @@
         if (error) throw error;
       }
     }
-
     // 2) Lier l'UID anonyme à l'ancien profil (une seule fois)
     async function linkLegacyIfNeeded() {
       const legacy = getLegacyLocalUserId();
@@ -309,7 +234,6 @@
         if (!error) localStorage.setItem('legacy_linked', '1');
       } catch (e) { console.warn('[linkLegacyIfNeeded]', e?.message || e); }
     }
-
     // 3) S’assurer qu’une ligne user existe (création si besoin)
     async function ensureUserRow() {
       const pseudo = getPseudoLocal();
@@ -317,9 +241,10 @@
       try { await sb.rpc('ensure_user', { default_lang: lang, default_pseudo: pseudo }); }
       catch (e) { console.warn('[ensureUserRow]', e?.message || e); }
     }
-
     // 4) Bootstrap global pour les anciens joueurs locaux
-    async function bootstrapAuthForLegacy() { await ensureAuth(); await linkLegacyIfNeeded(); await ensureUserRow(); }
+    async function bootstrapAuthForLegacy() {
+      await ensureAuth(); await linkLegacyIfNeeded(); await ensureUserRow();
+    }
 
     // Utilisateur courant (UID auth)
     async function getCurrentUserId() {
@@ -332,17 +257,11 @@
     async function getUsersTableIdForCurrentAuth() {
       await ensureAuth();
       const { data: { user } } = await sb.auth.getUser();
-      const authId = user?.id || null;
-      if (!authId) return null;
-
-      // Cas standard : users.auth_id = auth.uid
+      const authId = user?.id || null; if (!authId) return null;
       let { data, error } = await sb.from('users').select('id').eq('auth_id', authId).maybeSingle();
       if (!error && data?.id) return data.id;
-
-      // Fallback si chez toi users.id == authId
       ({ data, error } = await sb.from('users').select('id').eq('id', authId).maybeSingle());
       if (!error && data?.id) return data.id;
-
       console.warn('[popup] users.id introuvable pour auth_id', authId);
       return null;
     }
@@ -351,16 +270,12 @@
     async function checkAndShowPopupOnce() {
       const usersTableId = await getUsersTableIdForCurrentAuth();
       if (!usersTableId) return;
-
       const { data, error } = await sb
         .from('messages_popup')
         .select('id,message,vue,created_at,userid')
-        .eq('userid', usersTableId)       // filtre sur users.id
+        .eq('userid', usersTableId)
         .order('created_at', { ascending: false })
         .limit(1);
-
-      console.log('[Popup DEBUG]', { usersTableId, error, data });
-
       if (!error && data?.length) {
         const msg = data[0];
         if (!msg.vue) {
@@ -369,54 +284,43 @@
         }
       }
     }
-
     async function listenPopupsRealtime() {
       const usersTableId = await getUsersTableIdForCurrentAuth();
       if (!usersTableId) return;
-
       sb.channel('popups_for_' + usersTableId)
-        .on('postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'messages_popup', filter: `userid=eq.${usersTableId}` },
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages_popup', filter: `userid=eq.${usersTableId}` },
           async (payload) => {
             const m = payload.new;
             alert(m.message);
             await sb.from('messages_popup').update({ vue: true }).eq('id', m.id);
           }
-        )
-        .subscribe();
+        ).subscribe();
     }
 
     // --------- Concours (version fix) ---------
     async function checkConcoursStatusFixed() {
       try {
         const { data, error } = await sb
-          .from('config')
-          .select('concours_enabled')
-          .eq('id', 'global')
-          .single();
+          .from('config').select('concours_enabled')
+          .eq('id', 'global').single();
         if (!error) {
-          document.getElementById("btnConcours").style.display =
-            data?.concours_enabled ? "block" : "none";
+          document.getElementById("btnConcours").style.display = data?.concours_enabled ? "block" : "none";
         }
       } catch(e) {}
     }
 
     // --------- userData : appels RPC sécurisés ---------
     window.userData = window.userData || {};
-
     async function __getBalances() {
       const { data, error } = await sb.rpc('get_balances');
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
       return row || {};
     }
-
     userData.getVCoins = async () => { const b = await __getBalances(); return b?.vcoins ?? 0; };
     userData.addVCoins = async (n) => { const delta = parseInt(n, 10) || 0; const { error } = await sb.rpc('ajouter_vcoins', { montant: delta }); if (error) throw error; return true; };
-
     userData.getJetons = async () => { const b = await __getBalances(); return b?.jetons ?? 0; };
     userData.addJetons = async (n) => { const delta = parseInt(n, 10) || 0; const { error } = await sb.rpc('ajouter_jetons', { montant: delta }); if (error) throw error; return true; };
-
     userData.getUnlockedThemes = async () => { const b = await __getBalances(); return Array.isArray(b?.themes_possedes) ? b.themes_possedes : ['neon']; };
     userData.setUnlockedThemes = async (themes) => { const { error } = await sb.rpc('set_themes_secure', { themes }); if (error) throw error; return true; };
     userData.purchaseTheme = async (key, price) => { const { error } = await sb.rpc('purchase_theme', { theme_key: String(key), price: parseInt(price,10) || 0 }); if (error) throw error; return true; };
@@ -428,10 +332,38 @@
         await checkConcoursStatusFixed();
         await checkAndShowPopupOnce();
         await listenPopupsRealtime();
-      } catch (e) {
-        console.warn('[INDEX bootstrap]', e?.message || e);
-      }
+        if (window.i18nTranslateAll) window.i18nTranslateAll();
+        if (typeof window.applyConsentFromStorage === 'function') window.applyConsentFromStorage();
+      } catch (e) { console.warn('[INDEX bootstrap]', e?.message || e); }
     });
+  </script>
+
+  <!-- Push (Capacitor FCM) -->
+  <script>
+    (function () {
+      const DEBUG_PUSH = false;
+      let inited = false;
+      function isNative() {
+        try { return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web'; }
+        catch(e){ return false; }
+      }
+      async function initPush() {
+        if (inited) return; inited = true;
+        if (!isNative()) return;
+        const Push = window.Capacitor?.Plugins?.PushNotifications;
+        if (!Push) return;
+        try {
+          const perm = await Push.requestPermissions();
+          if (perm.receive !== 'granted') return;
+          await Push.register();
+          Push.addListener('registration', (token) => {
+            localStorage.setItem('fcmToken', token.value || '');
+            if (DEBUG_PUSH) console.log('[Push] FCM token:', token.value);
+          });
+        } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
+      }
+      window.__initPushOnce = initPush;
+    })();
   </script>
 </body>
 </html>

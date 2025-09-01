@@ -8,6 +8,9 @@
   <!-- Librairies / app -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
   <script src="js/userData.js"></script>
+  <!-- Gestion centralisée des pubs (AdMob, rewarded, interstitiels) -->
+   <script src="js/achat.js"></script>
+  <script src="js/pub.js"></script>
   <script src="js/i18n.js"></script>
 
   <link rel="stylesheet" href="style/main.css">
@@ -166,7 +169,6 @@ function normalizeThemeKey(k){
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/\s+/g,'');
 }
-/* accepte string ou objet {theme_key}/{key}/{name} */
 function toKeyLike(x){
   if (typeof x === 'string') return normalizeThemeKey(x);
   if (x && typeof x === 'object') {
@@ -178,18 +180,21 @@ function toKeyLike(x){
 /* ---------- Données boutique ---------- */
 const THEMES = [
   { key: "neon",   name: "Neon"   },
+  { key: "japon",  name: "Japon" },
+  { key: "grece",  name: "Grèce antique" },
+  { key: "arabic", name: "Arabic" },
+  { key: "space",  name: "Space"  },
+  { key: "cyber",  name: "Cyber"  },
+  { key: "angelique",  name: "Angelique"  },
   { key: "bubble", name: "Bubble" },
   { key: "nature", name: "Nature" },
   { key: "nuit",   name: "Nuit"   },
   { key: "retro",  name: "Retro"  },
   { key: "vitraux", name: "Vitraux" },
-  { key: "angelique",  name: "Angelique"  },
-  { key: "luxury", name: "Luxury" },
-  { key: "space",  name: "Space"  },
-  { key: "cyber",  name: "Cyber"  },
-  { key: "arabic", name: "Arabic" },
-  { key: "grece",  name: "Grèce antique" },
-  { key: "japon",  name: "Japon" }
+  
+  { key: "luxury", name: "Luxury" }
+ 
+ 
 ];
 
 const SPECIAL_CARTOUCHES = [
@@ -221,27 +226,22 @@ const THEME_COLOR = {
   japon  : 'color-green'
 };
 
-/* ---------- Fallback prix IAP (affichage) ---------- */
+/* ---------- Prix IAP (affichage depuis le Store uniquement) ---------- */
 async function getStoreProducts(productIds){
-  if (window.store && Array.isArray(store.products) && store.products.length) {
-    const out = {};
-    productIds.forEach(id => {
-      const p = store.get(id);
-      out[id] = { id, price: (p && p.price) ? p.price : "—" };
-    });
-    return out;
-  }
-  const fallback = {
-    points3000:  "€0,99",
-    points10000: "€1,99",
-    jetons12:    "€0,99",
-    jetons50:    "€2,99",
-    nopub:       "€3,49",
-  };
-  return productIds.reduce((acc,id)=>{
-    if (id) acc[id] = { id, price: fallback[id] || "—" };
-    return acc;
-  }, {});
+  const out = {};
+  productIds.forEach(id => {
+    // 1) Cache global si alimenté par ton init IAP
+    let price = (window.PRICES_BY_ALIAS && window.PRICES_BY_ALIAS[id]?.price) ? window.PRICES_BY_ALIAS[id].price : "";
+
+    // 2) Lecture directe store si dispo
+    const IAP = (window.store && typeof window.store.get === 'function') ? window.store : null;
+    if (!price && IAP) {
+      const p = IAP.get(id);
+      if (p && p.price) price = p.price; // ex: "€0,99"
+    }
+    out[id] = { id, price };
+  });
+  return out;
 }
 
 /* ---------- Helpers auth & lecture des thèmes (id OU auth_id) ---------- */
@@ -284,23 +284,46 @@ async function getUnlockedThemesNoSQL() {
 async function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
 
-  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => `
-    <div class="special-cartouche ${c.color}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
-      <span class="theme-ico">${c.icon}</span>
-      <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      <span class="prix-label">${c.prix ?? ""}</span>
-    </div>
-  `).join('');
+  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => {
+    const isReward = (c.key === 'boutique.cartouche.pub1jeton' || c.key === 'boutique.cartouche.pub300points');
+    return `
+      <div class="special-cartouche ${c.color} ${isReward ? 'btn-reward' : ''}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
+        <span class="theme-ico">${c.icon}</span>
+        <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
+        <span class="prix-label">${c.productId ? "…" : ""}</span>
+      </div>
+    `;
+  }).join('');
 
+  // Remplir les prix réels dès que possible
   const ids = SPECIAL_CARTOUCHES.map(c => c.productId).filter(Boolean);
   const products = await getStoreProducts(ids);
+  refreshDisplayedPrices(products);
 
-  document.querySelectorAll('#achats-list .special-cartouche').forEach(node=>{
-    const id = node.getAttribute('data-product-id');
-    const priceNode = node.querySelector('.prix-label');
-    if (id && products[id]?.price && priceNode) {
-      priceNode.textContent = products[id].price;
+  // Écoute des mises à jour du store (si Cordova Purchase)
+  try {
+    if (window.store && typeof store.when === 'function') {
+      store.when('product').updated(() => refreshDisplayedPrices());
     }
+    if (window.store && typeof store.ready === 'function') {
+      store.ready(() => refreshDisplayedPrices());
+    }
+  } catch(_) {}
+}
+
+// Met à jour les labels de prix à partir de PRICES_BY_ALIAS / store.get
+function refreshDisplayedPrices(preFetched) {
+  const ids = SPECIAL_CARTOUCHES.map(c => c.productId).filter(Boolean);
+  const map = preFetched || {};
+  ids.forEach(id => {
+    let price = (window.PRICES_BY_ALIAS && window.PRICES_BY_ALIAS[id]?.price) ? window.PRICES_BY_ALIAS[id].price : "";
+    if (!price && map[id]?.price) price = map[id].price;
+    if (!price && window.store && typeof store.get === 'function') {
+      const p = store.get(id);
+      if (p && p.price) price = p.price;
+    }
+    document.querySelectorAll(`#achats-list .special-cartouche[data-product-id="${id}"] .prix-label`)
+      .forEach(n => n.textContent = price || "…");
   });
 }
 
@@ -354,39 +377,52 @@ async function renderThemes() {
   if ($soldeJetons) $soldeJetons.textContent = (typeof jetons === "number" ? jetons : "--");
 }
 
-/* ---------- Pubs récompensées (actions locales) ---------- */
+/* ---------- Pubs récompensées (actions via pub.js) ---------- */
 function setupPubCartouches() {
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
     if (!label) return;
     const key = label.dataset.i18n;
 
+    // helper: évite double clic
+    const guard = (fn) => async () => {
+      if (cartouche._busy) return;
+      cartouche._busy = true;
+      try { await fn(); } finally { cartouche._busy = false; }
+    };
+
     if (key === 'boutique.cartouche.pub1jeton') {
       cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        cartouche.onclick = null;
-        try {
-          await window.userData?.addJetons?.(REWARD_JETONS);
-          alert("+1 jeton ajouté !");
-          await renderThemes();
-        } catch(e) {
-          alert("Erreur : " + (e?.message || e));
+      cartouche.onclick = guard(async () => {
+        if (typeof window.showRewardBoutique === 'function') {
+          const ok = await window.showRewardBoutique(); // rewarded + SSV
+          if (ok) {
+            alert("+1 jeton (rewarded) !");
+            await renderThemes();
+          } else {
+            alert("Pub annulée ou indisponible.");
+          }
+        } else {
+          alert("Pub non disponible sur cette plateforme.");
         }
-      };
+      });
     }
 
     if (key === 'boutique.cartouche.pub300points') {
       cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        cartouche.onclick = null;
-        try {
-          await window.userData?.addVCoins?.(300);
-          alert("+300 VCoins ajoutés !");
-          await renderThemes();
-        } catch(e) {
-          alert("Erreur : " + (e?.message || e));
+      cartouche.onclick = guard(async () => {
+        if (typeof window.showRewardVcoins === 'function') {
+          const ok = await window.showRewardVcoins(); // rewarded + SSV
+          if (ok) {
+            alert("+300 VCoins (rewarded) !");
+            await renderThemes();
+          } else {
+            alert("Pub annulée ou indisponible.");
+          }
+        } else {
+          alert("Pub non disponible sur cette plateforme.");
         }
-      };
+      });
     }
   });
 }
@@ -530,6 +566,13 @@ function ready(fn) {
 }
 ready(async () => {
   await renderThemes();
+  // Nouvelle passe prix quand le store sera prêt (si dispo)
+  try {
+    if (window.store && typeof store.ready === 'function') {
+      store.ready(() => refreshDisplayedPrices());
+    }
+  } catch(_) {}
+
   if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
   if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
 });
