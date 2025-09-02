@@ -135,7 +135,7 @@ window.accordeAchat = async function(type) {
       if (type === "points10000")  await sb.rpc('secure_add_points', { p_user_id: userId, p_amount: 10000, p_product: 'points10000' });
       if (type === "jetons12")     await sb.rpc('secure_add_jetons', { p_user_id: userId, p_amount: 12, p_product: 'jetons12' });
       if (type === "jetons50")     await sb.rpc('secure_add_jetons', { p_user_id: userId, p_amount: 50, p_product: 'jetons50' });
-      if (type === "nopub")        await sb.from('users').update({ nopub: true }).eq('auth_id', userId);
+      if (type === "nopub")        await sb.rpc('secure_set_nopub',  { p_user_id: userId, p_product: 'nopub' });
 
       try { await window.renderThemes?.(); } catch(_) {}
       alert("Achat simulé (web/dev) ✅");
@@ -149,39 +149,39 @@ window.accordeAchat = async function(type) {
 // === Listener achats approuvés (crédit direct Supabase, pas de backend) ===
 if (_iapAvailable()) {
   store.when("product").approved(async (p) => {
+    const sb = window.sb;
     try {
-      const sb = window.sb;
       const userId = sb?.auth?.currentUser?.id;
       if (!userId) {
         console.warn("[IAP] Aucun utilisateur connecté");
         return p.finish();
       }
 
-      console.log("[IAP] Approved:", p.id);
+      const key = (p.alias || p.id);
+      console.log("[IAP] Approved:", key);
 
-      if (p.id === "points3000") {
-        await sb.rpc("secure_add_points", { p_user_id: userId, p_amount: 3000, p_product: "points3000" });
+      if (key === "points3000") {
+        await sb.rpc("secure_add_points", { p_user_id: userId, p_amount: 3000,  p_product: "points3000" });
       }
-      else if (p.id === "points10000") {
+      else if (key === "points10000") {
         await sb.rpc("secure_add_points", { p_user_id: userId, p_amount: 10000, p_product: "points10000" });
       }
-      else if (p.id === "jetons12") {
-        await sb.rpc("secure_add_jetons", { p_user_id: userId, p_amount: 12, p_product: "jetons12" });
+      else if (key === "jetons12") {
+        await sb.rpc("secure_add_jetons", { p_user_id: userId, p_amount: 12,    p_product: "jetons12" });
       }
-      else if (p.id === "jetons50") {
-        await sb.rpc("secure_add_jetons", { p_user_id: userId, p_amount: 50, p_product: "jetons50" });
+      else if (key === "jetons50") {
+        await sb.rpc("secure_add_jetons", { p_user_id: userId, p_amount: 50,    p_product: "jetons50" });
       }
-      else if (p.id === "nopub") {
-        await sb.from("users").update({ nopub: true }).eq("auth_id", userId);
+      else if (key === "nopub") {
+        await sb.rpc("secure_set_nopub",  { p_user_id: userId, p_product: "nopub" });
       }
 
       alert("✅ Achat validé !");
       try { await window.renderThemes?.(); } catch(_) {}
-
-      p.finish(); // 🔴 NE PAS ENLEVER : finalise la transaction côté Play/App Store
     } catch (err) {
       console.error("[IAP ERROR]", err);
-      p.finish(); // 🔴 Même en cas d'erreur, on finit pour ne pas re-créditer en boucle
+    } finally {
+      p.finish(); // 🔴 Toujours finaliser
     }
   });
 

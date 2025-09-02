@@ -1690,27 +1690,25 @@ function fillRectThemeSafe(c, px, py, size) {
 
       return (window.sbUser && window.sbUser.id) || null;
     }
+async function setLastScoreSupabase(score) {
+  if (!sb) return;
+  const val = parseInt(score, 10) || 0;
+  await sb.rpc('set_lastscore_secure', { last_score: val });
+}
 
-    async function setLastScoreSupabase(score) {
-      if (!sb) return;
-      const userId = await getUserId(); // ✅ await
-      if (!userId) return;
-      await sb.from('users').update({ score }).eq('id', userId);
-    }
-    async function setHighScoreSupabase(score) {
-      if (!sb) return;
-      const userId = await getUserId(); // ✅ await
-      if (!userId) return;
-      await sb.from('users').update({ highscore: score }).eq('id', userId);
-    }
-    async function getHighScoreSupabase() {
-      if (!sb) return 0;
-      const userId = await getUserId(); // ✅ await
-      if (!userId) return 0;
-      const { data, error } = await sb.from('users').select('highscore').eq('id', userId).single();
-      if (error) return 0;
-      return data?.highscore || 0;
-    }
+async function setHighScoreSupabase(score) {
+  if (!sb) return;
+  const val = parseInt(score, 10) || 0;
+  await sb.rpc('set_highscore_secure', { new_score: val });
+}
+
+async function getHighScoreSupabase() {
+  if (!sb) return 0;
+  const { data, error } = await sb.rpc('get_balances'); // ou une RPC dédiée
+  if (error) return 0;
+  const row = Array.isArray(data) ? data[0] : data;
+  return row?.highscore || 0;
+}
 
     // ===== LANCEMENT avec reprise (seulement si inProgress true) =====
     (async function boot() {

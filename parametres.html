@@ -178,8 +178,7 @@
         <div class="switch" style="gap:0.6em;">
           <button id="music-toggle-btn" aria-label="Musique"
             style="background:none;border:none;cursor:pointer;padding:0;">
-            <img id="music-toggle-img" src="assets/icons/volume-2.svg" alt="Musique activée"
-              class="music-btn-img">
+            <img id="music-toggle-img" src="assets/icons/volume-2.svg" alt="Musique activée" class="music-btn-img">
           </button>
           <span id="music-toggle-label" data-i18n="settings.music.on">Activée</span>
         </div>
@@ -200,12 +199,10 @@
   <script src="js/i18n.js"></script>
 
   <script>
-    // Appliquer la traduction immédiatement si dispo
+    // Appliquer la traduction au plus tôt
     if (window.i18nTranslateAll) window.i18nTranslateAll();
-    // Et en fallback à la fin du chargement
     window.addEventListener("load", () => {
       if (window.i18nTranslateAll) window.i18nTranslateAll();
-      // S'assurer que <title> est traduit aussi si ton i18n ne le fait pas automatiquement
       const titleNode = document.querySelector('title[data-i18n]');
       if (titleNode && window.i18n) {
         const key = titleNode.getAttribute('data-i18n');
@@ -234,6 +231,7 @@
       }
     });
 
+    // ====== LANG ======
     const langues = [
       { code: "fr", label: "Français", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#0055a4"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ef4135"/></svg>` },
       { code: "en", label: "English (US)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#b22234"/><g><rect width="22" height="1.23" y="1.23" fill="#fff"/><rect width="22" height="1.23" y="3.69" fill="#fff"/><rect width="22" height="1.23" y="6.15" fill="#fff"/><rect width="22" height="1.23" y="8.61" fill="#fff"/><rect width="22" height="1.23" y="11.07" fill="#fff"/><rect width="22" height="1.23" y="13.53" fill="#fff"/></g><rect width="8.8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.2" cy="1" r="0.35"/><circle cx="2.4" cy="1" r="0.35"/><circle cx="3.6" cy="1" r="0.35"/><circle cx="4.8" cy="1" r="0.35"/><circle cx="6" cy="1" r="0.35"/><circle cx="7.2" cy="1" r="0.35"/><circle cx="1.8" cy="2" r="0.35"/><circle cx="3" cy="2" r="0.35"/><circle cx="4.2" cy="2" r="0.35"/><circle cx="5.4" cy="2" r="0.35"/><circle cx="6.6" cy="2" r="0.35"/><circle cx="2.4" cy="3" r="0.35"/><circle cx="3.6" cy="3" r="0.35"/><circle cx="4.8" cy="3" r="0.35"/><circle cx="6" cy="3" r="0.35"/><circle cx="7.2" cy="3" r="0.35"/></g></svg>` },
@@ -273,6 +271,7 @@
       langueSelect.appendChild(opt);
     });
 
+    // ====== Vibration helper ======
     window.vibrateIfEnabled = async function (ms = 60) {
       const vibrateEnabled = localStorage.getItem("vibrateEnabled") !== "false";
       if (!vibrateEnabled) return;
@@ -283,6 +282,7 @@
       }
     }
 
+    // ====== Publicités ======
     const adsToggle = document.getElementById("ads-toggle");
     const adsLabel = document.getElementById("ads-label");
     adsToggle.checked = localStorage.getItem("adsEnabled") !== "false";
@@ -296,11 +296,12 @@
       location.reload();
     });
 
+    // ====== Pièce fantôme ======
     const ghostToggle = document.getElementById("ghost-toggle");
     const ghostLabel = document.getElementById("ghost-label");
     ghostToggle.checked = localStorage.getItem("ghostPiece") !== "false";
     ghostLabel.setAttribute("data-i18n", ghostToggle.checked ? "settings.ghost.on" : "settings.ghost.off");
-    ghostLabel.textContent = "Activée";
+    ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
     ghostToggle.addEventListener("change", () => {
       localStorage.setItem("ghostPiece", ghostToggle.checked ? "true" : "false");
       ghostLabel.setAttribute("data-i18n", ghostToggle.checked ? "settings.ghost.on" : "settings.ghost.off");
@@ -308,7 +309,7 @@
       if (window.i18nTranslateAll) window.i18nTranslateAll();
     });
 
-    // === MUSIQUE : respecte vraiment le mute global du jeu ===
+    // ====== MUSIQUE : mute global persistant ======
     const musicToggleBtn = document.getElementById("music-toggle-btn");
     const musicToggleImg = document.getElementById("music-toggle-img");
     const musicToggleLabel = document.getElementById("music-toggle-label");
@@ -317,9 +318,11 @@
       return localStorage.getItem('alwaysMuteMusic') === 'true';
     }
     function setAlwaysMuted(val) {
+      // Si ton gestionnaire global est chargé ailleurs (ex: game.js), on l'utilise
       if (typeof window.setMusicAlwaysMuted === 'function') {
         window.setMusicAlwaysMuted(!!val);
       } else {
+        // Fallback: on persiste localStorage et on notifie l'app (même onglet)
         localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
         try {
           window.dispatchEvent(new StorageEvent('storage', {
@@ -351,9 +354,14 @@
       setAlwaysMuted(next);
       refreshMusicUI();
     });
+
+    // Si l'état change depuis un autre onglet/page
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'alwaysMuteMusic') refreshMusicUI();
+    });
   </script>
 
-  <!-- Autres scripts UI -->
+  <!-- Autres scripts UI (interstitiels/reward, etc.) -->
   <script src="js/pub.js"></script>
 </body>
 </html>
