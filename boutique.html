@@ -8,13 +8,9 @@
   <!-- Librairies / app -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
   <script src="js/userData.js"></script>
-  <script src="js/boutique.js"></script>
   <!-- Gestion centralisée des pubs (AdMob, rewarded, interstitiels) -->
-  <script src="js/achat.js"></script>
+   <script src="js/achat.js"></script>
   <script src="js/pub.js"></script>
-  <script>
-  window.SUPABASE_URL = "https://youhealyblgbwjhsskca.supabase.co";
-</script>
   <script src="js/i18n.js"></script>
 
   <link rel="stylesheet" href="style/main.css">
@@ -195,7 +191,10 @@ const THEMES = [
   { key: "nuit",   name: "Nuit"   },
   { key: "retro",  name: "Retro"  },
   { key: "vitraux", name: "Vitraux" },
+  
   { key: "luxury", name: "Luxury" }
+ 
+ 
 ];
 
 const SPECIAL_CARTOUCHES = [
@@ -209,8 +208,7 @@ const SPECIAL_CARTOUCHES = [
 ];
 
 const THEME_PRICE = 5000;
-/* évite le doublon de déclaration */
-window.REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
+const REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
 
 const THEME_COLOR = {
   neon: 'color-purple',
@@ -246,13 +244,16 @@ async function getStoreProducts(productIds){
   return out;
 }
 
-/* ---------- Helpers lecture des thèmes (id OU auth_id) ---------- */
+/* ---------- Helpers auth & lecture des thèmes (id OU auth_id) ---------- */
+async function ensureAuthSafe() {
+  try {
+    const s = await sb.auth.getSession();
+    if (!s?.data?.session) await sb.auth.signInAnonymously();
+  } catch (_) {}
+}
+
 async function getUnlockedThemesNoSQL() {
-  const sb = window.sb;
-  // On suppose bootstrap déjà fait (auth active); par sécurité :
-  if (typeof window.bootstrapAuthAndProfile === 'function') {
-    try { await window.bootstrapAuthAndProfile(); } catch(_) {}
-  }
+  await ensureAuthSafe();
 
   const { data: { user } } = await sb.auth.getUser();
   const uid = user?.id;
@@ -269,18 +270,7 @@ async function getUnlockedThemesNoSQL() {
       console.warn('[boutique] read users error:', error);
       return [];
     }
-    const raw = data?.themes_possedes;
-    let arr = [];
-
-    if (Array.isArray(raw)) {
-      arr = raw;
-    } else if (typeof raw === 'string' && raw.trim()) {
-      try { arr = JSON.parse(raw); }
-      catch {
-        const cleaned = raw.replace(/[{}]/g, '');
-        arr = cleaned.split(/[,\s]+/).map(s => s.replace(/^"(.*)"$/, '$1')).filter(Boolean);
-      }
-    }
+    const arr = Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
     const norm = arr.map(normalizeThemeKey);
     console.log('[Boutique] unlockedRaw=', arr, '→ normalized=', norm);
     return norm;
@@ -339,14 +329,14 @@ function refreshDisplayedPrices(preFetched) {
 
 /* ---------- Rendu Thèmes (avec grisage & masquage prix) ---------- */
 async function renderThemes() {
-  // Auth/profile (via userData, centralisé)
+  await renderAchats();
+
+  // Auth/profile (si fourni par userData)
   if (typeof window.bootstrapAuthAndProfile === 'function') {
     try { await window.bootstrapAuthAndProfile(); } catch(_) {}
   }
 
-  await renderAchats();
-
-  // LECTURE FIABLE (id OU auth_id)
+  // LECTURE FIABLE (id OU auth_id) — pas de dépendance à userData
   const unlocked = await getUnlockedThemesNoSQL();
 
   const $themesList = document.getElementById('themes-list');
@@ -575,13 +565,7 @@ function ready(fn) {
   else setTimeout(fn, 0);
 }
 ready(async () => {
-  // Auth unique (pas d'appel direct à signInAnonymously ici)
-  if (typeof window.bootstrapAuthAndProfile === 'function') {
-    try { await window.bootstrapAuthAndProfile(); } catch(_) {}
-  }
-
   await renderThemes();
-
   // Nouvelle passe prix quand le store sera prêt (si dispo)
   try {
     if (window.store && typeof store.ready === 'function') {
