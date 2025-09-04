@@ -1,351 +1,485 @@
-/* ===========================
-   boutique.js (IAP + UI boutique) — version sécurisée RPC
-   =========================== */
+// === Dépendances : userData.js / i18n.js / pub.js avant ce fichier ===
 
-// --- Helper i18n universel
-function t(key) {
-  if (window.i18n && window.i18n[key]) return window.i18n[key];
-  return key;
+// Petites aides i18n facultatives
+function _t(key, fallback) {
+  try { return typeof t === 'function' ? t(key, fallback || key) : (fallback || key); }
+  catch { return fallback || key; }
 }
 
-// --- Liste des thèmes/cadres possibles
-const THEMES = [
-  { key: "bubble" }, { key: "nature" }, { key: "nuit" }, { key: "luxury" },
-  { key: "space" }, { key: "angelique" }, { key: "cyber" }, { key: "vitraux" },
-  { key: "pixel" }, { key: "halloween" },
-  { key: "arabic", name: "Arabic" },
-  { key: "grece",  name: "Grèce antique" },
-  { key: "japon",  name: "Japon" }
-];
-
-// --- Cartouches d’achats spéciaux
-const SPECIAL_CARTOUCHES = [
-  { key: "boutique.cartouche.points3000",  icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "", amount: 3000 },
-  { key: "boutique.cartouche.points10000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-purple', prix: "", amount: 10000 },
-  { key: "boutique.cartouche.jetons12",    icon: '<img src="assets/images/jeton.webp" alt="jeton">',  color: 'color-blue',   prix: "", amount: 12 },
-  { key: "boutique.cartouche.jetons50",    icon: '<img src="assets/images/jeton.webp" alt="jeton">',  color: 'color-purple', prix: "", amount: 50 },
-  { key: "boutique.cartouche.nopub",       icon: '<img src="assets/images/ads.png" alt="No Ads">',    color: 'color-yellow', prix: "" },
-  { key: "boutique.cartouche.pub1jeton",   icon: '<img src="assets/images/jeton.webp" alt="Pub">',    color: 'color-green' },
-  { key: "boutique.cartouche.pub300points",icon: '<img src="assets/images/vcoin.webp" alt="Pub">',    color: 'color-blue' }
-];
-
-const THEME_PRICE = 5000;
-
-// --- IDs des produits (Google Play / iOS) — UNIFIÉS
-// (disponible globalement → window.PRODUCT_IDS)
-const PRODUCT_IDS = window.PRODUCT_IDS = window.PRODUCT_IDS || {
-  points3000:  'points3000',
-  points10000: 'points10000',
-  jetons12:    'jetons12',
-  jetons50:    'jetons50',
-  nopub:       'nopub'
-};
-
-// --- Mémo des prix localisés (rempli par IAP.ready/product.updated)
-const PRICES_BY_ALIAS = window.PRICES_BY_ALIAS = window.PRICES_BY_ALIAS || {};
-// { alias: { price: "€0,99", currency: "EUR", micros: 990000 } }
-
-// --- Utilitaires
-function getUserId() {
-  return localStorage.getItem('user_id') || "";
+/* ---------------- Affichages solde ---------------- */
+async function updatePointsDisplay() {
+  await window.loadUserData?.(true);
+  const el = document.getElementById("points");
+  if (el) {
+    const profil = await window.getUserDataCloud?.();
+    el.textContent = (profil && typeof profil.points === "number") ? profil.points : 0;
+  }
 }
-
-async function ensureAuthSafe() {
-  try {
-    const s = await sb.auth.getSession();
-    if (!s?.data?.session) await sb.auth.signInAnonymously();
-  } catch (_) {}
-}
-
-/* ===========================
-   SUPABASE — Accès SÉCURISÉ (RPC)
-   =========================== */
-
-async function __getBalances() {
-  await ensureAuthSafe();
-  const { data, error } = await sb.rpc('get_balances');
-  if (error) throw error;
-  const row = Array.isArray(data) ? data[0] : data;
-  return row || {};
-}
-
-// --- VCoins & Jetons (100% RPC sécurisées)
-async function getVCoinsSupabase() {
-  const b = await __getBalances();
-  return b?.vcoins ?? 0;
-}
-async function addVCoinsSupabase(amount) {
-  await ensureAuthSafe();
-  const delta = Number(amount) || 0;
-  const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
-  if (error) throw error;
-  const b = await __getBalances();
-  return b?.vcoins ?? 0;
-}
-async function getJetonsSupabase() {
-  const b = await __getBalances();
-  return b?.jetons ?? 0;
-}
-async function addJetonsSupabase(amount) {
-  await ensureAuthSafe();
-  const delta = Number(amount) || 0;
-  const { error } = await sb.rpc('ajouter_jetons', { montant: delta });
-  if (error) throw error;
-  const b = await __getBalances();
-  return b?.jetons ?? 0;
-}
-
-// --- Themes/cadres POSSEDES (lecture via RPC, setter sécurisé optionnel)
-async function getUnlockedThemesCloud() {
-  const b = await __getBalances();
-  return Array.isArray(b?.themes_possedes) ? b.themes_possedes : [];
-}
-async function setUnlockedThemesCloud(newThemes) {
-  await ensureAuthSafe();
-  const { error } = await sb.rpc('set_themes_secure', { themes: newThemes });
-  if (error) throw error;
-}
-
-/* ===========================
-   POPUP (ouverture/fermeture accessibles)
-   =========================== */
-
-function openThemeModal() {
-  const modal = document.getElementById("themeModalBackdrop");
-  if (!modal) return;
-  modal.style.display = "flex";
-  modal.removeAttribute("aria-hidden");
-  modal.removeAttribute("inert");
-  const closeBtn = document.getElementById("themeModalClose");
-  if (closeBtn) closeBtn.focus();
-}
-
-function closeThemeModal() {
-  const modal = document.getElementById("themeModalBackdrop");
-  if (!modal) return;
-  modal.setAttribute("aria-hidden", "true");
-  modal.setAttribute("inert", "");
-  modal.style.display = "none";
-  const opener = document.getElementById("btnThemes") || document.querySelector("[data-open='themeModal']");
-  if (opener) opener.focus();
-  if (document.activeElement) document.activeElement.blur();
-}
-
-/* ===========================
-   Achat sécurisé (Supabase RPC)
-   =========================== */
-
-async function acheterTheme(themeKey, prix) {
-  try {
-    if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-
-    const { data, error } = await sb.rpc('purchase_theme', {
-      theme_key: String(themeKey),
-      price: Number(prix) || 0
-    });
-
-    if (error) {
-      const msg = (error.message || "").toLowerCase();
-      if (msg.includes("not enough vcoins")) {
-        alert(t("boutique.alert.pasassez") || "Pas assez de VCoins.");
-        return false;
-      }
-      alert("Erreur: " + error.message);
-      return false;
-    }
-
-    await renderThemes();
-    closeThemeModal();
-    alert(t("theme.debloque") || "Thème débloqué !");
-    return true;
-  } catch (e) {
-    alert("Erreur: " + (e.message || e));
-    return false;
+async function updateJetonsDisplay() {
+  await window.loadUserData?.(true);
+  const el = document.getElementById("jetons");
+  if (el) {
+    const profil = await window.getUserDataCloud?.();
+    el.textContent = (profil && typeof profil.jetons === "number") ? profil.jetons : 0;
   }
 }
 
-/* ===========================
-   UI
-   =========================== */
+/* ---------------- Popups jetons ---------------- */
+function ouvrirPopupJetonBoutique() {
+  const popup = document.getElementById("popup-achat-jeton");
+  if (!popup) return;
+  popup.classList.remove("hidden");
 
-// --- Activation (localStorage)
-function getCurrentTheme() { return localStorage.getItem('themeVBlocks') || "neon"; }
-function setCurrentTheme(theme) { localStorage.setItem('themeVBlocks', theme); }
+  // Met à jour les prix des packs jetons (12/50) via Store
+  try {
+    if (typeof window.refreshStoreProducts === "function") window.refreshStoreProducts();
+    setTimeout(() => {
+      const ids = ["tokens_12", "tokens_50"];
+      ids.forEach(id => {
+        const span = document.getElementById("price-" + id);
+        const price = typeof window.getStorePrice === "function" ? window.getStorePrice(id) : null;
+        if (span && price) span.textContent = price;
+      });
+    }, 600);
+  } catch {}
+}
+function fermerPopupJetonBoutique() {
+  const popup = document.getElementById("popup-achat-jeton");
+  if (popup) popup.classList.add("hidden");
+}
 
-// --- Branche Achats + Pub
-function setupBoutiqueAchats() {
-  document.querySelectorAll('.special-cartouche').forEach(cartouche => {
-    const label = cartouche.querySelector('.theme-label');
-    if (!label) return;
-    const key = label.dataset.i18n || label.textContent;
-
-    // Achats via Store (alias = dernière partie de la clé i18n)
-    const alias = key?.split('.').pop();
-    const pid = PRODUCT_IDS[alias];
-
-    if (pid) {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
-        if (IAP) {
-          const ok = await (window.lancerPaiement ? window.lancerPaiement(alias) : Promise.resolve(true));
-          if (ok) IAP.order(pid);
-        } else {
-          alert("Achat via Store indisponible ici. Ouvre l’app installée depuis le Store.");
-          // // Pour autoriser l’achat côté web, décommente :
-          // await acheterProduitVercel(alias);
-          // await renderThemes(); setupPubCartouches?.(); setupBoutiqueAchats?.();
-        }
-      };
+// 1 jeton = 100 pièces
+async function acheterJetonAvecPieces() {
+  try {
+    await window.loadUserData?.(true);
+    const { data, error } = await window.supabase.rpc('secure_remove_points', { nb: 100 });
+    if (error || !data || data.success !== true) {
+      alert(_t("boutique.feedback.error", "❌ Pas assez de pièces."));
+      return;
     }
+    await window.supabase.rpc('secure_add_jetons', { nb: 1 });
+    alert(_t("boutique.feedback.jeton1", "✅ 1 jeton ajouté !"));
+    await updatePointsDisplay();
+    await updateJetonsDisplay();
+  } catch (e) {
+    alert("Erreur: " + (e?.message || e));
+  } finally {
+    fermerPopupJetonBoutique();
+  }
+}
 
-    // PUB Reward
-    if (key === 'boutique.cartouche.pub1jeton') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = () => (typeof showRewardBoutique === 'function' ? showRewardBoutique() : alert("Pub non disponible."));
+// 🎬 1 pub = 1 jeton (crédit après event rewarded via pub.js)
+async function acheterJetonAvecPub() {
+  try {
+    await window.showRewardBoutique?.(); // crédite à l’événement rewarded
+  } catch (e) {
+    alert("Erreur: " + (e?.message || e));
+  } finally {
+    fermerPopupJetonBoutique();
+  }
+}
+
+// Packs jetons (Store uniquement) : tokens_12 / tokens_50
+async function acheterPackJetons(productId) {
+  try {
+    if (typeof window.validerAchat !== "function") {
+      alert("Achat non disponible sur ce device.");
+      return;
     }
-    if (key === 'boutique.cartouche.pub300points') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = () => (typeof showRewardVcoins === 'function' ? showRewardVcoins() : alert("Pub non disponible."));
+    // On lance l'achat via le plugin (pas d'attente/retour)
+    window.validerAchat(productId);
+  } catch (e) {
+    alert("Achat annulé ou erreur : " + (e?.message || e));
+  } finally {
+    fermerPopupJetonBoutique();
+  }
+}
+
+/* ---------------- Popups pièces ---------------- */
+function ouvrirPopupPiecesBoutique() {
+  const el = document.getElementById("popup-achat-pieces");
+  if (!el) return;
+  el.classList.remove("hidden");
+
+  // Prix dynamiques packs pièces
+  try {
+    if (typeof window.refreshStoreProducts === "function") window.refreshStoreProducts();
+    setTimeout(() => {
+      const ids = ["coins_099","coins_199","coins_399","coins_999"];
+      ids.forEach(id => {
+        const span = document.getElementById("price-" + id);
+        const price = typeof window.getStorePrice === "function" ? window.getStorePrice(id) : null;
+        if (span && price) span.textContent = price;
+      });
+    }, 600);
+  } catch {}
+}
+function fermerPopupPiecesBoutique() {
+  const el = document.getElementById("popup-achat-pieces");
+  if (el) el.classList.add("hidden");
+}
+
+// 🎬 Pub → +100 pièces (crédit après event rewarded via pub.js)
+async function acheterPiecesAvecPub() {
+  try {
+    await window.showRewardVcoins?.(); // crédite à l’événement rewarded
+  } catch (e) {
+    alert("Erreur: " + (e?.message || e));
+  } finally {
+    fermerPopupPiecesBoutique();
+  }
+}
+
+// 👥 Parrainage → +300 pièces (fixe)
+async function acheterPiecesParrainage() {
+  try {
+    // branche ton flux réel de parrainage :
+    const ok = await window.demarrerParrainage?.();
+    if (!ok) return;
+    await window.supabase.rpc('secure_add_points', { nb: 300 });
+    await updatePointsDisplay();
+    alert(_t("boutique.feedback.coins300", "✅ +300 pièces !"));
+  } catch (e) {
+    alert("Erreur: " + (e?.message || e));
+  } finally {
+    fermerPopupPiecesBoutique();
+  }
+}
+
+// Packs pièces via Store
+async function acheterPackPieces(packId) {
+  try {
+    if (typeof window.validerAchat !== "function") {
+      alert("Achat non disponible sur ce device.");
+      return;
     }
+    // On lance l'achat via le plugin (pas d'attente/retour, pas de crédit local ici)
+    window.validerAchat(packId);
+  } catch (e) {
+    alert("Achat annulé ou erreur : " + (e?.message || e));
+  } finally {
+    fermerPopupPiecesBoutique();
+  }
+}
+
+/* ---------------- Boutique Cadres (inchangé côté logique prix) ---------------- */
+const CATEGORIES = [
+  { key: 'classique', nom: 'Classique' },
+  { key: 'prestige',  nom: 'Prestige' },
+  { key: 'premium',   nom: 'Premium' },
+  { key: 'bloque',    nom: 'Défi / Spéciaux 🔒' }
+];
+function getCategorie(id) {
+  const num = parseInt(String(id).replace('polaroid_', ''));
+  if (num >= 1 && num <= 10)   return 'classique';
+  if (num >= 11 && num <= 100) return 'prestige';
+  if (num >= 101 && num <= 200) return 'premium';
+  if (num >= 900 && num <= 1000) return 'bloque';
+  return 'autre';
+}
+
+const BOUTIQUE_DB_NAME = 'VFindBoutiqueCache';
+const BOUTIQUE_STORE = 'boutiqueData';
+async function openBoutiqueDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(BOUTIQUE_DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      e.target.result.createObjectStore(BOUTIQUE_STORE, { keyPath: 'key' });
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = reject;
+  });
+}
+async function getBoutiqueCache() {
+  const db = await openBoutiqueDB();
+  return new Promise(res => {
+    const tx = db.transaction(BOUTIQUE_STORE, 'readonly');
+    const store = tx.objectStore(BOUTIQUE_STORE);
+    const req = store.get('cadres');
+    req.onsuccess = () => res(req.result?.data || null);
+    req.onerror = () => res(null);
+  });
+}
+async function setBoutiqueCache(data) {
+  const db = await openBoutiqueDB();
+  return new Promise(res => {
+    const tx = db.transaction(BOUTIQUE_STORE, 'readwrite');
+    const store = tx.objectStore(BOUTIQUE_STORE);
+    store.put({ key: 'cadres', data, ts: Date.now() });
+    tx.oncomplete = res;
   });
 }
 
-// --- UI Achats (⚠️ rebind après chaque render)
-function renderAchats() {
-  const $achatsList = document.getElementById('achats-list');
-  if (!$achatsList) return;
-  const achatsHtml = SPECIAL_CARTOUCHES.map(c => `
-    <div class="special-cartouche ${c.color}">
-      <span class="theme-ico">${c.icon}</span>
-      <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      <span class="prix-label">${c.prix || "…"}</span>
-    </div>
-  `).join('');
-  $achatsList.innerHTML = achatsHtml;
-
-  setupBoutiqueAchats();
+async function checkCadreUnlock(cadre) {
+  if (!cadre.condition) return { unlocked: true };
+  switch (cadre.condition.type) {
+    case "premium":
+      return { unlocked: await window.isPremium?.(), texte: cadre.condition.texte || _t("boutique.button.premium", "Compte premium requis") };
+    case "jours_defis":
+      if (typeof window.getJoursDefisRealises === "function") {
+        const nb = await window.getJoursDefisRealises();
+        return { unlocked: nb >= (cadre.condition.nombre || 0), texte: cadre.unlock || _t("boutique.unlock.days", `Fais ${cadre.condition.nombre} jours de défis pour débloquer`) };
+      }
+      return { unlocked: false, texte: _t("boutique.unlock.nofunc", "Fonction de check non dispo") };
+    case "inviter_amis":
+      if (typeof window.getNbAmisInvites === "function") {
+        const nb = await window.getNbAmisInvites();
+        return { unlocked: nb >= (cadre.condition.nombre || 0), texte: cadre.unlock || _t("boutique.unlock.invite", `Invite ${cadre.condition.nombre} amis`) };
+      }
+      return { unlocked: false, texte: _t("boutique.unlock.nofunc", "Fonction de check non dispo") };
+    case "participation_concours":
+      if (typeof window.getConcoursParticipationStatus === "function") {
+        const ok = await window.getConcoursParticipationStatus();
+        return { unlocked: ok, texte: cadre.unlock || _t("boutique.unlock.concours", "Participe à un concours et vote au moins 3 jours") };
+      }
+      return { unlocked: false, texte: _t("boutique.unlock.nofunc", "Fonction de check non dispo") };
+    case "telechargement_vzone":
+      if (typeof window.hasDownloadedVZone === "function") {
+        const ok = await window.hasDownloadedVZone();
+        return { unlocked: ok, texte: cadre.unlock || _t("boutique.unlock.vzone", "Télécharge le jeu VZone pour débloquer ce cadre.") };
+      }
+      return { unlocked: false, texte: _t("boutique.unlock.nofunc", "Fonction de check non dispo") };
+    default:
+      return { unlocked: false, texte: cadre.unlock || _t("boutique.unlock.unknown", "Condition inconnue") };
+  }
 }
 
-// --- UI Themes
-async function renderThemes() {
-  renderAchats();
-  const list = document.getElementById('themes-list');
-  if (!list) return;
-  list.innerHTML = "";
-  const unlocked = await getUnlockedThemesCloud();
-  const current = getCurrentTheme();
+let CADRES_DATA = [];
+let currentCategory = 'classique';
 
-  THEMES.forEach(theme => {
-    const isUnlocked = unlocked.includes(theme.key);
-    const card = document.createElement('div');
-    card.className = 'theme-card' + (current === theme.key ? " selected" : "") + (isUnlocked ? "" : " locked");
-    card.innerHTML = `
-      <div class="theme-name">${t("theme." + theme.key)}</div>
-     <img class="theme-img" src="assets/modes/${theme.key}.webp" alt="" loading="lazy">
-    `;
-    if (isUnlocked) {
-      card.innerHTML += (current === theme.key)
-        ? `<button class="theme-btn selected" disabled>${t("boutique.btn.selectionne")}</button>`
-        : `<button class="theme-btn" onclick="setCurrentTheme('${theme.key}');renderThemes();">${t("boutique.btn.utiliser")}</button>`;
-    } else {
-      card.innerHTML += `<button class="theme-btn locked" onclick="acheterTheme('${theme.key}', ${THEME_PRICE})">${t("boutique.btn.debloquer").replace("{PRICE}", THEME_PRICE)}</button>`;
-    }
-    list.appendChild(card);
-  });
-
-  const soldeEls = document.querySelectorAll('.vcoins-solde');
-  if (soldeEls[0]) soldeEls[0].textContent = await getVCoinsSupabase();
-  if (soldeEls[1]) soldeEls[1].textContent = await getJetonsSupabase();
-}
-
-// --- Init DOM
-document.addEventListener("DOMContentLoaded", function() {
-  renderThemes();
-});
-
-// --- Store init Cordova Purchase
-document.addEventListener('deviceready', function() {
-  const IAP = (window.store && typeof window.store.register === 'function') ? window.store : null;
-  if (!IAP) {
-    console.warn("[IAP] Plugin purchase non dispo");
+async function fetchCadres(force = false) {
+  if (!force) {
+    const cached = await getBoutiqueCache();
+    if (cached) { CADRES_DATA = cached; return; }
+  }
+  const { data, error } = await window.supabase.from('cadres').select('*');
+  if (error || !data) {
+    console.error("Erreur chargement Supabase :", error);
     return;
   }
+  CADRES_DATA = data;
+  await setBoutiqueCache(data);
+}
 
-  // Register (nopub = NON_CONSUMABLE)
-  Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
-    const type = (alias === 'nopub') ? IAP.NON_CONSUMABLE : IAP.CONSUMABLE;
-    IAP.register({ id, alias, type });
-  });
+async function acheterCadreBoutique(id, prix) {
+  await window.loadUserData?.(true);
+  const { data, error } = await window.supabase.rpc('secure_remove_points', { nb: prix });
+  if (error || !data || data.success !== true) {
+    alert(_t("boutique.feedback.error", "❌ Pas assez de pièces ou erreur !"));
+    return;
+  }
+  await window.acheterCadre?.(id);
 
-  // Alimente PRICES_BY_ALIAS en continu
+  // cache local image
+  const url = `https://swmdepiukfginzhbeccz.supabase.co/storage/v1/object/public/cadres/${id}.webp`;
   try {
-    IAP.when('product').updated((p) => {
-      const alias = p.alias || Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p.id) || p.id;
-      if (p && p.price) {
-        PRICES_BY_ALIAS[alias] = {
-          price:    p.price || "",
-          currency: p.currency || "",
-          micros:   p.priceMicros || 0
-        };
-      }
-      // Mets à jour l’affichage des prix si la boutique est ouverte
-      try {
-        SPECIAL_CARTOUCHES.forEach(c => {
-          const a = c.key?.split('.').pop();
-          if (a && PRICES_BY_ALIAS[a]?.price) c.prix = PRICES_BY_ALIAS[a].price;
-        });
-        renderAchats();
-      } catch (_) {}
+    const res = await fetch(url, { cache: "reload" });
+    const blob = await res.blob();
+    await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => { localStorage.setItem(`cadre_${id}`, reader.result); resolve(); };
+      reader.readAsDataURL(blob);
     });
-  } catch (_) {}
+  } catch {}
+  localStorage.setItem('lastCadresUpdate', Date.now().toString());
+  await window.getOwnedFrames?.(true);
+  await updatePointsDisplay();
+  await updateJetonsDisplay();
+  alert(_t("boutique.feedback.success", "✅ Cadre acheté !"));
+  await renderBoutique(currentCategory);
+}
 
-  // Handlers IAP (validation & crédit)
-  Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
-    IAP.when(id).approved(async (p) => {
-      try {
-        if (typeof acheterProduitVercel === 'function') {
-          await acheterProduitVercel(alias);
+async function renderBoutique(categoryKey) {
+  const catBarContainer = document.getElementById("boutique-categories");
+  const boutiqueContainer = document.getElementById("boutique-container");
+
+  catBarContainer.innerHTML = "";
+  const bar = document.createElement("div");
+  bar.className = "categories-bar";
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement("button");
+    btn.textContent = cat.nom;
+    btn.className = "btn-categorie" + (cat.key === categoryKey ? " active" : "");
+    btn.onclick = () => { currentCategory = cat.key; renderBoutique(cat.key); };
+    bar.appendChild(btn);
+  });
+  catBarContainer.appendChild(bar);
+
+  boutiqueContainer.innerHTML = "";
+  const grid = document.createElement("div");
+  grid.id = "cadres-grid";
+  grid.className = "grid-cadres";
+
+  const cadresCat = CADRES_DATA.filter(cadre => getCategorie(cadre.id) === categoryKey);
+  let ownedFrames = [];
+  if (typeof window.getOwnedFrames === "function") {
+    ownedFrames = await window.getOwnedFrames();
+  }
+
+  if (!cadresCat.length) {
+    const empty = document.createElement("p");
+    empty.textContent = _t("boutique.empty", "Aucun cadre dans cette catégorie.");
+    grid.appendChild(empty);
+  } else {
+    for (const cadre of cadresCat) {
+      const item = document.createElement("div");
+      item.classList.add("cadre-item");
+
+      const wrapper = document.createElement("div");
+      wrapper.classList.add("cadre-preview");
+      wrapper.style.width = "80px";
+      wrapper.style.height = "100px";
+      wrapper.style.position = "relative";
+      wrapper.style.margin = "0 auto 10px";
+
+      const cadreEl = document.createElement("img");
+      if (typeof window.getCadreUrl === "function") {
+        cadreEl.src = window.getCadreUrl(cadre.id);
+      } else {
+        cadreEl.src = `https://swmdepiukfginzhbeccz.supabase.co/storage/v1/object/public/cadres/${cadre.id}.webp`;
+      }
+      cadreEl.className = "photo-cadre";
+      cadreEl.style.width = "100%";
+      cadreEl.style.height = "100%";
+
+      const photo = document.createElement("img");
+      photo.src = "assets/img/exemple.jpg";
+      photo.className = "photo-user";
+
+      wrapper.appendChild(cadreEl);
+      wrapper.appendChild(photo);
+
+      wrapper.addEventListener("click", () => {
+        const popup = document.createElement("div");
+        popup.className = "popup show";
+        popup.innerHTML = `
+          <div class="popup-inner">
+            <button id="close-popup" onclick="document.body.removeChild(this.parentNode.parentNode)">✖</button>
+            <div class="cadre-preview cadre-popup">
+              <img class="photo-cadre" src="https://swmdepiukfginzhbeccz.supabase.co/storage/v1/object/public/cadres/${cadre.id}.webp" />
+              <img class="photo-user" src="assets/img/exemple.jpg" />
+            </div>
+          </div>`;
+        document.body.appendChild(popup);
+      });
+
+      // ---- Titre, Prix, Bouton avec classes pour le CSS ----
+      const title = document.createElement("h3");
+      title.className = "cadre-title";
+      title.textContent = cadre.nom;
+
+      const price = document.createElement("p");
+      price.className = "cadre-price";
+      price.textContent = `${cadre.prix ? cadre.prix + " " + _t("label.pieces", "pièces") : ""}`;
+
+      const button = document.createElement("button");
+      button.className = "cadre-cta";
+
+      if (cadre.condition) {
+        const unlockInfo = await checkCadreUnlock(cadre);
+        if (unlockInfo.unlocked) {
+          if (!ownedFrames.includes(cadre.id)) {
+            if (!cadre.prix) {
+              await window.acheterCadre?.(cadre.id);
+              ownedFrames = await window.getOwnedFrames?.(true) || ownedFrames;
+              alert("🎉 " + _t("boutique.button.debloque", "Cadre débloqué !"));
+            }
+            button.textContent = cadre.prix ? _t("boutique.button.acheter", "Acheter") : _t("boutique.button.debloque", "Débloqué !");
+            button.disabled = !!cadre.prix ? false : true;
+            if (cadre.prix) button.addEventListener("click", () => acheterCadreBoutique(cadre.id, cadre.prix));
+            else button.classList.add("btn-success"); // garde l’état visuel
+          } else {
+            button.textContent = _t("boutique.button.debloque", "Débloqué !");
+            button.disabled = true;
+            button.classList.add("btn-success");
+          }
         } else {
-          // Fallback crédit direct Supabase (à utiliser seulement si pas de backend de validation)
-          if (alias === 'points3000')   await sb.rpc('ajouter_vcoins', { montant: 3000 });
-          if (alias === 'points10000')  await sb.rpc('ajouter_vcoins', { montant: 10000 });
-          if (alias === 'jetons12')     await sb.rpc('ajouter_jetons', { montant: 12 });
-          if (alias === 'jetons50')     await sb.rpc('ajouter_jetons', { montant: 50 });
-          if (alias === 'nopub')        await sb.rpc('ajouter_nopub');
+          button.textContent = _t("boutique.button.infos", "Infos");
+          button.disabled = false;
+          button.classList.add("btn-info");
+          button.onclick = () => {
+            const pop = document.createElement("div");
+            pop.className = "popup show";
+            pop.innerHTML = `
+              <div class="popup-inner">
+                <button id="close-popup" onclick="document.body.removeChild(this.parentNode.parentNode)">✖</button>
+                <h2 style="font-size:1.4em;">${cadre.nom}</h2>
+                <div style="margin:1em 0 0.5em 0;font-size:1.1em;text-align:center;">${unlockInfo.texte}</div>
+              </div>
+            `;
+            document.body.appendChild(pop);
+          };
         }
-
-        p.finish();
-        await renderThemes?.();
-        alert("Achat réussi !");
-      } catch (e) {
-        console.warn("[IAP] post-achat erreur:", e);
-        p.finish();
-        alert("Erreur post-achat.");
+      } else if (categoryKey === "premium" && !(await window.isPremium?.())) {
+        button.textContent = _t("boutique.button.premium", "Premium requis");
+        button.disabled = true;
+        button.classList.add("disabled-premium");
+        button.title = _t("boutique.button.premium", "Ce cadre nécessite un compte premium");
+      } else if (ownedFrames.includes(cadre.id)) {
+        button.textContent = _t("boutique.button.achete", "Acheté");
+        button.disabled = true;
+      } else {
+        button.textContent = _t("boutique.button.acheter", "Acheter");
+        button.addEventListener("click", () => acheterCadreBoutique(cadre.id, cadre.prix));
       }
-    });
-  });
 
-  IAP.ready(function() {
-    // Première passe: mémorise les prix + alimente les cartouches
-    IAP.products.forEach(prod => {
-      const foundAlias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === prod.id) || prod.alias;
-      if (foundAlias) {
-        PRICES_BY_ALIAS[foundAlias] = {
-          price:    prod.price || "",
-          currency: prod.currency || "",
-          micros:   prod.priceMicros || 0
-        };
-        // MAJ cartouche affichée
-        const c = SPECIAL_CARTOUCHES.find(x => x.key?.endsWith(foundAlias));
-        if (c) c.prix = prod.price || c.prix || "…";
-      }
-    });
+      item.appendChild(wrapper);
+      item.appendChild(title);
+      item.appendChild(price);
+      item.appendChild(button);
+      grid.appendChild(item);
+    }
+  }
+  boutiqueContainer.appendChild(grid);
+}
 
-    renderAchats();        // met à jour le DOM avec les prix localisés
-    setupBoutiqueAchats(); // rebind sécurité
-  });
+/* ---------------- Premium ---------------- */
+function activerPremium() {
+  const popup = document.getElementById("popup-premium");
+  if (popup) popup.classList.remove("hidden");
+}
+function fermerPopupPremium() {
+  const popup = document.getElementById("popup-premium");
+  if (popup) popup.classList.add("hidden");
+}
+async function acheterPremium() {
+  if (typeof window.validerAchat === 'function') {
+    // Déclenche l'achat premium via le plugin
+    window.validerAchat('premium');
+    return;
+  }
+  alert("Achat non disponible sur ce device.");
+}
 
-  IAP.error(e => console.warn('[IAP] error:', e));
-  IAP.refresh();
+/* ---------------- Expose Window ---------------- */
+window.updatePointsDisplay = updatePointsDisplay;
+window.updateJetonsDisplay = updateJetonsDisplay;
+
+window.ouvrirPopupJetonBoutique = ouvrirPopupJetonBoutique;
+window.fermerPopupJetonBoutique = fermerPopupJetonBoutique;
+window.acheterJetonAvecPieces = acheterJetonAvecPieces;
+window.acheterJetonAvecPub = acheterJetonAvecPub;
+window.acheterPackJetons = acheterPackJetons;
+
+window.ouvrirPopupPiecesBoutique = ouvrirPopupPiecesBoutique;
+window.fermerPopupPiecesBoutique = fermerPopupPiecesBoutique;
+window.acheterPiecesAvecPub = acheterPiecesAvecPub;
+window.acheterPiecesParrainage = acheterPiecesParrainage;
+window.acheterPackPieces = acheterPackPieces;
+
+window.fetchCadres = fetchCadres;
+window.renderBoutique = renderBoutique;
+window.acheterCadreBoutique = acheterCadreBoutique;
+
+window.activerPremium = activerPremium;
+window.fermerPopupPremium = fermerPopupPremium;
+window.acheterPremium = acheterPremium;
+
+/* ---------------- INIT ---------------- */
+document.addEventListener('DOMContentLoaded', async () => {
+  await window.loadUserData?.(true);
+  await fetchCadres(true);
+  await renderBoutique('classique');
+  await updatePointsDisplay();
+  await updateJetonsDisplay();
 });
