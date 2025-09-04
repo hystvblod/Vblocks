@@ -214,7 +214,7 @@
         const { data, error } = await window.sb
           .from('users')
           .select('pseudo, themes_possedes')
-          .eq('auth_id', uid)
+          .or(`id.eq.${uid},auth_id.eq.${uid}`)
           .maybeSingle();
 
         if(!error && data) return data;
@@ -256,7 +256,7 @@
         const { data, error } = await sb
           .from('users')
           .select('themes_possedes')
-          .eq('auth_id', uid)
+          .or(`id.eq.${uid},auth_id.eq.${uid}`)
           .single();
 
         if (error || !data) return [];
@@ -278,15 +278,38 @@
       } catch { return []; }
     }
 
+    // Lecture pseudo fiable (DB -> UI)
+    async function forcePseudoFromDB() {
+      try {
+        if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+        const { data: { user } } = await window.sb.auth.getUser();
+        const uid = user?.id;
+        if (!uid) throw new Error('no uid');
+        const { data, error } = await window.sb
+          .from('users')
+          .select('pseudo')
+          .or(`id.eq.${uid},auth_id.eq.${uid}`)
+          .maybeSingle();
+        if (error) throw error;
+        const pseudo = (data && data.pseudo) || localStorage.getItem('pseudo') || 'MonPseudo';
+        localStorage.setItem('pseudo', pseudo);
+        const el = document.getElementById('profilPseudo');
+        if (el) el.textContent = pseudo;
+      } catch(e) { console.warn('[forcePseudoFromDB]', e?.message||e); }
+    }
+
     // Popup pseudo
     function setupPseudoPopup(sb) {
       const popup = document.getElementById('popupPseudo');
       const btnOpen = document.getElementById('btnChangePseudo');
-      theBtnSave = document.getElementById('btnSavePseudo');
-      const btnSave = theBtnSave;
+      const btnSave = document.getElementById('btnSavePseudo');
       const btnCancel = document.getElementById('btnCancelPseudo');
       const input = document.getElementById('newPseudo');
       const err = document.getElementById('pseudoError');
+
+      if (!btnOpen || !btnSave || !btnCancel) {
+        console.warn('[profil] éléments popup pseudo manquants'); return;
+      }
 
       btnOpen.onclick = () => {
         err.textContent = '';
@@ -306,8 +329,7 @@
           } else {
             await updatePseudoSecureLocal(window.sb, v);
           }
-          document.getElementById("profilPseudo").textContent = v;
-          localStorage.setItem("pseudo", v);
+          await forcePseudoFromDB();
           err.textContent = i18nSafe('profil.popup.success','Pseudo mis à jour.');
           setTimeout(() => popup.classList.remove('active'), 500);
         } catch(e) {
@@ -320,8 +342,8 @@
     async function openThemePopup() {
       const popup = document.getElementById('theme-selector-popup');
       const themeList = document.getElementById('themeListVB');
+      if (!popup || !themeList) return;
 
-      // Ouvre immédiatement + placeholder
       popup.classList.add("active");
       themeList.innerHTML = '<div style="opacity:.7;padding:12px">Chargement…</div>';
 
@@ -392,18 +414,16 @@
       await window.userData?.syncThemeFromLocal?.().catch(()=>{});
 
       // Pseudo (cloud -> local) — lecture assurée
-      try {
-        const prof = await getProfileEnsured();
-        const pseudo = prof?.pseudo || localStorage.getItem("pseudo") || "MonPseudo";
-        localStorage.setItem("pseudo", pseudo);
-        document.getElementById("profilPseudo").textContent = pseudo;
-      } catch {
-        const p = localStorage.getItem("pseudo") || "MonPseudo";
-        document.getElementById("profilPseudo").textContent = p;
-      }
+      await forcePseudoFromDB();
 
+      // Popups
       setupPseudoPopup(window.sb);
-      document.getElementById("changeThemeBtn").onclick = () => openThemePopup();
+      const btnThemes = document.getElementById("changeThemeBtn");
+      if (btnThemes) {
+        btnThemes.onclick = () => { try { openThemePopup(); } catch(e){ console.error('[openThemePopup]', e); } };
+      } else {
+        console.warn('[profil] changeThemeBtn introuvable');
+      }
 
       // "Nos applis" désactivé
       const btnApplis = document.getElementById("applisBtn");
