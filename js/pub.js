@@ -1,18 +1,18 @@
 // =============================
-// PUB.JS — AdMob (Capacitor) + SSV Supabase — version complète
+// PUB.JS — AdMob (Capacitor Community) + SSV Supabase — version complète (2025-09-04)
 // =============================
 //
-// Notes rapides :
-// - Active le MODE TEST pour isoler le "no-fill" : mettre __DEV_ADS__ = true ci-dessous,
-//   ou passer ?ads=test dans l'URL, ou mettre localStorage.adsTest='true'.
-// - Un petit panneau s'affiche au démarrage (désactivable) pour vérifier la présence du plugin.
+// ⚠️ Charge ce fichier en module :
+// <script type="module" src="js/pub.js"></script>
 //
-// Dépendances côté app :
-// - Plugin AdMob Capacitor exposant window.AdMob / window.InterstitialAd / window.RewardAd
-// - Supabase client dans window.sb
-// - (Optionnel) window.bootstrapAuthAndProfile() pour auth centralisée
+// - Utilise @capacitor-community/admob (Capacitor 7).
+// - API moderne: InterstitialAd.load() / show(), RewardAd.load() / show().
+// - Garde toute ta logique (RGPD, SSV, counters, wrappers compat).
+// - Si tu tournes en web/Chrome, le plugin n’existe pas → on masque les boutons reward.
 //
 // =============================
+import { Capacitor } from '@capacitor/core';
+import { AdMob, InterstitialAd, RewardAd } from '@capacitor-community/admob';
 
 // ------- MODE TEST / DIAGNOSTIC -------
 const __DEV_ADS__ =
@@ -23,10 +23,10 @@ const __DEV_ADS__ =
 const SHOW_DIAG_PANEL = true; // mets false pour cacher le panneau overlay
 
 // IDs de test officiels AdMob
-const TEST_INTER = 'ca-app-pub-3940256099942544/1033173712';
+const TEST_INTER  = 'ca-app-pub-3940256099942544/1033173712';
 const TEST_REWARD = 'ca-app-pub-3940256099942544/5224354917';
 
-// --- Tes Ad Units réelles (laisse tel quel)
+// --- Tes Ad Units réelles (inchangées)
 const AD_UNIT_ID_INTERSTITIEL = 'ca-app-pub-6837328794080297/9890831605';
 const AD_UNIT_ID_REWARDED     = 'ca-app-pub-6837328794080297/3006407791';
 
@@ -35,7 +35,7 @@ const INTERSTITIEL_APRES_X_PARTIES = 3;          // 3 nouvelles parties (Infini 
 const INTERSTITIEL_APRES_X_REPRISES_INF = 3;     // 3 reprises (Infini uniquement)
 const INTER_COOLDOWN_MS = 0;                     // anti-spam (0 = off)
 
-// --- Récompenses par défaut
+// --- Récompenses par défaut (inchangées)
 window.REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
 window.REWARD_VCOINS = typeof window.REWARD_VCOINS === 'number' ? window.REWARD_VCOINS : 300;
 window.REWARD_REVIVE = typeof window.REWARD_REVIVE === 'boolean' ? window.REWARD_REVIVE : true;
@@ -55,22 +55,22 @@ async function ensureAuth() {
     if (typeof window.bootstrapAuthAndProfile === 'function') {
       await window.bootstrapAuthAndProfile(); // lock interne -> pas de doublons
     }
-  } catch (_) {}
+  } catch (_e) {}
 }
 
 // RGPD → ads personnalisées ou non
 function getPersonalizedAdsGranted() {
-  const rgpd = localStorage.getItem("rgpdConsent"); // "accept"|"refuse"|null
-  const adsConsent = (localStorage.getItem("adsConsent") || "").toLowerCase();
-  const adsEnabled = (localStorage.getItem("adsEnabled") || "").toLowerCase();
-  if (rgpd === "refuse") return false;
-  if (rgpd === "accept") {
-    if (adsConsent) return adsConsent === "yes";
-    if (adsEnabled) return adsEnabled === "true";
+  const rgpd = localStorage.getItem('rgpdConsent'); // "accept"|"refuse"|null
+  const adsConsent = (localStorage.getItem('adsConsent') || '').toLowerCase();
+  const adsEnabled = (localStorage.getItem('adsEnabled') || '').toLowerCase();
+  if (rgpd === 'refuse') return false;
+  if (rgpd === 'accept') {
+    if (adsConsent) return adsConsent === 'yes';
+    if (adsEnabled) return adsEnabled === 'true';
     return false;
   }
-  if (adsConsent) return adsConsent === "yes";
-  if (adsEnabled) return adsEnabled === "true";
+  if (adsConsent) return adsConsent === 'yes';
+  if (adsEnabled) return adsEnabled === 'true';
   return false;
 }
 function buildAdMobRequestConfig() {
@@ -83,25 +83,21 @@ function buildAdMobRequestConfig() {
 // =============================
 (function diagPanel(){
   if (!SHOW_DIAG_PANEL) return;
-  function badge(ok){ return ok ? '✅' : '❌'; }
-  const plat = (window.Capacitor && window.Capacitor.getPlatform) ? window.Capacitor.getPlatform() : 'unknown';
-  const hasAdMob = !!window.AdMob;
-  const hasInter = !!window.InterstitialAd;
-  const hasReward = !!window.RewardAd;
+  const badge = ok => ok ? '✅' : '❌';
+  const plat  = Capacitor?.getPlatform?.() || 'unknown';
 
   const msg = [
     `Platform: ${plat}`,
-    `AdMob obj: ${badge(hasAdMob)}`,
-    `InterstitialAd: ${badge(hasInter)}`,
-    `RewardAd: ${badge(hasReward)}`,
+    `AdMob.initialize: ${badge(!!AdMob?.initialize)}`,
+    `Interstitial API: ${badge(!!InterstitialAd?.load && !!InterstitialAd?.show)}`,
+    `Rewarded API: ${badge(!!RewardAd?.load && !!RewardAd?.show)}`,
     `Mode test Ads: ${__DEV_ADS__ ? 'ON' : 'OFF'}`
   ].join('\n');
 
   console.log('[ADS CHECK]\n' + msg);
-
   const box = document.createElement('div');
   box.style.cssText = 'position:fixed;z-index:99999;left:10px;top:10px;background:#111;color:#fff;padding:10px 12px;font:12px/1.2 monospace;border-radius:8px;opacity:.92;white-space:pre';
-  box.textContent = msg + '\n(touche pour fermer • retirez ce panneau ensuite)';
+  box.textContent = msg + '\n(toucher pour fermer • retirez ce panneau ensuite)';
   box.addEventListener('click', ()=> box.remove());
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ()=> document.body.appendChild(box), {once:true});
@@ -115,19 +111,24 @@ function buildAdMobRequestConfig() {
 // =============================
 (async function initAdMobOnce() {
   try {
-    if (window.AdMob && typeof AdMob.initialize === 'function') {
+    if (!Capacitor.isNativePlatform()) {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.btn-reward').forEach(el => el.style.display = 'none');
+      });
+      console.warn('[AdMob] Web mode: plugin indisponible.');
+      return;
+    }
+
+    if (typeof AdMob?.initialize === 'function') {
       console.log('[AdMob] init...', __DEV_ADS__ ? '(testing mode)' : '');
       await AdMob.initialize({ initializeForTesting: !!__DEV_ADS__ });
       console.log('[AdMob] initialisé');
     } else {
-      document.addEventListener('DOMContentLoaded', () => {
-        if (!isAdmobAvailable()) {
-          document.querySelectorAll('.btn-reward').forEach(el => el.style.display = 'none');
-        }
-      });
-      console.warn('[AdMob] Plugin introuvable (window.AdMob absent) — app en mode web/dev ?');
+      console.warn('[AdMob] initialize() indisponible.');
     }
-  } catch (e) { console.warn('[AdMob] init ERR:', e); }
+  } catch (e) {
+    console.warn('[AdMob] init ERR:', e);
+  }
 })();
 
 // =============================
@@ -155,7 +156,9 @@ async function hasNoAds() {
 // Helpers AdMob
 // =============================
 function isAdmobAvailable() {
-  return !!(window.RewardAd && typeof window.RewardAd.show === 'function');
+  return Capacitor.isNativePlatform() &&
+         typeof InterstitialAd?.load === 'function' &&
+         typeof RewardAd?.load === 'function';
 }
 function canShowInterstitialNow() {
   if (!INTER_COOLDOWN_MS) return true;
@@ -189,78 +192,82 @@ async function getSsvToken(type, amount) {
 }
 
 // =============================
-// Rewarded générique
+// Rewarded générique (load/show)
 // =============================
 async function showRewardedType(type, amount, onDone) {
   try {
-    if (!isAdmobAvailable()) { console.warn('[Rewarded] plugin indisponible'); alert("Publicité récompensée indisponible."); onDone?.(false); return; }
-    await ensureAuth();
+    if (!isAdmobAvailable()) {
+      console.warn('[Rewarded] plugin indisponible');
+      alert('Publicité récompensée indisponible.');
+      onDone?.(false);
+      return;
+    }
 
+    await ensureAuth();
     const sb = window.sb;
     const { data } = await sb.auth.getUser();
     const ssvUserId = data?.user?.id;
-    if (!ssvUserId) throw new Error("Utilisateur non authentifié");
+    if (!ssvUserId) throw new Error('Utilisateur non authentifié');
 
+    const adId = __DEV_ADS__ ? TEST_REWARD : AD_UNIT_ID_REWARDED;
+
+    // SSV
     const token = ENABLE_SSV ? await getSsvToken(type, amount) : null;
     const customPayload = ENABLE_SSV ? JSON.stringify({ type, amount, token }) : undefined;
 
-    const adId = __DEV_ADS__ ? TEST_REWARD : AD_UNIT_ID_REWARDED;
-    console.log('[Rewarded] prepare...', adId);
-    await RewardAd.prepare({
+    console.log('[Rewarded] load...', adId);
+    await RewardAd.load({
       adId,
       ...buildAdMobRequestConfig(),
       serverSideVerification: ENABLE_SSV ? { userId: ssvUserId, customData: customPayload } : undefined
     });
 
     console.log('[Rewarded] show...');
-    const res = await RewardAd.show();
+    const res = await RewardAd.show(); // sur Android: { rewardAmount, rewardType }
 
-    // Re-précharge en arrière-plan pour la prochaine fois
-    setTimeout(()=>RewardAd.prepare({ adId, ...buildAdMobRequestConfig() }).catch(()=>{}), 1200);
+    // Preload pour la prochaine fois
+    setTimeout(() => {
+      RewardAd.load({ adId, ...buildAdMobRequestConfig() }).catch(()=>{});
+    }, 1200);
 
     onDone?.(!!res);
   } catch (e) {
-    console.warn("[RewardedType] erreur:", e);
+    console.warn('[RewardedType] erreur:', e);
     onDone?.(false);
     // petit retry différé (facultatif)
     const adId = __DEV_ADS__ ? TEST_REWARD : AD_UNIT_ID_REWARDED;
-    setTimeout(()=>RewardAd.prepare({ adId, ...buildAdMobRequestConfig() }).catch(()=>{}), 1500);
+    setTimeout(() => RewardAd.load({ adId, ...buildAdMobRequestConfig() }).catch(()=>{}), 1500);
   }
 }
 
 // =============================
-// Interstitiel
+// Interstitiel (load/show)
 // =============================
 async function showInterstitial() {
   try {
-    if (await hasNoAds()) { console.log("[PUB] Interstitiel bloqué (NoPub)"); return false; }
-    if (!canShowInterstitialNow()) { console.log("[PUB] Interstitiel cooldown"); return false; }
-
-    if (!(window.InterstitialAd && typeof window.InterstitialAd.show === 'function')) {
-      console.log("[PUB] Interstitiel indisponible (plugin/web/dev).");
-      return false;
-    }
+    if (await hasNoAds()) { console.log('[PUB] Interstitiel bloqué (NoPub)'); return false; }
+    if (!canShowInterstitialNow()) { console.log('[PUB] Interstitiel cooldown'); return false; }
+    if (!isAdmobAvailable()) { console.log('[PUB] Interstitiel indisponible (plugin/web/dev).'); return false; }
 
     const adId = __DEV_ADS__ ? TEST_INTER : AD_UNIT_ID_INTERSTITIEL;
 
-    console.log('[Inter] prepare...', adId);
-    await InterstitialAd.prepare({ adId, ...buildAdMobRequestConfig() });
+    console.log('[Inter] load...', adId);
+    await InterstitialAd.load({ adId, ...buildAdMobRequestConfig() });
 
     console.log('[Inter] show...');
     const res = await InterstitialAd.show();
     if (res !== false) {
       markInterstitialShownNow();
-      // re-load arrière-plan pour la prochaine fenêtre
-      setTimeout(()=>InterstitialAd.prepare({ adId, ...buildAdMobRequestConfig() }).catch(()=>{}), 1200);
+      // pre-load discret
+      setTimeout(() => InterstitialAd.load({ adId, ...buildAdMobRequestConfig() }).catch(()=>{}), 1200);
       return true;
     }
-
     return false;
   } catch (e) {
-    console.warn("Interstitiel ERR:", e?.message || e);
+    console.warn('Interstitiel ERR:', e?.message || e);
     // retry discret (optionnel)
     const adId = __DEV_ADS__ ? TEST_INTER : AD_UNIT_ID_INTERSTITIEL;
-    setTimeout(()=>InterstitialAd.prepare({ adId, ...buildAdMobRequestConfig() }).catch(()=>{}), 1500);
+    setTimeout(() => InterstitialAd.load({ adId, ...buildAdMobRequestConfig() }).catch(()=>{}), 1500);
     return false;
   }
 }
@@ -298,13 +305,13 @@ function showRewardRevive(callback) {
 // =============================
 // Compteurs / Déclencheurs interstitiels
 // =============================
-function isModeInfini(m){ m=(m||"").toLowerCase(); return ["infini","infinite","endless"].includes(m); }
-function isModeClassique(m){ m=(m||"").toLowerCase(); return ["classique","classic","normal","arcade"].includes(m); }
-function isModeDuel(m){ m=(m||"").toLowerCase(); return ["duel","versus","vs","1v1","duo"].includes(m); }
+function isModeInfini(m){ m=(m||'').toLowerCase(); return ['infini','infinite','endless'].includes(m); }
+function isModeClassique(m){ m=(m||'').toLowerCase(); return ['classique','classic','normal','arcade'].includes(m); }
+function isModeDuel(m){ m=(m||'').toLowerCase(); return ['duel','versus','vs','1v1','duo'].includes(m); }
 
 // Nouvelle partie
-async function partieCommencee(mode="classique") {
-  const m = String(mode || "classique").toLowerCase();
+async function partieCommencee(mode='classique') {
+  const m = String(mode || 'classique').toLowerCase();
   if (isModeDuel(m)) return; // jamais en Duel
   if (isModeInfini(m) || isModeClassique(m)) {
     interPartiesEligibles++;
@@ -316,8 +323,8 @@ async function partieCommencee(mode="classique") {
   }
 }
 // Reprise (Infini uniquement)
-async function partieReprisee(mode="") {
-  const m = String(mode || "").toLowerCase();
+async function partieReprisee(mode='') {
+  const m = String(mode || '').toLowerCase();
   if (!isModeInfini(m)) return;
   interReprisesInfini++;
   localStorage.setItem('inter_reprises_infini', String(interReprisesInfini));
@@ -326,7 +333,7 @@ async function partieReprisee(mode="") {
     await showInterstitial();
   }
 }
-function partieTerminee(){ console.log("[Game] Partie terminée."); }
+function partieTerminee(){ console.log('[Game] Partie terminée.'); }
 
 // =============================
 // Exports globaux (compat)
@@ -342,6 +349,6 @@ window.partieTerminee  = partieTerminee;
 
 window.hasNoAds = hasNoAds;
 
-// Alias compat
+// Alias compat (ton code existant peut les appeler)
 window.showInterstitialAd = showInterstitial;
 window.showRewardedType   = showRewardedType;

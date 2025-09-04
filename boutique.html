@@ -9,6 +9,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
   <script src="js/userData.js"></script>
   <script src="js/i18n.js"></script>
+  <!-- cordova.js est injecté automatiquement dans l’app (ne gêne pas sur web) -->
+  <script src="cordova.js"></script>
 
   <link rel="stylesheet" href="style/main.css">
   <style>
@@ -35,15 +37,12 @@
     .theme-card.special-cartouche:hover { transform: translateY(-1px); }
 
     .theme-card .theme-ico{ display: none !important; }
-
     .theme-card .theme-label,
     .theme-card .prix-label { color: #fff !important; }
-
     .theme-card .theme-label{ font-weight: 700; letter-spacing: .2px; }
 
     .theme-card.unlocked { opacity: 1; }
     .theme-card.locked   { opacity: .95; }
-
     .achats-list .prix-label { color:#fff; font-weight:700; }
 
     .themes-list .theme-card .theme-label{
@@ -52,12 +51,8 @@
     }
 
     /* Effet grisé + masquage prix si possédé */
-    .theme-card.unlocked{
-      filter: grayscale(35%) brightness(.92);
-    }
-    .theme-card.unlocked .prix-label{
-      display: none !important;
-    }
+    .theme-card.unlocked{ filter: grayscale(35%) brightness(.92); }
+    .theme-card.unlocked .prix-label{ display: none !important; }
 
     /* Modal */
     .modal-backdrop {
@@ -166,19 +161,16 @@ function normalizeThemeKey(k){
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/\s+/g,'');
 }
-/* accepte string ou objet {theme_key}/{key}/{name} */
 function toKeyLike(x){
   if (typeof x === 'string') return normalizeThemeKey(x);
-  if (x && typeof x === 'object') {
-    return normalizeThemeKey(x.theme_key || x.key || x.name || '');
-  }
+  if (x && typeof x === 'object') return normalizeThemeKey(x.theme_key || x.key || x.name || '');
   return '';
 }
 
 /* ---------- Données boutique ---------- */
 const THEMES = [
   { key: "neon",   name: "Neon"   },
-    { key: "cyber",  name: "Cyber"  },
+  { key: "cyber",  name: "Cyber"  },
   { key: "arabic", name: "Arabic" },
   { key: "grece",  name: "Grèce antique" },
   { key: "japon",  name: "Japon" },
@@ -190,17 +182,6 @@ const THEMES = [
   { key: "angelique",  name: "Angelique"  },
   { key: "luxury", name: "Luxury" },
   { key: "space",  name: "Space"  }
-
-];
-
-const SPECIAL_CARTOUCHES = [
-  { key: "boutique.cartouche.points3000",  productId:"points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow', prix:null, amount:3000 },
-  { key: "boutique.cartouche.points10000", productId:"points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple', prix:null, amount:10000 },
-  { key: "boutique.cartouche.jetons12",    productId:"jetons12",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-blue',   prix:null, amount:12 },
-  { key: "boutique.cartouche.jetons50",    productId:"jetons50",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-purple', prix:null, amount:50 },
-  { key: "boutique.cartouche.nopub",       productId:"nopub",       icon:'<img src="assets/images/ads.png" alt="No Ads">',   color:'color-yellow', prix:null },
-  { key: "boutique.cartouche.pub1jeton",   productId:null,          icon:'<img src="assets/images/jeton.webp" alt="Pub">',   color:'color-green' },
-  { key: "boutique.cartouche.pub300points",productId:null,          icon:'<img src="assets/images/vcoin.webp" alt="Pub">',   color:'color-blue' }
 ];
 
 const THEME_PRICE = 5000;
@@ -222,90 +203,93 @@ const THEME_COLOR = {
   japon  : 'color-green'
 };
 
-/* ---------- Fallback prix IAP (affichage) ---------- */
-async function getStoreProducts(productIds){
-  if (window.store && Array.isArray(store.products) && store.products.length) {
-    const out = {};
-    productIds.forEach(id => {
-      const p = store.get(id);
-      out[id] = { id, price: (p && p.price) ? p.price : "—" };
-    });
-    return out;
-  }
-  const fallback = {
-    points3000:  "€0,99",
-    points10000: "€1,99",
-    jetons12:    "€0,99",
-    jetons50:    "€2,99",
-    nopub:       "€3,49",
-  };
-  return productIds.reduce((acc,id)=>{
-    if (id) acc[id] = { id, price: fallback[id] || "—" };
-    return acc;
-  }, {});
-}
+/* ---------- Cartouches d’achats (produits IAP) ---------- */
+const SPECIAL_CARTOUCHES = [
+  { key: "boutique.cartouche.points3000",  productId:"points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow', prix:null, amount:3000 },
+  { key: "boutique.cartouche.points10000", productId:"points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple', prix:null, amount:10000 },
+  { key: "boutique.cartouche.jetons12",    productId:"jetons12",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-blue',   prix:null, amount:12 },
+  { key: "boutique.cartouche.jetons50",    productId:"jetons50",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-purple', prix:null, amount:50 },
+  { key: "boutique.cartouche.nopub",       productId:"nopub",       icon:'<img src="assets/images/ads.png" alt="No Ads">',   color:'color-yellow', prix:null },
+  { key: "boutique.cartouche.pub1jeton",   productId:null,          icon:'<img src="assets/images/jeton.webp" alt="Pub">',   color:'color-green' },
+  { key: "boutique.cartouche.pub300points",productId:null,          icon:'<img src="assets/images/vcoin.webp" alt="Pub">',   color:'color-blue' }
+];
 
-/* ---------- Helpers auth & lecture des thèmes (id OU auth_id) ---------- */
+/* ---------- Helpers auth & lecture des thèmes ---------- */
 async function ensureAuthSafe() {
   try {
     const s = await sb.auth.getSession();
     if (!s?.data?.session) await sb.auth.signInAnonymously();
   } catch (_) {}
 }
-
 async function getUnlockedThemesNoSQL() {
   await ensureAuthSafe();
-
   const { data: { user } } = await sb.auth.getUser();
   const uid = user?.id;
   if (!uid) return [];
-
   try {
     const { data, error } = await sb
       .from('users')
       .select('themes_possedes')
       .or(`id.eq.${uid},auth_id.eq.${uid}`)
       .maybeSingle();
-
-    if (error) {
-      console.warn('[boutique] read users error:', error);
-      return [];
-    }
+    if (error) { console.warn('[boutique] read users error:', error); return []; }
     const arr = Array.isArray(data?.themes_possedes) ? data.themes_possedes : [];
-    const norm = arr.map(normalizeThemeKey);
-    console.log('[Boutique] unlockedRaw=', arr, '→ normalized=', norm);
-    return norm;
+    return arr.map(normalizeThemeKey);
   } catch (e) {
     console.warn('[boutique] exception read users:', e?.message || e);
     return [];
   }
 }
 
-/* ---------- Rendu Achats (IAP, pubs) ---------- */
+/* ---------- Prix depuis le STORE (Cordova Purchase) ---------- */
+function isStoreReady() {
+  return !!(window.store && typeof window.store.get === 'function');
+}
+function getStorePrice(productId) {
+  if (!isStoreReady()) return null;
+  const p = store.get(productId);
+  return p && p.price ? p.price : null;
+}
+function fillCartouchePricesFromStore() {
+  SPECIAL_CARTOUCHES.forEach(c => {
+    if (!c.productId) return;
+    const price = getStorePrice(c.productId);
+    if (price) c.prix = price;
+  });
+}
+
+/* ---------- Rendu Achats (affiche prix, puis rebind) ---------- */
 async function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
 
+  // 1) Template (utilise c.prix si déjà rempli par le store, sinon “—”)
   $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => `
     <div class="special-cartouche ${c.color}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      <span class="prix-label">${c.prix ?? ""}</span>
+      <span class="prix-label">${c.productId ? (c.prix ?? "—") : ""}</span>
     </div>
   `).join('');
 
-  const ids = SPECIAL_CARTOUCHES.map(c => c.productId).filter(Boolean);
-  const products = await getStoreProducts(ids);
+  // 2) Rebind des clics (IAP + pubs récompensées)
+  setupBoutiqueAchats();
+  setupPubCartouches();
 
-  document.querySelectorAll('#achats-list .special-cartouche').forEach(node=>{
-    const id = node.getAttribute('data-product-id');
-    const priceNode = node.querySelector('.prix-label');
-    if (id && products[id]?.price && priceNode) {
-      priceNode.textContent = products[id].price;
-    }
-  });
+  // 3) Si le store est prêt mais les prix pas encore posés, on rafraîchit
+  if (isStoreReady()) {
+    document.querySelectorAll('#achats-list .special-cartouche').forEach(node => {
+      const id = node.getAttribute('data-product-id');
+      if (!id) return;
+      const price = getStorePrice(id);
+      if (price) {
+        const priceNode = node.querySelector('.prix-label');
+        if (priceNode) priceNode.textContent = price;
+      }
+    });
+  }
 }
 
-/* ---------- Rendu Thèmes (avec grisage & masquage prix) ---------- */
+/* ---------- Rendu Thèmes ---------- */
 async function renderThemes() {
   await renderAchats();
 
@@ -314,10 +298,9 @@ async function renderThemes() {
     try { await window.bootstrapAuthAndProfile(); } catch(_) {}
   }
 
-  // LECTURE FIABLE (id OU auth_id) — pas de dépendance à userData
   const unlocked = await getUnlockedThemesNoSQL();
-
   const $themesList = document.getElementById('themes-list');
+
   const html = THEMES.map(theme => {
     const isUnlocked = unlocked.includes(normalizeThemeKey(theme.key));
     const color = THEME_COLOR[theme.key] || 'color-blue';
@@ -355,7 +338,7 @@ async function renderThemes() {
   if ($soldeJetons) $soldeJetons.textContent = (typeof jetons === "number" ? jetons : "--");
 }
 
-/* ---------- Pubs récompensées (actions locales) ---------- */
+/* ---------- Pubs récompensées ---------- */
 function setupPubCartouches() {
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
     const label = cartouche.querySelector('.theme-label');
@@ -392,44 +375,27 @@ function setupPubCartouches() {
   });
 }
 
-/* ---------- Achats IAP (boutons) ---------- */
+/* ---------- Achats IAP (clics) ---------- */
 function setupBoutiqueAchats() {
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
+    const id = cartouche.getAttribute('data-product-id');
     const label = cartouche.querySelector('.theme-label');
-    if (!label) return;
-    const key = label.dataset.i18n;
 
-    if (key === 'boutique.cartouche.points3000') {
+    // Cartouches IAP (Store)
+    if (id) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (await window.lancerPaiement?.("points3000")) window.accordeAchat?.("points3000");
+        const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
+        if (IAP) {
+          IAP.order(id);
+        } else {
+          alert("Achat via le Store indisponible ici. Ouvre l’app installée depuis le Store.");
+        }
       };
-    }
-    if (key === 'boutique.cartouche.points10000') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await window.lancerPaiement?.("points10000")) window.accordeAchat?.("points10000");
-      };
+      return;
     }
 
-    if (key === 'boutique.cartouche.jetons12') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await window.lancerPaiement?.("jetons12")) window.accordeAchat?.("jetons12");
-      };
-    }
-    if (key === 'boutique.cartouche.jetons50') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await window.lancerPaiement?.("jetons50")) window.accordeAchat?.("jetons50");
-      };
-    }
-    if (key === 'boutique.cartouche.nopub') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        if (await window.lancerPaiement?.("nopub")) window.accordeAchat?.("nopub");
-      };
-    }
+    // (Les cartouches "pub récompensée" sont gérées dans setupPubCartouches)
   });
 }
 
@@ -477,8 +443,6 @@ async function renderModalActions(themeKey) {
   if (typeof window.bootstrapAuthAndProfile === 'function') {
     try { await window.bootstrapAuthAndProfile(); } catch(_) {}
   }
-
-  // Utilise la même lecture fiable que la grille (id OU auth_id)
   const unlocked = await getUnlockedThemesNoSQL();
   const isUnlocked = unlocked.includes(normalizeThemeKey(themeKey));
 
@@ -498,7 +462,6 @@ async function renderModalActions(themeKey) {
         if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
         const ok = await window.userData?.purchaseTheme?.(themeKey, THEME_PRICE);
         if (!ok) return;
-
         await renderThemes();
         closeThemeModal();
         if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
@@ -519,9 +482,40 @@ async function renderModalActions(themeKey) {
   $actions.appendChild(closeBtn);
 }
 
+/* ---------- IAP (Cordova Purchase) : register + ready + refresh ---------- */
+document.addEventListener('deviceready', function() {
+  const IAP = (window.store && typeof window.store.register === 'function') ? window.store : null;
+  if (!IAP) {
+    console.warn("[IAP] Plugin purchase non dispo (web ou plugin manquant). Les prix resteront à — sur web.");
+    return;
+  }
+
+  // Types (consommables / non-consommables)
+  IAP.register({ id: "points3000",  alias: "points3000",  type: IAP.CONSUMABLE });
+  IAP.register({ id: "points10000", alias: "points10000", type: IAP.CONSUMABLE });
+  IAP.register({ id: "jetons12",    alias: "jetons12",    type: IAP.CONSUMABLE });
+  IAP.register({ id: "jetons50",    alias: "jetons50",    type: IAP.CONSUMABLE });
+  IAP.register({ id: "nopub",       alias: "nopub",       type: IAP.NON_CONSUMABLE });
+
+  // Quand le store est prêt : récupérer les prix localisés, injecter, re-render
+  IAP.ready(function() {
+    try {
+      fillCartouchePricesFromStore();
+      renderAchats(); // met à jour l’affichage avec les prix du store
+    } catch(e) {
+      console.warn("[IAP] ready error:", e);
+    }
+  });
+
+  // (Handlers d’achat approuvé à brancher dans ton flux si besoin)
+  // IAP.when("points3000").approved(p => { /* serveur, crédits... */ p.finish(); });
+
+  IAP.refresh();
+});
+
 /* ---------- Modal events ---------- */
 $close?.addEventListener('click', closeThemeModal);
-$backdrop.addEventListener('click', (e) => { if (e.target === $backdrop) closeThemeModal(); });
+document.getElementById('themeModalBackdrop').addEventListener('click', (e) => { if (e.target === document.getElementById('themeModalBackdrop')) closeThemeModal(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeThemeModal(); });
 
 /* ---------- Ready ---------- */

@@ -1,5 +1,5 @@
 // =============================
-// userData.js — Version durcie (anti-429 / anti-409)
+// userData.js — Version durcie (anti-429 / anti-409) + Pause musique auto
 // =============================
 
 // ---------- INIT SUPABASE (création unique) ----------
@@ -16,6 +16,80 @@ if (!window.SUPABASE_URL) window.SUPABASE_URL = SUPABASE_URL;
 if (!window.SUPABASE_ANON_KEY) window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 // confort console
 if (!window.supabase) window.supabase = sb;
+
+/* =====================================================
+   PAUSE MUSIQUE AUTO (global, sans import/bundler)
+   - Stoppe la musique quand l’app passe en arrière-plan
+     (bouton Home / app switcher) ou quand la page est masquée.
+   - Fournit aussi setMusicAlwaysMuted(true/false) utilisé par Paramètres.
+   ===================================================== */
+(function setupGlobalMusicGuards(){
+  const Plugins = (window.Capacitor && window.Capacitor.Plugins) || {};
+  const App = Plugins.App;
+
+  function getMusicEl() {
+    return window.music || document.getElementById('music') || null;
+  }
+
+  // Mute persistant (utilisé par settings.html)
+  window.setMusicAlwaysMuted = function(val){
+    try { localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false'); } catch(_){}
+    const m = getMusicEl();
+    if (m) {
+      try { m.muted = !!val; } catch(_){}
+      if (val && !m.paused) { try { m.pause(); } catch(_){ } }
+    }
+    // notifier les autres pages/onglets éventuellement ouverts
+    try {
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'alwaysMuteMusic',
+        newValue: val ? 'true' : 'false'
+      }));
+    } catch(_){}
+  };
+
+  // Appliquer le mute persistant au chargement de chaque page
+  (function applyInitialMute(){
+    const m = getMusicEl();
+    const muted = (localStorage.getItem('alwaysMuteMusic') === 'true');
+    if (m) {
+      try { m.muted = muted; } catch(_){}
+      if (muted && !m.paused) { try { m.pause(); } catch(_){ } }
+    }
+  })();
+
+  // 1) App passe en arrière-plan (Home / multitâche)
+  if (App && App.addListener) {
+    App.addListener('appStateChange', ({ isActive }) => {
+      if (!isActive) {
+        const m = getMusicEl();
+        if (m && typeof m.pause === 'function') {
+          try { m.pause(); } catch(_){}
+        }
+      }
+    });
+  }
+
+  // 2) Fallback : page masquée (visibilitychange)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      const m = getMusicEl();
+      if (m && !m.paused) {
+        try { m.pause(); } catch(_){}
+      }
+    }
+  });
+
+  // 3) Quand on quitte / décharge la page
+  window.addEventListener('pagehide', () => { const m = getMusicEl(); if (m) { try { m.pause(); } catch(_){ } }});
+  window.addEventListener('beforeunload', () => { const m = getMusicEl(); if (m) { try { m.pause(); } catch(_){ } }});
+
+  // 4) Petite API pratique avant navigation manuelle
+  window.pauseMusicNow = function(){
+    const m = getMusicEl();
+    if (m) { try { m.pause(); } catch(_){ } }
+  };
+})();
 
 
 // =============================
@@ -57,7 +131,6 @@ function applyLocalTheme(themeKey) {
 // =============================
 // AUTH ANONYME + MIGRATION LEGACY
 // =============================
-
 function getLegacyLocalUserId() {
   return localStorage.getItem('user_id') || null;
 }
