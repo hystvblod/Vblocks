@@ -226,5 +226,9 @@
   "theme.japon":  "Japan",
   "settings.music.label": "Muziek:",
 "settings.music.on": "Aan",
-"settings.music.off": "Uit"
+"settings.music.off": "Uit",
+   "index.update.title": "Update beschikbaar",
+    "index.update.body": "Er is een nieuwe versie klaar. Je kunt deze nu downloaden.",
+    "index.update.updateNow": "Nu updaten",
+    "index.update.later": "Later"
 }

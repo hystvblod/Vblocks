@@ -226,5 +226,9 @@
   "theme.japon":  "日本",
   "settings.music.label": "音楽：",
 "settings.music.on": "オン",
-"settings.music.off": "オフ"
+"settings.music.off": "オフ",
+    "index.update.title": "アップデートがあります",
+    "index.update.body": "新しいバージョンの準備ができました。今すぐダウンロードできます。",
+    "index.update.updateNow": "今すぐ更新",
+    "index.update.later": "後で"
 }

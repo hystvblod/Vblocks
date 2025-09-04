@@ -1,14 +1,17 @@
 /* ===========================
-   boutique.js (IAP + UI boutique) — version sécurisée RPC
+   boutique.js (IAP + UI boutique) — version PROD native + RPC
    =========================== */
 
-// --- Helper i18n universel
+/* ---------- Config ---------- */
+const ENABLE_WEB_FALLBACK = false; // doit rester false en prod
+
+/* ---------- Helper i18n ---------- */
 function t(key) {
   if (window.i18n && window.i18n[key]) return window.i18n[key];
   return key;
 }
 
-// --- Liste des thèmes/cadres possibles
+/* ---------- Liste des thèmes ---------- */
 const THEMES = [
   { key: "bubble" }, { key: "nature" }, { key: "nuit" }, { key: "luxury" },
   { key: "space" }, { key: "angelique" }, { key: "cyber" }, { key: "vitraux" },
@@ -18,7 +21,7 @@ const THEMES = [
   { key: "japon",  name: "Japon" }
 ];
 
-// --- Cartouches d’achats spéciaux
+/* ---------- Cartouches UI (achats) ---------- */
 const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.points3000",  icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "", amount: 3000 },
   { key: "boutique.cartouche.points10000", icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-purple', prix: "", amount: 10000 },
@@ -31,8 +34,7 @@ const SPECIAL_CARTOUCHES = [
 
 const THEME_PRICE = 5000;
 
-// --- IDs des produits (Google Play / iOS) — UNIFIÉS
-// (disponible globalement → window.PRODUCT_IDS)
+/* ---------- IDs produits (Play / iOS) ---------- */
 const PRODUCT_IDS = window.PRODUCT_IDS = {
   points3000:  'points3000',
   points10000: 'points10000',
@@ -41,55 +43,51 @@ const PRODUCT_IDS = window.PRODUCT_IDS = {
   nopub:       'nopub'
 };
 
-// --- Mémo des prix localisés (rempli dans IAP.ready) → lisible depuis achat.js
+/* ---------- Mémo prix localisés ---------- */
+// PRICES_BY_ALIAS = { alias: { price, currency, micros } }
 const PRICES_BY_ALIAS = window.PRICES_BY_ALIAS = {};
-// { alias: { price: "€0,99", currency: "EUR", micros: 990000 } }
+const PRICES_BY_ID = Object.create(null); // { productId: "€0,99" }
 
-// --- Utilitaires (toujours dispo pour tes appels serveur externes)
-function getUserId() {
-  return localStorage.getItem('user_id') || "";
+/* ---------- Utilitaires ---------- */
+function _iapAvailable() {
+  return !!(window.store && typeof window.store.register === 'function');
+}
+function _mapType(alias) {
+  if (!window.store) return null;
+  return alias === 'nopub' ? window.store.NON_CONSUMABLE : window.store.CONSUMABLE;
 }
 
 /* ===========================
-   SUPABASE — Accès SÉCURISÉ (RPC)
-   ===========================
+   SUPABASE — RPC sécurisées
+   =========================== */
+let __authEnsured = false;
+async function __ensureAuthOnce() {
+  if (__authEnsured) return;
+  try {
+    if (!window.sb) return;
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) await sb.auth.signInAnonymously();
+    __authEnsured = true;
+  } catch (e) {
+    console.warn('[boutique] ensureAuth:', e?.message || e);
+  }
+}
 
-   Prérequis côté SQL (toutes en SECURITY DEFINER) :
-   - ensure_user(default_lang text, default_pseudo text)
-   - get_balances() -> (vcoins int, jetons int, themes_possedes text[])
-   - ajouter_vcoins(montant int)
-   - ajouter_jetons(montant int)
-   - purchase_theme(theme_key text, price int)
-   - set_themes_secure(themes text[]) (optionnel admin/debug)
-   - ajouter_nopub()  -- (optionnel) voir snippet ci-dessous
-
-   -- Snippet pour ajouter_nopub si besoin :
-   -- CREATE OR REPLACE FUNCTION public.ajouter_nopub()
-   -- RETURNS void
-   -- LANGUAGE sql
-   -- SECURITY DEFINER
-   -- SET search_path TO 'public'
-   -- AS $$
-   --   update public.users
-   --      set nopub = true
-   --    where id = auth.uid() or auth_id = auth.uid();
-   -- $$;
-*/
-
-// Lecture groupée via RPC
 async function __getBalances() {
+  await __ensureAuthOnce();
   const { data, error } = await sb.rpc('get_balances');
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
   return row || {};
 }
 
-// --- VCoins & Jetons (100% RPC sécurisées)
+// VCoins & Jetons
 async function getVCoinsSupabase() {
   const b = await __getBalances();
   return b?.vcoins ?? 0;
 }
 async function addVCoinsSupabase(amount) {
+  await __ensureAuthOnce();
   const delta = Number(amount) || 0;
   const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
   if (error) throw error;
@@ -101,6 +99,7 @@ async function getJetonsSupabase() {
   return b?.jetons ?? 0;
 }
 async function addJetonsSupabase(amount) {
+  await __ensureAuthOnce();
   const delta = Number(amount) || 0;
   const { error } = await sb.rpc('ajouter_jetons', { montant: delta });
   if (error) throw error;
@@ -108,53 +107,34 @@ async function addJetonsSupabase(amount) {
   return b?.jetons ?? 0;
 }
 
-// --- Themes/cadres POSSEDES (lecture via RPC, setter sécurisé optionnel)
+// Thèmes
 async function getUnlockedThemesCloud() {
   const b = await __getBalances();
   return Array.isArray(b?.themes_possedes) ? b.themes_possedes : [];
 }
 async function setUnlockedThemesCloud(newThemes) {
+  await __ensureAuthOnce();
   const { error } = await sb.rpc('set_themes_secure', { themes: newThemes });
   if (error) throw error;
 }
 
-/* ===========================
-   POPUP (ouverture/fermeture accessibles)
-   =========================== */
-
-function openThemeModal() {
-  const modal = document.getElementById("themeModalBackdrop");
-  if (!modal) return;
-  modal.style.display = "flex";
-  modal.removeAttribute("aria-hidden");
-  modal.removeAttribute("inert");
-  const closeBtn = document.getElementById("themeModalClose");
-  if (closeBtn) closeBtn.focus();
-}
-
-function closeThemeModal() {
-  const modal = document.getElementById("themeModalBackdrop");
-  if (!modal) return;
-  modal.setAttribute("aria-hidden", "true");
-  modal.setAttribute("inert", "");
-  modal.style.display = "none";
-  // focus retour sur le bouton d’ouverture si présent
-  const opener = document.getElementById("btnThemes") || document.querySelector("[data-open='themeModal']");
-  if (opener) opener.focus();
-  // défocus de secours
-  if (document.activeElement) document.activeElement.blur();
+// No Ads
+async function setNoAds() {
+  await __ensureAuthOnce();
+  try { await sb.rpc('ajouter_nopub'); } catch(e) {}
+  localStorage.setItem('no_ads', '1');
+  if (typeof window.setNoAds === 'function') window.setNoAds(true);
+  if (window.userData?.setNoAds) await window.userData.setNoAds(true);
 }
 
 /* ===========================
-   Achat sécurisé (Supabase RPC)
+   Achat de thème via VCoins
    =========================== */
-
 async function acheterTheme(themeKey, prix) {
   try {
-    // S'assurer qu'on a une session Auth (anonyme ok)
     if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
 
-    const { data, error } = await sb.rpc('purchase_theme', {
+    const { error } = await sb.rpc('purchase_theme', {
       theme_key: String(themeKey),
       price: Number(prix) || 0
     });
@@ -169,9 +149,7 @@ async function acheterTheme(themeKey, prix) {
       return false;
     }
 
-    // Rafraîchir UI + fermer la popup d’achat
     await renderThemes();
-    closeThemeModal();
     alert(t("theme.debloque") || "Thème débloqué !");
     return true;
   } catch (e) {
@@ -181,56 +159,11 @@ async function acheterTheme(themeKey, prix) {
 }
 
 /* ===========================
-   UI
+   UI — thèmes & cartouches
    =========================== */
-
-// --- Activation (localStorage)
-// ⚠️ Harmonisé : "neon" devient la valeur par défaut (au lieu de "bubble")
 function getCurrentTheme() { return localStorage.getItem('themeVBlocks') || "neon"; }
 function setCurrentTheme(theme) { localStorage.setItem('themeVBlocks', theme); }
 
-// --- Branche Achats + Pub
-function setupBoutiqueAchats() {
-  document.querySelectorAll('.special-cartouche').forEach(cartouche => {
-    const label = cartouche.querySelector('.theme-label');
-    if (!label) return;
-    const key = label.dataset.i18n || label.textContent;
-
-    // Achats via Store
-    if (PRODUCT_IDS[key?.split('.').pop()]) {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        const alias = key.split('.').pop();
-        const pid = PRODUCT_IDS[alias];
-        const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
-
-        if (IAP) {
-          // Confirmation (utilise PRICES_BY_ALIAS si dispo)
-          const ok = await (window.lancerPaiement ? window.lancerPaiement(alias) : Promise.resolve(true));
-          if (ok) IAP.order(pid);
-        } else {
-          // Web / plugin absent → soit message clair, soit fallback serveur
-          alert("Achat via Google Play indisponible ici. Ouvre l’app installée depuis le Play Store.");
-          // // Pour autoriser l’achat côté web, décommente :
-          // await acheterProduitVercel(alias);
-          // await renderThemes(); setupPubCartouches?.(); setupBoutiqueAchats?.();
-        }
-      };
-    }
-
-    // PUB Reward
-    if (key === 'boutique.cartouche.pub1jeton') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = () => showRewardBoutique();
-    }
-    if (key === 'boutique.cartouche.pub300points') {
-      cartouche.style.cursor = 'pointer';
-      cartouche.onclick = () => showRewardVcoins();
-    }
-  });
-}
-
-// --- UI Achats (⚠️ rebind après chaque render)
 function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
   if (!$achatsList) return;
@@ -238,21 +171,21 @@ function renderAchats() {
     <div class="special-cartouche ${c.color}">
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      <span class="prix-label">${c.prix || "…"}</span>
+      <span class="prix-label">${c.prix || "—"}</span>
     </div>
   `).join('');
   $achatsList.innerHTML = achatsHtml;
 
-  // ✅ IMPORTANT : rebrancher les clics après le remplacement du DOM
-  setupBoutiqueAchats();
+  setupBoutiqueAchats(); // rebind après remplacement DOM
 }
 
-// --- UI Themes
 async function renderThemes() {
   renderAchats();
+
   const list = document.getElementById('themes-list');
   if (!list) return;
   list.innerHTML = "";
+
   const unlocked = await getUnlockedThemesCloud();
   const current = getCurrentTheme();
 
@@ -266,10 +199,10 @@ async function renderThemes() {
     `;
     if (isUnlocked) {
       card.innerHTML += (current === theme.key)
-        ? `<button class="theme-btn selected" disabled>${t("boutique.btn.selectionne")}</button>`
-        : `<button class="theme-btn" onclick="setCurrentTheme('${theme.key}');renderThemes();">${t("boutique.btn.utiliser")}</button>`;
+        ? `<button class="theme-btn selected" disabled>${t("boutique.btn.selectionne") || "Sélectionné"}</button>`
+        : `<button class="theme-btn" onclick="setCurrentTheme('${theme.key}');renderThemes();">${t("boutique.btn.utiliser") || "Utiliser"}</button>`;
     } else {
-      card.innerHTML += `<button class="theme-btn locked" onclick="acheterTheme('${theme.key}', ${THEME_PRICE})">${t("boutique.btn.debloquer").replace("{PRICE}", THEME_PRICE)}</button>`;
+      card.innerHTML += `<button class="theme-btn locked" onclick="acheterTheme('${theme.key}', ${THEME_PRICE})">${(t("boutique.btn.debloquer") || "Débloquer").replace("{PRICE}", THEME_PRICE)}</button>`;
     }
     list.appendChild(card);
   });
@@ -279,70 +212,171 @@ async function renderThemes() {
   if (soldeEls[1]) soldeEls[1].textContent = await getJetonsSupabase();
 }
 
-// --- Init DOM
-document.addEventListener("DOMContentLoaded", function() {
-  renderThemes();
-  // setupBoutiqueAchats(); // plus nécessaire ici car appelé dans renderAchats()
-});
-
-// --- Store init Cordova Purchase
-document.addEventListener('deviceready', function() {
-  const IAP = (window.store && typeof window.store.register === 'function') ? window.store : null;
-  if (!IAP) {
-    console.warn("[IAP] Plugin purchase non dispo");
-    return;
+/* ===========================
+   PUB récompensée — via pub.js (SSV)
+   =========================== */
+async function showRewardBoutique() {
+  try {
+    if (typeof window.showRewardBoutique !== 'function') {
+      alert("Publicité récompensée indisponible.");
+      return;
+    }
+    await window.showRewardBoutique(); // SSV → crédit côté serveur
+    await renderThemes();
+  } catch (e) {
+    alert("Erreur: " + (e?.message || e));
   }
+}
+async function showRewardVcoins() {
+  try {
+    if (typeof window.showRewardVcoins !== 'function') {
+      alert("Publicité récompensée indisponible.");
+      return;
+    }
+    await window.showRewardVcoins(); // SSV → crédit côté serveur
+    await renderThemes();
+  } catch (e) {
+    alert("Erreur: " + (e?.message || e));
+  }
+}
 
-  // Register (nopub = NON_CONSUMABLE)
-  Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
-    const type = (alias === 'nopub') ? IAP.NON_CONSUMABLE : IAP.CONSUMABLE;
-    IAP.register({ id, alias, type });
-  });
+/* ===========================
+   Achats Store — binding UI
+   =========================== */
+function setupBoutiqueAchats() {
+  document.querySelectorAll('.special-cartouche').forEach(cartouche => {
+    const label = cartouche.querySelector('.theme-label');
+    if (!label) return;
+    const key = label.dataset.i18n || label.textContent;
 
-  // Handlers IAP (utiliser IAP.when)
-  Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
-    IAP.when(id).approved(async (p) => {
-      try {
-        // Déclenche le traitement serveur (vérif côté backend si tu veux)
-        await acheterProduitVercel(alias);
-
-        // Cas spécial : "nopub" → passe aussi par une RPC sécurisée
-        if (alias === "nopub") {
-          // Nécessite la fonction SQL ajouter_nopub() SECURITY DEFINER (voir snippet)
-          await sb.rpc('ajouter_nopub');
+    // Achats via Store
+    const alias = key?.split('.').pop();
+    const pid = PRODUCT_IDS[alias];
+    if (pid) {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (_iapAvailable()) {
+          // Optionnel : confirmation custom si tu as une UI
+          if (typeof window.lancerPaiement === 'function') {
+            const ok = await window.lancerPaiement(alias);
+            if (!ok) return;
+          }
+          try { window.store.order(pid); }
+          catch (e) { alert('Erreur achat: ' + (e?.message || e)); }
+        } else {
+          alert("Achat via Store indisponible ici. Ouvre l’app installée depuis le Store.");
         }
+      };
+      return;
+    }
 
-        p.finish();
+    // PUB reward via pub.js
+    if (key === 'boutique.cartouche.pub1jeton') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = showRewardBoutique;
+    }
+    if (key === 'boutique.cartouche.pub300points') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = showRewardVcoins;
+    }
+  });
+}
 
-        await renderThemes?.();
-        setupPubCartouches?.();
-        setupBoutiqueAchats?.();
-        alert("Achat réussi !");
-      } catch (e) {
-        console.warn("[IAP] post-achat erreur:", e);
-        p.finish();
-        alert("Erreur post-achat.");
-      }
+/* ===========================
+   IAP Cordova Purchase
+   =========================== */
+const PROCESSED_TX = new Set();
+
+function refreshDisplayedPrices() {
+  try {
+    document.querySelectorAll('#achats-list .special-cartouche').forEach(node => {
+      const label = node.querySelector('.theme-label');
+      const alias = label?.dataset?.i18n?.split('.').pop();
+      if (!alias) return;
+      const pid = PRODUCT_IDS[alias];
+      if (!pid) return;
+      const price = PRICES_BY_ID[pid] || PRICES_BY_ALIAS[alias]?.price || '';
+      const el = node.querySelector('.prix-label');
+      if (el && price) el.textContent = price;
     });
+  } catch (_) {}
+}
+window.refreshDisplayedPrices = refreshDisplayedPrices;
+
+document.addEventListener('deviceready', function () {
+  if (!_iapAvailable()) { console.warn("[IAP] Plugin purchase non dispo"); return; }
+  const IAP = window.store;
+
+  // Register
+  Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
+    IAP.register({ id, alias, type: _mapType(alias) });
   });
 
-  // READY: récupérer prix localisés et MAJ UI
-  IAP.ready(function() {
-    console.log("Produits dispo:", IAP.products);
+  // Prix localisés → mémos + UI
+  IAP.when('product').updated(function (p) {
+    if (!p || !p.id) return;
+    PRICES_BY_ID[p.id] = p.price || PRICES_BY_ID[p.id] || '';
+    const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p.id);
+    if (alias) {
+      PRICES_BY_ALIAS[alias] = {
+        price: p.price || '',
+        currency: p.currency || '',
+        micros: p.priceMicros || 0
+      };
+    }
+    refreshDisplayedPrices();
+  });
 
-    // Mémorise les prix pour toute l'app (confirmation, etc.)
+  // Achat approuvé → crédits SERVEUR (RPC)
+  IAP.when('product').approved(async function (p) {
+    try {
+      const txId = p?.transaction?.id || p?.transaction?.orderId;
+      if (txId) {
+        if (PROCESSED_TX.has(txId)) { p.finish(); return; }
+        PROCESSED_TX.add(txId);
+      }
+      const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p.id);
+
+      // Crédit côté serveur selon le produit
+      if (alias === 'points3000')   await addVCoinsSupabase(3000);
+      else if (alias === 'points10000') await addVCoinsSupabase(10000);
+      else if (alias === 'jetons12')    await addJetonsSupabase(12);
+      else if (alias === 'jetons50')    await addJetonsSupabase(50);
+      else if (alias === 'nopub')       await setNoAds();
+
+      p.finish();
+      await renderThemes();
+      alert("Achat réussi !");
+    } catch (e) {
+      console.warn("[IAP] post-achat erreur:", e);
+      try { p.finish(); } catch (_) {}
+      alert("Erreur post-achat.");
+    }
+  });
+
+  // Possédé / restauré
+  IAP.when('product').owned(function (p) {
+    const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p?.id);
+    if (alias === 'nopub') setNoAds();
+  });
+
+  IAP.error(function (err) {
+    console.warn('[IAP] error:', err?.message || err);
+  });
+
+  IAP.ready(function () {
+    // snapshot initial
     IAP.products.forEach(prod => {
-      const foundAlias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === prod.id);
-      if (foundAlias) {
-        PRICES_BY_ALIAS[foundAlias] = {
-          price:    prod.price || "",
+      const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === prod.id);
+      if (alias) {
+        PRICES_BY_ALIAS[alias] = {
+          price: prod.price || "",
           currency: prod.currency || "",
-          micros:   prod.priceMicros || 0
+          micros: prod.priceMicros || 0
         };
       }
     });
-
-    // Met à jour les cartouches avec les prix localisés
+    // Peindre les prix
     SPECIAL_CARTOUCHES.forEach(c => {
       const alias = c.key?.split('.').pop();
       const pid = PRODUCT_IDS[alias];
@@ -350,10 +384,17 @@ document.addEventListener('deviceready', function() {
       const p = IAP.get(pid);
       if (p && p.price) c.prix = p.price;
     });
-
-    renderAchats();         // met à jour le DOM
-    setupBoutiqueAchats();  // ✅ rebind par sécurité (même si déjà appelé dans renderAchats)
+    renderAchats();
+    setupBoutiqueAchats();
   });
 
-  IAP.refresh();
+  try { IAP.refresh(); } catch (e) { console.warn('[IAP] refresh:', e?.message || e); }
+});
+
+/* ===========================
+   Bootstrap UI
+   =========================== */
+document.addEventListener("DOMContentLoaded", function() {
+  renderThemes();
+  refreshDisplayedPrices(); // “—” au début, puis mis à jour après IAP.ready()
 });

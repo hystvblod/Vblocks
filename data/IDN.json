@@ -226,5 +226,9 @@
   "theme.japon":  "Jepang",
   "settings.music.label": "Musik:",
 "settings.music.on": "Aktif",
-"settings.music.off": "Mati"
+"settings.music.off": "Mati",
+    "index.update.title": "Pembaruan tersedia",
+    "index.update.body": "Versi baru sudah siap. Kamu bisa mengunduhnya sekarang.",
+    "index.update.updateNow": "Perbarui sekarang",
+    "index.update.later": "Nanti"
 }

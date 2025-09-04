@@ -226,5 +226,9 @@
   "theme.japon":  "Japón",
   "settings.music.label": "Música:",
 "settings.music.on": "Activada",
-"settings.music.off": "Desactivada"
+"settings.music.off": "Desactivada",
+    "index.update.title": "Actualización disponible",
+    "index.update.body": "Hay una nueva versión lista. Puedes descargarla ahora.",
+    "index.update.updateNow": "Actualizar ahora",
+    "index.update.later": "Más tarde"
 }

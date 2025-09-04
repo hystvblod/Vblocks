@@ -319,14 +319,19 @@
   </script>
 
   <!-- SCRIPTS FONCTIONNELS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="js/i18n.js"></script>
-  <script>
-  window.SUPABASE_URL = "https://youhealyblgbwjhsskca.supabase.co";
-</script>
-  <script src="js/pub.js"></script>
-  <script src="js/userData.js"></script>
-  <script src="js/game.js"></script>
+<!-- Supabase client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
+
+<!-- App utils -->
+<script src="js/i18n.js"></script>
+<script src="js/userData.js"></script>
+
+<!-- Ads -->
+<script src="js/pub.js"></script>
+
+<!-- Jeu -->
+<script src="js/game.js"></script>
+
   <!-- Gestion du thème en synchro multi-onglet -->
   <script>
     window.addEventListener("storage", (e) => {

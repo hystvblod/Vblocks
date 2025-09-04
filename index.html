@@ -11,6 +11,25 @@
     .menu-btn.green  { background: #72eb63 !important; color: #ffffff !important; box-shadow: 0 3px 15px #2fd7b144; }
     .menu-btn.orange { background: #f0d642  !important; color: #fff !important; box-shadow: 0 3px 15px #2fd7b144; }
     .prix-blanc { color: white; font-size: 0.9em; display: block; margin-top: 5px; }
+
+    /* Bannière MAJ non bloquante */
+    #update-banner {
+      position: fixed; left: 16px; right: 16px; bottom: 16px;
+      background: rgba(17,17,17,.95); color: #fff;
+      border-radius: 14px; padding: 14px; z-index: 99998;
+      box-shadow: 0 8px 30px rgba(0,0,0,.35); display: none;
+    }
+    #update-banner h4 { margin: 0 0 6px; font-size: 1rem; }
+    #update-banner p  { margin: 0 0 10px; opacity: .9; font-size: .95rem; }
+    #update-banner .actions { display:flex; gap:10px; justify-content:flex-end; }
+    #btn-update-now {
+      border:0; border-radius: 10px; padding: 8px 12px; font-weight:700; cursor:pointer;
+      background:#4caf50; color:#fff;
+    }
+    #btn-update-later {
+      border:0; border-radius: 10px; padding: 8px 12px; font-weight:700; cursor:pointer;
+      background:#333; color:#fff;
+    }
   </style>
 
   <!-- Lib Supabase -->
@@ -282,6 +301,85 @@
         } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
       }
       window.__initPushOnce = initPush;
+    })();
+  </script>
+
+  <!-- ===== Bannière MAJ non bloquante + logique AppUpdate / Store ===== -->
+  <div id="update-banner">
+    <h4 data-i18n="index.update.title">Mise à jour disponible</h4>
+    <p data-i18n="index.update.body">Une nouvelle version est prête. Tu peux la télécharger maintenant.</p>
+    <div class="actions">
+      <button id="btn-update-later" data-i18n="index.update.later">Plus tard</button>
+      <button id="btn-update-now"  data-i18n="index.update.updateNow">Mettre à jour</button>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const PLAY_URL = "https://play.google.com/store/apps/details?id=com.vboldstudio.VBlocks";
+      const banner   = document.getElementById('update-banner');
+      const btnNow   = document.getElementById('btn-update-now');
+      const btnLater = document.getElementById('btn-update-later');
+
+      function i18nApply() {
+        try {
+          if (!window.i18nGet) return;
+          const t = (k, def)=> window.i18nGet(k) || def;
+          banner.querySelector('[data-i18n="index.update.title"]').textContent = t('index.update.title','Mise à jour disponible');
+          banner.querySelector('[data-i18n="index.update.body"]').textContent  = t('index.update.body','Une nouvelle version est prête. Tu peux la télécharger maintenant.');
+          btnNow.textContent   = t('index.update.updateNow','Mettre à jour');
+          btnLater.textContent = t('index.update.later','Plus tard');
+        } catch(_) {}
+      }
+
+      async function openStore(){
+        const AppLauncher = window.Capacitor?.Plugins?.AppLauncher;
+        if (AppLauncher) { try { await AppLauncher.openUrl({ url: PLAY_URL }); return; } catch(_){} }
+        location.href = PLAY_URL; // fallback web
+      }
+
+      async function checkPlayUpdateAndMaybeShow() {
+        const AppUpdate = window.Capacitor?.Plugins?.AppUpdate; // @capawesome/capacitor-app-update
+        if (!AppUpdate) {
+          console.warn('[AppUpdate] plugin absent → on ne montre rien');
+          return;
+        }
+        try {
+          const info = await AppUpdate.getAppUpdateInfo();
+          console.log('[AppUpdate] info', info);
+
+          // Affiche uniquement si Google dit "update dispo"
+          if (info.updateAvailability === 2) {
+            // Si flexible autorisé, on propose la bannière; si l'utilisateur clique, on lance le flux flexible
+            banner.style.display = 'block';
+            i18nApply();
+
+            btnNow.onclick = async () => {
+              try {
+                if (info.flexibleUpdateAllowed) {
+                  await AppUpdate.startFlexibleUpdate(); // téléchargement en arrière-plan
+                  // Optionnel : appeler completeFlexibleUpdate() au prochain démarrage
+                  banner.style.display = 'none';
+                } else {
+                  await openStore(); // pas flexible → on ouvre la fiche Play
+                }
+              } catch (e) {
+                console.warn('[AppUpdate] startFlexibleUpdate error', e);
+                await openStore(); // fallback store
+              }
+            };
+            btnLater.onclick = ()=>{ banner.style.display='none'; };
+          } else {
+            // Pas de mise à jour → ne rien afficher
+            console.log('[AppUpdate] aucune mise à jour disponible');
+          }
+        } catch (e) {
+          console.warn('[AppUpdate] getAppUpdateInfo error', e);
+          // En cas d’erreur API, on ne montre rien pour éviter les faux positifs
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', checkPlayUpdateAndMaybeShow);
     })();
   </script>
 </body>

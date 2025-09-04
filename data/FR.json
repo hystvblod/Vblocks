@@ -226,5 +226,9 @@
   "theme.japon":  "Japon",
   "settings.music.label": "Musique :",
   "settings.music.on": "Activée",
-  "settings.music.off": "Coupée"
+  "settings.music.off": "Coupée",
+     "index.update.title": "Mise à jour disponible",
+    "index.update.body": "Une nouvelle version est prête. Tu peux la télécharger maintenant.",
+    "index.update.updateNow": "Mettre à jour",
+    "index.update.later": "Plus tard"
 }

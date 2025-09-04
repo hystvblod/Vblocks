@@ -760,7 +760,7 @@ function fillRectThemeSafe(c, px, py, size) {
             <button id="end-revive-token" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#2a7;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}">
               ${tt('end.revive.token','Revivre (1 jeton)')}
             </button>
-            <button id="end-revive-ad" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#a73;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}">
+            <button id="end-revive-ad" class="btn" style="padding:.6em 1.1em;border:none;border-radius:.8em;background:#a73;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}">
               ${tt('end.revive.ad','Revivre (pub)')}
             </button>
           </div>
@@ -963,6 +963,7 @@ function fillRectThemeSafe(c, px, py, size) {
     }
     document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
 
+    // === SCORE: bonus combo ÷2 ===
     function computeScore(lines) {
       let pts = 0;
       switch (lines) {
@@ -973,7 +974,8 @@ function fillRectThemeSafe(c, px, py, size) {
         default: pts = 0;
       }
       if (mode !== 'infinite' && combo > 1 && lines > 0) {
-        pts += (combo - 1) * 5;
+        const baseBonus = (combo - 1) * 5;
+        pts += Math.floor(baseBonus / 2); // ✅ bonus combo divisé par 2
       }
       return pts;
     }
@@ -1516,6 +1518,9 @@ function fillRectThemeSafe(c, px, py, size) {
     let startX, startY, movedX, movedY, dragging = false, touchStartTime = 0;
     let holdToDropTimeout = null;
 
+    // ✅ lock rotation pendant un drop rapide
+    let quickDropLock = false;
+
     canvas.addEventListener('touchstart', function (e) {
       if (gameOver) return;
       if (e.touches.length !== 1) return;
@@ -1526,6 +1531,7 @@ function fillRectThemeSafe(c, px, py, size) {
       touchStartTime = Date.now();
       gestureMode = 'none';
       didHardDrop = false;
+      quickDropLock = false; // reset à chaque nouveau geste
 
       stopHorizontalRepeat(); // ✅ reset dès le début
 
@@ -1550,11 +1556,24 @@ function fillRectThemeSafe(c, px, py, size) {
       movedX = newMovedX;
       movedY = newMovedY;
 
+      // ✅ Détection d’un drop rapide vers le bas -> on verrouille la rotation
+      if (isQuickSwipeDown(elapsed, movedY)) {
+        quickDropLock = true;
+        gestureMode = 'vertical';
+        if (!softDropActive) startSoftDrop();
+        if (movedY > 24) {
+          dropPiece();
+          startY = t.clientY;
+        }
+        clearTimeout(holdToDropTimeout);
+        return;
+      }
+
       // Si on passe en vertical (soft drop / rotation), on coupe la répétition horizontale.
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';
         stopHorizontalRepeat();
-        if (!softDropActive && isQuickSwipeUp(elapsed, movedY)){
+        if (!quickDropLock && !softDropActive && isQuickSwipeUp(elapsed, movedY)){
           rotatePiece();
           touchStartTime = now;
           startY = t.clientY;
@@ -1594,7 +1613,7 @@ function fillRectThemeSafe(c, px, py, size) {
       }
 
       // gestes complémentaires (tant qu'on n'est pas en horizontal)
-      if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
+      if (!quickDropLock && !softDropActive && isQuickSwipeUp(elapsed, movedY)) {
         rotatePiece();
         touchStartTime = now;
         startY = t.clientY;
@@ -1623,24 +1642,27 @@ function fillRectThemeSafe(c, px, py, size) {
         stopSoftDrop();
         mustLiftFingerForNextSoftDrop = false;
         gestureMode = 'none';
+        quickDropLock = false;
         return;
       }
 
       if (wasHard) {
         didHardDrop = false;
         gestureMode = 'none';
+        quickDropLock = false;
         return;
       }
 
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
       const hasDropped   = Math.abs(movedY) > 18;
-      if (gestureMode !== 'horizontal' && isShortPress && !hasDropped && Math.abs(movedX) < 10) {
+      if (gestureMode !== 'horizontal' && isShortPress && !hasDropped && Math.abs(movedX) < 10 && !quickDropLock) {
         rotatePiece();
       }
 
       mustLiftFingerForNextSoftDrop = false;
       gestureMode = 'none';
+      quickDropLock = false;
     }, { passive: true });
 
     canvas.addEventListener('touchcancel', function () {
@@ -1651,6 +1673,7 @@ function fillRectThemeSafe(c, px, py, size) {
       mustLiftFingerForNextSoftDrop = false;
       gestureMode = 'none';
       didHardDrop = false;
+      quickDropLock = false;
     }, { passive: true });
 
     document.addEventListener('keydown', e => {
@@ -1661,7 +1684,7 @@ function fillRectThemeSafe(c, px, py, size) {
         case 'ArrowLeft':  move(-1);    break;
         case 'ArrowRight': move(1);     break;
         case 'ArrowDown':  dropPiece(); break;
-        case 'ArrowUp':    rotatePiece(); break;
+        case 'ArrowUp':    if (!quickDropLock) rotatePiece(); break; // ✅ rotation bloquée si quick drop actif
         case ' ':          hardDrop(); break;
         case 'c': case 'C': holdPieceSwapStay();  break;
       }

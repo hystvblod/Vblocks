@@ -226,5 +226,9 @@
   "theme.japon":  "اليابان",
   "settings.music.label": "الموسيقى:",
 "settings.music.on": "مفعلة",
-"settings.music.off": "متوقفة"
+"settings.music.off": "متوقفة",
+    "index.update.title": "تحديث متاح",
+    "index.update.body": "هناك إصدار جديد جاهز. يمكنك تنزيله الآن.",
+    "index.update.updateNow": "تحديث الآن",
+    "index.update.later": "لاحقًا"
 }

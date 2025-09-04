@@ -226,6 +226,10 @@
   "theme.japon":  "Japan",
   "settings.music.label": "Music:",
 "settings.music.on": "On",
-"settings.music.off": "Off"
+"settings.music.off": "Off",
+ "index.update.title": "Update available",
+    "index.update.body": "A new version is ready. You can download it now.",
+    "index.update.updateNow": "Update now",
+    "index.update.later": "Later"
 
 }
