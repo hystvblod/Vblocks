@@ -242,7 +242,7 @@ async function renderThemes() {
     card.className = 'theme-card' + (current === theme.key ? " selected" : "") + (isUnlocked ? "" : " locked");
     card.innerHTML = `
       <div class="theme-name">${t("theme." + theme.key)}</div>
-      <img class="theme-img" src="img/theme_${theme.key}.png" alt="" loading="lazy">
+     <img class="theme-img" src="assets/modes/${theme.key}.webp" alt="" loading="lazy">
     `;
     if (isUnlocked) {
       card.innerHTML += (current === theme.key)
