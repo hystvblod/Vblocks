@@ -2,29 +2,26 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title data-i18n="boutique.titre">Boutique</title>
+  <title data-i18n="boutique.titre"></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Libs -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js" defer></script>
-
-  <!-- ⚙️ Config AVANT userData.js -->
+  <!-- Librairies / app -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
+  <script src="js/userData.js"></script>
+  <script src="js/boutique.js"></script>
+  <!-- Gestion centralisée des pubs (AdMob, rewarded, interstitiels) -->
+  <script src="js/achat.js"></script>
+  <script src="js/pub.js"></script>
   <script>
-    window.SUPABASE_URL = "https://youhealyblgbwjhsskca.supabase.co";
-    // Si tu as une clé publique:
-    // window.SUPABASE_ANON_KEY = "xxxx";
-  </script>
-
-  <!-- App (ne charge PAS l'ancien js/boutique.js) -->
-  <script src="js/userData.js" defer></script>
-  <script src="js/achat.js" defer></script>
-  <script src="js/pub.js" defer></script>
-  <script src="js/i18n.js" defer></script>
+  window.SUPABASE_URL = "https://youhealyblgbwjhsskca.supabase.co";
+</script>
+  <script src="js/i18n.js"></script>
 
   <link rel="stylesheet" href="style/main.css">
   <style>
     html, body { height:auto; min-height:100%; overflow:auto; }
     body { overscroll-behavior-y:auto; }
+
     .container-boutique { padding-bottom: 80px; }
 
     .achats-list, .themes-list {
@@ -34,57 +31,108 @@
     }
     .themes-list { margin-top: .5rem; }
 
-    .special-cartouche {
-      display:flex; flex-direction:column; gap:6px;
-      padding:14px; border-radius:16px; color:#fff; font-weight:700;
-      box-shadow:0 8px 24px rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.12);
-      background:linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+    .theme-card.special-cartouche {
+      cursor: pointer;
+      transition: transform .06s ease, box-shadow .2s ease;
+      user-select: none;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
     }
-    .color-yellow { background:linear-gradient(135deg, #ffcf55, #ff9a3c); }
-    .color-purple { background:linear-gradient(135deg, #7a5cf7, #5c8df7); }
-    .color-blue   { background:linear-gradient(135deg, #6bd0ff, #3ba0ff); }
-    .color-green  { background:linear-gradient(135deg, #5bd17a, #2dbf8a); }
-
-    .theme-card.special-cartouche { cursor:pointer; transition:transform .06s ease, box-shadow .2s ease; }
     .theme-card.special-cartouche:hover { transform: translateY(-1px); }
-    .theme-card .theme-ico{ display:none !important; }
-    .theme-card .theme-label, .theme-card .prix-label { color:#fff !important; }
-    .theme-card .theme-label{ font-weight:700; letter-spacing:.2px; }
-    .theme-card.unlocked{ opacity:1; filter:grayscale(35%) brightness(.92); }
-    .theme-card.unlocked .prix-label{ display:none !important; }
+
+    .theme-card .theme-ico{ display: none !important; }
+
+    .theme-card .theme-label,
+    .theme-card .prix-label { color: #fff !important; }
+
+    .theme-card .theme-label{ font-weight: 700; letter-spacing: .2px; }
+
+    .theme-card.unlocked { opacity: 1; }
+    .theme-card.locked   { opacity: .95; }
+
     .achats-list .prix-label { color:#fff; font-weight:700; }
 
+    .themes-list .theme-card .theme-label{
+      font-size: clamp(1.06rem, 1.7vw, 1.32rem);
+      line-height: 1.2;
+    }
+
+    /* Effet grisé + masquage prix si possédé */
+    .theme-card.unlocked{
+      filter: grayscale(35%) brightness(.92);
+    }
+    .theme-card.unlocked .prix-label{
+      display: none !important;
+    }
+
     /* Modal */
-    .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.58); display:none; align-items:center; justify-content:center; z-index:9999; backdrop-filter:blur(2px); }
-    .modal { width:min(520px,92vw); border-radius:16px; background:#17181c; color:#e9e9e9; border:1px solid rgba(255,255,255,0.08); box-shadow:0 12px 40px rgba(0,0,0,.4); overflow:hidden; }
-    .modal-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.08); font-weight:700; }
-    .modal-body { padding:14px 16px 4px 16px; text-align:center; }
-    .modal-body img { width:100%; height:auto; border-radius:12px; background:rgba(255,255,255,0.03); }
-    .modal-actions { display:flex; gap:10px; justify-content:center; align-items:center; padding:16px; }
-    .btn { appearance:none; border:0; border-radius:12px; padding:12px 16px; font-weight:700; cursor:pointer; }
-    .btn-primary { background:linear-gradient(135deg, #5c8df7, #7a5cf7); color:#fff; }
-    .btn-ghost { background:transparent; color:#ddd; border:1px solid rgba(255,255,255,.15); }
-    .badge { display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; border-radius:999px; background:rgba(255,255,255,.08); color:#ddd; font-weight:700; border:1px solid rgba(255,255,255,.12); }
-    .modal-close { background:transparent; border:0; color:#bbb; cursor:pointer; padding:8px; border-radius:10px; }
-    .modal-close:hover { background:rgba(255,255,255,.06); }
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.58);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      backdrop-filter: blur(2px);
+    }
+    .modal {
+      width: min(520px, 92vw);
+      border-radius: 16px;
+      background: var(--card-bg, #17181c);
+      color: var(--body-color, #e9e9e9);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 12px 40px rgba(0,0,0,.4);
+      overflow: hidden;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-weight: 700;
+    }
+    .modal-body { padding: 14px 16px 4px 16px; text-align: center; }
+    .modal-body img {
+      width: 100%; height: auto; border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+    }
+    .modal-actions {
+      display: flex; gap: 10px; justify-content: center; align-items: center;
+      padding: 16px;
+    }
+    .btn { appearance: none; border: 0; border-radius: 12px; padding: 12px 16px; font-weight: 700; cursor: pointer; }
+    .btn-primary { background: linear-gradient(135deg, #5c8df7, #7a5cf7); color: #fff; }
+    .btn-ghost { background: transparent; color: #ddd; border: 1px solid rgba(255,255,255,.15); }
+    .badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 10px 14px; border-radius: 999px;
+      background: rgba(255,255,255,.08); color: #ddd; font-weight: 700;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .modal-close { background: transparent; border: 0; color: #bbb; cursor: pointer; padding: 8px; border-radius: 10px; }
+    .modal-close:hover { background: rgba(255,255,255,.06); }
   </style>
 </head>
 <body>
   <div class="top-bar">
     <div class="top-left">
       <a href="index.html" class="btn-back" title="" tabindex="0">
-        <svg viewBox="0 0 36 36" fill="none"><path d="M23.5 28L15 19.5L23.5 11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 36 36" fill="none">
+          <path d="M23.5 28L15 19.5L23.5 11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </a>
     </div>
     <div class="top-right">
-      <a href="profil.html" class="btn-icon"><img src="assets/icons/user.svg" alt="Profil" /></a>
-      <a href="parametres.html" class="btn-icon"><img src="assets/icons/settings.svg" alt="Paramètres" /></a>
+      <a href="profil.html" class="btn-icon">
+        <img src="assets/icons/user.svg" alt="Profil" />
+      </a>
+      <a href="parametres.html" class="btn-icon">
+        <img src="assets/icons/settings.svg" alt="Paramètres" />
+      </a>
     </div>
   </div>
 
   <div class="container-boutique">
-    <div class="shop-title" data-i18n="boutique.titre">Boutique</div>
+    <div class="shop-title" data-i18n="boutique.titre"></div>
 
     <div id="soldeVCoins" class="vcoins-bar">
       <img src="assets/images/vcoin.webp" alt="VCoins" class="vcoin-ico">
@@ -93,10 +141,10 @@
       <span class="vcoins-solde">--</span>
     </div>
 
-    <div class="section-label" data-i18n="boutique.section.vcoins">Vcoins & jetons</div>
+    <div class="section-label" data-i18n="boutique.section.vcoins"></div>
     <div class="achats-list" id="achats-list"></div>
 
-    <div class="section-label" style="margin-top:1.5em;" data-i18n="boutique.section.themes">Thèmes</div>
+    <div class="section-label" style="margin-top:1.5em;" data-i18n="boutique.section.themes"></div>
     <div class="themes-list" id="themes-list"></div>
   </div>
 
@@ -114,253 +162,436 @@
     </div>
   </div>
 
-  <!-- === Boutique inline (version unique) === -->
-  <script>
-  function t(key){ return window.i18nGet ? window.i18nGet(key) : key; }
-  function normalizeThemeKey(k){
-    return String(k||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'');
+<script>
+/* ---------- i18n helper ---------- */
+function t(key) { return window.i18nGet ? window.i18nGet(key) : key; }
+
+/* ---------- Normalisation clés ---------- */
+function normalizeThemeKey(k){
+  return String(k || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,'');
+}
+function toKeyLike(x){
+  if (typeof x === 'string') return normalizeThemeKey(x);
+  if (x && typeof x === 'object') {
+    return normalizeThemeKey(x.theme_key || x.key || x.name || '');
+  }
+  return '';
+}
+
+/* ---------- Données boutique ---------- */
+const THEMES = [
+  { key: "neon",   name: "Neon"   },
+  { key: "japon",  name: "Japon" },
+  { key: "grece",  name: "Grèce antique" },
+  { key: "arabic", name: "Arabic" },
+  { key: "space",  name: "Space"  },
+  { key: "cyber",  name: "Cyber"  },
+  { key: "angelique",  name: "Angelique"  },
+  { key: "bubble", name: "Bubble" },
+  { key: "nature", name: "Nature" },
+  { key: "nuit",   name: "Nuit"   },
+  { key: "retro",  name: "Retro"  },
+  { key: "vitraux", name: "Vitraux" },
+  { key: "luxury", name: "Luxury" }
+];
+
+const SPECIAL_CARTOUCHES = [
+  { key: "boutique.cartouche.points3000",  productId:"points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow', prix:null, amount:3000 },
+  { key: "boutique.cartouche.points10000", productId:"points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple', prix:null, amount:10000 },
+  { key: "boutique.cartouche.jetons12",    productId:"jetons12",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-blue',   prix:null, amount:12 },
+  { key: "boutique.cartouche.jetons50",    productId:"jetons50",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-purple', prix:null, amount:50 },
+  { key: "boutique.cartouche.nopub",       productId:"nopub",       icon:'<img src="assets/images/ads.png" alt="No Ads">',   color:'color-yellow', prix:null },
+  { key: "boutique.cartouche.pub1jeton",   productId:null,          icon:'<img src="assets/images/jeton.webp" alt="Pub">',   color:'color-green' },
+  { key: "boutique.cartouche.pub300points",productId:null,          icon:'<img src="assets/images/vcoin.webp" alt="Pub">',   color:'color-blue' }
+];
+
+const THEME_PRICE = 5000;
+/* évite le doublon de déclaration */
+window.REWARD_JETONS = typeof window.REWARD_JETONS === 'number' ? window.REWARD_JETONS : 1;
+
+const THEME_COLOR = {
+  neon: 'color-purple',
+  bubble: 'color-purple',
+  nature: 'color-green',
+  nuit: 'color-yellow',
+  retro: 'color-purple',
+  vitraux: 'color-blue',
+  angelique: 'color-blue',
+  luxury: 'color-yellow',
+  space: 'color-yellow',
+  cyber: 'color-green',
+  arabic : 'color-purple',
+  grece  : 'color-blue',
+  japon  : 'color-green'
+};
+
+/* ---------- Prix IAP (affichage depuis le Store uniquement) ---------- */
+async function getStoreProducts(productIds){
+  const out = {};
+  productIds.forEach(id => {
+    // 1) Cache global si alimenté par ton init IAP
+    let price = (window.PRICES_BY_ALIAS && window.PRICES_BY_ALIAS[id]?.price) ? window.PRICES_BY_ALIAS[id].price : "";
+
+    // 2) Lecture directe store si dispo
+    const IAP = (window.store && typeof window.store.get === 'function') ? window.store : null;
+    if (!price && IAP) {
+      const p = IAP.get(id);
+      if (p && p.price) price = p.price; // ex: "€0,99"
+    }
+    out[id] = { id, price };
+  });
+  return out;
+}
+
+/* ---------- Helpers lecture des thèmes (id OU auth_id) ---------- */
+async function getUnlockedThemesNoSQL() {
+  const sb = window.sb;
+  // On suppose bootstrap déjà fait (auth active); par sécurité :
+  if (typeof window.bootstrapAuthAndProfile === 'function') {
+    try { await window.bootstrapAuthAndProfile(); } catch(_) {}
   }
 
-  const THEMES = [
-    { key:"neon", name:"Neon" }, { key:"japon", name:"Japon" },
-    { key:"grece", name:"Grèce antique" }, { key:"arabic", name:"Arabic" },
-    { key:"space", name:"Space" }, { key:"cyber", name:"Cyber" },
-    { key:"angelique", name:"Angelique" }, { key:"bubble", name:"Bubble" },
-    { key:"nature", name:"Nature" }, { key:"nuit", name:"Nuit" },
-    { key:"retro", name:"Retro" }, { key:"vitraux", name:"Vitraux" },
-    { key:"luxury", name:"Luxury" }
-  ];
+  const { data: { user } } = await sb.auth.getUser();
+  const uid = user?.id;
+  if (!uid) return [];
 
-  const SPECIAL_CARTOUCHES = [
-    { key:"boutique.cartouche.points3000",  productId:"points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow' },
-    { key:"boutique.cartouche.points10000", productId:"points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple' },
-    { key:"boutique.cartouche.jetons12",    productId:"jetons12",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-blue' },
-    { key:"boutique.cartouche.jetons50",    productId:"jetons50",    icon:'<img src="assets/images/jeton.webp" alt="jeton">', color:'color-purple' },
-    { key:"boutique.cartouche.nopub",       productId:"nopub",       icon:'<img src="assets/images/ads.png"  alt="No Ads">',  color:'color-yellow' },
-    { key:"boutique.cartouche.pub1jeton",   productId:null,          icon:'<img src="assets/images/jeton.webp" alt="Pub">',   color:'color-green' },
-    { key:"boutique.cartouche.pub300points",productId:null,          icon:'<img src="assets/images/vcoin.webp" alt="Pub">',   color:'color-blue' }
-  ];
+  try {
+    const { data, error } = await sb
+      .from('users')
+      .select('themes_possedes')
+      .or(`id.eq.${uid},auth_id.eq.${uid}`)
+      .maybeSingle();
 
-  const THEME_PRICE = 5000;
-  const THEME_COLOR = {
-    neon:'color-purple', bubble:'color-purple', nature:'color-green', nuit:'color-yellow',
-    retro:'color-purple', vitraux:'color-blue', angelique:'color-blue', luxury:'color-yellow',
-    space:'color-yellow', cyber:'color-green', arabic:'color-purple', grece:'color-blue', japon:'color-green'
-  };
-
-  async function getStoreProducts(ids){
-    const out = {};
-    ids.forEach(id=>{
-      let price = (window.PRICES_BY_ALIAS && window.PRICES_BY_ALIAS[id]?.price) ? window.PRICES_BY_ALIAS[id].price : "";
-      const IAP = (window.store && typeof window.store.get === 'function') ? window.store : null;
-      if(!price && IAP){ const p = IAP.get(id); if(p?.price) price = p.price; }
-      out[id] = { id, price };
-    });
-    return out;
-  }
-
-  async function getUnlockedThemesNoSQL(){
-    const sb = window.sb;
-    if (typeof window.bootstrapAuthAndProfile === 'function') { try{ await window.bootstrapAuthAndProfile(); }catch{} }
-    const { data:{ user } } = await sb.auth.getUser();
-    const uid = user?.id; if(!uid) return [];
-    const { data, error } = await sb.from('users').select('themes_possedes').or(`id.eq.${uid},auth_id.eq.${uid}`).maybeSingle();
-    if(error) return [];
+    if (error) {
+      console.warn('[boutique] read users error:', error);
+      return [];
+    }
     const raw = data?.themes_possedes;
-    let arr = Array.isArray(raw) ? raw : (typeof raw === 'string' && raw.trim() ? (()=>{
-      try{ return JSON.parse(raw);}catch{ return raw.replace(/[{}]/g,'').split(/[,\s]+/).map(s=>s.replace(/^"(.*)"$/,'$1')).filter(Boolean); }
-    })() : []);
-    return arr.map(normalizeThemeKey);
-  }
+    let arr = [];
 
-  async function renderAchats(){
-    const $achatsList = document.getElementById('achats-list');
-    $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c=>`
-      <div class="special-cartouche ${c.color} ${c.productId ? '' : 'btn-reward'}" ${c.productId ? `data-product-id="${c.productId}"` : ''}>
+    if (Array.isArray(raw)) {
+      arr = raw;
+    } else if (typeof raw === 'string' && raw.trim()) {
+      try { arr = JSON.parse(raw); }
+      catch {
+        const cleaned = raw.replace(/[{}]/g, '');
+        arr = cleaned.split(/[,\s]+/).map(s => s.replace(/^"(.*)"$/, '$1')).filter(Boolean);
+      }
+    }
+    const norm = arr.map(normalizeThemeKey);
+    console.log('[Boutique] unlockedRaw=', arr, '→ normalized=', norm);
+    return norm;
+  } catch (e) {
+    console.warn('[boutique] exception read users:', e?.message || e);
+    return [];
+  }
+}
+
+/* ---------- Rendu Achats (IAP, pubs) ---------- */
+async function renderAchats() {
+  const $achatsList = document.getElementById('achats-list');
+
+  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c => {
+    const isReward = (c.key === 'boutique.cartouche.pub1jeton' || c.key === 'boutique.cartouche.pub300points');
+    return `
+      <div class="special-cartouche ${c.color} ${isReward ? 'btn-reward' : ''}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
         <span class="theme-ico">${c.icon}</span>
         <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
         <span class="prix-label">${c.productId ? "…" : ""}</span>
-      </div>`).join('');
+      </div>
+    `;
+  }).join('');
 
-    const ids = SPECIAL_CARTOUCHES.map(c=>c.productId).filter(Boolean);
-    const products = await getStoreProducts(ids);
-    refreshDisplayedPrices(products);
+  // Remplir les prix réels dès que possible
+  const ids = SPECIAL_CARTOUCHES.map(c => c.productId).filter(Boolean);
+  const products = await getStoreProducts(ids);
+  refreshDisplayedPrices(products);
 
-    try{
-      if(window.store?.when) store.when('product').updated(()=>refreshDisplayedPrices());
-      if(window.store?.ready) store.ready(()=>refreshDisplayedPrices());
-    }catch{}
-  }
-
-  function refreshDisplayedPrices(pre){
-    const ids = SPECIAL_CARTOUCHES.map(c=>c.productId).filter(Boolean);
-    ids.forEach(id=>{
-      let price = (window.PRICES_BY_ALIAS && window.PRICES_BY_ALIAS[id]?.price) ? window.PRICES_BY_ALIAS[id].price : "";
-      if(!price && pre?.[id]?.price) price = pre[id].price;
-      if(!price && window.store?.get){ const p = store.get(id); if(p?.price) price = p.price; }
-      document.querySelectorAll(`#achats-list .special-cartouche[data-product-id="${id}"] .prix-label`).forEach(n=>n.textContent = price || "…");
-    });
-  }
-
-  async function renderThemes(){
-    if (typeof window.bootstrapAuthAndProfile === 'function') { try{ await window.bootstrapAuthAndProfile(); }catch{} }
-    await renderAchats();
-
-    const unlocked = await getUnlockedThemesNoSQL();
-    const $themesList = document.getElementById('themes-list');
-    $themesList.innerHTML = THEMES.map(th=>{
-      const u = unlocked.includes(normalizeThemeKey(th.key));
-      const color = THEME_COLOR[th.key] || 'color-blue';
-      return `<div class="special-cartouche theme-card ${color} ${u ? 'unlocked' : 'locked'}" role="button" tabindex="0" data-theme="${th.key}">
-        <span class="theme-label">${th.name}</span>
-        <span class="prix-label" style="${u ? 'display:none' : ''}">${u ? '' : (THEME_PRICE + ' VCoins')}</span>
-      </div>`;
-    }).join('');
-
-    setupBoutiqueAchats();
-    setupPubCartouches();
-
-    $themesList.querySelectorAll('.theme-card').forEach(card=>{
-      const open = ()=> openThemeModal(card.dataset.theme);
-      card.addEventListener('click', open);
-      card.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
-    });
-
-    const coins = await window.userData?.getVCoins?.();
-    const jetons= await window.userData?.getJetons?.();
-    const $soldeCoins = document.querySelectorAll('.vcoins-solde')[0];
-    const $soldeJetons= document.querySelectorAll('.vcoins-solde')[1];
-    if($soldeCoins) $soldeCoins.textContent = (typeof coins === 'number') ? coins : '--';
-    if($soldeJetons) $soldeJetons.textContent = (typeof jetons === 'number') ? jetons : '--';
-  }
-
-  function setupPubCartouches(){
-    document.querySelectorAll('#achats-list .special-cartouche').forEach(c=>{
-      const label = c.querySelector('.theme-label'); if(!label) return;
-      const key = label.dataset.i18n;
-      const guard = fn => async ()=>{ if(c._busy) return; c._busy = true; try{ await fn(); } finally{ c._busy=false; }};
-
-      if(key==='boutique.cartouche.pub1jeton'){
-        c.style.cursor='pointer';
-        c.onclick = guard(async ()=>{
-          if(typeof window.showRewardBoutique==='function'){
-            const ok = await window.showRewardBoutique();
-            alert(ok? "+1 jeton (rewarded) !" : "Pub annulée ou indisponible.");
-            if(ok) await renderThemes();
-          } else alert("Pub non disponible sur cette plateforme.");
-        });
-      }
-      if(key==='boutique.cartouche.pub300points'){
-        c.style.cursor='pointer';
-        c.onclick = guard(async ()=>{
-          if(typeof window.showRewardVcoins==='function'){
-            const ok = await window.showRewardVcoins();
-            alert(ok? "+300 VCoins (rewarded) !" : "Pub annulée ou indisponible.");
-            if(ok) await renderThemes();
-          } else alert("Pub non disponible sur cette plateforme.");
-        });
-      }
-    });
-  }
-
-  function setupBoutiqueAchats(){
-    document.querySelectorAll('#achats-list .special-cartouche').forEach(c=>{
-      const label = c.querySelector('.theme-label'); if(!label) return;
-      const key = label.dataset.i18n;
-      const pay = async alias => { if(await window.lancerPaiement?.(alias)) window.accordeAchat?.(alias); };
-
-      if(key==='boutique.cartouche.points3000'){ c.style.cursor='pointer'; c.onclick = ()=>pay('points3000'); }
-      if(key==='boutique.cartouche.points10000'){ c.style.cursor='pointer'; c.onclick = ()=>pay('points10000'); }
-      if(key==='boutique.cartouche.jetons12'){   c.style.cursor='pointer'; c.onclick = ()=>pay('jetons12'); }
-      if(key==='boutique.cartouche.jetons50'){   c.style.cursor='pointer'; c.onclick = ()=>pay('jetons50'); }
-      if(key==='boutique.cartouche.nopub'){      c.style.cursor='pointer'; c.onclick = ()=>pay('nopub'); }
-    });
-  }
-
-  const $backdrop = document.getElementById('themeModalBackdrop');
-  const $title = document.getElementById('themeModalTitle');
-  const $img   = document.getElementById('themeModalImage');
-  const $actions = document.getElementById('themeModalActions');
-  const $close = document.getElementById('themeModalClose');
-
-  function openThemeModal(themeKey){
-    const specificKey = "boutique.modal.titre."+themeKey;
-    const theSpecific = t(specificKey);
-    const base = t("boutique.modal.titre") || "Thème";
-    $title.textContent = (theSpecific!==specificKey ? theSpecific : `${base} ${themeKey}`);
-
-    const webp = `assets/modes/${themeKey}.webp`;
-    const png  = `assets/modes/${themeKey}.png`;
-    $img.src = webp; $img.alt = themeKey;
-    $img.onerror = ()=>{ if($img.src.endsWith('.webp')) $img.src = png; };
-
-    renderModalActions(themeKey);
-    $backdrop.style.display='flex';
-    $backdrop.removeAttribute('aria-hidden'); $backdrop.removeAttribute('inert');
-    $close?.focus();
-    if(window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
-  }
-
-  function closeThemeModal(){
-    if ($backdrop.contains(document.activeElement)) document.activeElement.blur();
-    $backdrop.setAttribute('aria-hidden','true'); $backdrop.setAttribute('inert','');
-    $backdrop.style.display='none';
-  }
-
-  async function renderModalActions(themeKey){
-    $actions.innerHTML = '';
-    if (typeof window.bootstrapAuthAndProfile === 'function') { try{ await window.bootstrapAuthAndProfile(); }catch{} }
-    const unlocked = await getUnlockedThemesNoSQL();
-    const isUnlocked = unlocked.includes(normalizeThemeKey(themeKey));
-
-    if (isUnlocked){
-      const badge = document.createElement('div');
-      badge.className='badge'; badge.dataset.i18n='boutique.modal.possede';
-      badge.textContent = t('boutique.modal.possede') || 'Déjà possédé';
-      $actions.appendChild(badge);
-    } else {
-      const buy = document.createElement('button');
-      buy.className='btn btn-primary'; buy.dataset.i18n='boutique.modal.acheter';
-      buy.textContent = (t('boutique.modal.acheter') || 'Acheter') + ` (${THEME_PRICE} VCoins)`;
-      buy.onclick = async()=>{
-        try{
-          if(window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-          const ok = await window.userData?.purchaseTheme?.(themeKey, THEME_PRICE);
-          if(!ok) return;
-          await renderThemes(); closeThemeModal();
-          if(window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
-        }catch(e){
-          const msg = (e?.message||"").toLowerCase();
-          if(msg.includes("not enough vcoins")) alert(t("boutique.alert.pasassez") || "Pas assez de VCoins.");
-          else alert("Erreur : " + (e?.message || e));
-        }
-      };
-      $actions.appendChild(buy);
+  // Écoute des mises à jour du store (si Cordova Purchase)
+  try {
+    if (window.store && typeof store.when === 'function') {
+      store.when('product').updated(() => refreshDisplayedPrices());
     }
-    const closeBtn = document.createElement('button');
-    closeBtn.className='btn btn-ghost'; closeBtn.dataset.i18n='boutique.modal.fermer';
-    closeBtn.textContent = t('boutique.modal.fermer') || 'Fermer';
-    closeBtn.onclick = closeThemeModal;
-    $actions.appendChild(closeBtn);
-  }
+    if (window.store && typeof store.ready === 'function') {
+      store.ready(() => refreshDisplayedPrices());
+    }
+  } catch(_) {}
+}
 
-  document.getElementById('themeModalClose')?.addEventListener('click', closeThemeModal);
-  document.getElementById('themeModalBackdrop').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeThemeModal(); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeThemeModal(); });
-
-  function ready(fn){
-    if(window.i18nReady && typeof window.i18nReady.then==='function') window.i18nReady.then(fn);
-    else if(document.readyState==='complete' || document.readyState==='interactive') fn();
-    else document.addEventListener('DOMContentLoaded', fn);
-  }
-
-  ready(async ()=>{
-    if (typeof window.bootstrapAuthAndProfile === 'function') { try{ await window.bootstrapAuthAndProfile(); }catch{} }
-    await renderThemes();
-    try{ if(window.store?.ready) store.ready(()=>refreshDisplayedPrices()); }catch{}
-    if(window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
-    if(window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
+// Met à jour les labels de prix à partir de PRICES_BY_ALIAS / store.get
+function refreshDisplayedPrices(preFetched) {
+  const ids = SPECIAL_CARTOUCHES.map(c => c.productId).filter(Boolean);
+  const map = preFetched || {};
+  ids.forEach(id => {
+    let price = (window.PRICES_BY_ALIAS && window.PRICES_BY_ALIAS[id]?.price) ? window.PRICES_BY_ALIAS[id].price : "";
+    if (!price && map[id]?.price) price = map[id].price;
+    if (!price && window.store && typeof store.get === 'function') {
+      const p = store.get(id);
+      if (p && p.price) price = p.price;
+    }
+    document.querySelectorAll(`#achats-list .special-cartouche[data-product-id="${id}"] .prix-label`)
+      .forEach(n => n.textContent = price || "…");
   });
-  </script>
+}
+
+/* ---------- Rendu Thèmes (avec grisage & masquage prix) ---------- */
+async function renderThemes() {
+  // Auth/profile (via userData, centralisé)
+  if (typeof window.bootstrapAuthAndProfile === 'function') {
+    try { await window.bootstrapAuthAndProfile(); } catch(_) {}
+  }
+
+  await renderAchats();
+
+  // LECTURE FIABLE (id OU auth_id)
+  const unlocked = await getUnlockedThemesNoSQL();
+
+  const $themesList = document.getElementById('themes-list');
+  const html = THEMES.map(theme => {
+    const isUnlocked = unlocked.includes(normalizeThemeKey(theme.key));
+    const color = THEME_COLOR[theme.key] || 'color-blue';
+    return `
+      <div class="special-cartouche theme-card ${color} ${isUnlocked ? "unlocked" : "locked"}"
+           role="button" tabindex="0"
+           data-theme="${theme.key}">
+        <span class="theme-label">${theme.name}</span>
+        <span class="prix-label" style="${isUnlocked ? 'display:none' : ''}">
+          ${isUnlocked ? '' : (THEME_PRICE + ' VCoins')}
+        </span>
+      </div>
+    `;
+  }).join('');
+  $themesList.innerHTML = html;
+
+  setupBoutiqueAchats();
+  setupPubCartouches();
+
+  $themesList.querySelectorAll('.theme-card').forEach(card => {
+    const open = () => openThemeModal(card.dataset.theme);
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+  });
+
+  // Solde vcoins / jetons
+  const coins = await window.userData?.getVCoins?.();
+  const $soldeCoins = document.querySelector('.vcoins-solde');
+  if ($soldeCoins) $soldeCoins.textContent = (typeof coins === "number" ? coins : "--");
+
+  const jetons = await window.userData?.getJetons?.();
+  const $soldeJetons = document.querySelectorAll('.vcoins-solde')[1];
+  if ($soldeJetons) $soldeJetons.textContent = (typeof jetons === "number" ? jetons : "--");
+}
+
+/* ---------- Pubs récompensées (actions via pub.js) ---------- */
+function setupPubCartouches() {
+  document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
+    const label = cartouche.querySelector('.theme-label');
+    if (!label) return;
+    const key = label.dataset.i18n;
+
+    // helper: évite double clic
+    const guard = (fn) => async () => {
+      if (cartouche._busy) return;
+      cartouche._busy = true;
+      try { await fn(); } finally { cartouche._busy = false; }
+    };
+
+    if (key === 'boutique.cartouche.pub1jeton') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = guard(async () => {
+        if (typeof window.showRewardBoutique === 'function') {
+          const ok = await window.showRewardBoutique(); // rewarded + SSV
+          if (ok) {
+            alert("+1 jeton (rewarded) !");
+            await renderThemes();
+          } else {
+            alert("Pub annulée ou indisponible.");
+          }
+        } else {
+          alert("Pub non disponible sur cette plateforme.");
+        }
+      });
+    }
+
+    if (key === 'boutique.cartouche.pub300points') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = guard(async () => {
+        if (typeof window.showRewardVcoins === 'function') {
+          const ok = await window.showRewardVcoins(); // rewarded + SSV
+          if (ok) {
+            alert("+300 VCoins (rewarded) !");
+            await renderThemes();
+          } else {
+            alert("Pub annulée ou indisponible.");
+          }
+        } else {
+          alert("Pub non disponible sur cette plateforme.");
+        }
+      });
+    }
+  });
+}
+
+/* ---------- Achats IAP (boutons) ---------- */
+function setupBoutiqueAchats() {
+  document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
+    const label = cartouche.querySelector('.theme-label');
+    if (!label) return;
+    const key = label.dataset.i18n;
+
+    if (key === 'boutique.cartouche.points3000') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("points3000")) window.accordeAchat?.("points3000");
+      };
+    }
+    if (key === 'boutique.cartouche.points10000') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("points10000")) window.accordeAchat?.("points10000");
+      };
+    }
+
+    if (key === 'boutique.cartouche.jetons12') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("jetons12")) window.accordeAchat?.("jetons12");
+      };
+    }
+    if (key === 'boutique.cartouche.jetons50') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("jetons50")) window.accordeAchat?.("jetons50");
+      };
+    }
+    if (key === 'boutique.cartouche.nopub') {
+      cartouche.style.cursor = 'pointer';
+      cartouche.onclick = async () => {
+        if (await window.lancerPaiement?.("nopub")) window.accordeAchat?.("nopub");
+      };
+    }
+  });
+}
+
+/* ---------- Modal thème ---------- */
+const $backdrop = document.getElementById('themeModalBackdrop');
+const $title    = document.getElementById('themeModalTitle');
+const $img      = document.getElementById('themeModalImage');
+const $actions  = document.getElementById('themeModalActions');
+const $close    = document.getElementById('themeModalClose');
+
+function openThemeModal(themeKey) {
+  const specificKey = "boutique.modal.titre." + themeKey;
+  const theSpecific = t(specificKey);
+  const base = t("boutique.modal.titre");
+  $title.textContent = (theSpecific !== specificKey ? theSpecific : `${base} ${themeKey}`);
+
+  const webp = `assets/modes/${themeKey}.webp`;
+  const png  = `assets/modes/${themeKey}.png`;
+  $img.src = webp;
+  $img.alt = themeKey;
+  $img.onerror = () => { if ($img.src.endsWith('.webp')) $img.src = png; };
+
+  renderModalActions(themeKey);
+
+  $backdrop.style.display = 'flex';
+  $backdrop.removeAttribute('aria-hidden');
+  $backdrop.removeAttribute('inert');
+  $close?.focus();
+
+  if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+}
+
+function closeThemeModal() {
+  if ($backdrop.contains(document.activeElement)) document.activeElement.blur();
+  $backdrop.setAttribute('aria-hidden', 'true');
+  $backdrop.setAttribute('inert', '');
+  $backdrop.style.display = 'none';
+  const opener = document.querySelector("[data-open='themeModal']") || document.getElementById("btnThemes");
+  if (opener) opener.focus();
+}
+
+async function renderModalActions(themeKey) {
+  $actions.innerHTML = '';
+
+  if (typeof window.bootstrapAuthAndProfile === 'function') {
+    try { await window.bootstrapAuthAndProfile(); } catch(_) {}
+  }
+
+  // Utilise la même lecture fiable que la grille (id OU auth_id)
+  const unlocked = await getUnlockedThemesNoSQL();
+  const isUnlocked = unlocked.includes(normalizeThemeKey(themeKey));
+
+  if (isUnlocked) {
+    const badge = document.createElement('div');
+    badge.className = 'badge';
+    badge.setAttribute('data-i18n', 'boutique.modal.possede');
+    badge.textContent = t('boutique.modal.possede');
+    $actions.appendChild(badge);
+  } else {
+    const buy = document.createElement('button');
+    buy.className = 'btn btn-primary';
+    buy.setAttribute('data-i18n', 'boutique.modal.acheter');
+    buy.textContent = (t('boutique.modal.acheter') || 'Acheter') + ` (${THEME_PRICE} VCoins)`;
+    buy.onclick = async () => {
+      try {
+        if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+        const ok = await window.userData?.purchaseTheme?.(themeKey, THEME_PRICE);
+        if (!ok) return;
+
+        await renderThemes();
+        closeThemeModal();
+        if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+      } catch (e) {
+        const msg = (e?.message || "").toLowerCase();
+        if (msg.includes("not enough vcoins")) alert(t("boutique.alert.pasassez") || "Pas assez de VCoins.");
+        else alert("Erreur : " + (e?.message || e));
+      }
+    };
+    $actions.appendChild(buy);
+  }
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'btn btn-ghost';
+  closeBtn.setAttribute('data-i18n', 'boutique.modal.fermer');
+  closeBtn.textContent = t('boutique.modal.fermer') || 'Fermer';
+  closeBtn.onclick = closeThemeModal;
+  $actions.appendChild(closeBtn);
+}
+
+/* ---------- Modal events ---------- */
+$close?.addEventListener('click', closeThemeModal);
+$backdrop.addEventListener('click', (e) => { if (e.target === $backdrop) closeThemeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeThemeModal(); });
+
+/* ---------- Ready ---------- */
+function ready(fn) {
+  if (window.i18nReady && typeof window.i18nReady.then === "function") window.i18nReady.then(fn);
+  else setTimeout(fn, 0);
+}
+ready(async () => {
+  // Auth unique (pas d'appel direct à signInAnonymously ici)
+  if (typeof window.bootstrapAuthAndProfile === 'function') {
+    try { await window.bootstrapAuthAndProfile(); } catch(_) {}
+  }
+
+  await renderThemes();
+
+  // Nouvelle passe prix quand le store sera prêt (si dispo)
+  try {
+    if (window.store && typeof store.ready === 'function') {
+      store.ready(() => refreshDisplayedPrices());
+    }
+  } catch(_) {}
+
+  if (window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+  if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
+});
+</script>
 </body>
 </html>
