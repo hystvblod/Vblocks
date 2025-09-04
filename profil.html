@@ -186,23 +186,80 @@
   <script src="js/pub.js"></script>
 
   <script>
-    // i18n helper
+    const TAG='[PROFIL]';
+
     function i18nSafe(key, fb){ try{ const v=(window.i18nGet?.(key)); return (!v||v===key)?fb:v }catch{ return fb } }
 
-    // --- Helpers robustes (nouveaux joueurs) ---
+    // === Utils log
+    function log(){ console.log(TAG, ...arguments); }
+    function warn(){ console.warn(TAG, ...arguments); }
+    function err(){ console.error(TAG, ...arguments); }
+
+    // === OBSERVER: log toute écriture sur #profilPseudo + verrou anti-vide
+    function attachPseudoObserverAndLock() {
+      const el = document.getElementById('profilPseudo');
+      if(!el){ warn('attachPseudoObserverAndLock: #profilPseudo introuvable'); return; }
+
+      log('attachPseudoObserverAndLock: valeur DOM initiale =', JSON.stringify(el.textContent));
+
+      let expected = (el.textContent || '').trim();
+      if(!expected){
+        expected = (localStorage.getItem('pseudo') || '').trim();
+      }
+      if(!expected){
+        expected = 'Player_' + Math.random().toString(36).slice(2,8);
+        localStorage.setItem('pseudo', expected);
+      }
+      // impose la valeur initiale si DOM vide
+      if(!(el.textContent||'').trim()){
+        el.textContent = expected;
+        log('attachPseudoObserverAndLock: DOM vide → set', expected);
+      }
+
+      const obs = new MutationObserver((mutList)=>{
+        for(const mut of mutList){
+          if(mut.type==='childList' || mut.type==='characterData'){
+            // laisser le script terminer → lire la valeur finale
+            setTimeout(()=>{
+              const cur = (el.textContent || '').trim();
+              console.log(TAG, '[OBS] changement #profilPseudo →', JSON.stringify(cur));
+              if(!cur){
+                console.trace(TAG, '[OBS] écrasement vide, restauration', expected);
+                el.textContent = expected;
+              } else {
+                expected = cur; // on met à jour la référence si valeur non vide
+                localStorage.setItem('pseudo', expected);
+              }
+            },0);
+          }
+        }
+      });
+      obs.observe(el, {childList:true, characterData:true, subtree:true});
+      log('attachPseudoObserverAndLock: MutationObserver actif');
+    }
+
+    // --- Helpers robustes (nouveaux joueurs)
     async function ensureAuthAndProfileFallback(){
       const sb = window.sb;
       try{
         const { data:{ session } } = await sb.auth.getSession();
-        if(!session) await sb.auth.signInAnonymously();
-      }catch(e){ console.warn('[ensureAuth]', e?.message||e); }
+        log('ensureAuth: hasSession=', !!session);
+        if(!session){
+          const r = await sb.auth.signInAnonymously();
+          log('ensureAuth: signInAnonymously ->', r?.data?.user?.id || r?.error?.message);
+        }
+      }catch(e){ warn('ensureAuth error', e?.message||e); }
       try{
+        const defaultPseudo = localStorage.getItem('pseudo') || '';
+        const defaultLang = localStorage.getItem('lang') || 'fr';
+        log('ensure_user RPC: default_pseudo=', JSON.stringify(defaultPseudo), 'default_lang=', defaultLang);
         const { error } = await sb.rpc('ensure_user', {
-          default_lang: localStorage.getItem('lang') || 'fr',
-          default_pseudo: localStorage.getItem('pseudo') || ''
+          default_lang: defaultLang,
+          default_pseudo: defaultPseudo
         });
-        if(error) console.warn('[ensure_user]', error.message);
-      }catch(e){ console.warn('[ensure_user]', e?.message||e); }
+        if(error) warn('ensure_user RPC error:', error.message);
+        else log('ensure_user RPC ok');
+      }catch(e){ warn('ensure_user exception', e?.message||e); }
     }
 
     async function getProfileEnsured(maxTries=5){
@@ -217,19 +274,21 @@
           .or(`id.eq.${uid},auth_id.eq.${uid}`)
           .maybeSingle();
 
+        log('getProfileEnsured try', i+1, 'data=', data, 'error=', error?.message);
         if(!error && data) return data;
 
         await ensureAuthAndProfileFallback().catch(()=>{});
-        await new Promise(r=>setTimeout(r, 200*(i+1))); // backoff léger
+        await new Promise(r=>setTimeout(r, 200*(i+1))); // backoff
       }
       return null;
     }
 
-    // Fallback si userData.updatePseudoSecure indispo
+    // Fallback MAJ pseudo si userData indispo
     async function updatePseudoSecureLocal(sb, newPseudo){
       const np = String(newPseudo || '').trim();
       if (np.length < 3) throw new Error('Pseudo trop court.');
       if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+      log('updatePseudoSecureLocal: call RPC update_pseudo_secure', np);
       const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
       if (error) throw error;
       localStorage.setItem('pseudo', np);
@@ -259,6 +318,7 @@
           .or(`id.eq.${uid},auth_id.eq.${uid}`)
           .single();
 
+        log('fetchThemesDirectFromDB:', 'data=', data, 'error=', error?.message);
         if (error || !data) return [];
         const raw = data.themes_possedes;
         let arr = [];
@@ -275,27 +335,74 @@
           }
         }
         return [...new Set(arr.map(normalizeThemeKey).filter(Boolean))];
-      } catch { return []; }
+      } catch(e) { warn('fetchThemesDirectFromDB exception', e?.message||e); return []; }
     }
 
-    // Lecture pseudo fiable (DB -> UI)
+    // Lecture pseudo fiable (DB -> UI) avec logs détaillés
     async function forcePseudoFromDB() {
+      log('forcePseudoFromDB: start');
       try {
-        if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-        const { data: { user } } = await window.sb.auth.getUser();
-        const uid = user?.id;
-        if (!uid) throw new Error('no uid');
-        const { data, error } = await window.sb
-          .from('users')
-          .select('pseudo')
-          .or(`id.eq.${uid},auth_id.eq.${uid}`)
-          .maybeSingle();
-        if (error) throw error;
-        const pseudo = (data && data.pseudo) || localStorage.getItem('pseudo') || 'MonPseudo';
+        if (window.bootstrapAuthAndProfile) {
+          log('forcePseudoFromDB: calling bootstrapAuthAndProfile');
+          await window.bootstrapAuthAndProfile();
+        }
+        // 1) chemin préféré: userData.getProfileSecure
+        let prof = null;
+        try {
+          prof = await window.userData?.getProfileSecure?.();
+          log('forcePseudoFromDB: getProfileSecure ->', prof);
+        } catch(e) {
+          warn('forcePseudoFromDB: getProfileSecure error', e?.message||e);
+        }
+
+        let pseudo = (prof && prof.pseudo) ? String(prof.pseudo).trim() : '';
+
+        // 2) fallback DB direct
+        if(!pseudo){
+          const { data: { user } } = await window.sb.auth.getUser();
+          const uid = user?.id;
+          if (!uid) throw new Error('no uid');
+          const { data, error } = await window.sb
+            .from('users')
+            .select('pseudo')
+            .or(`id.eq.${uid},auth_id.eq.${uid}`)
+            .maybeSingle();
+          log('forcePseudoFromDB: select users.pseudo ->', data, 'error=', error?.message);
+          if (error) throw error;
+          pseudo = (data && data.pseudo) ? String(data.pseudo).trim() : '';
+        }
+
+        // 3) dernier filet: localStorage
+        if(!pseudo){
+          pseudo = (localStorage.getItem('pseudo') || '').trim();
+          log('forcePseudoFromDB: fallback localStorage ->', pseudo);
+        }
+
+        // 4) générer en ultime recours
+        if(!pseudo){
+          pseudo = 'Player_' + Math.random().toString(36).slice(2,8);
+          log('forcePseudoFromDB: generated pseudo ->', pseudo);
+        }
+
         localStorage.setItem('pseudo', pseudo);
         const el = document.getElementById('profilPseudo');
-        if (el) el.textContent = pseudo;
-      } catch(e) { console.warn('[forcePseudoFromDB]', e?.message||e); }
+        if (el) {
+          el.textContent = pseudo;
+          log('forcePseudoFromDB: set DOM ->', pseudo);
+        } else {
+          warn('forcePseudoFromDB: #profilPseudo introuvable');
+        }
+      } catch(e) {
+        warn('forcePseudoFromDB exception', e?.message||e);
+        // Affiche quand même un fallback local
+        const el = document.getElementById('profilPseudo');
+        if (el) {
+          const fallback = (localStorage.getItem('pseudo') || '').trim() || 'Player_' + Math.random().toString(36).slice(2,8);
+          el.textContent = fallback;
+          localStorage.setItem('pseudo', fallback);
+          log('forcePseudoFromDB: set fallback ->', fallback);
+        }
+      }
     }
 
     // Popup pseudo
@@ -305,35 +412,40 @@
       const btnSave = document.getElementById('btnSavePseudo');
       const btnCancel = document.getElementById('btnCancelPseudo');
       const input = document.getElementById('newPseudo');
-      const err = document.getElementById('pseudoError');
+      const errBox = document.getElementById('pseudoError');
 
       if (!btnOpen || !btnSave || !btnCancel) {
-        console.warn('[profil] éléments popup pseudo manquants'); return;
+        warn('setupPseudoPopup: éléments popup manquants'); return;
       }
 
       btnOpen.onclick = () => {
-        err.textContent = '';
+        errBox.textContent = '';
         input.value = localStorage.getItem("pseudo") || '';
         popup.classList.add('active');
         setTimeout(()=>input.focus(), 50);
+        log('popupPseudo: open, init value=', input.value);
       };
-      btnCancel.onclick = () => popup.classList.remove('active');
+      btnCancel.onclick = () => { popup.classList.remove('active'); log('popupPseudo: cancel'); };
 
       btnSave.onclick = async () => {
         const v = (input.value || '').trim();
-        if (!v) { err.textContent = i18nSafe('profil.popup.error.empty','Entre un pseudo.'); return; }
-        if (v.length > 20) { err.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
+        log('popupPseudo: save click ->', v);
+        if (!v) { errBox.textContent = i18nSafe('profil.popup.error.empty','Entre un pseudo.'); return; }
+        if (v.length > 20) { errBox.textContent = i18nSafe('profil.popup.error.length','20 caractères max.'); return; }
         try {
           if (window.userData?.updatePseudoSecure) {
+            log('popupPseudo: calling userData.updatePseudoSecure');
             await window.userData.updatePseudoSecure(v);
           } else {
+            log('popupPseudo: calling updatePseudoSecureLocal');
             await updatePseudoSecureLocal(window.sb, v);
           }
           await forcePseudoFromDB();
-          err.textContent = i18nSafe('profil.popup.success','Pseudo mis à jour.');
+          errBox.textContent = i18nSafe('profil.popup.success','Pseudo mis à jour.');
           setTimeout(() => popup.classList.remove('active'), 500);
         } catch(e) {
-          err.textContent = (e && e.message) ? e.message : i18nSafe('profil.popup.error.generic','Erreur lors de la mise à jour.');
+          errBox.textContent = (e && e.message) ? e.message : i18nSafe('profil.popup.error.generic','Erreur lors de la mise à jour.');
+          err('popupPseudo: save error', e?.message||e);
         }
       };
     }
@@ -346,6 +458,7 @@
 
       popup.classList.add("active");
       themeList.innerHTML = '<div style="opacity:.7;padding:12px">Chargement…</div>';
+      log('openThemePopup: open');
 
       // Assure la création du profil pour les nouveaux
       await getProfileEnsured().catch(()=>{});
@@ -367,6 +480,7 @@
                   ${label}${locked ? ' 🔒' : ''}
                 </button>`;
       }).join('');
+      log('openThemePopup: rendered themes, unlocked=', Array.from(ownedSet));
 
       let selectedTheme = normalizeThemeKey(localStorage.getItem("themeVBlocks") || "neon");
       document.querySelectorAll('.theme-choice-vb').forEach(btn => {
@@ -378,6 +492,7 @@
           document.querySelectorAll('.theme-choice-vb').forEach(b=>b.classList.remove('active'));
           btn.classList.add('active');
           selectedTheme = normalizeThemeKey(btn.dataset.theme);
+          log('openThemePopup: select theme ->', selectedTheme);
         };
       });
 
@@ -385,33 +500,50 @@
         if (!selectedTheme) return;
         try {
           window.userData?.applyLocalTheme(selectedTheme);
+          // purge autosave
           try {
             Object.keys(localStorage).forEach(k => { if (k.startsWith('vblocks:autosave:')) localStorage.removeItem(k); });
           } catch(_){}
+          log('openThemePopup: applied theme', selectedTheme);
         } catch(e) {
           alert("Impossible d'appliquer le thème : " + (e?.message || 'Erreur'));
+          err('openThemePopup: apply error', e?.message||e);
           return;
         }
         popup.classList.remove('active');
       };
-      document.getElementById('btnCancelTheme').onclick = () => popup.classList.remove('active');
+      document.getElementById('btnCancelTheme').onclick = () => { popup.classList.remove('active'); log('openThemePopup: cancel'); };
     }
 
     // Boot de la page — auth unique via userData.js (avec fallback et lecture assurée)
     window.addEventListener("DOMContentLoaded", async () => {
+      log('DOMContentLoaded');
+
+      // Attache l’observer/verrou immédiatement pour tracer tout écrasement
+      attachPseudoObserverAndLock();
+
       try {
         if (window.bootstrapAuthAndProfile) {
+          log('bootstrapAuthAndProfile: start');
           await window.bootstrapAuthAndProfile();
+          log('bootstrapAuthAndProfile: done');
         } else {
+          log('ensureAuthAndProfileFallback: start');
           await ensureAuthAndProfileFallback();
+          log('ensureAuthAndProfileFallback: done');
         }
       } catch(e) {
-        console.warn('[Profil bootstrap]', e?.message || e);
+        warn('bootstrap error', e?.message || e);
         await ensureAuthAndProfileFallback();
       }
 
       // Thème visuel local
-      await window.userData?.syncThemeFromLocal?.().catch(()=>{});
+      try {
+        await window.userData?.syncThemeFromLocal?.();
+        log('syncThemeFromLocal ok');
+      } catch(e) {
+        warn('syncThemeFromLocal error', e?.message||e);
+      }
 
       // Pseudo (cloud -> local) — lecture assurée
       await forcePseudoFromDB();
@@ -420,44 +552,36 @@
       setupPseudoPopup(window.sb);
       const btnThemes = document.getElementById("changeThemeBtn");
       if (btnThemes) {
-        btnThemes.onclick = () => { try { openThemePopup(); } catch(e){ console.error('[openThemePopup]', e); } };
+        btnThemes.onclick = () => { try { openThemePopup(); } catch(e){ err('openThemePopup', e); } };
       } else {
-        console.warn('[profil] changeThemeBtn introuvable');
+        warn('changeThemeBtn introuvable');
       }
 
       // "Nos applis" désactivé
       const btnApplis = document.getElementById("applisBtn");
       if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
-    });
-  </script>
 
-  <!-- Anti-écrasement de l'affichage du pseudo (ne remplace rien, juste protège) -->
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const el = document.getElementById('profilPseudo');
-      if (!el) return;
+      // Rechargement pseudo si la session/auth change (ex: reconnexion)
+      try {
+        window.sb?.auth?.onAuthStateChange?.((_evt) => {
+          log('onAuthStateChange -> refresh pseudo');
+          forcePseudoFromDB();
+        });
+      } catch(e) {
+        warn('onAuthStateChange setup error', e?.message||e);
+      }
 
-      // rétablit la valeur souhaitée si un autre script réécrit "MonPseudo"
-      const desired = () => (localStorage.getItem('pseudo') || el.textContent || 'MonPseudo');
-      let last = desired();
-
-      // Une passe immédiate après les autres scripts
-      setTimeout(() => {
-        const want = desired();
-        if (el.textContent !== want) el.textContent = want;
-        last = want;
-      }, 0);
-
-      // Observe et restaure si quelqu'un écrase
-      const obs = new MutationObserver(() => {
-        const want = localStorage.getItem('pseudo') || last;
-        if (el.textContent !== want) {
-          console.warn('[profilPseudo] tentative de réécriture → restore', { from: el.textContent, to: want });
-          el.textContent = want;
-          last = want;
-        }
-      });
-      obs.observe(el, { childList: true, characterData: true, subtree: true });
+      // Log l’UID et le pseudo DB pour vérif rapide
+      try{
+        const { data:{ user } } = await window.sb.auth.getUser();
+        log('DEBUG uid=', user?.id);
+        const { data, error } = await window.sb
+          .from('users').select('id,auth_id,pseudo')
+          .or(`id.eq.${user.id},auth_id.eq.${user.id}`).maybeSingle();
+        log('DEBUG users row=', data, 'error=', error?.message);
+      } catch(e){
+        warn('DEBUG select users error', e?.message||e);
+      }
     });
   </script>
 </body>
