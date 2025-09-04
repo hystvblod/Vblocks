@@ -430,5 +430,35 @@
       if (btnApplis) { btnApplis.style.display = "none"; btnApplis.onclick = null; }
     });
   </script>
+
+  <!-- Anti-écrasement de l'affichage du pseudo (ne remplace rien, juste protège) -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('profilPseudo');
+      if (!el) return;
+
+      // rétablit la valeur souhaitée si un autre script réécrit "MonPseudo"
+      const desired = () => (localStorage.getItem('pseudo') || el.textContent || 'MonPseudo');
+      let last = desired();
+
+      // Une passe immédiate après les autres scripts
+      setTimeout(() => {
+        const want = desired();
+        if (el.textContent !== want) el.textContent = want;
+        last = want;
+      }, 0);
+
+      // Observe et restaure si quelqu'un écrase
+      const obs = new MutationObserver(() => {
+        const want = localStorage.getItem('pseudo') || last;
+        if (el.textContent !== want) {
+          console.warn('[profilPseudo] tentative de réécriture → restore', { from: el.textContent, to: want });
+          el.textContent = want;
+          last = want;
+        }
+      });
+      obs.observe(el, { childList: true, characterData: true, subtree: true });
+    });
+  </script>
 </body>
 </html>
