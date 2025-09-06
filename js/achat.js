@@ -109,18 +109,24 @@
     if (!p || !p.id) return;
     if (p.price) {
       PRICES_BY_ID[p.id] = p.price; // prix localisé
+      console.log('[IAP] updated price:', p.id, '=>', p.price);
       refreshDisplayedPrices();
+    } else {
+      console.log('[IAP] product updated sans price:', p.id);
     }
   }
 
   // --- Wiring principal (uniquement après deviceready) ---
   document.addEventListener('deviceready', function onReady(){
+    console.log('[IAP] deviceready fired');
+
     if (!_iapAvailable()) {
       console.warn('[achat] Plugin cordova-purchase indisponible (build web ?). Les prix resteront "—".');
       return;
     }
 
     const IAP = window.store;
+    console.log('[IAP] plugin present =', !!IAP, 'verbosity =', IAP && IAP.verbosity);
 
     // 1) REGISTER produits
     PRODUCTS.forEach(prod => {
@@ -130,10 +136,13 @@
         type: _mapType(prod.type),
       });
     });
+    console.log('[IAP] registered:', PRODUCTS.map(p => p.id));
 
     // 2) Listeners généraux
     IAP.ready(() => {
       STORE_READY = true;
+      console.log('[IAP] READY callback hit');
+
       // On capture tous les prix connus et on push dans l’UI
       try {
         PRODUCTS.forEach(({ id }) => {
@@ -142,7 +151,27 @@
             PRICES_BY_ID[id] = p.price;
           }
         });
+        // log des produits connus à READY
+        try {
+          const list = (IAP.products || []).map(p => ({ id: p.id, title: p.title, price: p.price }));
+          console.info('[IAP] READY products:', list);
+        } catch(e) {
+          console.warn('[IAP] ready list error', e);
+        }
+
         refreshDisplayedPrices();
+
+        // --- HOTFIX peinture UI répétée (si l'UI s'est peinte avant les prix)
+        try { window.refreshDisplayedPrices && window.refreshDisplayedPrices(); } catch(_) {}
+        setTimeout(function(){ try { window.refreshDisplayedPrices && window.refreshDisplayedPrices(); } catch(_) {} }, 1500);
+        var __tries = 0;
+        var __t = setInterval(function(){
+          try {
+            window.refreshDisplayedPrices && window.refreshDisplayedPrices();
+            if ((++__tries) >= 5) clearInterval(__t); // arrête après ~5s
+          } catch(_){ clearInterval(__t); }
+        }, 1000);
+
       } catch (_) {}
     });
 
@@ -151,11 +180,12 @@
 
     // — Achat approuvé: créditer + finish (idempotent)
     IAP.when('product').approved(async function(p){
+      console.log('[IAP] approved:', p && p.id, p && p.transaction);
       try {
         // idempotence: éviter double exécution si l’event rejoue
         const txId = p && p.transaction && (p.transaction.id || p.transaction.orderId);
         if (txId) {
-          if (PROCESSED_TX.has(txId)) { p.finish(); return; }
+          if (PROCESSED_TX.has(txId)) { console.log('[IAP] approved duplicate tx, finishing'); p.finish(); return; }
           PROCESSED_TX.add(txId);
         }
 
@@ -197,11 +227,19 @@
     });
 
     // 3) Refresh (déclenche la récupération des prix/états)
+    console.log('[IAP] refresh() call 1');
     try {
       IAP.refresh();
     } catch (e) {
       console.warn('[achat] refresh error:', e?.message || e);
     }
+    // un 2e refresh un peu plus tard (réseaux lents / billing lent)
+    setTimeout(() => {
+      try {
+        console.log('[IAP] refresh() call 2');
+        IAP.refresh();
+      } catch(_) {}
+    }, 2500);
   });
 
   // --- API achat programmatique (optionnelle) ---
