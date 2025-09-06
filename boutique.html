@@ -12,11 +12,10 @@
 
   <!-- Cordova (404 en web = normal) -->
   <script src="cordova.js"></script>
-
+<script src="js/achat.js"></script>
 
   <!-- Ads (récompensées) uniquement -->
   <script src="js/pub.js"></script>
-  <script src="js/achat.js"></script>
 
   <link rel="stylesheet" href="style/main.css">
   <style>
@@ -213,6 +212,18 @@ function setupPubCartouches(){
         finally{ setupPubCartouches(); }
       };
     }
+  });
+}
+
+/* ---------- clics cartouches IAP (désactivés) ---------- */
+function setupBoutiqueAchats(){
+  document.querySelectorAll('#achats-list .special-cartouche[data-product-id]').forEach(node=>{
+    const id = node.getAttribute('data-product-id');
+    node.style.cursor = 'pointer';
+    node.onclick = () => {
+      if (window.buyProduct) window.buyProduct(id);
+      else alert("Boutique en cours d'initialisation… réessaie dans un instant.");
+    };
   });
 }
 
