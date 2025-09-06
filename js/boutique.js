@@ -299,7 +299,6 @@ function setupBoutiqueAchats() {
     if (pid) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        // Confirmation UI optionnelle
         if (typeof window.lancerPaiement === 'function') {
           const ok = await window.lancerPaiement(alias);
           if (!ok) return;
