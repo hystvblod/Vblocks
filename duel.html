@@ -89,7 +89,7 @@
       margin-right: 6px;
     }
 
-    /* === Ajout Bloc CANVAS Top, même style que classic === */
+    /* === Bloc CANVAS Top === */
     .top-canvas-row {
       width: 100%;
       display: flex;
@@ -98,7 +98,6 @@
       margin: 0 0 12px 0;
       gap: 16px;
     }
-
     .side-canvas-block {
       display: flex;
       flex-direction: column;
@@ -121,7 +120,6 @@
       box-shadow: 0 2px 8px #2f2f6a24;
       display: block;
     }
-
     .middle-duel-title {
       display: flex;
       flex-direction: column;
@@ -231,6 +229,7 @@
 
   <audio id="music" src="assets/sounds/chill.mp3" loop></audio>
 
+  <!-- Librairies / scripts -->
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/pub.js"></script>
@@ -349,37 +348,77 @@
 
       if (!duelCode) {
         showDuelPopup('choice');
-      } else {
-        let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
-        duelId = data?.id;
-        console.log("[DUEL] Room fetch:", data);
-        if (!data) {
-          showDuelPopup('choice');
-          alert("Ce duel n'existe pas ou a expiré.");
+        return;
+      }
+
+      // Lecture room
+      const { data, error } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
+      if (error || !data) {
+        showDuelPopup('choice');
+        alert("Ce duel n'existe pas ou a expiré.");
+        return;
+      }
+      duelId = data.id;
+
+      if (playerNum === 1) {
+        showDuelPopup('wait', { code: duelCode });
+      } else if (playerNum === 2) {
+        console.log("[DUEL] J2 rejoint la room, update player2/status pending");
+
+        // 1) UID garanti
+        const uid = (window.getUserId ? await window.getUserId() : null);
+        if (!uid) {
+          alert("Impossible de rejoindre (UID null). Active l’auth anonyme et recharge.");
           return;
         }
-        if (playerNum === 1) {
-          showDuelPopup('wait', { code: duelCode });
-        } else if (playerNum === 2) {
-          console.log("[DUEL] J2 rejoint la room, update player2/status pending");
-          await window.sb.from('duels')
-            .update({ player2: await window.getUserId(), status: "pending" })
-            .eq('id', duelId);
-          showDuelPopup('confirm');
+
+        // 2) Room déjà pleine ?
+        if (data.player2 && data.player2 !== uid) {
+          alert("Cette room est déjà pleine.");
+          return;
         }
-        pollDuelStatus();
+
+        // 3) UPDATE contrôlé + lecture retour
+        const { data: after, error: updErr } = await window.sb
+          .from('duels')
+          .update({ player2: uid, status: "pending" })
+          .eq('id', duelId)
+          .select('id, player1, player2, status')
+          .single();
+
+        if (updErr) {
+          console.error('[DUEL] update player2 failed:', updErr);
+          alert("Échec pour rejoindre le duel (UPDATE). Regarde la console.");
+          return;
+        }
+        if (!after?.player2) {
+          console.warn('[DUEL] UPDATE ok mais player2 vide:', after);
+          alert("player2 est resté vide (UID manquant).");
+          return;
+        }
+
+        showDuelPopup('confirm');
       }
+
+      // Lancer la surveillance
+      pollDuelStatus();
     }
 
     async function createNewDuel() {
       duelCode = genDuelCode();
       playerNum = 1;
       console.log("[DUEL] Création nouvelle room avec code:", duelCode);
+
+      // Assure l'UID (créateur)
+      const uid = (window.getUserId ? await window.getUserId() : null);
+      if (!uid) { alert("Auth introuvable (UID null)."); return; }
+
       let { data, error } = await window.sb.from('duels').insert([{
         code: duelCode,
-        player1: await window.getUserId(),
+        player1: uid,
         status: "waiting"
       }]).select().single();
+
       duelId = data?.id;
       if (error || !duelId) {
         console.log("[DUEL] ERREUR création:", error, data);
@@ -394,15 +433,26 @@
     async function onAcceptDuel() {
       // J2 accepte le duel !
       console.log("[DUEL] J2 clique Accept Duel");
-      await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
-      let { data } = await window.sb.from('duels').select('*').eq('id', duelId).single();
+
+      const { error: e1 } = await window.sb.from('duels').update({ status: 'ready' }).eq('id', duelId);
+      if (e1) { console.error(e1); alert('MAJ status failed'); return; }
+
+      const { data, error: e2 } = await window.sb.from('duels').select('*').eq('id', duelId).single();
+      if (e2) { console.error(e2); alert('Lecture duel failed'); return; }
+
       if (data && !data.pieces_seq) {
         console.log("[DUEL] J2 va générer la séquence et passer en started");
         const seq = Array.from({ length: 1000 }, () => Math.floor(Math.random() * 7)).join(',');
-        await window.sb.from('duels').update({ pieces_seq: seq, status: "started" }).eq('id', duelId);
+        const { error: e3 } = await window.sb.from('duels')
+          .update({ pieces_seq: seq, status: "started" })
+          .eq('id', duelId);
+        if (e3) { console.error(e3); alert('MAJ seq failed'); return; }
       } else {
         console.log("[DUEL] J2 passe en started (sequence déjà là)");
-        await window.sb.from('duels').update({ status: "started" }).eq('id', duelId);
+        const { error: e4 } = await window.sb.from('duels')
+          .update({ status: "started" })
+          .eq('id', duelId);
+        if (e4) { console.error(e4); alert('Start failed'); return; }
       }
       showDuelPopup('countdown');
       startCountdown();
@@ -411,11 +461,14 @@
     async function pollDuelStatus() {
       let tries = 0;
       while (tries++ < 80) {
-        let { data } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
+        const { data, error } = await window.sb.from('duels').select('*').eq('code', duelCode).single();
+        if (error) { await new Promise(r => setTimeout(r, 1000)); continue; }
         console.log(`[DUEL] poll #${tries}, status=`, data?.status, data);
         if (!data) break;
+
         if (data.status === "waiting") showDuelPopup('wait', { code: duelCode });
         if (playerNum === 2 && data.status === "pending") showDuelPopup('confirm');
+
         if ((playerNum === 1 || playerNum === 2) && data.status === "started" && data.pieces_seq) {
           console.log("[DUEL] La partie commence, status=started, pieces_seq OK !");
           showDuelPopup('countdown');
@@ -441,14 +494,6 @@
       }, 1000);
     }
 
-    // ✅ Attendre i18n avant de démarrer (sinon les boutons restent en clés)
-    window.addEventListener("DOMContentLoaded", async () => {
-      if (window.i18nReady) { try { await window.i18nReady; } catch(e){} }
-      startDuelFlow();
-    });
-
-    // (handler musique en doublon supprimé — géré par game_duel.js)
-
     async function updateVCoinsDisplay() {
       let vcoins = 0;
       try {
@@ -463,6 +508,18 @@
     }
     updateVCoinsDisplay();
     window.addEventListener("storage", updateVCoinsDisplay);
+
+    // ✅ Attendre i18n + AUTH avant de démarrer
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        if (window.i18nReady) { try { await window.i18nReady; } catch(e){} }
+        if (window.bootstrapAuthAndProfile) { await window.bootstrapAuthAndProfile(); }
+        await startDuelFlow();
+      } catch (e) {
+        console.error('[DUEL] init failed', e);
+        alert("Init duel impossible (auth).");
+      }
+    });
   </script>
 </body>
 </html>
