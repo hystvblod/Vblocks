@@ -1,5 +1,5 @@
 /* ===========================
-   boutique.js (IAP + UI boutique) — version PROD native + RPC
+   boutique.js (IAP + UI boutique) — PROD natif + RPC
    =========================== */
 
 /* ---------- Config ---------- */
@@ -8,6 +8,7 @@ const ENABLE_WEB_FALLBACK = false; // doit rester false en prod
 /* ---------- Helper i18n ---------- */
 function t(key) {
   if (window.i18n && window.i18n[key]) return window.i18n[key];
+  if (typeof window.i18nGet === 'function') return window.i18nGet(key);
   return key;
 }
 
@@ -21,6 +22,8 @@ const THEMES = [
   { key: "japon",  name: "Japon" }
 ];
 
+const THEME_PRICE = 5000;
+
 /* ---------- Cartouches UI (achats) ---------- */
 const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.points3000",  icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "", amount: 3000 },
@@ -31,8 +34,6 @@ const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.pub1jeton",   icon: '<img src="assets/images/jeton.webp" alt="Pub">',    color: 'color-green' },
   { key: "boutique.cartouche.pub300points",icon: '<img src="assets/images/vcoin.webp" alt="Pub">',    color: 'color-blue' }
 ];
-
-const THEME_PRICE = 5000;
 
 /* ---------- IDs produits (Play / iOS) ---------- */
 const PRODUCT_IDS = window.PRODUCT_IDS = {
@@ -48,13 +49,49 @@ const PRODUCT_IDS = window.PRODUCT_IDS = {
 const PRICES_BY_ALIAS = window.PRICES_BY_ALIAS = {};
 const PRICES_BY_ID = Object.create(null); // { productId: "€0,99" }
 
-/* ---------- Utilitaires ---------- */
+/* ---------- Utilitaires IAP ---------- */
 function _iapAvailable() {
   return !!(window.store && typeof window.store.register === 'function');
 }
 function _mapType(alias) {
   if (!window.store) return null;
   return alias === 'nopub' ? window.store.NON_CONSUMABLE : window.store.CONSUMABLE;
+}
+
+window.__IAP_READY__ = false;
+
+function isNativeRuntime() {
+  try {
+    if (window.Capacitor && typeof window.Capacitor.getPlatform === 'function') {
+      return window.Capacitor.getPlatform() !== 'web';
+    }
+  } catch(_) {}
+  if (window.cordova && typeof window.cordova.platformId === 'string') return true;
+  return false;
+}
+
+async function waitIapReady(maxMs = 15000) {
+  const step = 150;
+  let waited = 0;
+  while (!window.__IAP_READY__ && waited < maxMs) {
+    await new Promise(r => setTimeout(r, step));
+    waited += step;
+  }
+  return !!window.__IAP_READY__;
+}
+
+async function safeOrder(productId) {
+  const ok = await waitIapReady(15000);
+  if (!ok || !window.store || typeof window.store.order !== 'function') {
+    if (!isNativeRuntime() && !ENABLE_WEB_FALLBACK) {
+      alert("Boutique indisponible dans ce contexte. Lance l’application installée.");
+      return;
+    }
+    alert("Boutique en cours d'initialisation… réessaie dans un instant.");
+    return;
+  }
+  try { window.store.order(productId); }
+  catch(e){ alert("Erreur achat: " + (e?.message || e)); }
 }
 
 /* ===========================
@@ -168,15 +205,24 @@ function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
   if (!$achatsList) return;
   const achatsHtml = SPECIAL_CARTOUCHES.map(c => `
-    <div class="special-cartouche ${c.color}">
+    <div class="special-cartouche ${c.color}" ${(() => {
+      const alias = c.key.split('.').pop();
+      const pid = PRODUCT_IDS[alias];
+      return pid ? `data-product-id="${pid}"` : '';
+    })()}>
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      <span class="prix-label">${c.prix || "—"}</span>
+      <span class="prix-label">${c.prix || (PRODUCT_IDS[c.key?.split('.').pop()] ? "—" : "")}</span>
     </div>
   `).join('');
   $achatsList.innerHTML = achatsHtml;
 
   setupBoutiqueAchats(); // rebind après remplacement DOM
+
+  // 👉 déclenche le remplissage des prix par achat.js si dispo
+  if (typeof window.refreshDisplayedPrices === 'function') {
+    window.refreshDisplayedPrices();
+  }
 }
 
 async function renderThemes() {
@@ -208,12 +254,20 @@ async function renderThemes() {
   });
 
   const soldeEls = document.querySelectorAll('.vcoins-solde');
-  if (soldeEls[0]) soldeEls[0].textContent = await getVCoinsSupabase();
-  if (soldeEls[1]) soldeEls[1].textContent = await getJetonsSupabase();
+  try {
+    if (soldeEls[0]) soldeEls[0].textContent = await getVCoinsSupabase();
+    if (soldeEls[1]) soldeEls[1].textContent = await getJetonsSupabase();
+  } catch(_) {}
+
+  // tenter à nouveau le remplissage des prix (si IAP a répondu entre-temps)
+  if (typeof window.refreshDisplayedPrices === 'function') {
+    window.refreshDisplayedPrices();
+    setTimeout(() => { try { window.refreshDisplayedPrices(); } catch(_){} }, 1500);
+  }
 }
 
 /* ===========================
-   PUB récompensée — via pub.js (SSV)
+   PUB récompensée — via pub.js
    =========================== */
 async function showRewardBoutique() {
   try {
@@ -255,17 +309,11 @@ function setupBoutiqueAchats() {
     if (pid) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (_iapAvailable()) {
-          // Optionnel : confirmation custom si tu as une UI
-          if (typeof window.lancerPaiement === 'function') {
-            const ok = await window.lancerPaiement(alias);
-            if (!ok) return;
-          }
-          try { window.store.order(pid); }
-          catch (e) { alert('Erreur achat: ' + (e?.message || e)); }
-        } else {
-          alert("Achat via Store indisponible ici. Ouvre l’app installée depuis le Store.");
+        if (typeof window.lancerPaiement === 'function') {
+          const ok = await window.lancerPaiement(alias);
+          if (!ok) return;
         }
+        await safeOrder(pid);
       };
       return;
     }
@@ -285,116 +333,16 @@ function setupBoutiqueAchats() {
 /* ===========================
    IAP Cordova Purchase
    =========================== */
-const PROCESSED_TX = new Set();
-
-function refreshDisplayedPrices() {
-  try {
-    document.querySelectorAll('#achats-list .special-cartouche').forEach(node => {
-      const label = node.querySelector('.theme-label');
-      const alias = label?.dataset?.i18n?.split('.').pop();
-      if (!alias) return;
-      const pid = PRODUCT_IDS[alias];
-      if (!pid) return;
-      const price = PRICES_BY_ID[pid] || PRICES_BY_ALIAS[alias]?.price || '';
-      const el = node.querySelector('.prix-label');
-      if (el && price) el.textContent = price;
-    });
-  } catch (_) {}
-}
-window.refreshDisplayedPrices = refreshDisplayedPrices;
-
-document.addEventListener('deviceready', function () {
-  if (!_iapAvailable()) { console.warn("[IAP] Plugin purchase non dispo"); return; }
-  const IAP = window.store;
-
-  // Register
-  Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
-    IAP.register({ id, alias, type: _mapType(alias) });
-  });
-
-  // Prix localisés → mémos + UI
-  IAP.when('product').updated(function (p) {
-    if (!p || !p.id) return;
-    PRICES_BY_ID[p.id] = p.price || PRICES_BY_ID[p.id] || '';
-    const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p.id);
-    if (alias) {
-      PRICES_BY_ALIAS[alias] = {
-        price: p.price || '',
-        currency: p.currency || '',
-        micros: p.priceMicros || 0
-      };
-    }
-    refreshDisplayedPrices();
-  });
-
-  // Achat approuvé → crédits SERVEUR (RPC)
-  IAP.when('product').approved(async function (p) {
-    try {
-      const txId = p?.transaction?.id || p?.transaction?.orderId;
-      if (txId) {
-        if (PROCESSED_TX.has(txId)) { p.finish(); return; }
-        PROCESSED_TX.add(txId);
-      }
-      const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p.id);
-
-      // Crédit côté serveur selon le produit
-      if (alias === 'points3000')   await addVCoinsSupabase(3000);
-      else if (alias === 'points10000') await addVCoinsSupabase(10000);
-      else if (alias === 'jetons12')    await addJetonsSupabase(12);
-      else if (alias === 'jetons50')    await addJetonsSupabase(50);
-      else if (alias === 'nopub')       await setNoAds();
-
-      p.finish();
-      await renderThemes();
-      alert("Achat réussi !");
-    } catch (e) {
-      console.warn("[IAP] post-achat erreur:", e);
-      try { p.finish(); } catch (_) {}
-      alert("Erreur post-achat.");
-    }
-  });
-
-  // Possédé / restauré
-  IAP.when('product').owned(function (p) {
-    const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p?.id);
-    if (alias === 'nopub') setNoAds();
-  });
-
-  IAP.error(function (err) {
-    console.warn('[IAP] error:', err?.message || err);
-  });
-
-  IAP.ready(function () {
-    // snapshot initial
-    IAP.products.forEach(prod => {
-      const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === prod.id);
-      if (alias) {
-        PRICES_BY_ALIAS[alias] = {
-          price: prod.price || "",
-          currency: prod.currency || "",
-          micros: prod.priceMicros || 0
-        };
-      }
-    });
-    // Peindre les prix
-    SPECIAL_CARTOUCHES.forEach(c => {
-      const alias = c.key?.split('.').pop();
-      const pid = PRODUCT_IDS[alias];
-      if (!pid) return;
-      const p = IAP.get(pid);
-      if (p && p.price) c.prix = p.price;
-    });
-    renderAchats();
-    setupBoutiqueAchats();
-  });
-
-  try { IAP.refresh(); } catch (e) { console.warn('[IAP] refresh:', e?.message || e); }
-});
 
 /* ===========================
    Bootstrap UI
    =========================== */
 document.addEventListener("DOMContentLoaded", function() {
   renderThemes();
-  refreshDisplayedPrices(); // “—” au début, puis mis à jour après IAP.ready()
+
+  // Au cas où achat.js ait déjà des prix en cache
+  if (typeof window.refreshDisplayedPrices === 'function') {
+    window.refreshDisplayedPrices();
+    setTimeout(() => { try { window.refreshDisplayedPrices(); } catch(_){} }, 1500);
+  }
 });
