@@ -1,5 +1,5 @@
 /* ===========================
-   boutique.js (IAP + UI boutique) — PROD natif + RPC
+   boutique.js (IAP + UI boutique) — version PROD native + RPC
    =========================== */
 
 /* ---------- Config ---------- */
@@ -8,7 +8,6 @@ const ENABLE_WEB_FALLBACK = false; // doit rester false en prod
 /* ---------- Helper i18n ---------- */
 function t(key) {
   if (window.i18n && window.i18n[key]) return window.i18n[key];
-  if (typeof window.i18nGet === 'function') return window.i18nGet(key);
   return key;
 }
 
@@ -49,7 +48,7 @@ const PRODUCT_IDS = window.PRODUCT_IDS = {
 const PRICES_BY_ALIAS = window.PRICES_BY_ALIAS = {};
 const PRICES_BY_ID = Object.create(null); // { productId: "€0,99" }
 
-/* ---------- Utilitaires IAP ---------- */
+/* ---------- Utilitaires ---------- */
 function _iapAvailable() {
   return !!(window.store && typeof window.store.register === 'function');
 }
@@ -58,6 +57,9 @@ function _mapType(alias) {
   return alias === 'nopub' ? window.store.NON_CONSUMABLE : window.store.CONSUMABLE;
 }
 
+/* ==========================================================
+   Détection runtime + attente réelle du SDK IAP
+   ========================================================== */
 window.__IAP_READY__ = false;
 
 function isNativeRuntime() {
@@ -70,7 +72,7 @@ function isNativeRuntime() {
   return false;
 }
 
-async function waitIapReady(maxMs = 15000) {
+async function waitIapReady(maxMs = 15000) {   // ← 15000 au lieu de 5000
   const step = 150;
   let waited = 0;
   while (!window.__IAP_READY__ && waited < maxMs) {
@@ -80,14 +82,27 @@ async function waitIapReady(maxMs = 15000) {
   return !!window.__IAP_READY__;
 }
 
+
 async function safeOrder(productId) {
-  const ok = await waitIapReady(15000);
-  if (!ok || !window.store || typeof window.store.order !== 'function') {
-    if (!isNativeRuntime() && !ENABLE_WEB_FALLBACK) {
-      alert("Boutique indisponible dans ce contexte. Lance l’application installée.");
+  if (!isNativeRuntime()) {
+    if (ENABLE_WEB_FALLBACK) {
+      // (optionnel) simuler un achat en web pour debug
+      alert("DEBUG: achat simulé " + productId);
       return;
     }
-    alert("Boutique en cours d'initialisation… réessaie dans un instant.");
+    alert("Boutique indisponible dans ce contexte. Lance l’application installée.");
+    return;
+  }
+  if (!window.store) {
+    const okLater = await waitIapReady(4000);
+    if (!okLater || !window.store) {
+      alert("Boutique en cours d'initialisation… réessaie dans un instant.");
+      return;
+    }
+  }
+  const ok = await waitIapReady(4000);
+  if (!ok || typeof window.store.order !== 'function') {
+    alert("Boutique indisponible pour le moment. Réessaie.");
     return;
   }
   try { window.store.order(productId); }
@@ -218,11 +233,6 @@ function renderAchats() {
   $achatsList.innerHTML = achatsHtml;
 
   setupBoutiqueAchats(); // rebind après remplacement DOM
-
-  // 👉 déclenche le remplissage des prix par achat.js si dispo
-  if (typeof window.refreshDisplayedPrices === 'function') {
-    window.refreshDisplayedPrices();
-  }
 }
 
 async function renderThemes() {
@@ -254,20 +264,12 @@ async function renderThemes() {
   });
 
   const soldeEls = document.querySelectorAll('.vcoins-solde');
-  try {
-    if (soldeEls[0]) soldeEls[0].textContent = await getVCoinsSupabase();
-    if (soldeEls[1]) soldeEls[1].textContent = await getJetonsSupabase();
-  } catch(_) {}
-
-  // tenter à nouveau le remplissage des prix (si IAP a répondu entre-temps)
-  if (typeof window.refreshDisplayedPrices === 'function') {
-    window.refreshDisplayedPrices();
-    setTimeout(() => { try { window.refreshDisplayedPrices(); } catch(_){} }, 1500);
-  }
+  if (soldeEls[0]) soldeEls[0].textContent = await getVCoinsSupabase();
+  if (soldeEls[1]) soldeEls[1].textContent = await getJetonsSupabase();
 }
 
 /* ===========================
-   PUB récompensée — via pub.js
+   PUB récompensée — via pub.js (SSV)
    =========================== */
 async function showRewardBoutique() {
   try {
@@ -309,6 +311,7 @@ function setupBoutiqueAchats() {
     if (pid) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
+        // Confirmation UI optionnelle
         if (typeof window.lancerPaiement === 'function') {
           const ok = await window.lancerPaiement(alias);
           if (!ok) return;
@@ -335,11 +338,25 @@ function setupBoutiqueAchats() {
    =========================== */
 const PROCESSED_TX = new Set();
 
+function refreshDisplayedPrices() {
+  try {
+    document.querySelectorAll('#achats-list .special-cartouche').forEach(node => {
+      const label = node.querySelector('.theme-label');
+      const alias = label?.dataset?.i18n?.split('.').pop();
+      if (!alias) return;
+      const pid = PRODUCT_IDS[alias];
+      if (!pid) return;
+      const price = PRICES_BY_ID[pid] || PRICES_BY_ALIAS[alias]?.price || '';
+      const el = node.querySelector('.prix-label');
+      if (el && price) el.textContent = price;
+    });
+  } catch (_) {}
+}
+window.refreshDisplayedPrices = refreshDisplayedPrices;
+
 document.addEventListener('deviceready', function () {
   if (!_iapAvailable()) { console.warn("[IAP] Plugin purchase non dispo"); return; }
   const IAP = window.store;
-
-  try { IAP.verbosity = Math.max(IAP.verbosity || 0, 4); } catch(_) {}
 
   // Register
   Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
@@ -358,10 +375,7 @@ document.addEventListener('deviceready', function () {
         micros: p.priceMicros || 0
       };
     }
-    // pousser le prix à l’écran depuis achat.js si dispo
-    if (typeof window.refreshDisplayedPrices === 'function') {
-      window.refreshDisplayedPrices();
-    }
+    refreshDisplayedPrices();
   });
 
   // Achat approuvé → crédits SERVEUR (RPC)
@@ -404,7 +418,7 @@ document.addEventListener('deviceready', function () {
   IAP.ready(function () {
     window.__IAP_READY__ = true;
 
-    // snapshot initial (mémo prix)
+    // snapshot initial
     IAP.products.forEach(prod => {
       const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === prod.id);
       if (alias) {
@@ -415,8 +429,7 @@ document.addEventListener('deviceready', function () {
         };
       }
     });
-
-    // Peindre les prix init + UI
+    // Peindre les prix
     SPECIAL_CARTOUCHES.forEach(c => {
       const alias = c.key?.split('.').pop();
       const pid = PRODUCT_IDS[alias];
@@ -426,16 +439,9 @@ document.addEventListener('deviceready', function () {
     });
     renderAchats();
     setupBoutiqueAchats();
-
-    // pousser les prix dans l’UI depuis achat.js
-    if (typeof window.refreshDisplayedPrices === 'function') {
-      window.refreshDisplayedPrices();
-      setTimeout(() => { try { window.refreshDisplayedPrices(); } catch(_){} }, 1500);
-    }
   });
 
   try { IAP.refresh(); } catch (e) { console.warn('[IAP] refresh:', e?.message || e); }
-  setTimeout(() => { try { IAP.refresh(); } catch(_){} }, 3000);
 });
 
 /* ===========================
@@ -443,10 +449,5 @@ document.addEventListener('deviceready', function () {
    =========================== */
 document.addEventListener("DOMContentLoaded", function() {
   renderThemes();
-
-  // Au cas où achat.js ait déjà des prix en cache
-  if (typeof window.refreshDisplayedPrices === 'function') {
-    window.refreshDisplayedPrices();
-    setTimeout(() => { try { window.refreshDisplayedPrices(); } catch(_){} }, 1500);
-  }
+  refreshDisplayedPrices(); // “—” au début, puis mis à jour après IAP.ready()
 });
