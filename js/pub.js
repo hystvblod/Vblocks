@@ -1,25 +1,5 @@
 // =============================
-// PUB.JS — AdMob (Capacitor Community, no-import) + SSV Supabase
-// Version NATIVE PROD (HTML + Capacitor) — 2025-09-04
-//  • Interstitiel au DÉBUT de la 4e action (nouvelle/reprise/recommencer)
-//  • Fix end-card freeze + revive no-SSV-block conservés
-// =============================
-//
-// Chargement côté HTML (exemple):
-//   <script src="cordova.js"></script> <!-- généré par Capacitor -->
-//   <script src="js/pub.js"></script>
-//
-// ❗ Points clés :
-// - AUCUN import / AUCUN type="module".
-// - API via Capacitor.Plugins.AdMob (community).
-// - Pas d’IDs de test ici (mettre initializeForTesting=false en prod).
-// - Crédit STRICTEMENT côté serveur via SSV (Edge Function). Ici on ne fait que rafraîchir l’UI.
-//   👉 Sauf pour "revive": on n’attend PAS le SSV pour relancer la partie.
-//
-// Expose global :
-//   window.showInterstitial, window.showRewardBoutique, window.showRewardVcoins, window.showRewardRevive
-//   window.partieCommencee, window.partieReprisee, window.partieRecommencee, window.partieTerminee
-//   window.hasNoAds, window.onRewardClosed
+// PUB.JS — AdMob (Capacitor Community, no-import) — SANS SSV
 // =============================
 (function () {
   'use strict';
@@ -27,49 +7,62 @@
   // ------- Raccourcis globaux -------
   var Capacitor = (window.Capacitor || {});
   var AdMob = (Capacitor.Plugins && Capacitor.Plugins.AdMob) ? Capacitor.Plugins.AdMob : null;
+  var App = (Capacitor.App) ? Capacitor.App
+          : ((Capacitor.Plugins && Capacitor.Plugins.App) ? Capacitor.Plugins.App : null);
 
   // ------- STRICT PROD -------
-  var __DEV_ADS__ = false;      // si tu veux tester avec init=testing, passe à true en debug
-  var SHOW_DIAG_PANEL = false;  // pas de panneau overlay
+  var __DEV_ADS__ = false;      // true pour tests locaux
+  var SHOW_DIAG_PANEL = false;  // overlay debug (laisse false en prod)
 
   // --- Tes Ad Units réelles ---
   var AD_UNIT_ID_INTERSTITIEL = 'ca-app-pub-6837328794080297/9890831605';
   var AD_UNIT_ID_REWARDED     = 'ca-app-pub-6837328794080297/3006407791';
 
   // --- Réglages interstitiels ---
-  // On déclenche la pub AU DÉBUT de la 4ᵉ action (après 3 actions cumulées)
-  var INTERSTITIEL_APRES_X_ACTIONS = 3;
+  var INTERSTITIEL_APRES_X_ACTIONS = 3; // pub AU DÉBUT de la 4ᵉ action
   var INTER_COOLDOWN_MS = 0; // anti-spam (0 = off)
 
-  // --- Récompenses par défaut (affichage uniquement ; crédit via SSV serveur) ---
+  // --- Récompenses par défaut (affichage/UI) ---
   window.REWARD_JETONS = typeof window.REWARD_JETONS === 'number'  ? window.REWARD_JETONS : 1;
   window.REWARD_VCOINS = typeof window.REWARD_VCOINS === 'number'  ? window.REWARD_VCOINS : 300;
   window.REWARD_REVIVE = typeof window.REWARD_REVIVE === 'boolean' ? window.REWARD_REVIVE : true;
 
-  // --- SSV activé ---
-  var ENABLE_SSV = true;
+  // --- SSV désactivé (NO-SSV)
+  var ENABLE_SSV = false;
 
   // --- Flags d'état ---
   var isRewardShowing = false;
   window.__ads_active = false; // flag global anti-back/anti-overlays côté app
 
-  // --- Compteur unifié persisté ---
-  // Compte TOUTES les "actions de jeu" (nouvelle + reprise + recommencer), hors Duel.
+  // --- Compteur unifié persisté (interstitiels) ---
   var interActionsCount = parseInt(localStorage.getItem('inter_actions_count') || '0', 10);
+  var lastInterTs = parseInt(localStorage.getItem('inter_last_ts') || '0', 10);
 
   // =============================
   // Utils / Auth / Consent
   // =============================
+
+  // ✅ Auth lecture-seule (PAS d'upsert / PAS d'écriture client)
   async function ensureAuth() {
+    const sb = window.sb;
+    if (!sb || !sb.auth) return null;
+
     try {
       if (typeof window.bootstrapAuthAndProfile === 'function') {
-        await window.bootstrapAuthAndProfile();
+        await window.bootstrapAuthAndProfile(); // peut faire signInAnonymously en interne
       }
-    } catch (_e) {}
+    } catch (_) {}
+
+    try {
+      const { data: { user }, error } = await sb.auth.getUser();
+      if (error) return null;
+      return user?.id || null;
+    } catch (_) {
+      return null;
+    }
   }
 
   function getPersonalizedAdsGranted() {
-    // RGPD : lecture de tes drapeaux locaux
     var rgpd = localStorage.getItem('rgpdConsent'); // "accept"|"refuse"|null
     var adsConsent = (localStorage.getItem('adsConsent') || '').toLowerCase();
     var adsEnabled = (localStorage.getItem('adsEnabled') || '').toLowerCase();
@@ -84,7 +77,6 @@
     return false;
   }
   function buildAdMobRequestOptions() {
-    // npa: '1' = non-personnalisées ; '0' = personnalisées
     return { npa: getPersonalizedAdsGranted() ? '0' : '1' };
   }
 
@@ -97,25 +89,48 @@
   }
 
   // =============================
-  // Helpers anti-surcouches avant/après show()
+  // Helpers anti-surcouches avant/après show() — WHITELIST SAFE
   // =============================
+  var APP_OVERLAYS = [
+    '#popup-consent',
+    '#update-banner',
+    '.tooltip-box',
+    '.popup-consent-bg',
+    '.modal-app',
+    '.dialog-app',
+    '.backdrop-app',
+    '.overlay-app',
+    '.loading-app'
+  ];
+
+  function hideOverlays() {
+    try {
+      APP_OVERLAYS.forEach(function(sel){
+        document.querySelectorAll(sel).forEach(function(el){
+          el.__prevDisplay = el.style.display;
+          el.style.display = 'none';
+        });
+      });
+    } catch(_) {}
+  }
+
+  function restoreOverlays() {
+    try {
+      APP_OVERLAYS.forEach(function(sel){
+        document.querySelectorAll(sel).forEach(function(el){
+          el.style.display = (typeof el.__prevDisplay === 'string') ? el.__prevDisplay : '';
+          try { delete el.__prevDisplay; } catch(_) {}
+        });
+      });
+    } catch(_) {}
+  }
+
   function preShowAdCleanup() {
     try {
-      // Pause les In-App Messages OneSignal (si présent)
       if (window.OneSignal && window.OneSignal.InAppMessages) {
         window.OneSignal.InAppMessages.paused = true;
       }
-      // Cache/retire les overlays HTML éventuels
-      document.querySelectorAll('.modal,.popup,.dialog,.backdrop').forEach(function(el){
-        el.style.display = 'none';
-      });
-      var blocker = document.querySelector('.overlay--ad, .overlay, .loading');
-      if (blocker) blocker.remove();
-
-      // Verrou global d'UI (anti-clics fantômes)
-      try { document.documentElement.style.pointerEvents = 'none'; } catch(_) {}
-
-      // Flag "pub active"
+      hideOverlays();
       window.__ads_active = true;
     } catch(_) {}
   }
@@ -126,83 +141,78 @@
         window.OneSignal.InAppMessages.paused = false;
       }
       window.__ads_active = false;
+      restoreOverlays();
+    } catch(_) {}
+  }
 
-      // Optionnel : retirer une classe overlay si utilisée côté app
-      var ov = document.querySelector('.overlay--ad');
-      if (ov) ov.classList.remove('overlay--ad');
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden) {
+      if (!isRewardShowing) postAdCleanup();
+    }
+  });
 
-      // Déverrou global d'UI
-      try { document.documentElement.style.pointerEvents = ''; } catch(_) {}
+  // =============================
+  // Panneau diag (optionnel)
+  // =============================
+  function diag(msg) {
+    if (!SHOW_DIAG_PANEL) return;
+    try {
+      var el = document.getElementById('__ads_diag');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = '__ads_diag';
+        el.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:999999;background:rgba(0,0,0,.6);color:#fff;padding:6px 8px;border-radius:8px;font:12px/1.35 monospace;max-width:80vw;';
+        document.body.appendChild(el);
+      }
+      var sep = el.textContent ? '\n' : '';
+      el.textContent += sep + '['+new Date().toLocaleTimeString()+'] ' + msg;
     } catch(_) {}
   }
 
   // =============================
-  // Enregistrement des listeners (1 seule fois)
+  // Écouteurs AdMob (1 seule fois)
   // =============================
   function registerAdEventsOnce() {
     try {
       if (!AdMob || !AdMob.addListener || window.__adListenersRegistered) return;
       window.__adListenersRegistered = true;
 
-      // Filet global pour réactiver l’UI
       if (typeof window.onRewardClosed !== 'function') {
         window.onRewardClosed = function () {
           try { postAdCleanup(); } catch (_) {}
         };
       }
 
-      // Petite protection try/catch silencieuse
-      var SAFE = (fn)=> (arg)=> { try { fn && fn(arg); } catch(e) {} };
+      var SAFE = function(fn){ return function(arg){ try { fn && fn(arg); } catch(e) {} }; };
 
-      // Événements possibles selon versions du plugin community
       var map = [
-        ['onAdFullScreenContentOpened', () => {
+        ['onAdFullScreenContentOpened', function () {
           isRewardShowing = true;
           window.__ads_active = true;
-          console.log('[Ad] Opened');
-        } ],
-        ['onAdDismissedFullScreenContent', () => {
-          console.log('[Ad] Dismissed (full screen content)');
+          diag('Ad opened');
+        }],
+        ['onAdDismissedFullScreenContent', function () {
+          diag('Ad dismissed');
           isRewardShowing = false;
           postAdCleanup();
           window.onRewardClosed && window.onRewardClosed();
-        } ],
-        ['onAdFailedToShowFullScreenContent', (err) => {
-          console.warn('[Ad] Failed to show', err);
+        }],
+        ['onAdFailedToShowFullScreenContent', function () {
+          diag('Ad failed to show');
           isRewardShowing = false;
           postAdCleanup();
           window.onRewardClosed && window.onRewardClosed();
-        } ],
-
-        // Alias/legacy possibles (rewarded)
-        ['onRewardedAdDismissed', () => {
-          console.log('[Reward] Dismissed (legacy rewarded)');
-          isRewardShowing = false;
-          postAdCleanup();
-          window.onRewardClosed && window.onRewardClosed();
-        } ],
-        ['onRewardedVideoAdClosed', () => {
-          console.log('[Reward] Closed (very old name)');
-          isRewardShowing = false;
-          postAdCleanup();
-          window.onRewardClosed && window.onRewardClosed();
-        } ],
-
-        // Gagne la récompense (⚠️ crédit via SSV serveur uniquement)
-        ['onRewarded', (data) => {
-          console.log('[Reward] User earned reward', data);
-        } ],
+        }],
+        ['onRewarded', function () {
+          diag('Rewarded granted');
+        }],
       ];
 
       for (var i=0;i<map.length;i++) {
         var evt = map[i][0], handler = map[i][1];
         try { AdMob.addListener(evt, SAFE(handler)); } catch(e) {}
       }
-
-      console.log('[AdMob] Listeners enregistrés.');
-    } catch (e) {
-      console.warn('[AdMob] register listeners err:', e && (e.message || e));
-    }
+    } catch (_e) {}
   }
 
   // =============================
@@ -211,26 +221,20 @@
   (async function initAdMobOnce() {
     try {
       if (!isNative()) {
-        // En web, pas de plugin → masquer boutons reward si tu en as
         document.addEventListener('DOMContentLoaded', function(){
           document.querySelectorAll('.btn-reward').forEach(function(el){ el.style.display = 'none'; });
         });
-        console.warn('[AdMob] Web mode: plugin indisponible.');
         return;
       }
       if (!AdMob || !AdMob.initialize) {
-        console.error('[AdMob] Plugin community non disponible (Capacitor.Plugins.AdMob absent).');
         return;
       }
       await AdMob.initialize({
         requestTrackingAuthorization: false,
-        initializeForTesting: __DEV_ADS__ // mettre false en prod
+        initializeForTesting: __DEV_ADS__
       });
       registerAdEventsOnce();
-      console.log('[AdMob] Ready (native, community plugin).');
-    } catch (e) {
-      console.warn('[AdMob] init ERR:', e && (e.message || e));
-    }
+    } catch (_e) {}
   })();
 
   // =============================
@@ -249,8 +253,7 @@
     try {
       var b = await __getBalances();
       return !!(b && b.nopub);
-    } catch (e) {
-      console.warn('[PUB] get_balances err', e);
+    } catch (_e) {
       return false;
     }
   }
@@ -263,33 +266,33 @@
       if (type === 'vcoin') msg = 'Récompense validée ! VCoins: ' + (b && b.vcoins != null ? b.vcoins : '--');
       if (msg) {
         if (typeof window.showToast === 'function') window.showToast(msg);
-        else console.log('[Reward]', msg); // fallback console, surtout pas alert()
       }
       if (typeof window.renderThemes === 'function') window.renderThemes();
+      if (typeof window.updateBalancesHeader === 'function') window.updateBalancesHeader();
     } catch(_) {}
   }
 
   async function refreshBalanceUntil(timeoutMs, stepMs, type) {
     var t0 = Date.now();
-    while (Date.now() - t0 < (timeoutMs || 20000)) {
+    while (Date.now() - t0 < (timeoutMs || 8000)) {
       try {
         var b = await __getBalances();
         notifyRewardUI(b, type);
         return true;
-      } catch (e) { /* ignore and retry */ }
-      await new Promise(r => setTimeout(r, stepMs || 2000));
+      } catch (_e) {}
+      await new Promise(function(r){ setTimeout(r, stepMs || 1000); });
     }
     return false;
   }
 
   function waitDismissedOnce() {
-    return new Promise((resolve) => {
-      var off1 = AdMob.addListener && AdMob.addListener('onAdDismissedFullScreenContent', () => {
+    return new Promise(function(resolve) {
+      var off1 = AdMob.addListener && AdMob.addListener('onAdDismissedFullScreenContent', function(){
         try { off1 && off1.remove && off1.remove(); } catch(_) {}
         try { off2 && off2.remove && off2.remove(); } catch(_) {}
         resolve(true);
       });
-      var off2 = AdMob.addListener && AdMob.addListener('onAdFailedToShowFullScreenContent', () => {
+      var off2 = AdMob.addListener && AdMob.addListener('onAdFailedToShowFullScreenContent', function(){
         try { off1 && off1.remove && off1.remove(); } catch(_) {}
         try { off2 && off2.remove && off2.remove(); } catch(_) {}
         resolve(false);
@@ -297,29 +300,113 @@
     });
   }
 
-  // =============================
-  // SSV token (Edge Function)
-  // =============================
-  async function getSsvToken(type, amount) {
-    var sb = window.sb;
-    var supabaseUrl = window.SUPABASE_URL || (typeof window.SB_URL !== 'undefined' ? window.SB_URL : '');
-    if (!supabaseUrl) throw new Error('SUPABASE_URL manquant');
-
-    var sess = await sb.auth.getSession();
-    var at = (sess && sess.data && sess.data.session && sess.data.session.access_token) || '';
-
-    var res = await fetch(supabaseUrl + '/functions/v1/reward-token', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + at, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: String(type||'jeton'), amount: Number(amount||1) })
+  function waitOpenedOnce(timeoutMs) {
+    return new Promise(function (resolve) {
+      var off = null, timer = null, resolved = false;
+      try {
+        off = AdMob.addListener('onAdFullScreenContentOpened', function () {
+          if (resolved) return; resolved = true;
+          try { off && off.remove && off.remove(); } catch(_) {}
+          if (timer) { clearTimeout(timer); timer = null; }
+          resolve(true);
+        });
+      } catch(_) {
+        resolve(false);
+        return;
+      }
+      timer = setTimeout(function(){
+        if (resolved) return; resolved = true;
+        try { off && off.remove && off.remove(); } catch(_) {}
+        resolve(false);
+      }, timeoutMs || 4000);
     });
-    if (!res.ok) throw new Error('reward-token failed');
-    var json = await res.json();
-    return json.token;
+  }
+
+  function waitRewardedOnce(timeoutMs) {
+    return new Promise(function (resolve) {
+      var off = null, timer = null;
+      try {
+        off = AdMob.addListener('onRewarded', function () {
+          try { off && off.remove && off.remove(); } catch(_) {}
+          if (timer) { clearTimeout(timer); timer = null; }
+          resolve(true);
+        });
+      } catch(_) {
+        resolve(false);
+        return;
+      }
+      timer = setTimeout(function(){
+        try { off && off.remove && off.remove(); } catch(_) {}
+        resolve(false);
+      }, timeoutMs || 30000);
+    });
+  }
+
+  function waitAppReturnOnce() {
+    return new Promise(function(resolve){
+      var resolved = false;
+      function done(){ if (resolved) return; resolved = true; cleanup(); resolve(true); }
+      function onVis(){ try { if (!document.hidden) done(); } catch(_) {} }
+      function onFocus(){ done(); }
+      var off1=null, off2=null;
+
+      function cleanup(){
+        try { document.removeEventListener('visibilitychange', onVis); } catch(_) {}
+        try { window.removeEventListener('focus', onFocus); } catch(_) {}
+        try { off1 && off1.remove && off1.remove(); } catch(_) {}
+        try { off2 && off2.remove && off2.remove(); } catch(_) {}
+      }
+
+      try { document.addEventListener('visibilitychange', onVis, { once:true }); } catch(_) {}
+      try { window.addEventListener('focus', onFocus, { once:true }); } catch(_) {}
+
+      try {
+        if (App && App.addListener) {
+          off1 = App.addListener('resume', done);
+          off2 = App.addListener('appStateChange', function(state){
+            try { if (state && state.isActive) done(); } catch(_){}
+          });
+        }
+      } catch(_) {}
+    });
   }
 
   // =============================
-  // Rewarded (LOAD/SHOW) — SSV + revive non bloquant
+  // Crédit côté client (NO-SSV) — signature 3 params
+  // =============================
+  async function creditRewardClientSide(type, amount) {
+    var sb = window.sb;
+    if (!sb || !sb.rpc) throw new Error('Supabase non initialisé');
+
+    var uid = await ensureAuth();
+    if (!uid) return false;
+
+    var params = {
+      p_user_id: uid,
+      p_amount: Number(amount || 0),
+      p_product: 'reward_ad'
+    };
+
+    try {
+      if (String(type) === 'jeton') {
+        var r1 = await sb.rpc('secure_add_jetons', params);
+        if (r1 && r1.error) throw r1.error;
+        return true;
+      }
+      if (String(type) === 'vcoin') {
+        var r2 = await sb.rpc('secure_add_points', params);
+        if (r2 && r2.error) throw r2.error;
+        return true;
+      }
+      return true; // revive: pas de crédit numérique
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  // =============================
+  // Rewarded (LOAD/SHOW) — SANS SSV
+  //  ⚠️ Crédit déclenché sur onRewarded (fiable), pas sur dismissed
   // =============================
   async function showRewardedType(type, amount, onDone) {
     var unlocked = false;
@@ -334,68 +421,64 @@
     }
 
     try {
-      if (!isNative()) { console.warn('[Rewarded] non-native'); onDone&&onDone(false); return; }
+      if (!isNative()) { onDone&&onDone(false); return; }
       if (!AdMob || !AdMob.prepareRewardVideoAd || !AdMob.showRewardVideoAd) {
-        console.warn('[Rewarded] API indisponible (community)');
         onDone&&onDone(false);
         return;
       }
 
       await ensureAuth();
-      var sb = window.sb;
-      var gu = await sb.auth.getUser();
-      var ssvUserId = gu && gu.data && gu.data.user && gu.data.user.id;
-      if (!ssvUserId) throw new Error('Utilisateur non authentifié');
 
       var adId = AD_UNIT_ID_REWARDED;
 
-      // SSV: on demande un nonce signé côté backend
-      var token = ENABLE_SSV ? await getSsvToken(type, amount) : null;
-      // IMPORTANT : customData doit contenir UNIQUEMENT le token (pas un JSON)
-      var customPayload = ENABLE_SSV ? String(token || '') : undefined;
+      var rewardedP  = waitRewardedOnce(30000);
+      var dismissedP = waitDismissedOnce();
+      var openedP    = waitOpenedOnce(4000);
 
-      console.log('[Rewarded] prepare...', adId);
       await AdMob.prepareRewardVideoAd({
         adId: adId,
-        requestOptions: buildAdMobRequestOptions(),
-        serverSideVerification: ENABLE_SSV ? { userId: ssvUserId, customData: customPayload } : undefined
+        requestOptions: buildAdMobRequestOptions()
       });
 
-      // --- Coup de filet anti-surcouches avant d'afficher ---
       preShowAdCleanup();
-
-      console.log('[Rewarded] show...');
       isRewardShowing = true;
 
-      // Watchdog 120s : si aucun "dismissed" ne remonte
-      watchdog = setTimeout(function(){
-        console.warn('[Rewarded] Watchdog timeout -> cleanup forcé');
-        unlockUI();
-      }, 120000);
+      watchdog = setTimeout(function(){ unlockUI(); }, 120000);
 
-      // On arme un "attente de fermeture" AVANT le show
-      var dismissedP = waitDismissedOnce();
+      var showPromise = AdMob.showRewardVideoAd();
 
-      // Affiche la pub
-      await AdMob.showRewardVideoAd();
-
-      // ⚠️ On attend la FERMETURE réelle de la pub (end-card incluse)
-      var closed = await dismissedP;
-
-      // === Différenciation des types ===
       if (String(type) === 'revive') {
-        // 👉 Revive: on NE BLOQUE PAS sur le SSV (mais on le laisse vivre)
-        try { await refreshBalanceUntil(2000, 1000, type); } catch(_) {}
-        onDone && onDone(!!closed);
-      } else {
-        // Jetons / VCoins: on exige le crédit SSV
-        var credited = await refreshBalanceUntil(20000, 2000, type);
-        onDone && onDone(!!(closed && credited));
+        try {
+          await Promise.race([ openedP, new Promise(function (res) { setTimeout(res, 4000); }) ]);
+        } catch (_) {}
+
+        var outcome = await Promise.race([
+          rewardedP.then(function(){ return 'reward'; }).catch(function(){ return 'timeout'; }),
+          dismissedP.then(function(){ return 'dismissed'; }),
+          new Promise(function (res) { setTimeout(function(){ res('timeout'); }, 60000); })
+        ]);
+
+        if (outcome === 'timeout') { onDone && onDone(false); return; }
+
+        if (outcome !== 'dismissed') {
+          await Promise.race([ dismissedP.catch(function(){}), waitAppReturnOnce() ]);
+        }
+
+        try { await refreshBalanceUntil(3000, 800); } catch(_) {}
+        onDone && onDone(true);
+        return;
       }
-    } catch (e) {
-      console.warn('[Rewarded] erreur:', e && (e.message || e));
+
+      var gotReward = await rewardedP;
+      var credited  = await creditRewardClientSide(type, amount);
+      await refreshBalanceUntil(5000, 800, type);
+
+      showPromise.finally(function(){}).catch(function(){});
+      onDone && onDone(!!(gotReward || credited));
+      dismissedP.then(function(){}).catch(function(){});
+
+    } catch (_e) {
       onDone && onDone(false);
-      // Préload discret pour prochaine fois (best effort)
       try {
         AdMob.prepareRewardVideoAd({
           adId: AD_UNIT_ID_REWARDED,
@@ -403,59 +486,84 @@
         }).catch(function(){});
       } catch(_) {}
     } finally {
-      // ✅ Garantit la reprise de l’UI même si aucun event 'dismissed' n'est remonté
       unlockUI();
     }
+  }
+
+  // Wrappers publics
+  async function showRewardBoutique() {
+    return new Promise(function(resolve){
+      showRewardedType('jeton', window.REWARD_JETONS, function(ok){ resolve(!!ok); });
+    });
+  }
+  async function showRewardVcoins() {
+    return new Promise(function(resolve){
+      showRewardedType('vcoin', window.REWARD_VCOINS, function(ok){ resolve(!!ok); });
+    });
+  }
+  function showRewardRevive(onDone) {
+    showRewardedType('revive', 1, function(ok){ try { onDone && onDone(!!ok); } catch(_){}; });
   }
 
   // =============================
   // Interstitiel (LOAD/SHOW)
   // =============================
+  function canShowInterstitialNow() {
+    if (!INTER_COOLDOWN_MS) return true;
+    var now = Date.now();
+    if (now - lastInterTs < INTER_COOLDOWN_MS) return false;
+    return true;
+  }
+  function markInterstitialShownNow() {
+    lastInterTs = Date.now();
+    localStorage.setItem('inter_last_ts', String(lastInterTs));
+  }
+
   async function showInterstitial() {
+    var watchdog = null;
     try {
-      if (await hasNoAds()) { console.log('[Inter] bloqué (NoPub)'); return false; }
-      if (!isNative()) { console.log('[Inter] non-native'); return false; }
+      if (await hasNoAds()) { return false; }
+      if (!isNative()) { return false; }
       if (!AdMob || !AdMob.prepareInterstitial || !AdMob.showInterstitial) {
-        console.log('[Inter] API indisponible (community)');
         return false;
       }
-      if (!canShowInterstitialNow()) { console.log('[Inter] cooldown'); return false; }
+      if (!canShowInterstitialNow()) { return false; }
 
       var adId = AD_UNIT_ID_INTERSTITIEL;
 
-      console.log('[Inter] prepare...', adId);
       await AdMob.prepareInterstitial({
         adId: adId,
         requestOptions: buildAdMobRequestOptions()
       });
 
-      // --- Coup de filet anti-surcouches avant d'afficher ---
       preShowAdCleanup();
 
-      console.log('[Inter] show...');
-      var watchdog = setTimeout(function(){ postAdCleanup(); }, 120000);
-      var res = await AdMob.showInterstitial();
-      clearTimeout(watchdog);
+      watchdog = setTimeout(function(){
+        postAdCleanup();
+      }, 120000);
 
-      // Si on arrive ici, Android a normalement renvoyé (fermeture ou click-out)
-      postAdCleanup();
+      var dismissedP = waitDismissedOnce();
+
+      var res = await AdMob.showInterstitial();
+
+      await Promise.race([ dismissedP.catch(function(){}), waitAppReturnOnce() ]);
 
       if (res !== false) {
         markInterstitialShownNow();
-        // Préload discret
         setTimeout(function(){
           AdMob.prepareInterstitial({ adId: adId, requestOptions: buildAdMobRequestOptions() }).catch(function(){});
         }, 1200);
         return true;
       }
       return false;
-    } catch (e) {
-      console.warn('[Inter] err:', (e && e.message) || e);
+    } catch (_e) {
       try {
         AdMob.prepareInterstitial({ adId: AD_UNIT_ID_INTERSTITIEL, requestOptions: buildAdMobRequestOptions() }).catch(function(){});
       } catch(_) {}
-      postAdCleanup();
       return false;
+    } finally {
+      if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+      postAdCleanup();
     }
   }
 
@@ -466,25 +574,22 @@
   function isModeClassique(m){ m=(m||'').toLowerCase(); return ['classique','classic','normal','arcade'].includes(m); }
   function isModeDuel(m){ m=(m||'').toLowerCase(); return ['duel','versus','vs','1v1','duo'].includes(m); }
 
-  // 👉 Logique unifiée : pub AU DÉBUT de la 4e action (nouvelle/reprise/recommencer), Duel exclu
   async function maybeShowInterBeforeAction(mode) {
-    if (isModeDuel(mode)) return; // jamais en Duel
+    if (isModeDuel(mode)) return;
 
-    // Si déjà 3 actions cumulées -> afficher la pub AVANT de lancer la 4ᵉ
     var needAd = interActionsCount >= INTERSTITIEL_APRES_X_ACTIONS;
     if (needAd) {
-      interActionsCount = 0; // reset avant d'afficher
+      interActionsCount = 0;
       localStorage.setItem('inter_actions_count', '0');
-      await showInterstitial(); // affichée AVANT de lancer l'action
+      await showInterstitial();
     }
 
-    // On compte l'action qui démarre maintenant
     interActionsCount++;
     localStorage.setItem('inter_actions_count', String(interActionsCount));
   }
 
   // =============================
-  // Wrappers "événements jeu" (à appeler AVANT de lancer le gameplay)
+  // Wrappers "événements jeu" (à appeler AVANT le gameplay)
   // =============================
   async function partieCommencee(mode){
     mode = String(mode || 'classique').toLowerCase();
@@ -504,46 +609,21 @@
       await maybeShowInterBeforeAction(mode);
     }
   }
-  function partieTerminee(){ console.log('[Game] Partie terminée.'); }
+  function partieTerminee(){}
 
   // =============================
-  // Cooldown helpers
+  // Expose global
   // =============================
-  function canShowInterstitialNow() {
-    if (!INTER_COOLDOWN_MS) return true;
-    var last = parseInt(localStorage.getItem('lastInterstitialTs') || '0', 10);
-    return (Date.now() - last) >= INTER_COOLDOWN_MS;
-  }
-  function markInterstitialShownNow() {
-    localStorage.setItem('lastInterstitialTs', String(Date.now()));
-  }
+  window.showInterstitial     = showInterstitial;
+  window.showRewardBoutique   = showRewardBoutique;
+  window.showRewardVcoins     = showRewardVcoins;
+  window.showRewardRevive     = showRewardRevive;
 
-  // =============================
-  // Exports globaux
-  // =============================
-  window.showInterstitial   = showInterstitial;
-  window.showRewardBoutique = function(){ return new Promise(function(resolve){ showRewardedType('jeton', window.REWARD_JETONS, function(ok){ resolve(!!ok); }); }); };
-  window.showRewardVcoins   = function(){ return new Promise(function(resolve){ showRewardedType('vcoin', window.REWARD_VCOINS, function(ok){ resolve(!!ok); }); }); };
-  window.showRewardRevive   = function(callback){ if (!window.REWARD_REVIVE) return; showRewardedType('revive', 0, function(ok){ if (ok && typeof callback === 'function') callback(); }); };
+  window.partieCommencee      = partieCommencee;
+  window.partieReprisee       = partieReprisee;
+  window.partieRecommencee    = partieRecommencee;
+  window.partieTerminee       = partieTerminee;
 
-  window.partieCommencee   = partieCommencee;   // nouvelle partie
-  window.partieReprisee    = partieReprisee;    // reprise d'une partie
-  window.partieRecommencee = partieRecommencee; // "Recommencer" via popup
-  window.partieTerminee    = partieTerminee;
-
-  window.hasNoAds = hasNoAds;
-
-  // Alias compat
-  window.showInterstitialAd = showInterstitial;
-  window.showRewardedType   = showRewardedType;
-
-  // Petit diag optionnel
-  (function diag() {
-    if (!SHOW_DIAG_PANEL) return;
-    console.log('[AdDiag]', {
-      native: isNative(),
-      hasPlugin: !!AdMob
-    });
-  })();
+  window.hasNoAds             = hasNoAds;
 
 })();

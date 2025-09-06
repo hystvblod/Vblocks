@@ -6,18 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Librairies / app -->
-<!-- Supabase client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
+  <!-- Supabase client -->
+  <script src="js/vendor/supabase-2.42.5.min.js"></script>
 
-<!-- App utils -->
-<script src="js/i18n.js"></script>
-<script src="js/userData.js"></script>
+  <!-- App utils -->
+  <script src="js/i18n.js"></script>
+  <script src="js/userData.js"></script>
 
-<!-- Ads + IAP -->
-<!-- cordova.js est injecté automatiquement par Capacitor -->
-<script src="js/pub.js"></script>
-<script src="js/achat.js"></script>
-
+  <!-- Pont Cordova (fourni automatiquement dans l’APK/IPA, 404 en web = normal) -->
+  <script src="cordova.js"></script>
+  <script src="js/achat.js"></script>
+  <!-- Ads + IAP -->
+  <script src="js/pub.js"></script>
 
   <link rel="stylesheet" href="style/main.css">
   <style>
@@ -384,6 +384,73 @@ function setupPubCartouches() {
   });
 }
 
+/* ==========================================================
+   IAP — Attente réelle de ready/refresh + click sécurisé
+   ========================================================== */
+window.__IAP_READY__ = false;
+
+// Détecte NATIVE (Capacitor OU Cordova)
+function isNativeRuntime() {
+  try {
+    if (window.Capacitor && typeof window.Capacitor.getPlatform === 'function') {
+      return window.Capacitor.getPlatform() !== 'web';
+    }
+  } catch(_) {}
+  if (window.cordova && typeof window.cordova.platformId === 'string') return true;
+  return false;
+}
+
+document.addEventListener('deviceready', function () {
+  const IAP = window.store;
+  if (!IAP) return;
+
+  try {
+    // Quand le SDK IAP est prêt → on marque le flag & on repeint les prix
+    IAP.ready(function () {
+      window.__IAP_READY__ = true;
+      try { fillCartouchePricesFromStore(); } catch(_) {}
+      try { renderAchats(); } catch(_) {}
+    });
+
+    // Déclenche la récupération des SKU/prix/owned
+    IAP.refresh();
+  } catch(_) {}
+});
+
+// Attente active tant que le store n'est pas prêt
+async function waitIapReady(maxMs = 5000) {
+  const step = 150;
+  let waited = 0;
+  while (!window.__IAP_READY__ && waited < maxMs) {
+    await new Promise(r => setTimeout(r, step));
+    waited += step;
+  }
+  return window.__IAP_READY__;
+}
+
+// ORDER sécurisé
+async function safeOrder(productId) {
+  if (!isNativeRuntime()) {
+    alert("Boutique indisponible dans ce contexte. Lance l’application installée.");
+    return;
+  }
+  if (!window.store) {
+    // Laisse une chance au bridge de se lier
+    const okLater = await waitIapReady(4000);
+    if (!okLater || !window.store) {
+      alert("Boutique en cours d'initialisation… réessaie dans un instant.");
+      return;
+    }
+  }
+  const ok = await waitIapReady(4000);
+  if (!ok || typeof window.store.order !== 'function') {
+    alert("Boutique indisponible pour le moment. Réessaie.");
+    return;
+  }
+  try { window.store.order(productId); }
+  catch(e){ alert("Erreur achat: " + (e?.message || e)); }
+}
+
 /* ---------- Achats IAP (clics) ---------- */
 function setupBoutiqueAchats() {
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
@@ -392,14 +459,7 @@ function setupBoutiqueAchats() {
     // Cartouches IAP (Store)
     if (id) {
       cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => {
-        const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
-        if (IAP) {
-          IAP.order(id);
-        } else {
-          alert("Achat via le Store indisponible ici. Ouvre l’app installée depuis le Store.");
-        }
-      };
+      cartouche.onclick = async () => { await safeOrder(id); };
       return;
     }
     // (Les cartouches "pub récompensée" sont gérées dans setupPubCartouches)

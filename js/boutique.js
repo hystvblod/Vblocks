@@ -21,6 +21,8 @@ const THEMES = [
   { key: "japon",  name: "Japon" }
 ];
 
+const THEME_PRICE = 5000;
+
 /* ---------- Cartouches UI (achats) ---------- */
 const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.points3000",  icon: '<img src="assets/images/vcoin.webp" alt="Points">', color: 'color-yellow', prix: "", amount: 3000 },
@@ -31,8 +33,6 @@ const SPECIAL_CARTOUCHES = [
   { key: "boutique.cartouche.pub1jeton",   icon: '<img src="assets/images/jeton.webp" alt="Pub">',    color: 'color-green' },
   { key: "boutique.cartouche.pub300points",icon: '<img src="assets/images/vcoin.webp" alt="Pub">',    color: 'color-blue' }
 ];
-
-const THEME_PRICE = 5000;
 
 /* ---------- IDs produits (Play / iOS) ---------- */
 const PRODUCT_IDS = window.PRODUCT_IDS = {
@@ -55,6 +55,57 @@ function _iapAvailable() {
 function _mapType(alias) {
   if (!window.store) return null;
   return alias === 'nopub' ? window.store.NON_CONSUMABLE : window.store.CONSUMABLE;
+}
+
+/* ==========================================================
+   Détection runtime + attente réelle du SDK IAP
+   ========================================================== */
+window.__IAP_READY__ = false;
+
+function isNativeRuntime() {
+  try {
+    if (window.Capacitor && typeof window.Capacitor.getPlatform === 'function') {
+      return window.Capacitor.getPlatform() !== 'web';
+    }
+  } catch(_) {}
+  if (window.cordova && typeof window.cordova.platformId === 'string') return true;
+  return false;
+}
+
+async function waitIapReady(maxMs = 5000) {
+  const step = 150;
+  let waited = 0;
+  while (!window.__IAP_READY__ && waited < maxMs) {
+    await new Promise(r => setTimeout(r, step));
+    waited += step;
+  }
+  return window.__IAP_READY__;
+}
+
+async function safeOrder(productId) {
+  if (!isNativeRuntime()) {
+    if (ENABLE_WEB_FALLBACK) {
+      // (optionnel) simuler un achat en web pour debug
+      alert("DEBUG: achat simulé " + productId);
+      return;
+    }
+    alert("Boutique indisponible dans ce contexte. Lance l’application installée.");
+    return;
+  }
+  if (!window.store) {
+    const okLater = await waitIapReady(4000);
+    if (!okLater || !window.store) {
+      alert("Boutique en cours d'initialisation… réessaie dans un instant.");
+      return;
+    }
+  }
+  const ok = await waitIapReady(4000);
+  if (!ok || typeof window.store.order !== 'function') {
+    alert("Boutique indisponible pour le moment. Réessaie.");
+    return;
+  }
+  try { window.store.order(productId); }
+  catch(e){ alert("Erreur achat: " + (e?.message || e)); }
 }
 
 /* ===========================
@@ -168,10 +219,14 @@ function renderAchats() {
   const $achatsList = document.getElementById('achats-list');
   if (!$achatsList) return;
   const achatsHtml = SPECIAL_CARTOUCHES.map(c => `
-    <div class="special-cartouche ${c.color}">
+    <div class="special-cartouche ${c.color}" ${(() => {
+      const alias = c.key.split('.').pop();
+      const pid = PRODUCT_IDS[alias];
+      return pid ? `data-product-id="${pid}"` : '';
+    })()}>
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
-      <span class="prix-label">${c.prix || "—"}</span>
+      <span class="prix-label">${c.prix || (PRODUCT_IDS[c.key?.split('.').pop()] ? "—" : "")}</span>
     </div>
   `).join('');
   $achatsList.innerHTML = achatsHtml;
@@ -255,17 +310,12 @@ function setupBoutiqueAchats() {
     if (pid) {
       cartouche.style.cursor = 'pointer';
       cartouche.onclick = async () => {
-        if (_iapAvailable()) {
-          // Optionnel : confirmation custom si tu as une UI
-          if (typeof window.lancerPaiement === 'function') {
-            const ok = await window.lancerPaiement(alias);
-            if (!ok) return;
-          }
-          try { window.store.order(pid); }
-          catch (e) { alert('Erreur achat: ' + (e?.message || e)); }
-        } else {
-          alert("Achat via Store indisponible ici. Ouvre l’app installée depuis le Store.");
+        // Confirmation UI optionnelle
+        if (typeof window.lancerPaiement === 'function') {
+          const ok = await window.lancerPaiement(alias);
+          if (!ok) return;
         }
+        await safeOrder(pid);
       };
       return;
     }
@@ -338,7 +388,7 @@ document.addEventListener('deviceready', function () {
       const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p.id);
 
       // Crédit côté serveur selon le produit
-      if (alias === 'points3000')   await addVCoinsSupabase(3000);
+      if (alias === 'points3000')       await addVCoinsSupabase(3000);
       else if (alias === 'points10000') await addVCoinsSupabase(10000);
       else if (alias === 'jetons12')    await addJetonsSupabase(12);
       else if (alias === 'jetons50')    await addJetonsSupabase(50);
@@ -365,6 +415,8 @@ document.addEventListener('deviceready', function () {
   });
 
   IAP.ready(function () {
+    window.__IAP_READY__ = true;
+
     // snapshot initial
     IAP.products.forEach(prod => {
       const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === prod.id);

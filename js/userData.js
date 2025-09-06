@@ -117,15 +117,16 @@ function setCurrentTheme(theme) {
 }
 
 function applyLocalTheme(themeKey) {
-  const t = normalizeThemeKey(themeKey || 'neon');
-  setCurrentTheme(t);
+  const t = normalizeThemeKey(themeKey || 'retro');
+  setCurrentTheme(t); // écrit dans localStorage
   try { document.documentElement.setAttribute('data-theme', t); } catch {}
-  try { document.body && document.body.setAttribute('data-theme', t); } catch {}
+  try { document.body?.setAttribute('data-theme', t); } catch {}
   const link = document.getElementById('theme-style');
   if (link) link.href = `themes/${t}.css`;
   try { window.dispatchEvent(new CustomEvent('vblocks-theme-changed', { detail:{ theme: t } })); } catch {}
-  try { localStorage.setItem('themeVBlocks', t); } catch {}
+  // (inutile de refaire localStorage.setItem ici)
 }
+
 
 
 // =============================

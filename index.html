@@ -1,9 +1,26 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>VBlocks - Accueil</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Bootstrap thème : défaut = retro + anti-flash (à placer AVANT CSS & JS) -->
+  <script>
+    (function () {
+      try {
+        var KEY = 'themeVBlocks';
+        if (!localStorage.getItem(KEY)) {
+          localStorage.setItem(KEY, 'retro');   // Défaut la 1ère fois
+        }
+        var th = localStorage.getItem(KEY) || 'retro';
+        document.documentElement.setAttribute('data-theme', th); // applique tout de suite
+      } catch(e) {}
+    })();
+  </script>
+
+  <!-- Capacitor bridge (généré à la compilation mobile) -->
+  <script src="cordova.js"></script>
 
   <!-- Styles -->
   <link rel="stylesheet" href="style/main.css" />
@@ -32,10 +49,10 @@
     }
   </style>
 
-  <!-- Lib Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.5/dist/umd/supabase.min.js"></script>
+  <!-- Lib Supabase (UMD locale) — le client est créé dans userData.js -->
+  <script src="js/vendor/supabase-2.42.5.min.js"></script>
 
-  <!-- App utils -->
+  <!-- App utils (créent window.sb & co) -->
   <script src="js/userData.js"></script>
   <script src="js/i18n.js"></script>
 
@@ -70,7 +87,7 @@
       <!-- ✅ Choix publicités uniquement -->
       <div style="text-align:left;margin-top:.75rem">
         <label style="display:flex;gap:.5em;align-items:center;margin:.25rem 0">
-          <input id="consent-ads" type="checkbox" checked>
+          <input id="consent-ads" type="checkbox" checked />
           <span data-i18n="index.rgpd.ads">Publicités personnalisées</span>
         </label>
       </div>
@@ -350,7 +367,6 @@
 
           // Affiche uniquement si Google dit "update dispo"
           if (info.updateAvailability === 2) {
-            // Si flexible autorisé, on propose la bannière; si l'utilisateur clique, on lance le flux flexible
             banner.style.display = 'block';
             i18nApply();
 
@@ -358,24 +374,21 @@
               try {
                 if (info.flexibleUpdateAllowed) {
                   await AppUpdate.startFlexibleUpdate(); // téléchargement en arrière-plan
-                  // Optionnel : appeler completeFlexibleUpdate() au prochain démarrage
                   banner.style.display = 'none';
                 } else {
                   await openStore(); // pas flexible → on ouvre la fiche Play
                 }
               } catch (e) {
                 console.warn('[AppUpdate] startFlexibleUpdate error', e);
-                await openStore(); // fallback store
+                await openStore();
               }
             };
             btnLater.onclick = ()=>{ banner.style.display='none'; };
           } else {
-            // Pas de mise à jour → ne rien afficher
             console.log('[AppUpdate] aucune mise à jour disponible');
           }
         } catch (e) {
           console.warn('[AppUpdate] getAppUpdateInfo error', e);
-          // En cas d’erreur API, on ne montre rien pour éviter les faux positifs
         }
       }
 
