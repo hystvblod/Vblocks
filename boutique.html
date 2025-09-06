@@ -5,19 +5,22 @@
   <title data-i18n="boutique.titre"></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Librairies / app -->
-  <!-- Supabase client -->
-  <script src="js/vendor/supabase-2.42.5.min.js"></script>
+<!-- Librairies / app -->
+<!-- Supabase client -->
+<script src="js/vendor/supabase-2.42.5.min.js"></script>
 
-  <!-- App utils -->
-  <script src="js/i18n.js"></script>
-  <script src="js/userData.js"></script>
-<script src="js/boutique.js"></script>
-  <!-- Pont Cordova (fourni automatiquement dans l’APK/IPA, 404 en web = normal) -->
-  <script src="cordova.js"></script>
-  <script src="js/achat.js"></script>
-  <!-- Ads + IAP -->
-  <script src="js/pub.js"></script>
+<!-- App utils -->
+<script src="js/i18n.js"></script>
+<script src="js/userData.js"></script>
+
+<!-- Pont Cordova (fourni automatiquement dans l’APK/IPA, 404 en web = normal) -->
+<script src="cordova.js"></script>
+
+<!-- Ads + IAP -->
+<script src="js/pub.js"></script>
+<script src="js/achat.js"></script>
+
+
 
   <link rel="stylesheet" href="style/main.css">
   <style>
@@ -384,69 +387,6 @@ function setupPubCartouches() {
   });
 }
 
-/* ==========================================================
-   IAP — Attente réelle de ready/refresh + click sécurisé
-   ========================================================== */
-window.__IAP_READY__ = false;
-
-// Détecte NATIVE (Capacitor OU Cordova)
-function isNativeRuntime() {
-  try {
-    if (window.Capacitor && typeof window.Capacitor.getPlatform === 'function') {
-      return window.Capacitor.getPlatform() !== 'web';
-    }
-  } catch(_) {}
-  if (window.cordova && typeof window.cordova.platformId === 'string') return true;
-  return false;
-}
-
-/* ----- Unique handler deviceready pour IAP (net et sans doublons) ----- */
-document.addEventListener('deviceready', function () {
-  const IAP = window.store;
-  if (!IAP) return;
-
-  try {
-    // Quand le SDK IAP est prêt → flag + maj prix
-    IAP.ready(function () {
-      window.__IAP_READY__ = true;
-      try { fillCartouchePricesFromStore(); } catch(_) {}
-      try { renderAchats(); } catch(_) {}
-    });
-
-    // 1er refresh immédiat
-    IAP.refresh();
-
-    // 2e refresh 3 s plus tard (fiabilise le 1er run)
-    setTimeout(() => {
-      try { IAP.refresh(); } catch (_) {}
-    }, 3000);
-  } catch(_) {}
-});
-
-// Attente active tant que le store n'est pas prêt
-async function waitIapReady(maxMs = 15000) {   // ← 15000 au lieu de 5000
-  const step = 150;
-  let waited = 0;
-  while (!window.__IAP_READY__ && waited < maxMs) {
-    await new Promise(r => setTimeout(r, step));
-    waited += step;
-  }
-  return !!window.__IAP_READY__;
-}
-
-
-// ORDER sécurisé
-async function safeOrder(productId){
-  // Attendre réellement le bridge + le SDK
-  let ok = await waitIapReady(15000);
-  if (!ok || !window.store || typeof window.store.order !== 'function') {
-    alert("Boutique en cours d'initialisation… réessaie dans un instant.");
-    return;
-  }
-  try { window.store.order(productId); }
-  catch(e){ alert("Erreur achat: " + (e?.message || e)); }
-}
-
 /* ---------- Achats IAP (clics) ---------- */
 function setupBoutiqueAchats() {
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche => {
@@ -455,7 +395,14 @@ function setupBoutiqueAchats() {
     // Cartouches IAP (Store)
     if (id) {
       cartouche.style.cursor = 'pointer';
-      cartouche.onclick = async () => { await safeOrder(id); };
+      cartouche.onclick = async () => {
+        const IAP = (window.store && typeof window.store.order === 'function') ? window.store : null;
+        if (IAP) {
+          IAP.order(id);
+        } else {
+          alert("Achat via le Store indisponible ici. Ouvre l’app installée depuis le Store.");
+        }
+      };
       return;
     }
     // (Les cartouches "pub récompensée" sont gérées dans setupPubCartouches)
@@ -554,7 +501,7 @@ document.addEventListener('deviceready', function () {
 
 /* ---------- Events modal ---------- */
 $close?.addEventListener('click', closeThemeModal);
-$backdrop.addEventListener('click', (e) => { if (e.target === $backdrop) closeThemeModal(); });
+document.getElementById('themeModalBackdrop').addEventListener('click', (e) => { if (e.target === document.getElementById('themeModalBackdrop')) closeThemeModal(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeThemeModal(); });
 
 /* ---------- Ready ---------- */
