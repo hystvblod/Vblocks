@@ -369,6 +369,10 @@ function fillRectThemeSafe(c, px, py, size) {
     // ✅ Limitation: 1 seul revive par partie (pub OU jeton)
     let reviveUsed = false;
 
+    // 🔒 Anti-double fin/anti-double crédit
+    let endHandled = false;
+    let creditDone = false;
+
     function lerp(a, b, t) { return a + (b - a) * t; }
 
     function saveHistory() {
@@ -676,6 +680,8 @@ function fillRectThemeSafe(c, px, py, size) {
       lastTime = 0;
       reviveRampActive = false;
       reviveUsed = false; // ✅ on ré-autorise 1 revive pour la nouvelle partie
+      endHandled = false;
+      creditDone = false;
 
       // UI
       const scoreEl = document.getElementById('score');
@@ -704,6 +710,10 @@ function fillRectThemeSafe(c, px, py, size) {
 
     // Nouvelle popup de fin de partie (+ revive)
     function showEndPopup(points) {
+      // 🔒 Anti-double popup/fin
+      if (endHandled) return;
+      endHandled = true;
+
       // === AJUSTEMENT #3c : notifier la fin au gestionnaire de pubs
       try { window.partieTerminee?.(); } catch(_){}
 
@@ -717,6 +727,8 @@ function fillRectThemeSafe(c, px, py, size) {
       clearSavedGame();
 
       (async function saveScoreAndRewards(points) {
+        if (creditDone) return; // 🔒 anti-double crédit
+        creditDone = true;
         try {
           await setLastScoreSupabase(points);
           const cloudHigh = await getHighScoreSupabase();
@@ -772,39 +784,37 @@ function fillRectThemeSafe(c, px, py, size) {
       `;
       document.body.appendChild(popup);
 
-async function doRevive(withAd) {
-  if (withAd) {
-    if (typeof window.showRewardRevive === 'function') {
-      const ok = await new Promise(resolve => {
-        try { window.showRewardRevive(closedOk => resolve(!!closedOk)); }
-        catch(_) { resolve(false); }
-      });
-      if (!ok) return;
+      async function doRevive(withAd) {
+        if (withAd) {
+          if (typeof window.showRewardRevive === 'function') {
+            const ok = await new Promise(resolve => {
+              try { window.showRewardRevive(closedOk => resolve(!!closedOk)); }
+              catch(_) { resolve(false); }
+            });
+            if (!ok) return;
 
-      // Ici: pub ouverte puis FERMÉE (et/ou reward) → on relance
-      reviveUsed = true;
-      try { popup.remove(); } catch(_) {}
-      reviveRewindAndResume();
-      return;
-    }
+            // Ici: pub ouverte puis FERMÉE (et/ou reward) → on relance
+            reviveUsed = true;
+            try { popup.remove(); } catch(_) {}
+            reviveRewindAndResume();
+            return;
+          }
 
-    // Fallback web/dev si showRewardRevive indisponible
-    await showInterstitial();
-    reviveUsed = true;
-    try { popup.remove(); } catch(_) {}
-    reviveRewindAndResume();
-    return;
-  }
+          // Fallback web/dev si showRewardRevive indisponible
+          await showInterstitial();
+          reviveUsed = true;
+          try { popup.remove(); } catch(_) {}
+          reviveRewindAndResume();
+          return;
+        }
 
-  // Revive via JETON (inchangé)
-  const okTok = await useJeton();
-  if (!okTok) { alert('Pas assez de jetons.'); return; }
-  reviveUsed = true;
-  try { popup.remove(); } catch(_) {}
-  reviveRewindAndResume();
-}
-
-
+        // Revive via JETON (inchangé)
+        const okTok = await useJeton();
+        if (!okTok) { alert('Pas assez de jetons.'); return; }
+        reviveUsed = true;
+        try { popup.remove(); } catch(_) {}
+        reviveRewindAndResume();
+      }
 
       document.getElementById('end-restart').onclick = function () {
         popup.remove();
@@ -967,12 +977,11 @@ async function doRevive(withAd) {
     }
     document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
 
-    // === SCORE: bonus combo ÷2 ===
-// === SCORE: barème fixe (sans combo/enchaînement) ===
-function computeScore(lines) {
-  const TABLE = [0, 10, 25, 40, 60]; // 0,1,2,3,4 lignes
-  return TABLE[lines] || 0;
-}
+    // === SCORE: barème fixe (sans combo/enchaînement) ===
+    function computeScore(lines) {
+      const TABLE = [0, 10, 25, 40, 60]; // 0,1,2,3,4 lignes
+      return TABLE[lines] || 0;
+    }
 
     async function startGame() {
       // === AJUSTEMENT #3a : notifier une nouvelle partie
@@ -982,6 +991,8 @@ function computeScore(lines) {
       gameOver = false;
       lastTime = 0;
       reviveUsed = false; // ✅ nouvelle partie → on réautorise 1 revive
+      endHandled = false;
+      creditDone = false;
 
       if (mode === 'duel') await setupDuelSequence();
       if (mode !== 'duel') {
@@ -1111,7 +1122,11 @@ function computeScore(lines) {
       }
     }
 
+    // 🔒 rotation lock global (empêche rotation pendant glissements/softdrop/quickdrop)
+    let rotationLocked = false;
+
     function rotatePiece() {
+      if (rotationLocked) return; // 🔒
       const shape = currentPiece.shape;
       let oldVariants = null;
       if (isVariantTheme(currentTheme)) oldVariants = currentPiece.variants;
@@ -1446,7 +1461,7 @@ function computeScore(lines) {
     // TOUCH & CLAVIER
     // ====================
 
-  canvas.style.touchAction = 'none';
+    canvas.style.touchAction = 'none';
     canvas.style.userSelect  = 'none';
 
     let softDropTimer = null;
@@ -1476,8 +1491,8 @@ function computeScore(lines) {
       repeatKickoff = setTimeout(() => {
         repeatKickoff = null;
         repeatTicker = setInterval(() => {
-  if (!paused && !gameOver && !window.__ads_active) move(horizDir);
-}, REPEAT_INTERVAL);
+          if (!paused && !gameOver && !window.__ads_active) move(horizDir);
+        }, REPEAT_INTERVAL);
       }, INITIAL_REPEAT_DELAY);
     }
     function stopHorizontalRepeat() {
@@ -1493,16 +1508,17 @@ function computeScore(lines) {
       if (softDropActive || paused || gameOver) return;
       if (mustLiftFingerForNextSoftDrop) return;
       softDropActive = true;
+      rotationLocked = true; // 🔒 pas de rotation pendant soft drop
       lastTime = performance.now();
-    softDropTimer = setInterval(() => {
-  if (!paused && !gameOver && !window.__ads_active) dropPiece();
- }, SOFT_DROP_INTERVAL);
+      softDropTimer = setInterval(() => {
+        if (!paused && !gameOver && !window.__ads_active) dropPiece();
+      }, SOFT_DROP_INTERVAL);
     }
     function stopSoftDrop() {
       if (softDropTimer) clearInterval(softDropTimer);
       softDropTimer = null;
       softDropActive = false;
-      mustLiftFingerForNextSoftDrop = true;
+      // rotationLocked restera true jusqu'au relâchement
     }
 
     function isQuickSwipeUp(elapsed, dy) {
@@ -1529,6 +1545,7 @@ function computeScore(lines) {
       gestureMode = 'none';
       didHardDrop = false;
       quickDropLock = false;
+      rotationLocked = false; // 🔓 nouveau contact : rotation autorisée au départ
 
       stopHorizontalRepeat(); // reset
 
@@ -1556,6 +1573,7 @@ function computeScore(lines) {
       // Drop rapide vers le bas -> verrouille rotation
       if (isQuickSwipeDown(elapsed, movedY)) {
         quickDropLock = true;
+        rotationLocked = true; // 🔒
         gestureMode = 'vertical';
         if (!softDropActive) startSoftDrop();
         if (movedY > 24) {
@@ -1569,8 +1587,9 @@ function computeScore(lines) {
       // Passage en vertical
       if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';
+        rotationLocked = true; // 🔒 pendant vertical/softdrop
         stopHorizontalRepeat();
-        if (!quickDropLock && !softDropActive && isQuickSwipeUp(elapsed, movedY)){
+        if (!quickDropLock && !softDropActive && !rotationLocked && isQuickSwipeUp(elapsed, movedY)){
           rotatePiece();
           touchStartTime = now;
           startY = t.clientY;
@@ -1583,6 +1602,7 @@ function computeScore(lines) {
       if (gestureMode === 'none') {
         if (Math.abs(movedX) > Math.max(Math.abs(movedY), DEAD_ZONE) && Math.abs(movedX) > HORIZ_THRESHOLD) {
           gestureMode = 'horizontal';
+          rotationLocked = true; // 🔒 on a commencé un drag horizontal → pas de rotation jusqu'au relâchement
           clearTimeout(holdToDropTimeout);
         }
       }
@@ -1607,7 +1627,7 @@ function computeScore(lines) {
       }
 
       // Gestes complémentaires
-      if (!quickDropLock && !softDropActive && isQuickSwipeUp(elapsed, movedY)) {
+      if (!quickDropLock && !softDropActive && !rotationLocked && isQuickSwipeUp(elapsed, movedY)) {
         rotatePiece();
         touchStartTime = now;
         startY = t.clientY;
@@ -1636,6 +1656,7 @@ function computeScore(lines) {
         mustLiftFingerForNextSoftDrop = false;
         gestureMode = 'none';
         quickDropLock = false;
+        rotationLocked = false; // 🔓 lift => on peut re-rotater au prochain contact
         return;
       }
 
@@ -1643,19 +1664,24 @@ function computeScore(lines) {
         didHardDrop = false;
         gestureMode = 'none';
         quickDropLock = false;
+        rotationLocked = false; // 🔓
         return;
       }
 
       const pressDuration = Date.now() - touchStartTime;
       const isShortPress = pressDuration < 200;
       const hasDropped   = Math.abs(movedY) > 18;
-      if (gestureMode !== 'horizontal' && isShortPress && !hasDropped && Math.abs(movedX) < 10 && !quickDropLock) {
+      const movedHoriz   = Math.abs(movedX) >= HORIZ_THRESHOLD;
+
+      // 🔒 Pas de rotation si un drag horizontal est survenu ou si le verrou est actif
+      if (gestureMode !== 'horizontal' && isShortPress && !hasDropped && Math.abs(movedX) < 10 && !quickDropLock && !rotationLocked && !movedHoriz) {
         rotatePiece();
       }
 
       mustLiftFingerForNextSoftDrop = false;
       gestureMode = 'none';
       quickDropLock = false;
+      rotationLocked = false; // 🔓 prêt pour la prochaine interaction
     }, { passive: true });
 
     canvas.addEventListener('touchcancel', function () {
@@ -1667,6 +1693,7 @@ function computeScore(lines) {
       gestureMode = 'none';
       didHardDrop = false;
       quickDropLock = false;
+      rotationLocked = false; // 🔓
     }, { passive: true });
 
     document.addEventListener('keydown', e => {
@@ -1677,7 +1704,7 @@ function computeScore(lines) {
         case 'ArrowLeft':  move(-1);    break;
         case 'ArrowRight': move(1);     break;
         case 'ArrowDown':  dropPiece(); break;
-        case 'ArrowUp':    if (!quickDropLock) rotatePiece(); break;
+        case 'ArrowUp':    if (!quickDropLock && !rotationLocked) rotatePiece(); break; // 🔒
         case ' ':          hardDrop(); break;
         case 'c': case 'C': holdPieceSwapStay();  break;
       }
@@ -1707,25 +1734,25 @@ function computeScore(lines) {
 
       return (window.sbUser && window.sbUser.id) || null;
     }
-async function setLastScoreSupabase(score) {
-  if (!sb) return;
-  const val = parseInt(score, 10) || 0;
-  await sb.rpc('set_lastscore_secure', { last_score: val });
-}
+    async function setLastScoreSupabase(score) {
+      if (!sb) return;
+      const val = parseInt(score, 10) || 0;
+      await sb.rpc('set_lastscore_secure', { last_score: val });
+    }
 
-async function setHighScoreSupabase(score) {
-  if (!sb) return;
-  const val = parseInt(score, 10) || 0;
-  await sb.rpc('set_highscore_secure', { new_score: val });
-}
+    async function setHighScoreSupabase(score) {
+      if (!sb) return;
+      const val = parseInt(score, 10) || 0;
+      await sb.rpc('set_highscore_secure', { new_score: val });
+    }
 
-async function getHighScoreSupabase() {
-  if (!sb) return 0;
-  const { data, error } = await sb.rpc('get_balances'); // ou une RPC dédiée
-  if (error) return 0;
-  const row = Array.isArray(data) ? data[0] : data;
-  return row?.highscore || 0;
-}
+    async function getHighScoreSupabase() {
+      if (!sb) return 0;
+      const { data, error } = await sb.rpc('get_balances'); // ou une RPC dédiée
+      if (error) return 0;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row?.highscore || 0;
+    }
 
     // ===== LANCEMENT avec reprise (seulement si inProgress true) =====
     (async function boot() {
@@ -1749,4 +1776,3 @@ async function getHighScoreSupabase() {
 
   global.VBlocksGame = { initGame };
 })(this);
-
