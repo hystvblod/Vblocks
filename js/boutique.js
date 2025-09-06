@@ -333,6 +333,110 @@ function setupBoutiqueAchats() {
 /* ===========================
    IAP Cordova Purchase
    =========================== */
+const PROCESSED_TX = new Set();
+
+document.addEventListener('deviceready', function () {
+  if (!_iapAvailable()) { console.warn("[IAP] Plugin purchase non dispo"); return; }
+  const IAP = window.store;
+
+  try { IAP.verbosity = Math.max(IAP.verbosity || 0, 4); } catch(_) {}
+
+  // Register
+  Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
+    IAP.register({ id, alias, type: _mapType(alias) });
+  });
+
+  // Prix localisés → mémos + UI
+  IAP.when('product').updated(function (p) {
+    if (!p || !p.id) return;
+    PRICES_BY_ID[p.id] = p.price || PRICES_BY_ID[p.id] || '';
+    const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p.id);
+    if (alias) {
+      PRICES_BY_ALIAS[alias] = {
+        price: p.price || '',
+        currency: p.currency || '',
+        micros: p.priceMicros || 0
+      };
+    }
+    // pousser le prix à l’écran depuis achat.js si dispo
+    if (typeof window.refreshDisplayedPrices === 'function') {
+      window.refreshDisplayedPrices();
+    }
+  });
+
+  // Achat approuvé → crédits SERVEUR (RPC)
+  IAP.when('product').approved(async function (p) {
+    try {
+      const txId = p?.transaction?.id || p?.transaction?.orderId;
+      if (txId) {
+        if (PROCESSED_TX.has(txId)) { p.finish(); return; }
+        PROCESSED_TX.add(txId);
+      }
+      const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p.id);
+
+      // Crédit côté serveur selon le produit
+      if (alias === 'points3000')       await addVCoinsSupabase(3000);
+      else if (alias === 'points10000') await addVCoinsSupabase(10000);
+      else if (alias === 'jetons12')    await addJetonsSupabase(12);
+      else if (alias === 'jetons50')    await addJetonsSupabase(50);
+      else if (alias === 'nopub')       await setNoAds();
+
+      p.finish();
+      await renderThemes();
+      alert("Achat réussi !");
+    } catch (e) {
+      console.warn("[IAP] post-achat erreur:", e);
+      try { p.finish(); } catch (_) {}
+      alert("Erreur post-achat.");
+    }
+  });
+
+  // Possédé / restauré
+  IAP.when('product').owned(function (p) {
+    const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === p?.id);
+    if (alias === 'nopub') setNoAds();
+  });
+
+  IAP.error(function (err) {
+    console.warn('[IAP] error:', err?.message || err);
+  });
+
+  IAP.ready(function () {
+    window.__IAP_READY__ = true;
+
+    // snapshot initial (mémo prix)
+    IAP.products.forEach(prod => {
+      const alias = Object.keys(PRODUCT_IDS).find(a => PRODUCT_IDS[a] === prod.id);
+      if (alias) {
+        PRICES_BY_ALIAS[alias] = {
+          price: prod.price || "",
+          currency: prod.currency || "",
+          micros: prod.priceMicros || 0
+        };
+      }
+    });
+
+    // Peindre les prix init + UI
+    SPECIAL_CARTOUCHES.forEach(c => {
+      const alias = c.key?.split('.').pop();
+      const pid = PRODUCT_IDS[alias];
+      if (!pid) return;
+      const p = IAP.get(pid);
+      if (p && p.price) c.prix = p.price;
+    });
+    renderAchats();
+    setupBoutiqueAchats();
+
+    // pousser les prix dans l’UI depuis achat.js
+    if (typeof window.refreshDisplayedPrices === 'function') {
+      window.refreshDisplayedPrices();
+      setTimeout(() => { try { window.refreshDisplayedPrices(); } catch(_){} }, 1500);
+    }
+  });
+
+  try { IAP.refresh(); } catch (e) { console.warn('[IAP] refresh:', e?.message || e); }
+  setTimeout(() => { try { IAP.refresh(); } catch(_){} }, 3000);
+});
 
 /* ===========================
    Bootstrap UI
