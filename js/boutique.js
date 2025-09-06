@@ -11,15 +11,7 @@ function t(key) {
   return key;
 }
 
-/* ---------- Liste des thèmes ---------- */
-const THEMES = [
-  { key: "bubble" }, { key: "nature" }, { key: "nuit" }, { key: "luxury" },
-  { key: "space" }, { key: "angelique" }, { key: "cyber" }, { key: "vitraux" },
-  { key: "pixel" }, { key: "halloween" },
-  { key: "arabic", name: "Arabic" },
-  { key: "grece",  name: "Grèce antique" },
-  { key: "japon",  name: "Japon" }
-];
+
 
 const THEME_PRICE = 5000;
 
