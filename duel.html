@@ -160,11 +160,12 @@
   </style>
 </head>
 <body>
-    <script>
+  <script>
     // Force le thème dès le départ pour éviter tout flash
     const theme = localStorage.getItem('themeVBlocks') || 'neon';
-    document.body.setAttribute('data-theme', theme); 
-    </script>
+    document.body.setAttribute('data-theme', theme);
+  </script>
+
   <div class="main-content">
     <div class="header-row">
       <div class="header-side">
@@ -210,7 +211,7 @@
         <span id="vcoin-amount">0</span>
       </div>
       <div class="game-flex-wrap">
-       <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas"></canvas>
       </div>
       <div class="score-row" id="score-row">
         <div class="score-group">
@@ -227,12 +228,15 @@
       </div>
     </div>
   </div>
+
   <audio id="music" src="assets/sounds/chill.mp3" loop></audio>
-<script src="js/vendor/supabase-2.42.5.min.js"></script>
+
+  <script src="js/vendor/supabase-2.42.5.min.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/pub.js"></script>
   <script src="js/userData.js"></script>
   <script src="js/game_duel.js"></script>
+
   <script>
     // --- Utils ---
     function genDuelCode(len = 6) {
@@ -251,27 +255,25 @@
       console.log("[DUEL] showDuelPopup", state, data);
       const popup = document.getElementById('duelPopup');
       popup.style.display = 'flex';
-popup.style.background = "rgba(0,0,0,0.85)";
+      popup.style.background = "rgba(0,0,0,0.85)";
       let html = '';
 
-if (state === 'choice') {
-  html = `
-    <div>
-      <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
-      <button class="duel-btn" id="btnNewDuel" data-i18n="duel.popup.choice.new"></button>
-      <br>
-      <button class="duel-btn" id="btnJoinDuel" data-i18n="duel.popup.choice.join"></button>
-      <br><br>
-    <button style="padding:0.4em 1em;font-size:0.9em;border-radius:0.5em;
-               border:none;background:#444;color:#fff;cursor:pointer;"
-        onclick="window.location.href='index.html'">
-  ${i18nT("button.back")}
-</button>
-
-    </div>
-  `;
-}
-
+      if (state === 'choice') {
+        html = `
+          <div>
+            <h2 data-i18n="duel.popup.choice.title">${i18nT("duel.popup.choice.title")}</h2>
+            <button class="duel-btn" id="btnNewDuel" data-i18n="duel.popup.choice.new"></button>
+            <br>
+            <button class="duel-btn" id="btnJoinDuel" data-i18n="duel.popup.choice.join"></button>
+            <br><br>
+            <button style="padding:0.4em 1em;font-size:0.9em;border-radius:0.5em;
+                      border:none;background:#444;color:#fff;cursor:pointer;"
+                onclick="window.location.href='index.html'">
+              ${i18nT("button.back")}
+            </button>
+          </div>
+        `;
+      }
 
       if (state === 'wait') {
         html = `<div>
@@ -360,7 +362,9 @@ if (state === 'choice') {
           showDuelPopup('wait', { code: duelCode });
         } else if (playerNum === 2) {
           console.log("[DUEL] J2 rejoint la room, update player2/status pending");
-          await window.sb.from('duels').update({ player2: window.getUserId(), status: "pending" }).eq('id', duelId);
+          await window.sb.from('duels')
+            .update({ player2: await window.getUserId(), status: "pending" })
+            .eq('id', duelId);
           showDuelPopup('confirm');
         }
         pollDuelStatus();
@@ -373,7 +377,7 @@ if (state === 'choice') {
       console.log("[DUEL] Création nouvelle room avec code:", duelCode);
       let { data, error } = await window.sb.from('duels').insert([{
         code: duelCode,
-        player1: window.getUserId(),
+        player1: await window.getUserId(),
         status: "waiting"
       }]).select().single();
       duelId = data?.id;
@@ -443,33 +447,19 @@ if (state === 'choice') {
       startDuelFlow();
     });
 
-    setTimeout(()=>{
-      const music = document.getElementById("music");
-      const btn = document.getElementById("music-btn");
-      if(music && btn){
-        btn.onclick = function() {
-          if (music.paused) {
-            music.play();
-            this.textContent = i18nT("duel.music");
-          } else {
-            music.pause();
-            this.textContent = i18nT("duel.mute");
-          }
-        };
-      }
-    }, 500);
+    // (handler musique en doublon supprimé — géré par game_duel.js)
 
     async function updateVCoinsDisplay() {
       let vcoins = 0;
       try {
-        if(window.userData && userData.getVCoins) {
+        if (window.userData && userData.getVCoins) {
           vcoins = await userData.getVCoins();
         } else {
           vcoins = parseInt(localStorage.getItem("vblocks_vcoins") || "0", 10);
         }
       } catch(e) { vcoins = 0; }
       let el = document.getElementById("vcoin-amount");
-      if(el) el.textContent = vcoins;
+      if (el) el.textContent = vcoins;
     }
     updateVCoinsDisplay();
     window.addEventListener("storage", updateVCoinsDisplay);

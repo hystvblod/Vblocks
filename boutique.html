@@ -400,51 +400,47 @@ function isNativeRuntime() {
   return false;
 }
 
+/* ----- Unique handler deviceready pour IAP (net et sans doublons) ----- */
 document.addEventListener('deviceready', function () {
   const IAP = window.store;
   if (!IAP) return;
 
   try {
-    // Quand le SDK IAP est prêt → on marque le flag & on repeint les prix
+    // Quand le SDK IAP est prêt → flag + maj prix
     IAP.ready(function () {
       window.__IAP_READY__ = true;
       try { fillCartouchePricesFromStore(); } catch(_) {}
       try { renderAchats(); } catch(_) {}
     });
 
-    // Déclenche la récupération des SKU/prix/owned
+    // 1er refresh immédiat
     IAP.refresh();
+
+    // 2e refresh 3 s plus tard (fiabilise le 1er run)
+    setTimeout(() => {
+      try { IAP.refresh(); } catch (_) {}
+    }, 3000);
   } catch(_) {}
 });
 
 // Attente active tant que le store n'est pas prêt
-async function waitIapReady(maxMs = 5000) {
+async function waitIapReady(maxMs = 15000) {   // ← 15000 au lieu de 5000
   const step = 150;
   let waited = 0;
   while (!window.__IAP_READY__ && waited < maxMs) {
     await new Promise(r => setTimeout(r, step));
     waited += step;
   }
-  return window.__IAP_READY__;
+  return !!window.__IAP_READY__;
 }
 
+
 // ORDER sécurisé
-async function safeOrder(productId) {
-  if (!isNativeRuntime()) {
-    alert("Boutique indisponible dans ce contexte. Lance l’application installée.");
-    return;
-  }
-  if (!window.store) {
-    // Laisse une chance au bridge de se lier
-    const okLater = await waitIapReady(4000);
-    if (!okLater || !window.store) {
-      alert("Boutique en cours d'initialisation… réessaie dans un instant.");
-      return;
-    }
-  }
-  const ok = await waitIapReady(4000);
-  if (!ok || typeof window.store.order !== 'function') {
-    alert("Boutique indisponible pour le moment. Réessaie.");
+async function safeOrder(productId){
+  // Attendre réellement le bridge + le SDK
+  let ok = await waitIapReady(15000);
+  if (!ok || !window.store || typeof window.store.order !== 'function') {
+    alert("Boutique en cours d'initialisation… réessaie dans un instant.");
     return;
   }
   try { window.store.order(productId); }
@@ -558,7 +554,7 @@ document.addEventListener('deviceready', function () {
 
 /* ---------- Events modal ---------- */
 $close?.addEventListener('click', closeThemeModal);
-document.getElementById('themeModalBackdrop').addEventListener('click', (e) => { if (e.target === document.getElementById('themeModalBackdrop')) closeThemeModal(); });
+$backdrop.addEventListener('click', (e) => { if (e.target === $backdrop) closeThemeModal(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeThemeModal(); });
 
 /* ---------- Ready ---------- */

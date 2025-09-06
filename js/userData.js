@@ -1,5 +1,6 @@
 // =============================
 // userData.js — Version durcie (anti-429 / anti-409) + Pause musique auto
+// Patch 2025-09-06 : expose getUserId global (compat duel.html)
 // =============================
 
 // ---------- INIT SUPABASE (création unique) ----------
@@ -303,6 +304,13 @@ async function getAuthUserId() {
     const { data: { user } } = await sb.auth.getUser();
     return user?.id || null;
   } catch { return null; }
+}
+
+// --- Patch duel.html compatibility: getUserId global ---
+async function getUserIdGlobal() {
+  // Assure l’auth + ensure_user avant de retourner l’UID
+  await bootstrapAuthAndProfile();
+  return await getAuthUserId();
 }
 
 
@@ -645,6 +653,12 @@ userData.syncThemeFromLocal  = syncThemeFromLocal;
 window.updatePseudoUI        = updatePseudoUI;
 window.setupPseudoPopup      = setupPseudoPopup;
 window.bootstrapAuthAndProfile = bootstrapAuthAndProfile;
+
+// --- exports auth / UID ---
+userData.ensureAuth          = ensureAuth;
+userData.getAuthUserId       = getAuthUserId;
+userData.getUserId           = getUserIdGlobal;   // ✅ nouvel export haut-niveau
+window.getUserId             = getUserIdGlobal;   // ✅ compat héritée (duel.html)
 
 // confort
 window.getCurrentTheme       = getCurrentTheme;

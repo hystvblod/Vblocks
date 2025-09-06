@@ -72,36 +72,25 @@ function isNativeRuntime() {
   return false;
 }
 
-async function waitIapReady(maxMs = 5000) {
+async function waitIapReady(maxMs = 15000) { // ← 15 s au lieu de 5 s
   const step = 150;
   let waited = 0;
   while (!window.__IAP_READY__ && waited < maxMs) {
     await new Promise(r => setTimeout(r, step));
     waited += step;
   }
-  return window.__IAP_READY__;
+  return !!window.__IAP_READY__;
 }
 
 async function safeOrder(productId) {
-  if (!isNativeRuntime()) {
-    if (ENABLE_WEB_FALLBACK) {
-      // (optionnel) simuler un achat en web pour debug
-      alert("DEBUG: achat simulé " + productId);
+  // Attendre réellement l’initialisation IAP (au lieu de rejeter trop tôt)
+  const ok = await waitIapReady(15000);
+  if (!ok || !window.store || typeof window.store.order !== 'function') {
+    if (!isNativeRuntime() && !ENABLE_WEB_FALLBACK) {
+      alert("Boutique indisponible dans ce contexte. Lance l’application installée.");
       return;
     }
-    alert("Boutique indisponible dans ce contexte. Lance l’application installée.");
-    return;
-  }
-  if (!window.store) {
-    const okLater = await waitIapReady(4000);
-    if (!okLater || !window.store) {
-      alert("Boutique en cours d'initialisation… réessaie dans un instant.");
-      return;
-    }
-  }
-  const ok = await waitIapReady(4000);
-  if (!ok || typeof window.store.order !== 'function') {
-    alert("Boutique indisponible pour le moment. Réessaie.");
+    alert("Boutique en cours d'initialisation… réessaie dans un instant.");
     return;
   }
   try { window.store.order(productId); }
@@ -357,6 +346,9 @@ document.addEventListener('deviceready', function () {
   if (!_iapAvailable()) { console.warn("[IAP] Plugin purchase non dispo"); return; }
   const IAP = window.store;
 
+  // (Optionnel en prod) logs détaillés pendant le debug
+  try { IAP.verbosity = Math.max(IAP.verbosity || 0, 4); } catch(_) {}
+
   // Register
   Object.entries(PRODUCT_IDS).forEach(([alias, id]) => {
     IAP.register({ id, alias, type: _mapType(alias) });
@@ -441,6 +433,8 @@ document.addEventListener('deviceready', function () {
   });
 
   try { IAP.refresh(); } catch (e) { console.warn('[IAP] refresh:', e?.message || e); }
+  // 2e refresh 3 s plus tard (fiabilise le 1er run)
+  setTimeout(() => { try { IAP.refresh(); } catch(_){} }, 3000);
 });
 
 /* ===========================
