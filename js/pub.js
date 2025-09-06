@@ -19,7 +19,7 @@
   var AD_UNIT_ID_REWARDED     = 'ca-app-pub-6837328794080297/3006407791';
 
   // --- Réglages interstitiels ---
-  var INTERSTITIEL_APRES_X_ACTIONS = 3; // pub AU DÉBUT de la 4ᵉ action
+  var INTERSTITIEL_APRES_X_ACTIONS = 2; // pub AU DÉBUT de la 3ᵉ action
   var INTER_COOLDOWN_MS = 0; // anti-spam (0 = off)
 
   // --- Récompenses par défaut (affichage/UI) ---
@@ -626,4 +626,76 @@
 
   window.hasNoAds             = hasNoAds;
 
+})();
+
+/* ====== ADD-ONLY: PRELOAD REWARDED (ne modifie rien d’existant) ====== */
+(function () {
+  'use strict';
+
+  // Récup plugin sans casser tes variables
+  var Cap = (window.Capacitor || {});
+  var AdMob = (Cap.Plugins && Cap.Plugins.AdMob) ? Cap.Plugins.AdMob : (window.AdMob || null);
+
+  // ⚠️ On reprend ton ad unit rewarded tel quel (même valeur que dans le fichier ci-dessus)
+  var REWARDED_ID = 'ca-app-pub-6837328794080297/3006407791';
+
+  // Petits flags internes au preload (ne touchent pas tes variables)
+  var __rewardReady = false;
+  var __rewardLoading = false;
+
+  function isNative() {
+    try {
+      if (window.Capacitor && typeof window.Capacitor.getPlatform === 'function') {
+        return window.Capacitor.getPlatform() !== 'web';
+      }
+      if (Capacitor && Capacitor.isNativePlatform) return Capacitor.isNativePlatform();
+    } catch (_) {}
+    return !!(window.cordova && typeof window.cordova.platformId === 'string');
+  }
+
+  function buildReq() {
+    // si ta fonction existe dans le scope global, on l’utilise
+    try { if (typeof window.buildAdMobRequestOptions === 'function') return window.buildAdMobRequestOptions(); } catch(_){}
+    return {};
+  }
+
+  async function preloadReward() {
+    if (!isNative()) return;
+    if (!AdMob || !REWARDED_ID) return;
+    if (__rewardReady || __rewardLoading) return;
+    __rewardLoading = true;
+    try {
+      // Compat différentes APIs
+      if (AdMob.loadRewardedAd) {
+        await AdMob.loadRewardedAd({ adId: REWARDED_ID, requestOptions: buildReq() });
+      } else if (AdMob.prepareRewardVideoAd) {
+        await AdMob.prepareRewardVideoAd({ adId: REWARDED_ID, requestOptions: buildReq() });
+      } else {
+        __rewardLoading = false;
+        return;
+      }
+      __rewardReady = true;
+    } catch (_) {
+      __rewardReady = false;
+    } finally {
+      __rewardLoading = false;
+    }
+  }
+
+  // Expose un hook global SANS toucher à tes flux existants
+  window.preloadRewardAds = preloadReward;
+
+  // Précharge automatiquement au bon moment, sans modifier ton init
+  document.addEventListener('deviceready', function () {
+    try { preloadReward(); } catch (_) {}
+    var timer = setInterval(function () {
+      if (__rewardReady) { clearInterval(timer); return; }
+      if (!__rewardLoading) { preloadReward(); }
+    }, 20000);
+  });
+
+  // Bonus: si la page arrive avant deviceready, on tente un petit preload
+  document.addEventListener('DOMContentLoaded', function () {
+    try { preloadReward(); } catch (_) {}
+  });
 })();
