@@ -22,6 +22,9 @@
   const PROCESSED_TX = new Set();           // idempotence par transaction.id
   let   STORE_READY  = false;
 
+  // --- Flag pour boutique.js (débloque les clics quand prêt) ---
+  window.__IAP_READY__ = false;
+
   // --- Détection API disponible ---
   function getIapApi() {
     // Priorité à l'API moderne (Billing v7+)
@@ -44,9 +47,7 @@
       const { data: { session } } = await sb.auth.getSession();
       if (!session) await sb.auth.signInAnonymously();
       __authEnsured = true;
-    } catch (e) {
-      console.warn('[achat] ensureAuth error:', e?.message || e);
-    }
+    } catch (e) {}
   }
 
   // --- Créditer l’utilisateur ---
@@ -76,12 +77,8 @@
         }
         return true;
       }
-      console.warn('[achat] Pas de userData/sb: crédit non appliqué');
       return false;
-    } catch (e) {
-      console.error('[achat] creditUser error:', e?.message || e);
-      return false;
-    }
+    } catch (e) { return false; }
   }
 
   // --- Injecter les prix dans le DOM (HTML-first) ---
@@ -95,19 +92,17 @@
           const priceNode = node.querySelector('.prix-label');
           if (priceNode && price) priceNode.textContent = price;
         });
-    } catch { /* silencieux */ }
+    } catch {}
   }
   window.refreshDisplayedPrices = refreshDisplayedPrices;
 
   // ============ BOOT ============ //
   document.addEventListener('deviceready', function () {
-    console.log('[IAP] deviceready fired');
     const { api, store } = getIapApi();
     if (api === 'none') {
-      console.warn('[achat] Plugin IAP indisponible. Prix resteront "—".');
+      // Pas de plugin (build web/sideload) : prix resteront "—"
       return;
     }
-    console.log('[IAP] API =', api);
 
     if (api === 'legacy') {
       // ===== API HISTORIQUE: window.store =====
@@ -117,15 +112,16 @@
       }
 
       // 1) Register
-      PRODUCTS.forEach(p => IAP.register({ id: p.id, alias: p.id, type: mapType(p.type) }));
-      console.log('[IAP] registered:', PRODUCTS.map(p => p.id));
+      PRODUCTS.forEach(p => { try { IAP.register({ id: p.id, alias: p.id, type: mapType(p.type) }); } catch(_){} });
 
       // 2) Updates → prix
       IAP.when('product').updated(p => {
-        if (p?.id && p.price) {
-          PRICES_BY_ID[p.id] = p.price;
-          refreshDisplayedPrices();
-        }
+        try {
+          if (p?.id && p.price) {
+            PRICES_BY_ID[p.id] = p.price;
+            refreshDisplayedPrices();
+          }
+        } catch {}
       });
 
       // 3) Approved → crédit + finish (idempotent)
@@ -133,11 +129,11 @@
         try {
           const txId = p?.transaction && (p.transaction.id || p.transaction.orderId);
           if (txId) {
-            if (PROCESSED_TX.has(txId)) { p.finish(); return; }
+            if (PROCESSED_TX.has(txId)) { try { p.finish(); } catch {} return; }
             PROCESSED_TX.add(txId);
           }
           const found = PRODUCTS.find(x => x.id === p?.id);
-          if (!found) { p.finish(); return; }
+          if (!found) { try { p.finish(); } catch {} return; }
           const ok = await creditUser(found.credit, { productId: p.id, type: p.type, transaction: p.transaction || null });
           if (ok) {
             if (found.credit.vcoins) alert('✅ VCoins crédités !');
@@ -146,26 +142,27 @@
           } else {
             alert('Erreur de crédit. Réessayez ou contactez le support.');
           }
-          p.finish();
-        } catch (e) {
-          console.error('[IAP] approved error', e);
-          try { p.finish(); } catch {}
-        }
+        } catch {}
+        try { p.finish(); } catch {}
       });
 
       // 4) Owned (restauré) → NO ADS
       IAP.when('product').owned(p => {
-        if (p?.id === 'nopub') {
-          localStorage.setItem('no_ads', '1');
-          if (typeof window.setNoAds === 'function') window.setNoAds(true);
-        }
+        try {
+          if (p?.id === 'nopub') {
+            localStorage.setItem('no_ads', '1');
+            if (typeof window.setNoAds === 'function') window.setNoAds(true);
+          }
+        } catch {}
       });
-
-      IAP.error(err => console.warn('[IAP] error', err && (err.message || err.code || err)));
 
       // 5) Ready + refresh
       IAP.ready(() => {
         STORE_READY = true;
+        // ✅ débloque la boutique (boutique.js)
+        window.__IAP_READY__ = true;
+        try { window.dispatchEvent(new Event('iap-ready')); } catch {}
+
         try {
           PRODUCTS.forEach(({ id }) => {
             const p = IAP.get(id);
@@ -173,7 +170,6 @@
           });
         } catch {}
         refreshDisplayedPrices();
-        // hotfix: relances
         try { window.refreshDisplayedPrices(); } catch {}
         setTimeout(() => { try { window.refreshDisplayedPrices(); } catch {} }, 1500);
         let n = 0, t = setInterval(() => {
@@ -196,80 +192,147 @@
     // ===== API MODERNE: window.CdvPurchase.store (Billing v7+) =====
     const S = store; // alias
 
-    // 1) Register / initialize
+    // 1) initialize + register (v13+)
+    try {
+      // initialize attend un ARRAY de plateformes
+      const platform = (S.Platform && S.Platform.GOOGLE_PLAY) ? S.Platform.GOOGLE_PLAY : (S.defaultPlatform && S.defaultPlatform());
+      if (platform) { S.initialize([ platform ]); }
+    } catch {}
+
     const mapType = (t) => t === 'NON_CONSUMABLE' ? S.ProductType.NON_CONSUMABLE : S.ProductType.CONSUMABLE;
-    S.initialize(PRODUCTS.map(p => ({ id: p.id, type: mapType(p.type) })));
+    try {
+      S.register(PRODUCTS.map(p => ({ id: p.id, type: mapType(p.type) })));
+    } catch {}
 
-    // 2) Updates produits → prix
-    S.updated.add(() => {
-      PRODUCTS.forEach(({ id }) => {
-        const p = S.products?.byId?.[id];
-        const priceStr = p?.pricing?.price || p?.price; // selon version
-        if (priceStr) PRICES_BY_ID[id] = priceStr;
+    // 2) Updates produits → prix (via when().productUpdated)
+    if (S.when && S.when().productUpdated) {
+      S.when().productUpdated(p => {
+        try {
+          const priceStr = p?.pricing?.price || p?.price;
+          if (p?.id && priceStr) {
+            PRICES_BY_ID[p.id] = priceStr;
+            refreshDisplayedPrices();
+          }
+        } catch {}
       });
-      refreshDisplayedPrices();
-    });
-
-    // 3) Achats approuvés → crédit + finish (idempotent)
-    S.approved.add(async (p) => {
-      try {
-        const txId = p?.transaction?.id || p?.transactionId;
-        if (txId) {
-          if (PROCESSED_TX.has(txId)) { try { await S.finish(p); } catch {} return; }
-          PROCESSED_TX.add(txId);
-        }
-        const found = PRODUCTS.find(x => x.id === p?.id);
-        if (!found) { try { await S.finish(p); } catch {} return; }
-        const ok = await creditUser(found.credit, { productId: p.id, type: p.type, transaction: p.transaction || null });
-        if (ok) {
-          if (found.credit.vcoins) alert('✅ VCoins crédités !');
-          if (found.credit.jetons) alert('✅ Jetons crédités !');
-          if (found.credit.nopub)  alert('✅ Pack NO ADS activé !');
-        } else {
-          alert('Erreur de crédit. Réessayez ou contactez le support.');
-        }
-        try { await S.finish(p); } catch {}
-      } catch (e) {
-        console.error('[IAP] approved error', e);
-        try { await S.finish(p); } catch {}
-      }
-    });
-
-    // 4) Owned / restored → NO ADS
-    S.owned?.add?.((p) => {
-      if (p?.id === 'nopub') {
-        localStorage.setItem('no_ads', '1');
-        if (typeof window.setNoAds === 'function') window.setNoAds(true);
-      }
-    });
-
-    S.error?.add?.(err => console.warn('[IAP] error', err && (err.message || err.code || err)));
-
-    // 5) Ready + refresh
-    S.ready(() => {
-      STORE_READY = true;
-      try {
+    } else if (S.updated && S.updated.add) {
+      // fallback signal
+      S.updated.add(() => {
         PRODUCTS.forEach(({ id }) => {
           const prod = S.products?.byId?.[id];
           const priceStr = prod?.pricing?.price || prod?.price;
           if (priceStr) PRICES_BY_ID[id] = priceStr;
         });
-      } catch {}
-      refreshDisplayedPrices();
-      try { window.refreshDisplayedPrices(); } catch {}
-      setTimeout(() => { try { window.refreshDisplayedPrices(); } catch {} }, 1500);
-      let n = 0, t = setInterval(() => {
-        try { window.refreshDisplayedPrices(); } catch {}
-        if (++n >= 5) clearInterval(t);
-      }, 1000);
-    });
+        refreshDisplayedPrices();
+      });
+    }
 
-    try { S.refresh(); } catch {}
-    setTimeout(() => { try { S.refresh(); } catch {} }, 2500);
+    // 3) Achats approuvés → crédit + finish (idempotent)
+    if (S.when && S.when().approved) {
+      S.when().approved(async (tx) => {
+        try {
+          const productId = tx?.productId || tx?.product?.id;
+          const txId = tx?.transactionId || tx?.orderId || tx?.transaction?.id || tx?.id;
+          if (txId) {
+            if (PROCESSED_TX.has(txId)) { try { tx.finish && tx.finish(); } catch {} return; }
+            PROCESSED_TX.add(txId);
+          }
+          const found = PRODUCTS.find(x => x.id === productId);
+          if (!found) { try { tx.finish && tx.finish(); } catch {} return; }
+
+          const ok = await creditUser(found.credit, { productId, transaction: { id: txId } });
+          if (ok) {
+            if (found.credit.vcoins) alert('✅ VCoins crédités !');
+            if (found.credit.jetons) alert('✅ Jetons crédités !');
+            if (found.credit.nopub)  alert('✅ Pack NO ADS activé !');
+          } else {
+            alert('Erreur de crédit. Réessayez ou contactez le support.');
+          }
+          try { tx.finish && tx.finish(); } catch {}
+        } catch {
+          try { tx.finish && tx.finish(); } catch {}
+        }
+      });
+    } else if (S.approved && S.approved.add) {
+      // fallback signal
+      S.approved.add(async (p) => {
+        try {
+          const txId = p?.transaction?.id || p?.transactionId;
+          if (txId) {
+            if (PROCESSED_TX.has(txId)) { try { S.finish && S.finish(p); } catch {} return; }
+            PROCESSED_TX.add(txId);
+          }
+          const found = PRODUCTS.find(x => x.id === p?.id);
+          if (!found) { try { S.finish && S.finish(p); } catch {} return; }
+          const ok = await creditUser(found.credit, { productId: p.id, transaction: p.transaction || null });
+          if (ok) {
+            if (found.credit.vcoins) alert('✅ VCoins crédités !');
+            if (found.credit.jetons) alert('✅ Jetons crédités !');
+            if (found.credit.nopub)  alert('✅ Pack NO ADS activé !');
+          } else {
+            alert('Erreur de crédit. Réessayez ou contactez le support.');
+          }
+          try { S.finish && S.finish(p); } catch {}
+        } catch {
+          try { S.finish && S.finish(p); } catch {}
+        }
+      });
+    }
+
+    // 4) Owned / restored → NO ADS (via receipt)
+    if (S.when && S.when().receiptUpdated) {
+      S.when().receiptUpdated(() => {
+        try {
+          const prod = S.products?.byId?.['nopub'];
+          const owned = S.owned ? S.owned({ id: 'nopub' }) : (prod && prod.owned);
+          if (owned) {
+            localStorage.setItem('no_ads', '1');
+            if (typeof window.setNoAds === 'function') window.setNoAds(true);
+          }
+        } catch {}
+      });
+    }
+
+    // 5) Ready + update/refresh catalogue
+    if (S.ready) {
+      S.ready(() => {
+        STORE_READY = true;
+        // ✅ débloque la boutique (boutique.js)
+        window.__IAP_READY__ = true;
+        try { window.dispatchEvent(new Event('iap-ready')); } catch {}
+
+        try {
+          PRODUCTS.forEach(({ id }) => {
+            const prod = S.products?.byId?.[id] || (S.get && S.get(id));
+            const priceStr = (prod && prod.pricing && prod.pricing.price) || (prod && prod.price);
+            if (priceStr) PRICES_BY_ID[id] = priceStr;
+          });
+        } catch {}
+        refreshDisplayedPrices();
+        try { window.refreshDisplayedPrices(); } catch {}
+        setTimeout(() => { try { window.refreshDisplayedPrices(); } catch {} }, 1500);
+        let n = 0, t = setInterval(() => {
+          try { window.refreshDisplayedPrices(); } catch {}
+          if (++n >= 5) clearInterval(t);
+        }, 1000);
+      });
+    }
+
+    // v13 : préférer update()
+    try { (S.update ? S.update() : (S.refresh && S.refresh())); } catch {}
+    setTimeout(() => { try { (S.update ? S.update() : (S.refresh && S.refresh())); } catch {} }, 2500);
 
     // Achat programmatique
-    window.buyProduct = function (id) {
-      try { S.order(id); } catch (e) { alert('Erreur achat: ' + (e?.message || e)); }
+    window.buyProduct = async function (id) {
+      try {
+        // v13+: commander une OFFER, pas l'ID produit direct
+        const p = (S.products && S.products.byId && S.products.byId[id]) || (S.get && S.get(id));
+        const offer = p && p.offers && p.offers[0];
+        if (!offer) { alert('Offre introuvable pour ce produit.'); return; }
+        await S.order(offer);
+      } catch (e) {
+        alert('Erreur achat: ' + (e?.message || e));
+      }
     };
     window.safeOrder = window.buyProduct;
   });

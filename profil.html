@@ -375,7 +375,7 @@
       popup.classList.add("active");
 
       // sélection courante
-      let selectedTheme = localStorage.getItem("themeVBlocks") || "neon";
+      let selectedTheme = localStorage.getItem("themeVBlocks") || "retro";
       selectedTheme = normalizeThemeKey(selectedTheme);
       document.querySelectorAll('.theme-choice-vb').forEach(btn => {
         if (normalizeThemeKey(btn.dataset.theme) === selectedTheme) btn.classList.add('active');

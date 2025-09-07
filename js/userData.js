@@ -111,7 +111,7 @@ function normalizeThemeKey(k){
 }
 
 function getCurrentTheme() {
-  return localStorage.getItem('themeVBlocks') || 'neon';
+  return localStorage.getItem('themeVBlocks') || 'retro';
 }
 function setCurrentTheme(theme) {
   localStorage.setItem('themeVBlocks', theme);

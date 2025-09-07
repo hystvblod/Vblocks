@@ -73,16 +73,14 @@ function fillRectThemeSafe(c, px, py, size) {
       else playMusicAuto();
     }
   });
-  if (window.Capacitor || window.cordova) {
-    setTimeout(playMusicAuto, 350);
-  } else {
-    window.addEventListener('pointerdown', function autoStartMusic() {
-      if (!window.musicStarted && !isMusicAlwaysMuted()) {
-        playMusicAuto();
-        window.musicStarted = true;
-      }
-    }, { once: true });
-  }
+  // Démarrage audio sur premier input (pas d’attente réseau)
+  window.addEventListener('pointerdown', function autoStartMusic() {
+    if (!window.musicStarted && !isMusicAlwaysMuted()) {
+      playMusicAuto();
+      window.musicStarted = true;
+    }
+  }, { once: true });
+
   setTimeout(refreshMusicBtn, 200);
   document.addEventListener('DOMContentLoaded', () => {
     const btnMusic = document.getElementById('music-btn');
@@ -448,11 +446,15 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     // =========================
-    // AUTOSAVE / RESUME (LOCAL + CLOUD)
+    // AUTOSAVE / RESUME (LOCAL UNIQUEMENT)
     // =========================
     const SAVE_KEY = `vblocks:autosave:${mode}:v3`; // v3: inclut inProgress + séquence
     const SAVE_TTL_MS = 1000 * 60 * 60 * 48; // 48h
     const CAN_RESUME = (mode !== 'duel'); // Par équité, pas de reprise en duel
+
+    // Cloud désactivé pour la sauvegarde de partie
+    const saveStateCloud = async () => {};
+    const loadSavedCloud = async () => null;
 
     function getSavableState() {
       return {
@@ -488,42 +490,21 @@ function fillRectThemeSafe(c, px, py, size) {
         localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
       } catch (_e) {}
     }
-    async function saveStateCloud(stateOrNull) {
-      if (!CAN_RESUME || !sb) return;
-      const userId = await getUserId(); // ✅ await
-      if (!userId) return;
-      try {
-        if (stateOrNull === null) {
-          await sb.from('vblocks_saves').delete().eq('user_id', userId).eq('mode', mode);
-        } else {
-          const payload = { version: 3, ts: Date.now(), state: stateOrNull };
-          await sb.from('vblocks_saves').upsert(
-            { user_id: userId, mode, payload },
-            { onConflict: 'user_id,mode' }
-          );
-        }
-      } catch (_e) { /* silencieux */ }
+
+    async function saveStateNow() {
+      if (!CAN_RESUME) return;
+      const state = getSavableState();
+      saveStateNowLocal();
+      // pas de cloud ici
     }
-    async function loadSavedCloud() {
-      if (!CAN_RESUME || !sb) return null;
-      const userId = await getUserId(); // ✅ await
-      if (!userId) return null;
-      try {
-        const { data, error } = await sb
-          .from('vblocks_saves')
-          .select('payload')
-          .eq('user_id', userId)
-          .eq('mode', mode)
-          .maybeSingle();
-        if (error || !data || !data.payload) return null;
-        const p = data.payload;
-        const st = p.state || null;
-        if (!st) return null;
-        if ((Date.now() - (p.ts || st.ts || 0)) > SAVE_TTL_MS) return null;
-        if (!st.inProgress) return null; // clé : on ne propose pas si pas en cours
-        return st;
-      } catch (_e) { return null; }
+
+    let saveTimer = null;
+    function scheduleSave() {
+      if (!CAN_RESUME) return;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveStateNow, 300);
     }
+
     function loadSavedLocal() {
       if (!CAN_RESUME) return null;
       const raw = localStorage.getItem(SAVE_KEY);
@@ -538,20 +519,6 @@ function fillRectThemeSafe(c, px, py, size) {
       if (st.mode !== mode) return null;
       if (!st.inProgress) return null;
       return st;
-    }
-
-    async function saveStateNow() {
-      if (!CAN_RESUME) return;
-      const state = getSavableState();
-      saveStateNowLocal();
-      await saveStateCloud(state).catch(()=>{});
-    }
-
-    let saveTimer = null;
-    function scheduleSave() {
-      if (!CAN_RESUME) return;
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveStateNow, 300);
     }
 
     function restoreFromSave(s) {
@@ -609,7 +576,7 @@ function fillRectThemeSafe(c, px, py, size) {
     window.addEventListener('pagehide', saveStateNow);
     document.addEventListener('backbutton', saveStateNow, false);
 
-    // Popup de reprise (avec i18n) — n’afficher que si inProgress
+    // Popup de reprise (locale)
     function showResumePopup(savedState) {
       const overlay = document.createElement('div');
       overlay.id = 'resume-popup';
@@ -638,7 +605,6 @@ function fillRectThemeSafe(c, px, py, size) {
       overlay.innerHTML = html;
       document.body.appendChild(overlay);
 
-      // ✅ Compte comme une "reprise" AVANT de restaurer
       overlay.querySelector('#resume-yes').onclick = () => {
         try { window.partieReprisee?.(mode); } catch(_){}
         overlay.remove();
@@ -647,7 +613,7 @@ function fillRectThemeSafe(c, px, py, size) {
       overlay.querySelector('#resume-restart').onclick = () => {
         clearSavedGame();
         overlay.remove();
-        restartGameHard(); // le hook "recommencer" est centralisé dans restartGameHard()
+        restartGameHard();
       };
     }
 
@@ -656,12 +622,11 @@ function fillRectThemeSafe(c, px, py, size) {
 
     // === RESTART PROPRE GLOBAL (utile en cours de partie ou fin) ===
     function restartGameHard() {
-      // ✅ Compte comme une "action recommencer" (centralisé)
       try { window.partieRecommencee?.(mode); } catch(_){}
 
       // stop timers
       stopSoftDrop();
-      stopHorizontalRepeat(); // ✅ stop auto-repeat si actif
+      stopHorizontalRepeat();
       if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
 
       // reset state
@@ -708,39 +673,39 @@ function fillRectThemeSafe(c, px, py, size) {
     // Expose facultatif si tu as un bouton "Recommencer" en HUD
     global.restartGameHard = restartGameHard;
 
+    // === helper de crédit des récompenses (appelé sur Restart/Quit) ===
+    async function commitEndRewards(points) {
+      if (creditDone) return;
+      creditDone = true;
+      try {
+        await setLastScoreSupabase(points);
+        const cloudHigh = await getHighScoreSupabase();
+        if (points > cloudHigh) {
+          await setHighScoreSupabase(points);
+          highscoreCloud = points;
+          updateHighscoreDisplay();
+        }
+        await userData.addVCoins?.(points);
+        updateBalancesHeader();
+      } catch (err) {}
+    }
+
     // Nouvelle popup de fin de partie (+ revive)
     function showEndPopup(points) {
-      // 🔒 Anti-double popup/fin
       if (endHandled) return;
-      endHandled = true;
-
-      // === AJUSTEMENT #3c : notifier la fin au gestionnaire de pubs
+      // ⚠️ on NE met PAS endHandled=true ici — on attend la confirmation fin
       try { window.partieTerminee?.(); } catch(_){}
 
       paused = true;
       stopSoftDrop();
-      stopHorizontalRepeat(); // ✅
+      stopHorizontalRepeat();
 
       safeRedraw();
 
       // on efface ttes sauvegardes → pas de "reprendre"
       clearSavedGame();
 
-      (async function saveScoreAndRewards(points) {
-        if (creditDone) return; // 🔒 anti-double crédit
-        creditDone = true;
-        try {
-          await setLastScoreSupabase(points);
-          const cloudHigh = await getHighScoreSupabase();
-          if (points > cloudHigh) {
-            await setHighScoreSupabase(points);
-            highscoreCloud = points;
-            updateHighscoreDisplay();
-          }
-          await userData.addVCoins?.(points);
-          updateBalancesHeader();
-        } catch (err) {}
-      })(points);
+      // ❌ Ancienne IIFE de crédit supprimée : on crédite au Restart/Quit
 
       const old = document.getElementById('gameover-popup');
       if (old) old.remove();
@@ -750,7 +715,7 @@ function fillRectThemeSafe(c, px, py, size) {
         return;
       }
 
-      const canRevive = !reviveUsed; // ✅ une seule fois
+      const canRevive = !reviveUsed;
       const popup = document.createElement('div');
       popup.id = 'gameover-popup';
       popup.style = `
@@ -786,41 +751,61 @@ function fillRectThemeSafe(c, px, py, size) {
 
       async function doRevive(withAd) {
         if (withAd) {
+          // Marque pub active (pour le gel) puis réinitialise quoi qu’il arrive
+          window.__ads_active = true;
+          window.__ads_freeze = true;
+          const resetAds = () => { window.__ads_active = false; window.__ads_freeze = false; };
+
           if (typeof window.showRewardRevive === 'function') {
             const ok = await new Promise(resolve => {
               try { window.showRewardRevive(closedOk => resolve(!!closedOk)); }
               catch(_) { resolve(false); }
             });
+            resetAds();
             if (!ok) return;
 
-            // Ici: pub ouverte puis FERMÉE (et/ou reward) → on relance
             reviveUsed = true;
             try { popup.remove(); } catch(_) {}
+            // ✅ Réarmer les flags pour permettre la prochaine popup de fin
+            endHandled = false;
+            creditDone = false;
+            gameOver = false;
             reviveRewindAndResume();
             return;
           }
 
           // Fallback web/dev si showRewardRevive indisponible
           await showInterstitial();
+          resetAds();
           reviveUsed = true;
           try { popup.remove(); } catch(_) {}
+          endHandled = false;
+          creditDone = false;
+          gameOver = false;
           reviveRewindAndResume();
           return;
         }
 
-        // Revive via JETON (inchangé)
+        // Revive via JETON
         const okTok = await useJeton();
         if (!okTok) { alert('Pas assez de jetons.'); return; }
         reviveUsed = true;
         try { popup.remove(); } catch(_) {}
+        endHandled = false;      // ✅ clé : autoriser la prochaine popup
+        creditDone = false;      // ✅ pas de crédit encore
+        gameOver = false;
         reviveRewindAndResume();
       }
 
-      document.getElementById('end-restart').onclick = function () {
+      document.getElementById('end-restart').onclick = async function () {
+        await commitEndRewards(points); // ✅ crédit au moment de confirmer la fin
+        endHandled = true;
         popup.remove();
-        restartGameHard(); // hook "recommencer" déclenché au début de restartGameHard()
+        restartGameHard();
       };
-      document.getElementById('end-quit').onclick = function () {
+      document.getElementById('end-quit').onclick = async function () {
+        await commitEndRewards(points); // ✅ crédit au moment de confirmer la fin
+        endHandled = true;
         window.location.href = INDEX_URL;
       };
       const btnTok = document.getElementById('end-revive-token');
@@ -830,7 +815,6 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     function reviveRewindAndResume() {
-      // 1) Reculer de 8 “états” complets (pièces, board, séquence incluse)
       if (history.length === 0) return;
       const index = history.length > 8 ? history.length - 8 : 0;
       const state = history[index];
@@ -845,13 +829,16 @@ function fillRectThemeSafe(c, px, py, size) {
       linesCleared = state.linesCleared;
       dropInterval = state.dropInterval || 500;
 
-      // Séquence exactement identique
       if (state.piecesSequence && Array.isArray(state.piecesSequence)) {
         piecesSequence = state.piecesSequence.slice();
       }
       if (Number.isInteger(state.piecesUsed)) {
         piecesUsed = state.piecesUsed;
       }
+
+      // ❄️ Assure qu'aucun flag pub ne bloque
+      window.__ads_active = false;
+      window.__ads_freeze = false;
 
       paused = true;
       gameOver = false;
@@ -885,7 +872,6 @@ function fillRectThemeSafe(c, px, py, size) {
 
           lastTime = performance.now();
 
-          // === AJUSTEMENT #3b : notifier une "reprise" (revive)
           try { window.partieReprisee?.(mode); } catch(_){}
 
           requestAnimationFrame(update);
@@ -946,7 +932,7 @@ function fillRectThemeSafe(c, px, py, size) {
       paused = !paused;
       if (paused) {
         stopSoftDrop();
-        stopHorizontalRepeat(); // ✅
+        stopHorizontalRepeat();
       }
       safeRedraw();
       if (!paused && !gameOver) requestAnimationFrame(update);
@@ -984,13 +970,12 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     async function startGame() {
-      // === AJUSTEMENT #3a : notifier une nouvelle partie
       try { window.partieCommencee?.(mode); } catch(_){}
 
       paused = false;
       gameOver = false;
       lastTime = 0;
-      reviveUsed = false; // ✅ nouvelle partie → on réautorise 1 revive
+      reviveUsed = false; // ✅ nouvelle partie → re-autorise 1 revive
       endHandled = false;
       creditDone = false;
 
@@ -1716,7 +1701,7 @@ function fillRectThemeSafe(c, px, py, size) {
     });
 
 
-    // === SUPABASE Fonctions ===
+    // === SUPABASE Fonctions (scores uniquement) ===
     async function getUserId() {
       try {
         if (typeof userData !== 'undefined' && userData.getUserId) {
@@ -1754,24 +1739,23 @@ function fillRectThemeSafe(c, px, py, size) {
       return row?.highscore || 0;
     }
 
-    // ===== LANCEMENT avec reprise (seulement si inProgress true) =====
-    (async function boot() {
-      if (CAN_RESUME) {
-        const savedCloud = await loadSavedCloud();
-        if (savedCloud && savedCloud.inProgress) {
-          paused = true;
-          showResumePopup(savedCloud);
-          return;
-        }
-        const savedLocal = loadSavedLocal();
-        if (savedLocal && savedLocal.inProgress) {
-          paused = true;
-          showResumePopup(savedLocal);
-          return;
-        }
+    // ===== BOOT (LOCAL UNIQUEMENT, SANS CLOUD) =====
+    (function boot() {
+      // reset des flags ads pour éviter tout gel initial
+      window.__ads_active = false;
+      window.__ads_freeze = false;
+
+      const savedLocal = loadSavedLocal();
+      if (savedLocal && savedLocal.inProgress) {
+        // Affiche la popup de reprise locale
+        paused = true;
+        showResumePopup(savedLocal);
+        return;
       }
-      startGame(); // sinon on démarre direct sans popup
+      // Pas de save locale → démarre direct
+      startGame();
     })();
+
   }
 
   global.VBlocksGame = { initGame };
