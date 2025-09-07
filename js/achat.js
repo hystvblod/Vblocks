@@ -1,14 +1,14 @@
 /* =========================================================
    achat.js — Cordova Purchase (prix dynamiques + achats)
-   – Branché 100% après `deviceready`
-   – Affiche les prix localisés depuis le Store (no hardcode)
-   – Crédit VCoins / Jetons à l’approval (idempotent)
-   – Garde-fou d’auth Supabase anonyme si besoin
-   – Expose window.refreshDisplayedPrices() pour l’UI
+   - Compatible API legacy (window.store) ET API moderne (window.CdvPurchase.store)
+   - Branché 100% après `deviceready`
+   - Affiche les prix localisés depuis le Store (no hardcode)
+   - Crédit VCoins / Jetons à l’approval (idempotent)
+   - Expose window.refreshDisplayedPrices(), window.buyProduct(), window.safeOrder()
    ========================================================= */
 
-(function(){
-  // --- Configuration produits (IDs identiques Play/App Store) ---
+(function () {
+  // --- Configuration produits (IDs identiques Play) ---
   const PRODUCTS = [
     { id: 'points3000',  type: 'CONSUMABLE',     credit: { vcoins: 3000  } },
     { id: 'points10000', type: 'CONSUMABLE',     credit: { vcoins: 10000 } },
@@ -17,24 +17,25 @@
     { id: 'nopub',       type: 'NON_CONSUMABLE', credit: { nopub: true   } },
   ];
 
-  // Mémos
-  const PRICES_BY_ID = Object.create(null);             // { productId: "€1,99" }
-  const PROCESSED_TX = new Set();                       // idempotence par transaction.id
-  let   STORE_READY   = false;
+  // --- Mémo runtime ---
+  const PRICES_BY_ID = Object.create(null); // { productId: "€1.99" }
+  const PROCESSED_TX = new Set();           // idempotence par transaction.id
+  let   STORE_READY  = false;
 
-  // --- Helpers présence plugin / types ---
-  function _iapAvailable() {
-    return !!(window.store && typeof window.store.register === 'function');
-  }
-  function _mapType(t) {
-    const s = window.store;
-    if (!s) return null;
-    return t === 'CONSUMABLE' ? s.CONSUMABLE
-         : t === 'NON_CONSUMABLE' ? s.NON_CONSUMABLE
-         : s.CONSUMABLE;
+  // --- Détection API disponible ---
+  function getIapApi() {
+    // Priorité à l'API moderne (Billing v7+)
+    if (window.CdvPurchase && window.CdvPurchase.store) {
+      return { api: 'cdv7', store: window.CdvPurchase.store };
+    }
+    // Fallback API historique
+    if (window.store && typeof window.store.register === 'function') {
+      return { api: 'legacy', store: window.store };
+    }
+    return { api: 'none', store: null };
   }
 
-  // --- Supabase: s’assurer d’une session (anonyme OK) ---
+  // --- Supabase: session anonyme si besoin ---
   let __authEnsured = false;
   async function __ensureAuthOnce() {
     if (__authEnsured) return;
@@ -48,38 +49,33 @@
     }
   }
 
-  // --- Créditer l’utilisateur (via userData si présent, sinon RPC simple) ---
+  // --- Créditer l’utilisateur ---
   async function creditUser(credit, meta) {
     await __ensureAuthOnce();
-
     try {
       if (window.userData) {
         if (credit.vcoins) await window.userData.addVCoins(credit.vcoins);
         if (credit.jetons) await window.userData.addJetons(credit.jetons);
-        if (credit.nopub)  {
-          // flag local + éventuel setter applicatif
+        if (credit.nopub) {
           localStorage.setItem('no_ads', '1');
           if (typeof window.setNoAds === 'function') window.setNoAds(true);
           if (window.userData.setNoAds) await window.userData.setNoAds(true);
         }
         return true;
       }
-
-      // Fallback très basique via RPC (à remplacer par ton Edge Function de vérif reçu).
+      // Fallback ultra simple (à remplacer par ton backend sécurisé si besoin)
       if (window.sb) {
-        if (credit.vcoins) {
-          await sb.rpc('secure_add_points', { delta: credit.vcoins });
-        }
-        if (credit.jetons) {
-          await sb.rpc('secure_add_jetons', { delta: credit.jetons });
-        }
+        if (credit.vcoins) await sb.rpc('secure_add_points', { delta: credit.vcoins });
+        if (credit.jetons) await sb.rpc('secure_add_jetons', { delta: credit.jetons });
         if (credit.nopub) {
-          await sb.from('users').update({ no_ads: true }).eq('id', (await sb.auth.getUser()).data.user.id);
+          try {
+            const { data: { user } } = await sb.auth.getUser();
+            if (user?.id) await sb.from('users').update({ no_ads: true }).eq('id', user.id);
+          } catch {}
           localStorage.setItem('no_ads', '1');
         }
         return true;
       }
-
       console.warn('[achat] Pas de userData/sb: crédit non appliqué');
       return false;
     } catch (e) {
@@ -88,174 +84,196 @@
     }
   }
 
-  // --- Injecter les prix dans le DOM (boutique.html) ---
+  // --- Injecter les prix dans le DOM (HTML-first) ---
   function refreshDisplayedPrices() {
     try {
-      // Cartouches "achats" (data-product-id)
-      document.querySelectorAll('#achats-list .special-cartouche[data-product-id]').forEach(node => {
-        const id = node.getAttribute('data-product-id');
-        const price = PRICES_BY_ID[id];
-        const priceNode = node.querySelector('.prix-label');
-        if (priceNode && price) priceNode.textContent = price;
-      });
-    } catch (e) {
-      // silencieux en cas d’absence d’UI
-    }
+      document
+        .querySelectorAll('#achats-list .special-cartouche[data-product-id]')
+        .forEach(node => {
+          const id = node.getAttribute('data-product-id');
+          const price = PRICES_BY_ID[id];
+          const priceNode = node.querySelector('.prix-label');
+          if (priceNode && price) priceNode.textContent = price;
+        });
+    } catch { /* silencieux */ }
   }
   window.refreshDisplayedPrices = refreshDisplayedPrices;
 
-  // --- Récupérer prix depuis le Store ---
-  function updateProductPrice(p) {
-    if (!p || !p.id) return;
-    if (p.price) {
-      PRICES_BY_ID[p.id] = p.price; // prix localisé
-      console.log('[IAP] updated price:', p.id, '=>', p.price);
-      refreshDisplayedPrices();
-    } else {
-      console.log('[IAP] product updated sans price:', p.id);
-    }
-  }
-
-  // --- Wiring principal (uniquement après deviceready) ---
-  document.addEventListener('deviceready', function onReady(){
+  // ============ BOOT ============ //
+  document.addEventListener('deviceready', function () {
     console.log('[IAP] deviceready fired');
+    const { api, store } = getIapApi();
+    if (api === 'none') {
+      console.warn('[achat] Plugin IAP indisponible. Prix resteront "—".');
+      return;
+    }
+    console.log('[IAP] API =', api);
 
-    if (!_iapAvailable()) {
-      console.warn('[achat] Plugin cordova-purchase indisponible (build web ?). Les prix resteront "—".');
+    if (api === 'legacy') {
+      // ===== API HISTORIQUE: window.store =====
+      const IAP = store;
+      function mapType(t) {
+        return t === 'NON_CONSUMABLE' ? IAP.NON_CONSUMABLE : IAP.CONSUMABLE;
+      }
+
+      // 1) Register
+      PRODUCTS.forEach(p => IAP.register({ id: p.id, alias: p.id, type: mapType(p.type) }));
+      console.log('[IAP] registered:', PRODUCTS.map(p => p.id));
+
+      // 2) Updates → prix
+      IAP.when('product').updated(p => {
+        if (p?.id && p.price) {
+          PRICES_BY_ID[p.id] = p.price;
+          refreshDisplayedPrices();
+        }
+      });
+
+      // 3) Approved → crédit + finish (idempotent)
+      IAP.when('product').approved(async p => {
+        try {
+          const txId = p?.transaction && (p.transaction.id || p.transaction.orderId);
+          if (txId) {
+            if (PROCESSED_TX.has(txId)) { p.finish(); return; }
+            PROCESSED_TX.add(txId);
+          }
+          const found = PRODUCTS.find(x => x.id === p?.id);
+          if (!found) { p.finish(); return; }
+          const ok = await creditUser(found.credit, { productId: p.id, type: p.type, transaction: p.transaction || null });
+          if (ok) {
+            if (found.credit.vcoins) alert('✅ VCoins crédités !');
+            if (found.credit.jetons) alert('✅ Jetons crédités !');
+            if (found.credit.nopub)  alert('✅ Pack NO ADS activé !');
+          } else {
+            alert('Erreur de crédit. Réessayez ou contactez le support.');
+          }
+          p.finish();
+        } catch (e) {
+          console.error('[IAP] approved error', e);
+          try { p.finish(); } catch {}
+        }
+      });
+
+      // 4) Owned (restauré) → NO ADS
+      IAP.when('product').owned(p => {
+        if (p?.id === 'nopub') {
+          localStorage.setItem('no_ads', '1');
+          if (typeof window.setNoAds === 'function') window.setNoAds(true);
+        }
+      });
+
+      IAP.error(err => console.warn('[IAP] error', err && (err.message || err.code || err)));
+
+      // 5) Ready + refresh
+      IAP.ready(() => {
+        STORE_READY = true;
+        try {
+          PRODUCTS.forEach(({ id }) => {
+            const p = IAP.get(id);
+            if (p?.price) PRICES_BY_ID[id] = p.price;
+          });
+        } catch {}
+        refreshDisplayedPrices();
+        // hotfix: relances
+        try { window.refreshDisplayedPrices(); } catch {}
+        setTimeout(() => { try { window.refreshDisplayedPrices(); } catch {} }, 1500);
+        let n = 0, t = setInterval(() => {
+          try { window.refreshDisplayedPrices(); } catch {}
+          if (++n >= 5) clearInterval(t);
+        }, 1000);
+      });
+
+      try { IAP.refresh(); } catch {}
+      setTimeout(() => { try { IAP.refresh(); } catch {} }, 2500);
+
+      // Achat programmatique
+      window.buyProduct = function (id) {
+        try { IAP.order(id); } catch (e) { alert('Erreur achat: ' + (e?.message || e)); }
+      };
+      window.safeOrder = window.buyProduct;
       return;
     }
 
-    const IAP = window.store;
-    console.log('[IAP] plugin present =', !!IAP, 'verbosity =', IAP && IAP.verbosity);
+    // ===== API MODERNE: window.CdvPurchase.store (Billing v7+) =====
+    const S = store; // alias
 
-    // 1) REGISTER produits
-    PRODUCTS.forEach(prod => {
-      IAP.register({
-        id: prod.id,
-        alias: prod.id,
-        type: _mapType(prod.type),
+    // 1) Register / initialize
+    const mapType = (t) => t === 'NON_CONSUMABLE' ? S.ProductType.NON_CONSUMABLE : S.ProductType.CONSUMABLE;
+    S.initialize(PRODUCTS.map(p => ({ id: p.id, type: mapType(p.type) })));
+
+    // 2) Updates produits → prix
+    S.updated.add(() => {
+      PRODUCTS.forEach(({ id }) => {
+        const p = S.products?.byId?.[id];
+        const priceStr = p?.pricing?.price || p?.price; // selon version
+        if (priceStr) PRICES_BY_ID[id] = priceStr;
       });
-    });
-    console.log('[IAP] registered:', PRODUCTS.map(p => p.id));
-
-    // 2) Listeners généraux
-    IAP.ready(() => {
-      STORE_READY = true;
-      console.log('[IAP] READY callback hit');
-
-      // On capture tous les prix connus et on push dans l’UI
-      try {
-        PRODUCTS.forEach(({ id }) => {
-          const p = IAP.get(id);
-          if (p && p.price) {
-            PRICES_BY_ID[id] = p.price;
-          }
-        });
-        // log des produits connus à READY
-        try {
-          const list = (IAP.products || []).map(p => ({ id: p.id, title: p.title, price: p.price }));
-          console.info('[IAP] READY products:', list);
-        } catch(e) {
-          console.warn('[IAP] ready list error', e);
-        }
-
-        refreshDisplayedPrices();
-
-        // --- HOTFIX peinture UI répétée (si l'UI s'est peinte avant les prix)
-        try { window.refreshDisplayedPrices && window.refreshDisplayedPrices(); } catch(_) {}
-        setTimeout(function(){ try { window.refreshDisplayedPrices && window.refreshDisplayedPrices(); } catch(_) {} }, 1500);
-        var __tries = 0;
-        var __t = setInterval(function(){
-          try {
-            window.refreshDisplayedPrices && window.refreshDisplayedPrices();
-            if ((++__tries) >= 5) clearInterval(__t); // arrête après ~5s
-          } catch(_){ clearInterval(__t); }
-        }, 1000);
-
-      } catch (_) {}
+      refreshDisplayedPrices();
     });
 
-    // — Prix: se met à jour à chaque update produit
-    IAP.when('product').updated(updateProductPrice);
-
-    // — Achat approuvé: créditer + finish (idempotent)
-    IAP.when('product').approved(async function(p){
-      console.log('[IAP] approved:', p && p.id, p && p.transaction);
+    // 3) Achats approuvés → crédit + finish (idempotent)
+    S.approved.add(async (p) => {
       try {
-        // idempotence: éviter double exécution si l’event rejoue
-        const txId = p && p.transaction && (p.transaction.id || p.transaction.orderId);
+        const txId = p?.transaction?.id || p?.transactionId;
         if (txId) {
-          if (PROCESSED_TX.has(txId)) { console.log('[IAP] approved duplicate tx, finishing'); p.finish(); return; }
+          if (PROCESSED_TX.has(txId)) { try { await S.finish(p); } catch {} return; }
           PROCESSED_TX.add(txId);
         }
-
-        const meta = { productId: p.id, type: p.type, transaction: p.transaction || null };
-        const found = PRODUCTS.find(x => x.id === p.id);
-        if (!found) {
-          console.warn('[achat] Produit non mappé:', p.id);
-          p.finish();
-          return;
-        }
-
-        const ok = await creditUser(found.credit, meta);
-        if (!ok) {
-          alert('Une erreur est survenue pendant l’attribution. Réessayez ou contactez le support.');
-        } else {
-          // petit feedback UI
+        const found = PRODUCTS.find(x => x.id === p?.id);
+        if (!found) { try { await S.finish(p); } catch {} return; }
+        const ok = await creditUser(found.credit, { productId: p.id, type: p.type, transaction: p.transaction || null });
+        if (ok) {
           if (found.credit.vcoins) alert('✅ VCoins crédités !');
           if (found.credit.jetons) alert('✅ Jetons crédités !');
           if (found.credit.nopub)  alert('✅ Pack NO ADS activé !');
+        } else {
+          alert('Erreur de crédit. Réessayez ou contactez le support.');
         }
-
-        p.finish();
+        try { await S.finish(p); } catch {}
       } catch (e) {
-        console.error('[achat] approved handler error:', e?.message || e);
-        try { p.finish(); } catch(_) {}
+        console.error('[IAP] approved error', e);
+        try { await S.finish(p); } catch {}
       }
     });
 
-    // — Possédé / restauré: utile pour NO ADS
-    IAP.when('product').owned(function(p){
-      if (p && p.id === 'nopub') {
+    // 4) Owned / restored → NO ADS
+    S.owned?.add?.((p) => {
+      if (p?.id === 'nopub') {
         localStorage.setItem('no_ads', '1');
         if (typeof window.setNoAds === 'function') window.setNoAds(true);
       }
     });
 
-    IAP.error(function(err){
-      console.warn('[achat] Store error:', err && (err.message || err.code || err));
+    S.error?.add?.(err => console.warn('[IAP] error', err && (err.message || err.code || err)));
+
+    // 5) Ready + refresh
+    S.ready(() => {
+      STORE_READY = true;
+      try {
+        PRODUCTS.forEach(({ id }) => {
+          const prod = S.products?.byId?.[id];
+          const priceStr = prod?.pricing?.price || prod?.price;
+          if (priceStr) PRICES_BY_ID[id] = priceStr;
+        });
+      } catch {}
+      refreshDisplayedPrices();
+      try { window.refreshDisplayedPrices(); } catch {}
+      setTimeout(() => { try { window.refreshDisplayedPrices(); } catch {} }, 1500);
+      let n = 0, t = setInterval(() => {
+        try { window.refreshDisplayedPrices(); } catch {}
+        if (++n >= 5) clearInterval(t);
+      }, 1000);
     });
 
-    // 3) Refresh (déclenche la récupération des prix/états)
-    console.log('[IAP] refresh() call 1');
-    try {
-      IAP.refresh();
-    } catch (e) {
-      console.warn('[achat] refresh error:', e?.message || e);
-    }
-    // un 2e refresh un peu plus tard (réseaux lents / billing lent)
-    setTimeout(() => {
-      try {
-        console.log('[IAP] refresh() call 2');
-        IAP.refresh();
-      } catch(_) {}
-    }, 2500);
+    try { S.refresh(); } catch {}
+    setTimeout(() => { try { S.refresh(); } catch {} }, 2500);
+
+    // Achat programmatique
+    window.buyProduct = function (id) {
+      try { S.order(id); } catch (e) { alert('Erreur achat: ' + (e?.message || e)); }
+    };
+    window.safeOrder = window.buyProduct;
   });
 
-  // --- API achat programmatique (optionnelle) ---
-  window.buyProduct = function(productId){
-    if (!_iapAvailable()) {
-      alert('Achat via le Store indisponible ici. Ouvre l’app installée depuis le Store.');
-      return;
-    }
-    try { window.store.order(productId); }
-    catch (e) { alert('Erreur achat: ' + (e?.message || e)); }
-  };
-
-  // --- Petit confort: si ta page est chargée avant deviceready,
-  //     affiche "—" et remontera tout seul dès que IAP.ready() pose les prix.
-  document.addEventListener('DOMContentLoaded', function(){
-    refreshDisplayedPrices();
-  });
-
+  // Affichage des prix si la page est prête avant deviceready
+  document.addEventListener('DOMContentLoaded', refreshDisplayedPrices);
 })();
