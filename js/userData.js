@@ -516,7 +516,7 @@ function updateScoreIfHigher(newScore) {
 // =============================
 async function syncThemeFromLocal() {
   try {
-    const t = normalizeThemeKey(getCurrentTheme() || 'neon');
+    const t = normalizeThemeKey(getCurrentTheme() || 'retro');
     document.documentElement.setAttribute('data-theme', t);
     if (document.body) document.body.setAttribute('data-theme', t);
     const link = document.getElementById('theme-style');

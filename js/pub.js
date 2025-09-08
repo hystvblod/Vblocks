@@ -574,9 +574,17 @@
   function isModeClassique(m){ m=(m||'').toLowerCase(); return ['classique','classic','normal','arcade'].includes(m); }
   function isModeDuel(m){ m=(m||'').toLowerCase(); return ['duel','versus','vs','1v1','duo'].includes(m); }
 
-  async function maybeShowInterBeforeAction(mode) {
-    if (isModeDuel(mode)) return;
+ async function maybeShowInterBeforeAction(mode) {
+  if (isModeDuel(mode)) return;
 
+  // ⛔ Popup ouverte : ne pas compter
+  if (window.__ads_waiting_choice) return;
+
+  // ⛔ Reprise suite à revive : ignorer UNE action
+  if (window.__ads_skip_next_action) {
+    window.__ads_skip_next_action = false;
+    return;
+  }
     var needAd = interActionsCount >= INTERSTITIEL_APRES_X_ACTIONS;
     if (needAd) {
       interActionsCount = 0;
