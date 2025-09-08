@@ -576,45 +576,53 @@ function fillRectThemeSafe(c, px, py, size) {
     window.addEventListener('pagehide', saveStateNow);
     document.addEventListener('backbutton', saveStateNow, false);
 
-    // Popup de reprise (locale)
-    function showResumePopup(savedState) {
-      const overlay = document.createElement('div');
-      overlay.id = 'resume-popup';
-      overlay.style = `
-        position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);
-        display:flex;align-items:center;justify-content:center;
-      `;
-      const html = `
-        <div style="background:#23294a;border-radius:1em;padding:22px 18px;box-shadow:0 0 14px #3ff7;min-width:240px;max-width:92vw;text-align:center">
-          <div style="font-size:1.15em;font-weight:bold;margin-bottom:8px;">
-            ${tt('resume.title','Partie en cours')}
-          </div>
-          <div style="opacity:.9;margin-bottom:14px">
-            ${tt('resume.subtitle','Voulez-vous reprendre là où vous vous êtes arrêté ?')}
-          </div>
-          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-            <button id="resume-yes" style="padding:.5em 1em;border-radius:.7em;border:none;background:#39f;color:#fff;cursor:pointer;">
-              ${tt('resume.resume','Reprendre')}
-            </button>
-            <button id="resume-restart" style="padding:.5em 1em;border-radius:.7em;border:none;background:#444;color:#fff;cursor:pointer;">
-              ${tt('resume.restart','Recommencer')}
-            </button>
-          </div>
-        </div>
-      `;
-      overlay.innerHTML = html;
-      document.body.appendChild(overlay);
 
-      overlay.querySelector('#resume-yes').onclick = () => {
-        try { window.partieReprisee?.(mode); } catch(_){}
-        overlay.remove();
-        restoreFromSave(savedState);
-      };
-      overlay.querySelector('#resume-restart').onclick = () => {
-        clearSavedGame();
-        overlay.remove();
-        restartGameHard();
-      };
+ // Popup de reprise (locale)
+function showResumePopup(savedState) {
+  // Empêche de compter tant que la popup est ouverte
+  window.__ads_waiting_choice = true;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'resume-popup';
+  overlay.style = `
+    position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);
+    display:flex;align-items:center;justify-content:center;
+  `;
+  overlay.innerHTML = `
+    <div style="background:#23294a;border-radius:1em;padding:22px 18px;box-shadow:0 0 14px #3ff7;min-width:240px;max-width:92vw;text-align:center">
+      <div style="font-size:1.15em;font-weight:bold;margin-bottom:8px;">
+        ${tt('resume.title','Partie en cours')}
+      </div>
+      <div style="opacity:.9;margin-bottom:14px">
+        ${tt('resume.subtitle','Voulez-vous reprendre là où vous vous êtes arrêté ?')}
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button id="resume-yes" style="padding:.5em 1em;border-radius:.7em;border:none;background:#39f;color:#fff;cursor:pointer;">
+          ${tt('resume.resume','Reprendre')}
+        </button>
+        <button id="resume-restart" style="padding:.5em 1em;border-radius:.7em;border:none;background:#444;color:#fff;cursor:pointer;">
+          ${tt('resume.restart','Recommencer')}
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const cleanup = () => { window.__ads_waiting_choice = false; overlay.remove(); };
+
+overlay.querySelector('#resume-yes').onclick = () => {
+  cleanup();  // remet __ads_waiting_choice = false
+  try { window.partieReprisee?.(mode); } catch(_){}
+  restoreFromSave(savedState);
+
+
+  };
+  overlay.querySelector('#resume-restart').onclick = () => {
+    clearSavedGame();
+    cleanup();
+    restartGameHard();
+  };
+
     }
 
     // URL index pour "Quitter"
@@ -861,20 +869,24 @@ function fillRectThemeSafe(c, px, py, size) {
           clearInterval(tmr);
           overlay.remove();
 
-          // 3) Restaure et démarre rampe de vitesse
-          paused = false;
-          gameOver = false;
+// 3) Restaure et démarre rampe de vitesse
+paused = false;
+gameOver = false;
 
-          reviveTargetInterval = dropInterval || 500;
-          dropInterval = 1200; // très lent au départ
-          reviveRampActive = true;
-          reviveRampStart = performance.now();
+reviveTargetInterval = dropInterval || 500;
+dropInterval = 1200; // très lent au départ
+reviveRampActive = true;
+reviveRampStart = performance.now();
 
-          lastTime = performance.now();
+lastTime = performance.now();
 
-          try { window.partieReprisee?.(mode); } catch(_){}
+// ⬅️ Ne pas compter la reprise post-revive comme une action
+window.__ads_skip_next_action = true;
 
-          requestAnimationFrame(update);
+try { window.partieReprisee?.(mode); } catch(_) {}
+
+requestAnimationFrame(update);
+
         }
       }, 1000);
     }

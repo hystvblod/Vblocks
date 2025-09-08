@@ -98,7 +98,10 @@
       </div>
 
       <div style="margin-top:0.75rem;text-align:center;">
-        <a href="publicite_accords.html" class="link-accords" data-i18n="index.rgpd.manage">Gérer les accords publicitaires</a>
+        <!-- 🔗 Lien mis à jour -->
+        <a href="https://hystvblod.github.io/Vboldstudio/vblocks.html"
+           target="_blank" rel="noopener"
+           class="link-accords" data-i18n="index.rgpd.manage">Gérer les accords publicitaires</a>
       </div>
     </div>
   </div>
@@ -179,6 +182,19 @@
       const ADS_KEY     = "adsConsent";
       const ADS_ENABLED = "adsEnabled";
 
+      // 🛡️ Garde-fou: si ancien "adsEnabled" existe mais "rgpdConsent" manque, on synchronise
+      (function syncConsentKeys() {
+        try {
+          const rg = localStorage.getItem(CONSENT_KEY);
+          const ae = localStorage.getItem(ADS_ENABLED);
+          const ads = localStorage.getItem(ADS_KEY);
+          if (!rg && ae !== null) {
+            localStorage.setItem(CONSENT_KEY, ae === 'true' ? 'accept' : 'refuse');
+            if (!ads) localStorage.setItem(ADS_KEY, ae === 'true' ? 'yes' : 'no');
+          }
+        } catch(_) {}
+      })();
+
       function showConsentIfNeeded() {
         const consent = localStorage.getItem(CONSENT_KEY);
         if (!consent) {
@@ -199,6 +215,18 @@
         const btnAccept = document.getElementById("consent-accept");
         const btnRefuse = document.getElementById("consent-refuse");
         const cbAds   = document.getElementById("consent-ads");
+
+        // Init état du checkbox selon stockage
+        try {
+          const rg = localStorage.getItem(CONSENT_KEY);
+          const ae = localStorage.getItem(ADS_ENABLED);
+          if (rg) {
+            cbAds.checked = (localStorage.getItem(ADS_KEY) === 'yes');
+          } else if (ae !== null) {
+            cbAds.checked = (ae === 'true');
+          }
+        } catch(_) {}
+
         showConsentIfNeeded();
 
         btnAccept.onclick = function() {

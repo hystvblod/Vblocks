@@ -58,7 +58,7 @@
       width: 42px; height: 42px;
       transition: background 0.15s;
     }
-    .btn-back img { width: 28px; height: 28px; filter: drop-shadow(0 1px 2px #0005);}
+    .btn-back img { width: 28px; height: 28px; filter: drop-shadow(0 1px 2px #0005); }
     .main-title {
       flex: 1;
       font-size: 2em; font-weight: 900;
@@ -121,7 +121,7 @@
       font-weight: 700; cursor: pointer; margin-top: 1em;
     }
     button.return-btn:hover { background: rgba(255, 255, 255, 0.1); }
-    .music-btn-img { width: 32px; height: 32px; vertical-align: middle;}
+    .music-btn-img { width: 32px; height: 32px; vertical-align: middle; }
     @media (max-width:480px) {
       .main-content, .top-bar { max-width: 100vw; }
       .top-bar { padding: 4px 3px 0 3px; max-width: 99vw; }
@@ -192,7 +192,7 @@
   </div>
 
   <!-- SDK Supabase AVANT userData.js -->
-<script src="js/vendor/supabase-2.42.5.min.js"></script>
+  <script src="js/vendor/supabase-2.42.5.min.js"></script>
   <!-- Script qui utilise Supabase -->
   <script src="js/userData.js"></script>
   <!-- Charger i18n AVANT le script inline pour pouvoir l'appeler -->
@@ -256,7 +256,6 @@
         document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
         opt.classList.add('selected');
         if (window.setLang) window.setLang(l.code);
-
         // Mise à jour en base (users.lang)
         try {
           if (window.userData?.updateLangDirect) {
@@ -265,7 +264,6 @@
         } catch (e) {
           console.warn('[updateLangDirect] échec:', e?.message || e);
         }
-
         location.reload();
       };
       langueSelect.appendChild(opt);
@@ -282,17 +280,45 @@
       }
     }
 
+    // ====== CONSENT: sync historique (adsEnabled -> rgpdConsent/adsConsent si manquants) ======
+    (function syncConsentKeys() {
+      const rg = localStorage.getItem('rgpdConsent');
+      const ae = localStorage.getItem('adsEnabled');
+      if (!rg && ae !== null) {
+        localStorage.setItem('rgpdConsent', ae === 'true' ? 'accept' : 'refuse');
+        localStorage.setItem('adsConsent', ae === 'true' ? 'yes' : 'no');
+      }
+    })();
+
     // ====== Publicités ======
     const adsToggle = document.getElementById("ads-toggle");
     const adsLabel = document.getElementById("ads-label");
-    adsToggle.checked = localStorage.getItem("adsEnabled") !== "false";
-    adsLabel.setAttribute("data-i18n", adsToggle.checked ? "settings.ads.on" : "settings.ads.off");
-    adsLabel.textContent = adsToggle.checked ? "Activées" : "Désactivées";
+
+    // État initial basé d'abord sur rgpdConsent, sinon sur adsEnabled (par défaut ON)
+    (function initAdsUI() {
+      const rg = localStorage.getItem('rgpdConsent');
+      let enabled;
+      if (rg === 'accept') enabled = true;
+      else if (rg === 'refuse') enabled = false;
+      else enabled = (localStorage.getItem('adsEnabled') !== 'false');
+      adsToggle.checked = enabled;
+      adsLabel.setAttribute("data-i18n", enabled ? "settings.ads.on" : "settings.ads.off");
+      adsLabel.textContent = enabled ? "Activées" : "Désactivées";
+    })();
+
     adsToggle.addEventListener("change", () => {
-      localStorage.setItem("adsEnabled", adsToggle.checked ? "true" : "false");
-      adsLabel.setAttribute("data-i18n", adsToggle.checked ? "settings.ads.on" : "settings.ads.off");
-      adsLabel.textContent = adsToggle.checked ? "Activées" : "Désactivées";
-      window.userConsent = adsToggle.checked ? "accept" : "refuse";
+      const enabled = adsToggle.checked;
+      // Persistance cohérente pour toutes les couches de l'app
+      localStorage.setItem("adsEnabled", enabled ? "true" : "false");
+      localStorage.setItem("rgpdConsent", enabled ? "accept" : "refuse");
+      localStorage.setItem("adsConsent", enabled ? "yes" : "no");
+      window.userConsent = enabled ? "accept" : "refuse";
+
+      adsLabel.setAttribute("data-i18n", enabled ? "settings.ads.on" : "settings.ads.off");
+      adsLabel.textContent = enabled ? "Activées" : "Désactivées";
+
+      if (window.i18nTranslateAll) window.i18nTranslateAll();
+      // Rechargement pour que l'accueil lise bien le consentement et ne relance pas la popup
       location.reload();
     });
 
@@ -318,11 +344,9 @@
       return localStorage.getItem('alwaysMuteMusic') === 'true';
     }
     function setAlwaysMuted(val) {
-      // Si ton gestionnaire global est chargé ailleurs (ex: game.js), on l'utilise
       if (typeof window.setMusicAlwaysMuted === 'function') {
         window.setMusicAlwaysMuted(!!val);
       } else {
-        // Fallback: on persiste localStorage et on notifie l'app (même onglet)
         localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
         try {
           window.dispatchEvent(new StorageEvent('storage', {

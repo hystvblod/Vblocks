@@ -1,13 +1,12 @@
 /* =========================================================
-   achat.js — Cordova Purchase (prix dynamiques + achats) — PATCH v13 (Google Play)
-   - Compatible API legacy (window.store) ET API moderne (window.CdvPurchase.store v13+)
-   - Débloque l'UI via window.__IAP_READY__
-   - Affiche les prix localisés (pricing.price / price)
-   - v13+ : register() avec platform GOOGLE_PLAY + order(offer)
-   - Ajout __iapDiag() pour diagnostiquer le catalogue sur l'appareil
+   achat.js — Cordova Purchase v13 (Google Play) + legacy
+   - Order: register → initialize → update
+   - get(id, PL.GOOGLE_PLAY) en v13
+   - Achat via product.getOffer().order()
+   - Prix localisés + crédit VCoins/Jetons/NoAds
    ========================================================= */
 (function () {
-  // --- Produits ---
+  // --- Produits (IDs = Play Console) ---
   const PRODUCTS = [
     { id: 'points3000',  type: 'CONSUMABLE',     credit: { vcoins: 3000  } },
     { id: 'points10000', type: 'CONSUMABLE',     credit: { vcoins: 10000 } },
@@ -16,15 +15,15 @@
     { id: 'nopub',       type: 'NON_CONSUMABLE', credit: { nopub: true   } },
   ];
 
-  // --- Mémo / état ---
+  // --- État / mémo ---
   const PRICES_BY_ID = Object.create(null);
   const PROCESSED_TX = new Set();
   let   STORE_READY  = false;
 
-  // Flag lu par la boutique pour autoriser les clics
+  // Flag lu par la boutique pour débloquer les clics
   window.__IAP_READY__ = false;
 
-  // Stub immédiat pour éviter l’alerte “initialisation” (sera remplacé quand prêt)
+  // Stub avant init
   window.buyProduct = function () {
     alert("Boutique en cours d'initialisation… réessaie dans un instant.");
   };
@@ -37,7 +36,7 @@
     return { api:'none', store: null };
   }
 
-  // --- Auth Supabase (anonyme si besoin) ---
+  // --- Auth Supabase (anonyme au besoin) ---
   let __authEnsured = false;
   async function __ensureAuthOnce() {
     if (__authEnsured) return;
@@ -80,7 +79,7 @@
     return false;
   }
 
-  // --- Peinture des prix dans l’UI ---
+  // --- Affichage des prix dans l’UI ---
   function refreshDisplayedPrices() {
     try {
       document.querySelectorAll('#achats-list .special-cartouche[data-product-id]').forEach(node => {
@@ -93,39 +92,63 @@
   }
   window.refreshDisplayedPrices = refreshDisplayedPrices;
 
-  // Attendre une offer (v13+), en repeignant le prix dès qu’on l’a
-  async function waitForOffer(S, productId, timeoutMs) {
-    const t0 = Date.now(), lim = timeoutMs || 6000;
-    while (Date.now() - t0 < lim) {
-      try {
-        const p = (S.get && S.get(productId)) || (S.products && S.products.byId && S.products.byId[productId]);
+  // --- Helpers v13 : récupération produit/offre ---
+  function getProduct(S, id, PL) {
+    try {
+      if (!S || !id) return null;
+      if (S.get) {
+        // get(id, platform?) en v13+
+        return (S.get.length >= 2) ? S.get(id, PL && PL.GOOGLE_PLAY) : S.get(id);
+      }
+      return (S.products && S.products.byId && S.products.byId[id]) || null;
+    } catch(_) { return null; }
+  }
+
+  async function waitForProduct(S, id, PL, timeoutMs = 12000) {
+    const t0 = Date.now();
+    while (Date.now() - t0 < timeoutMs) {
+      const p = getProduct(S, id, PL);
+      if (p) {
         const price = p?.pricing?.price || p?.price;
-        if (price) { PRICES_BY_ID[productId] = price; refreshDisplayedPrices(); }
-        const offer = p?.offers?.[0];
-        if (offer) return offer;
-      } catch(_) {}
+        if (price) { PRICES_BY_ID[id] = price; refreshDisplayedPrices(); }
+        return p;
+      }
       try { S.update ? await S.update() : (S.refresh && await S.refresh()); } catch(_) {}
-      await new Promise(r => setTimeout(r, 250));
+      await new Promise(r => setTimeout(r, 350));
     }
     return null;
   }
 
-  // --- DIAG rapide à lancer depuis la console (ou via bouton caché) ---
+  async function waitForOffer(S, product, timeoutMs = 12000) {
+    const t0 = Date.now();
+    while (Date.now() - t0 < timeoutMs) {
+      try {
+        const offer = product?.getOffer && product.getOffer();
+        if (offer) return offer;
+      } catch(_) {}
+      try { S.update ? await S.update() : (S.refresh && await S.refresh()); } catch(_) {}
+      await new Promise(r => setTimeout(r, 350));
+    }
+    return null;
+  }
+
+  // --- DIAG rapide (à lancer en console) ---
   window.__iapDiag = async function() {
     const { api, store:S } = getIapApi();
     const out = { api, cdvPresent: !!window.CdvPurchase, storePresent: !!S, version: S && S.version, ready: !!(S && S.isReady) };
-    try { if (S && S.products) out.products = (S.products.byId ? Object.keys(S.products.byId) : (S.products||[]).map(p=>p.id)); } catch(_) {}
     try {
-      const list = {};
+      const PL = S && (S.Platform || (window.CdvPurchase && CdvPurchase.Platform));
+      const details = {};
       for (const {id} of PRODUCTS) {
-        const p = S?.get && S.get(id);
-        list[id] = {
+        const p = getProduct(S, id, PL);
+        details[id] = {
           found: !!p,
           price: p?.pricing?.price || p?.price || null,
-          offers: (p?.offers && p.offers.length) || 0
+          offer: !!(p && p.getOffer && p.getOffer()),
+          owned: !!p?.owned
         };
       }
-      out.details = list;
+      out.details = details;
     } catch(_) {}
     return out;
   };
@@ -133,12 +156,9 @@
   // --- Bootstrap ---
   document.addEventListener('deviceready', function () {
     const { api, store } = getIapApi();
-    if (api === 'none') {
-      // En web/sideload, on laisse les prix à “—”
-      return;
-    }
+    if (api === 'none') return; // Web/sideload : pas de store
 
-    // =============== Branche legacy ===============
+    // =================== Branche legacy (v<13) ===================
     if (api === 'legacy') {
       const IAP = store;
       const mapType = t => (t === 'NON_CONSUMABLE' ? IAP.NON_CONSUMABLE : IAP.CONSUMABLE);
@@ -150,6 +170,10 @@
       IAP.when('product').updated(p => {
         try {
           if (p?.id && p.price) { PRICES_BY_ID[p.id] = p.price; refreshDisplayedPrices(); }
+          if (p?.owned && p.id === 'nopub') {
+            localStorage.setItem('no_ads','1');
+            if (window.setNoAds) window.setNoAds(true);
+          }
         } catch(_) {}
       });
 
@@ -178,14 +202,12 @@
       // Owned
       IAP.when('product').owned(p => {
         if (p?.id === 'nopub') {
-          try {
-            localStorage.setItem('no_ads','1');
-            if (window.setNoAds) window.setNoAds(true);
-          } catch(_) {}
+          localStorage.setItem('no_ads','1');
+          if (window.setNoAds) window.setNoAds(true);
         }
       });
 
-      // Ready + refresh
+      // Ready
       IAP.ready(() => {
         STORE_READY = true;
         window.__IAP_READY__ = true;
@@ -202,63 +224,69 @@
       });
 
       try { IAP.refresh(); } catch(_) {}
-      setTimeout(()=>{ try { IAP.refresh(); } catch(_) {} }, 2500);
+      setTimeout(()=>{ try { IAP.refresh(); } catch(_) {} }, 2000);
 
       // Achat legacy
       window.buyProduct = function (id) {
         try { IAP.order(id); } catch (e) { alert('Erreur achat: ' + (e?.message || e)); }
       };
       window.safeOrder = window.buyProduct;
-      return; // stop ici pour legacy
+      return;
     }
 
-    // =============== Branche v13+ ===============
-    const S = store;
-    const PT = S.ProductType || window.CdvPurchase?.ProductType;
-    const PL = S.Platform || window.CdvPurchase?.Platform;
+    // =================== Branche v13 (CdvPurchase) ===================
+    const S  = store;
+    const PT = S.ProductType || (window.CdvPurchase && CdvPurchase.ProductType);
+    const PL = S.Platform    || (window.CdvPurchase && CdvPurchase.Platform);
     const mapType = t => (t === 'NON_CONSUMABLE' ? PT.NON_CONSUMABLE : PT.CONSUMABLE);
 
-    // Verbosité utile pour les logs (désactiver si besoin)
-    try { S.verbosity = window.CdvPurchase?.LogLevel?.INFO ?? 3; } catch(_) {}
+    try { if (window.CdvPurchase?.log) CdvPurchase.log.level = CdvPurchase.LogLevel.INFO; } catch(_) {}
 
-    // initialize : déclarer explicitement la plateforme Google Play
-    (function robustInitialize(){
-      try {
-        if (S.initialize) {
-          if (PL?.GOOGLE_PLAY) { S.initialize({ platforms:[ PL.GOOGLE_PLAY ] }); return; }
-          S.initialize([ PL.GOOGLE_PLAY ]); // fallback signature
-        }
-      } catch(_) {}
-    })();
-
-    // register avec platform obligatoire côté v13
+    // 1) REGISTER d'abord (avec plateforme)
     try {
-      const toRegister = PRODUCTS.map(p => ({ id:p.id, type:mapType(p.type), platform: PL.GOOGLE_PLAY }));
-      S.register && S.register(toRegister);
+      const regs = PRODUCTS.map(p => ({ id:p.id, type:mapType(p.type), platform: PL.GOOGLE_PLAY }));
+      S.register && S.register(regs);
     } catch(_) {}
 
-    // Ecoute prix / MAJ produits
+    // 2) INITIALIZE ensuite
+    try {
+      if (S.initialize) S.initialize({ platforms: [ PL.GOOGLE_PLAY ] });
+    } catch(_) {}
+
+    // 3) UPDATE le catalogue
+    try { S.update ? S.update() : (S.refresh && S.refresh()); } catch(_) {}
+    try { setTimeout(()=>{ S.update && S.update(); }, 1500); } catch(_) {}
+
+    // Prix / mises à jour de produits
     if (S.when && S.when().productUpdated) {
       S.when().productUpdated(p => {
         try {
           const price = p?.pricing?.price || p?.price;
           if (p?.id && price) { PRICES_BY_ID[p.id] = price; refreshDisplayedPrices(); }
+          if (p?.owned && p.id === 'nopub') {
+            localStorage.setItem('no_ads','1');
+            if (window.setNoAds) window.setNoAds(true);
+          }
         } catch(_) {}
       });
     } else if (S.updated && S.updated.add) {
       S.updated.add(() => {
         try {
           PRODUCTS.forEach(({id}) => {
-            const p = S.get ? S.get(id) : (S.products?.byId?.[id]);
+            const p = getProduct(S, id, PL);
             const price = p?.pricing?.price || p?.price;
             if (price) PRICES_BY_ID[id] = price;
+            if (p?.owned && id === 'nopub') {
+              localStorage.setItem('no_ads','1');
+              if (window.setNoAds) window.setNoAds(true);
+            }
           });
           refreshDisplayedPrices();
         } catch(_) {}
       });
     }
 
-    // Approved
+    // Approved (v13)
     if (S.when && S.when().approved) {
       S.when().approved(async (tx) => {
         try {
@@ -281,29 +309,6 @@
         } catch(_) {}
         try { tx.finish && tx.finish(); } catch(_) {}
       });
-    } else if (S.approved && S.approved.add) {
-      S.approved.add(async (p) => {
-        try {
-          const txId = p?.transaction?.id || p?.transactionId;
-          if (txId) {
-            if (PROCESSED_TX.has(txId)) { try { S.finish && S.finish(p); } catch(_) {} return; }
-            PROCESSED_TX.add(txId);
-          }
-          const found = PRODUCTS.find(x => x.id === p?.id);
-          if (!found) { try { S.finish && S.finish(p); } catch(_) {} return; }
-          const ok = await creditUser(found.credit);
-          if (ok) {
-            if (found.credit.vcoins) alert('✅ VCoins crédités !');
-            if (found.credit.jetons) alert('✅ Jetons crédités !');
-            if (found.credit.nopub)  alert('✅ Pack NO ADS activé !');
-          } else {
-            alert('Erreur de crédit. Réessayez.');
-          }
-          try { S.finish && S.finish(p); } catch(_) {}
-        } catch(_) {
-          try { S.finish && S.finish(p); } catch(_) {}
-        }
-      });
     }
 
     // Ready
@@ -314,9 +319,13 @@
         try { window.dispatchEvent(new Event('iap-ready')); } catch(_) {}
         try {
           PRODUCTS.forEach(({id}) => {
-            const p = S.get ? S.get(id) : (S.products?.byId?.[id]);
+            const p = getProduct(S, id, PL);
             const price = p?.pricing?.price || p?.price;
             if (price) PRICES_BY_ID[id] = price;
+            if (p?.owned && id === 'nopub') {
+              localStorage.setItem('no_ads','1');
+              if (window.setNoAds) window.setNoAds(true);
+            }
           });
         } catch(_) {}
         refreshDisplayedPrices();
@@ -325,19 +334,24 @@
       });
     }
 
-    // Refresh/update catalogue
-    try { S.update ? S.update() : (S.refresh && S.refresh()); } catch(_) {}
-    setTimeout(()=>{ try { S.update ? S.update() : (S.refresh && S.refresh()); } catch(_) {} }, 2000);
-
-    // Achat v13+ : attendre l’offre
+    // Achat v13 : via product.getOffer().order()
     window.buyProduct = async function (productId) {
       try {
-        const offer = await waitForOffer(S, productId, 7000);
-        if (!offer) { alert('Offre introuvable pour ce produit.'); return; }
-        const result = await S.order(offer);
-        if (result && result.isError && result.code) {
-          alert('Erreur achat: ' + (result.message || result.code));
-        }
+        if (!STORE_READY) { try { S.update && await S.update(); } catch(_) {} }
+
+        const product = await waitForProduct(S, productId, PL, 12000);
+        if (!product) { alert('Produit introuvable sur ce device.'); return; }
+
+        const price = product?.pricing?.price || product?.price;
+        if (price) { PRICES_BY_ID[productId] = price; refreshDisplayedPrices(); }
+
+        let offer = (product.getOffer && product.getOffer()) || null;
+        if (!offer) offer = await waitForOffer(S, product, 12000);
+
+        if (!offer || !offer.order) { alert('Offre introuvable pour ce produit.'); return; }
+
+        const err = await offer.order(); // ✅ v13
+        if (err && err.isError) alert('Erreur achat: ' + (err.message || err.code || 'inconnue'));
       } catch (e) {
         alert('Erreur achat: ' + (e?.message || e));
       }
@@ -345,6 +359,6 @@
     window.safeOrder = window.buyProduct;
   });
 
-  // Si la page charge avant deviceready : peint au moins “—”
+  // Si DOM prêt avant deviceready : peindre au moins "—"
   document.addEventListener('DOMContentLoaded', refreshDisplayedPrices);
 })();
