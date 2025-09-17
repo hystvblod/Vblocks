@@ -19,7 +19,7 @@
   var AD_UNIT_ID_REWARDED     = 'ca-app-pub-6837328794080297/3006407791';
 
   // --- Réglages interstitiels ---
-  var INTERSTITIEL_APRES_X_ACTIONS = 2; // pub AU DÉBUT de la 3ᵉ action
+  var INTERSTITIEL_APRES_X_ACTIONS = 2; // pub AU DÉBUT de la 3ᵉ action réelle
   var INTER_COOLDOWN_MS = 0; // anti-spam (0 = off)
 
   // --- Récompenses par défaut (affichage/UI) ---
@@ -570,21 +570,16 @@
   // =============================
   // Compteurs / Déclencheur interstitiels
   // =============================
-  function isModeInfini(m){ m=(m||'').toLowerCase(); return ['infini','infinite','endless'].includes(m); }
-  function isModeClassique(m){ m=(m||'').toLowerCase(); return ['classique','classic','normal','arcade'].includes(m); }
-  function isModeDuel(m){ m=(m||'').toLowerCase(); return ['duel','versus','vs','1v1','duo'].includes(m); }
 
- async function maybeShowInterBeforeAction(mode) {
-  if (isModeDuel(mode)) return;
+  // ➜ Nouvelle API claire : marquer UNIQUEMENT quand une game démarre vraiment
+  async function adsMarkGameLaunched(mode) {
+    // ⛔ Reprise suite à revive : ignorer UNE action
+    if (window.__ads_skip_next_action) {
+      window.__ads_skip_next_action = false;
+      return;
+    }
 
-  // ⛔ Popup ouverte : ne pas compter
-  if (window.__ads_waiting_choice) return;
-
-  // ⛔ Reprise suite à revive : ignorer UNE action
-  if (window.__ads_skip_next_action) {
-    window.__ads_skip_next_action = false;
-    return;
-  }
+    // Vérifie si une pub doit partir AVANT de compter la nouvelle action (pub au début de la 3e)
     var needAd = interActionsCount >= INTERSTITIEL_APRES_X_ACTIONS;
     if (needAd) {
       interActionsCount = 0;
@@ -592,29 +587,51 @@
       await showInterstitial();
     }
 
+    // Compte l'action réelle (game lancée / reprise / recommencée)
     interActionsCount++;
     localStorage.setItem('inter_actions_count', String(interActionsCount));
   }
 
+  // Compat restreinte : modes
+  function isModeInfini(m){ m=(m||'').toLowerCase(); return ['infini','infinite','endless'].includes(m); }
+  function isModeClassique(m){ m=(m||'').toLowerCase(); return ['classique','classic','normal','arcade'].includes(m); }
+  function isModeDuel(m){ m=(m||'').toLowerCase(); return ['duel','versus','vs','1v1','duo'].includes(m); }
+
+  // Ancien hook : conserve mais protège pour ne PAS compter les clics qui ouvrent une popup
+  async function maybeShowInterBeforeAction(mode) {
+    if (isModeDuel(mode)) return;
+
+    // ⛔ Popup ouverte (reprise ?): ne PAS compter
+    if (window.__ads_waiting_choice) return;
+
+    // Délègue à la nouvelle API (action réelle)
+    await adsMarkGameLaunched(mode);
+  }
+
   // =============================
-  // Wrappers "événements jeu" (à appeler AVANT le gameplay)
+  // Wrappers "événements jeu" (à appeler au moment RÉEL du départ)
   // =============================
   async function partieCommencee(mode){
     mode = String(mode || 'classique').toLowerCase();
-    if (isModeInfini(mode) || isModeClassique(mode) || isModeDuel(mode)) {
-      await maybeShowInterBeforeAction(mode);
+    // NE PAS compter si une popup va s'ouvrir : on comptera sur Reprendre/Recommencer
+    if (window.__ads_waiting_choice) return;
+    if (isModeInfini(mode) || isModeClassique(mode)) {
+      await adsMarkGameLaunched(mode);
     }
   }
   async function partieReprisee(mode){
     mode = String(mode || 'classique').toLowerCase();
-    if (isModeInfini(mode) || isModeClassique(mode) || isModeDuel(mode)) {
-      await maybeShowInterBeforeAction(mode);
+    // La popup vient d'être validée → on la ferme côté flag
+    window.__ads_waiting_choice = false;
+    if (isModeInfini(mode) || isModeClassique(mode)) {
+      await adsMarkGameLaunched(mode);
     }
   }
   async function partieRecommencee(mode){
     mode = String(mode || 'classique').toLowerCase();
-    if (isModeInfini(mode) || isModeClassique(mode) || isModeDuel(mode)) {
-      await maybeShowInterBeforeAction(mode);
+    window.__ads_waiting_choice = false;
+    if (isModeInfini(mode) || isModeClassique(mode)) {
+      await adsMarkGameLaunched(mode);
     }
   }
   function partieTerminee(){}
@@ -627,12 +644,21 @@
   window.showRewardVcoins     = showRewardVcoins;
   window.showRewardRevive     = showRewardRevive;
 
+  // ➜ Nouvelle API claire si tu veux l’appeler toi-même
+  window.adsMarkGameLaunched  = adsMarkGameLaunched;
+
+  // ➜ Compat avec ton code existant
   window.partieCommencee      = partieCommencee;
   window.partieReprisee       = partieReprisee;
   window.partieRecommencee    = partieRecommencee;
   window.partieTerminee       = partieTerminee;
 
   window.hasNoAds             = hasNoAds;
+
+  // (Optionnel) expose un helper pour ton UI de reprise
+  window.adsSetResumePopupOpen = function (isOpen) {
+    window.__ads_waiting_choice = !!isOpen;
+  };
 
 })();
 

@@ -19,9 +19,6 @@
     })();
   </script>
 
-  <!-- Capacitor bridge (généré à la compilation mobile) -->
-  <script src="cordova.js"></script>
-
   <!-- Styles -->
   <link rel="stylesheet" href="style/main.css" />
   <style>
@@ -47,18 +44,50 @@
       border:0; border-radius: 10px; padding: 8px 12px; font-weight:700; cursor:pointer;
       background:#333; color:#fff;
     }
+
+    /* Popup consent (au-dessus de tous les calques pour capter les clics) */
+    #popup-consent,
+    .popup-consent-bg {
+      position: fixed;
+      inset: 0;
+      display: none;              /* affichée en 'flex' par showPopupOnce() */
+      z-index: 100050;            /* > #update-banner (99998) */
+      pointer-events: auto;       /* capter les clics */
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.35);
+    }
+    .popup-consent-box {
+      position: relative;
+      z-index: 100051;            /* la boîte au-dessus du fond */
+      pointer-events: auto;
+      background: #1d1d1f;
+      color: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      width: min(92vw, 420px);
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+      text-align: center;
+    }
   </style>
 
   <!-- Lib Supabase (UMD locale) — le client est créé dans userData.js -->
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
-
-  <!-- App utils (créent window.sb & co) -->
   <script src="js/userData.js"></script>
   <script src="js/i18n.js"></script>
 
-  <!-- Ads + IAP -->
+  <!-- Cordova d'abord -->
+  <script src="cordova.js"></script>
+  <script src="js/achat.js"></script> 
+  <script>
+  document.addEventListener('deviceready', function(){
+    console.log('[IAPCHK]', 'CdvPurchase=', !!window.CdvPurchase, 'store=', !!(window.CdvPurchase && CdvPurchase.store));
+  });
+  </script>
+
+  <!-- Ensuite seulement les scripts qui peuvent dépendre de Cordova -->
   <script src="js/pub.js"></script>
-  <script src="js/achat.js"></script>
+ 
 </head>
 
 <body>
@@ -98,7 +127,6 @@
       </div>
 
       <div style="margin-top:0.75rem;text-align:center;">
-        <!-- 🔗 Lien mis à jour -->
         <a href="https://hystvblod.github.io/Vboldstudio/vblocks.html"
            target="_blank" rel="noopener"
            class="link-accords" data-i18n="index.rgpd.manage">Gérer les accords publicitaires</a>
@@ -175,14 +203,17 @@
         tooltip.style.display = 'none';
       });
     });
+  </script>
 
-    // --------------- RGPD & Consents ---------------
+  <!-- --------------- RGPD & Consents (version robuste) --------------- -->
+  <script>
     (function(){
-      const CONSENT_KEY = "rgpdConsent";
-      const ADS_KEY     = "adsConsent";
-      const ADS_ENABLED = "adsEnabled";
+      const CONSENT_KEY  = "rgpdConsent";   // "accept" | "refuse"
+      const ADS_KEY      = "adsConsent";    // "yes" | "no"
+      const ADS_ENABLED  = "adsEnabled";    // "true" | "false"
+      const SHOWN_FLAG   = "consentPopupShown"; // session-only
 
-      // 🛡️ Garde-fou: si ancien "adsEnabled" existe mais "rgpdConsent" manque, on synchronise
+      // 0) Garde-fou: aligne anciennes clés locales si besoin
       (function syncConsentKeys() {
         try {
           const rg = localStorage.getItem(CONSENT_KEY);
@@ -195,59 +226,110 @@
         } catch(_) {}
       })();
 
-      function showConsentIfNeeded() {
-        const consent = localStorage.getItem(CONSENT_KEY);
-        if (!consent) {
-          document.getElementById("popup-consent").style.display = "flex";
-        } else {
-          applyConsentFromStorage();
-        }
+      function hasLocalConsent() {
+        const c = localStorage.getItem(CONSENT_KEY);
+        return c === 'accept' || c === 'refuse';
       }
-      function applyConsentFromStorage() {
+      function applyConsentFromLocal() {
         const consent = localStorage.getItem(CONSENT_KEY);
-        const ads  = localStorage.getItem(ADS_KEY) === "yes";
-        if (consent === "accept" && ads && typeof window.initAds === "function") {
+        const personalized = localStorage.getItem(ADS_KEY) === "yes";
+        if (consent === "accept" && personalized && typeof window.initAds === "function") {
           try { window.initAds(); } catch(e){}
         }
       }
-      window.addEventListener("DOMContentLoaded", function() {
+      async function syncConsentFromCloud() {
+        try {
+          if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+          if (!window.sb?.rpc) return null;
+          const { data, error } = await window.sb.rpc('get_ads_consent');
+          if (error) { console.warn('[consent] get_ads_consent error', error.message || error); return null; }
+          if (data === 'accept' || data === 'refuse') {
+            localStorage.setItem(CONSENT_KEY, data);
+            if (data === 'accept') {
+              if (!localStorage.getItem(ADS_KEY)) localStorage.setItem(ADS_KEY, 'yes');
+              if (!localStorage.getItem(ADS_ENABLED)) localStorage.setItem(ADS_ENABLED, 'true');
+            } else {
+              localStorage.setItem(ADS_KEY, 'no');
+              localStorage.setItem(ADS_ENABLED, 'false');
+            }
+            return data;
+          }
+          return null;
+        } catch(e) {
+          console.warn('[consent] syncConsentFromCloud exception', e?.message || e);
+          return null;
+        }
+      }
+      function showPopupOnce() {
+        if (sessionStorage.getItem(SHOWN_FLAG) === '1') return;
         const popup = document.getElementById("popup-consent");
+        if (popup) {
+          popup.style.display = "flex";
+          sessionStorage.setItem(SHOWN_FLAG, '1');
+        }
+      }
+
+      // expose pour d’autres pages si besoin
+      window.applyConsentFromStorage = applyConsentFromLocal;
+
+      // Décision d’amorçage stricte:
+      // 1) si local ok -> appliquer et basta
+      // 2) sinon, on tente la base; si base ok -> on écrit local et on applique
+      // 3) sinon, popup (mais jamais 2x dans la même session)
+      window.addEventListener("DOMContentLoaded", async function() {
+        try {
+          if (hasLocalConsent()) {
+            applyConsentFromLocal();
+            return;
+          }
+          const cloud = await syncConsentFromCloud();
+          if (cloud) {
+            applyConsentFromLocal();
+            return;
+          }
+          showPopupOnce();
+        } catch(e) {
+          console.warn('[consent] bootstrap error', e?.message || e);
+          // en cas d’erreur inattendue, pour ne pas bloquer l’accès, on montre la popup une seule fois
+          showPopupOnce();
+        }
+
+        // Boutons popup
         const btnAccept = document.getElementById("consent-accept");
         const btnRefuse = document.getElementById("consent-refuse");
-        const cbAds   = document.getElementById("consent-ads");
+        const cbAds     = document.getElementById("consent-ads");
+        const popup     = document.getElementById("popup-consent");
 
-        // Init état du checkbox selon stockage
-        try {
-          const rg = localStorage.getItem(CONSENT_KEY);
-          const ae = localStorage.getItem(ADS_ENABLED);
-          if (rg) {
-            cbAds.checked = (localStorage.getItem(ADS_KEY) === 'yes');
-          } else if (ae !== null) {
-            cbAds.checked = (ae === 'true');
-          }
-        } catch(_) {}
-
-        showConsentIfNeeded();
-
-        btnAccept.onclick = function() {
-          localStorage.setItem(CONSENT_KEY, "accept");
-          localStorage.setItem(ADS_KEY,   cbAds.checked   ? "yes" : "no");
-          localStorage.setItem(ADS_ENABLED, cbAds.checked ? "true" : "false");
-          popup.style.display = "none";
-          applyConsentFromStorage();
-        };
-        btnRefuse.onclick = function() {
-          localStorage.setItem(CONSENT_KEY, "refuse");
-          localStorage.setItem(ADS_KEY,   "no");
-          localStorage.setItem(ADS_ENABLED, "false");
-          popup.style.display = "none";
-        };
+        if (btnAccept) {
+          btnAccept.onclick = async function() {
+            localStorage.setItem(CONSENT_KEY, "accept");
+            localStorage.setItem(ADS_KEY,   cbAds && cbAds.checked ? "yes" : "no");
+            localStorage.setItem(ADS_ENABLED, cbAds && cbAds.checked ? "true" : "false");
+            if (popup) popup.style.display = "none";
+            applyConsentFromLocal();
+            try {
+              if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+              if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "accept" });
+            } catch(e) { console.warn('[consent] update accept RPC', e?.message || e); }
+          };
+        }
+        if (btnRefuse) {
+          btnRefuse.onclick = async function() {
+            localStorage.setItem(CONSENT_KEY, "refuse");
+            localStorage.setItem(ADS_KEY,   "no");
+            localStorage.setItem(ADS_ENABLED, "false");
+            if (popup) popup.style.display = "none";
+            try {
+              if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+              if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "refuse" });
+            } catch(e) { console.warn('[consent] update refuse RPC', e?.message || e); }
+          };
+        }
       });
-      window.applyConsentFromStorage = applyConsentFromStorage;
     })();
   </script>
 
-  <!-- ========= Helpers POPUP (utilise window.sb fourni par userData.js) ========= -->
+  <!-- ========= Helpers POPUP (messages, concours) ========= -->
   <script>
     async function getUsersTableIdForCurrentAuth() {
       const { data: { user } } = await window.sb.auth.getUser();
@@ -314,7 +396,6 @@
         await listenPopupsRealtime();
 
         if (window.i18nTranslateAll) window.i18nTranslateAll();
-        if (typeof window.applyConsentFromStorage === 'function') window.applyConsentFromStorage();
       } catch (e) {
         console.warn('[INDEX bootstrap]', e?.message || e);
       }

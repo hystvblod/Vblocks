@@ -70,11 +70,7 @@
       user-select: none;
       text-shadow: 0 3px 16px #2e6ead44, 0 1px 1px #fff7;
     }
-    .profile-row {
-      display: flex;
-      flex-direction: row;
-      gap: 8px;
-    }
+    .profile-row { display: flex; flex-direction: row; gap: 8px; }
     .btn-icon img { width: 27px; height: 27px; }
     .param-container {
       display: flex; flex-direction: column; align-items: center;
@@ -159,7 +155,7 @@
         <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
         <div class="switch">
           <input type="checkbox" id="ads-toggle">
-          <span id="ads-label" data-i18n="settings.ads.on">Activées</span>
+          <span id="ads-label" data-i18n="settings.ads.on">Activée</span>
         </div>
       </div>
 
@@ -261,131 +257,142 @@
           if (window.userData?.updateLangDirect) {
             await window.userData.updateLangDirect(l.code);
           }
-        } catch (e) {
-          console.warn('[updateLangDirect] échec:', e?.message || e);
-        }
-        location.reload();
+        } catch(e){}
       };
       langueSelect.appendChild(opt);
     });
-
-    // ====== Vibration helper ======
-    window.vibrateIfEnabled = async function (ms = 60) {
-      const vibrateEnabled = localStorage.getItem("vibrateEnabled") !== "false";
-      if (!vibrateEnabled) return;
-      if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.Plugins?.Haptics) {
-        await window.Capacitor.Plugins.Haptics.vibrate({ duration: ms });
-      } else if ("vibrate" in navigator) {
-        navigator.vibrate(ms);
-      }
-    }
-
-    // ====== CONSENT: sync historique (adsEnabled -> rgpdConsent/adsConsent si manquants) ======
-    (function syncConsentKeys() {
-      const rg = localStorage.getItem('rgpdConsent');
-      const ae = localStorage.getItem('adsEnabled');
-      if (!rg && ae !== null) {
-        localStorage.setItem('rgpdConsent', ae === 'true' ? 'accept' : 'refuse');
-        localStorage.setItem('adsConsent', ae === 'true' ? 'yes' : 'no');
-      }
-    })();
-
-    // ====== Publicités ======
-    const adsToggle = document.getElementById("ads-toggle");
-    const adsLabel = document.getElementById("ads-label");
-
-    // État initial basé d'abord sur rgpdConsent, sinon sur adsEnabled (par défaut ON)
-    (function initAdsUI() {
-      const rg = localStorage.getItem('rgpdConsent');
-      let enabled;
-      if (rg === 'accept') enabled = true;
-      else if (rg === 'refuse') enabled = false;
-      else enabled = (localStorage.getItem('adsEnabled') !== 'false');
-      adsToggle.checked = enabled;
-      adsLabel.setAttribute("data-i18n", enabled ? "settings.ads.on" : "settings.ads.off");
-      adsLabel.textContent = enabled ? "Activées" : "Désactivées";
-    })();
-
-    adsToggle.addEventListener("change", () => {
-      const enabled = adsToggle.checked;
-      // Persistance cohérente pour toutes les couches de l'app
-      localStorage.setItem("adsEnabled", enabled ? "true" : "false");
-      localStorage.setItem("rgpdConsent", enabled ? "accept" : "refuse");
-      localStorage.setItem("adsConsent", enabled ? "yes" : "no");
-      window.userConsent = enabled ? "accept" : "refuse";
-
-      adsLabel.setAttribute("data-i18n", enabled ? "settings.ads.on" : "settings.ads.off");
-      adsLabel.textContent = enabled ? "Activées" : "Désactivées";
-
-      if (window.i18nTranslateAll) window.i18nTranslateAll();
-      // Rechargement pour que l'accueil lise bien le consentement et ne relance pas la popup
-      location.reload();
-    });
-
-    // ====== Pièce fantôme ======
-    const ghostToggle = document.getElementById("ghost-toggle");
-    const ghostLabel = document.getElementById("ghost-label");
-    ghostToggle.checked = localStorage.getItem("ghostPiece") !== "false";
-    ghostLabel.setAttribute("data-i18n", ghostToggle.checked ? "settings.ghost.on" : "settings.ghost.off");
-    ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
-    ghostToggle.addEventListener("change", () => {
-      localStorage.setItem("ghostPiece", ghostToggle.checked ? "true" : "false");
-      ghostLabel.setAttribute("data-i18n", ghostToggle.checked ? "settings.ghost.on" : "settings.ghost.off");
-      ghostLabel.textContent = ghostToggle.checked ? "Activée" : "Désactivée";
-      if (window.i18nTranslateAll) window.i18nTranslateAll();
-    });
-
-    // ====== MUSIQUE : mute global persistant ======
-    const musicToggleBtn = document.getElementById("music-toggle-btn");
-    const musicToggleImg = document.getElementById("music-toggle-img");
-    const musicToggleLabel = document.getElementById("music-toggle-label");
-
-    function isAlwaysMuted() {
-      return localStorage.getItem('alwaysMuteMusic') === 'true';
-    }
-    function setAlwaysMuted(val) {
-      if (typeof window.setMusicAlwaysMuted === 'function') {
-        window.setMusicAlwaysMuted(!!val);
-      } else {
-        localStorage.setItem('alwaysMuteMusic', val ? 'true' : 'false');
-        try {
-          window.dispatchEvent(new StorageEvent('storage', {
-            key: 'alwaysMuteMusic',
-            newValue: val ? 'true' : 'false'
-          }));
-        } catch (_) {}
-      }
-    }
-    function refreshMusicUI() {
-      const muted = isAlwaysMuted();
-      if (muted) {
-        musicToggleImg.src = "assets/icons/volume-x.svg";
-        musicToggleImg.alt = "Musique coupée";
-        musicToggleLabel.textContent = "Coupée";
-        musicToggleLabel.setAttribute("data-i18n", "settings.music.off");
-      } else {
-        musicToggleImg.src = "assets/icons/volume-2.svg";
-        musicToggleImg.alt = "Musique activée";
-        musicToggleLabel.textContent = "Activée";
-        musicToggleLabel.setAttribute("data-i18n", "settings.music.on");
-      }
-      if (window.i18nTranslateAll) window.i18nTranslateAll();
-    }
-    refreshMusicUI();
-
-    musicToggleBtn.addEventListener("click", () => {
-      const next = !isAlwaysMuted();
-      setAlwaysMuted(next);
-      refreshMusicUI();
-    });
-
-    // Si l'état change depuis un autre onglet/page
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'alwaysMuteMusic') refreshMusicUI();
-    });
   </script>
 
-  <!-- Autres scripts UI (interstitiels/reward, etc.) -->
-  <script src="js/pub.js"></script>
+  <script>
+    // ====== ADS CONSENT (toggle) ======
+    (function(){
+      const CONSENT_KEY = "rgpdConsent";
+      const ADS_KEY     = "adsConsent";
+      const ADS_ENABLED = "adsEnabled";
+
+      const adsToggle = document.getElementById('ads-toggle');
+      const adsLabel  = document.getElementById('ads-label');
+
+      function refreshAdsLabel() {
+        const on = adsToggle.checked;
+        adsLabel.textContent = on
+          ? (window.i18nGet ? window.i18nGet('settings.ads.on') || 'Activée' : 'Activée')
+          : (window.i18nGet ? window.i18nGet('settings.ads.off') || 'Désactivée' : 'Désactivée');
+      }
+
+      async function loadConsentFromCloudThenLocal() {
+        try {
+          if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+          if (window.sb?.rpc) {
+            const { data, error } = await window.sb.rpc('get_ads_consent');
+            if (!error && data) {
+              // data = 'accept' | 'refuse'
+              localStorage.setItem(CONSENT_KEY, data);
+              if (data === 'accept') {
+                localStorage.setItem(ADS_KEY, 'yes');
+                localStorage.setItem(ADS_ENABLED, 'true');
+              } else {
+                localStorage.setItem(ADS_KEY, 'no');
+                localStorage.setItem(ADS_ENABLED, 'false');
+              }
+            }
+          }
+        } catch(e) { /* non bloquant */ }
+
+        // Applique au toggle
+        try {
+          const consent = localStorage.getItem(CONSENT_KEY);
+          const adsYes  = localStorage.getItem(ADS_KEY) === 'yes';
+          if (consent === 'accept') {
+            adsToggle.checked = adsYes; // si accept mais pas personnalisée → off
+          } else if (consent === 'refuse') {
+            adsToggle.checked = false;
+          } else {
+            // jamais choisi → on reflète l'état local
+            adsToggle.checked = (localStorage.getItem(ADS_ENABLED) === 'true');
+          }
+        } catch(_) {}
+        refreshAdsLabel();
+      }
+
+      async function persistConsent(toChecked) {
+        // Règle choisie :
+        // - Toggle = ON  → consent global = accept + publicités personnalisées YES
+        // - Toggle = OFF → consent global = refuse
+        const willAccept = !!toChecked;
+
+        localStorage.setItem(CONSENT_KEY, willAccept ? 'accept' : 'refuse');
+        localStorage.setItem(ADS_KEY,     willAccept ? 'yes' : 'no');
+        localStorage.setItem(ADS_ENABLED, willAccept ? 'true' : 'false');
+
+        // Cloud
+        try {
+          if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+          if (window.sb?.rpc) {
+            await window.sb.rpc('update_ads_consent', { new_consent: willAccept ? 'accept' : 'refuse' });
+          }
+        } catch(e) { console.warn('[param] update_ads_consent', e?.message || e); }
+
+        // Si on vient de passer en accept+yes, on peut initialiser les pubs
+        try {
+          if (willAccept && typeof window.applyConsentFromStorage === 'function') {
+            window.applyConsentFromStorage();
+          }
+        } catch(_){}
+      }
+
+      if (adsToggle) {
+        adsToggle.addEventListener('change', async function(){
+          refreshAdsLabel();
+          await persistConsent(adsToggle.checked);
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', loadConsentFromCloudThenLocal);
+    })();
+  </script>
+
+  <!-- Ghost + Music (inchangés) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      // Ghost toggle (existant)
+      const ghostToggle = document.getElementById('ghost-toggle');
+      const ghostLabel  = document.getElementById('ghost-label');
+      try {
+        const g = localStorage.getItem('ghostEnabled');
+        ghostToggle.checked = (g === null) ? true : (g === 'true');
+        ghostLabel.textContent = ghostToggle.checked ? (window.i18nGet ? window.i18nGet('settings.ghost.on') || 'Activée' : 'Activée')
+                                                     : (window.i18nGet ? window.i18nGet('settings.ghost.off') || 'Désactivée' : 'Désactivée');
+        ghostToggle.addEventListener('change', function(){
+          localStorage.setItem('ghostEnabled', ghostToggle.checked ? 'true' : 'false');
+          ghostLabel.textContent = ghostToggle.checked ? (window.i18nGet ? window.i18nGet('settings.ghost.on') || 'Activée' : 'Activée')
+                                                       : (window.i18nGet ? window.i18nGet('settings.ghost.off') || 'Désactivée' : 'Désactivée');
+        });
+      } catch(_){}
+
+      // Music toggle (existant via userData.js)
+      const btn = document.getElementById('music-toggle-btn');
+      const img = document.getElementById('music-toggle-img');
+      const lbl = document.getElementById('music-toggle-label');
+      function syncMusicUI() {
+        const muted = (localStorage.getItem('alwaysMuteMusic') === 'true');
+        img.src = muted ? 'assets/icons/volume-x.svg' : 'assets/icons/volume-2.svg';
+        lbl.textContent = muted ? (window.i18nGet ? window.i18nGet('settings.music.off') || 'Coupée' : 'Coupée')
+                                : (window.i18nGet ? window.i18nGet('settings.music.on')  || 'Activée' : 'Activée');
+      }
+      if (btn) {
+        btn.addEventListener('click', function(){
+          const muted = (localStorage.getItem('alwaysMuteMusic') === 'true');
+          if (typeof window.setMusicAlwaysMuted === 'function') {
+            window.setMusicAlwaysMuted(!muted);
+          } else {
+            localStorage.setItem('alwaysMuteMusic', (!muted) ? 'true' : 'false');
+          }
+          syncMusicUI();
+        });
+      }
+      syncMusicUI();
+    });
+  </script>
 </body>
 </html>

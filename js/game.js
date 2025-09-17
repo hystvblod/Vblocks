@@ -544,9 +544,12 @@ function fillRectThemeSafe(c, px, py, size) {
           piecesUsed = s.piecesUsed;
         }
 
-        if (s.theme && THEMES.includes(s.theme) && s.theme !== currentTheme) {
-          changeTheme(s.theme);
-        }
+    // Préfère TOUJOURS le thème actuel choisi par l’utilisateur
+const desiredTheme = localStorage.getItem('themeVBlocks') || s.theme || currentTheme;
+if (THEMES.includes(desiredTheme) && desiredTheme !== currentTheme) {
+  changeTheme(desiredTheme);
+}
+
 
         const scoreEl = document.getElementById('score');
         if (scoreEl) scoreEl.textContent = String(score);

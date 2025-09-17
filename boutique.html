@@ -9,14 +9,25 @@
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/userData.js"></script>
-  <script src="js/boutique.js"></script>
 
   <!-- Cordova (404 en web = normal) -->
   <script src="cordova.js"></script>
-<script src="js/achat.js"></script>
+
+    <script src="js/achat.js"></script>
+  <!-- Boutique UI/logic -->
+
+  <script src="js/boutique.js"></script>
 
   <!-- Ads (récompensées) uniquement -->
   <script src="js/pub.js"></script>
+
+   <script>
+  // Optionnel : rafraîchir l’étiquette de prix au chargement
+  document.addEventListener('deviceready', function () {
+    window.refreshDisplayedPrices?.();
+  }, { once:true });
+  setTimeout(() => window.refreshDisplayedPrices?.(), 800);
+</script>
 
   <link rel="stylesheet" href="style/main.css">
   <style>
@@ -119,8 +130,8 @@ const THEME_COLOR = {
 
 /* cartouches (on garde visuel + couleurs) */
 const SPECIAL_CARTOUCHES = [
-  { key:"boutique.cartouche.points3000",  productId:"points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow', prix:"—", amount:3000 },
-  { key:"boutique.cartouche.points10000", productId:"points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple', prix:"—", amount:10000 },
+  { key:"boutique.cartouche.points3000",  productId:"points3000",  icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-yellow', prix:"—", amount:5000 },
+  { key:"boutique.cartouche.points10000", productId:"points10000", icon:'<img src="assets/images/vcoin.webp" alt="Points">', color:'color-purple', prix:"—", amount:12000 },
   { key:"boutique.cartouche.jetons12",    productId:"jetons12",    icon:'<img src="assets/images/jeton.webp" alt="jeton">',  color:'color-blue',   prix:"—", amount:12 },
   { key:"boutique.cartouche.jetons50",    productId:"jetons50",    icon:'<img src="assets/images/jeton.webp" alt="jeton">',  color:'color-purple', prix:"—", amount:50 },
   { key:"boutique.cartouche.nopub",       productId:"nopub",       icon:'<img src="assets/images/ads.png"  alt="No Ads">',   color:'color-yellow', prix:"—" },
@@ -216,7 +227,7 @@ function setupPubCartouches(){
   });
 }
 
-/* ---------- clics cartouches IAP (désactivés) ---------- */
+/* ---------- clics cartouches IAP (safe) ---------- */
 function setupBoutiqueAchats(){
   document.querySelectorAll('#achats-list .special-cartouche[data-product-id]').forEach(node=>{
     const id = node.getAttribute('data-product-id');
@@ -227,7 +238,6 @@ function setupBoutiqueAchats(){
     };
   });
 }
-
 
 /* ---------- modal thème ---------- */
 const $backdrop=document.getElementById('themeModalBackdrop');
@@ -282,5 +292,44 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeThemeModal()
   if (window.i18nGet) document.title = window.i18nGet("boutique.titre") || "Boutique";
 });
 </script>
+
+<!-- ======= PRIX : écoute l’IAP sans ré-initialiser ======= -->
+<script>
+(function () {
+  function paintPricesFromProducts(products) {
+    products.forEach(function (p) {
+      var price = p.price || (p.pricing && (p.pricing.price || p.pricing.priceString)) || '';
+      document.querySelectorAll('.special-cartouche[data-product-id="'+p.id+'"] .prix-label')
+        .forEach(function (el) { el.textContent = price || '—'; });
+    });
+  }
+
+  function paintFromIAPDump() {
+    try {
+      if (typeof window.IAPDump === 'function') {
+        var arr = window.IAPDump(); // [{id, price, ...}]
+        if (Array.isArray(arr) && arr.length) paintPricesFromProducts(arr);
+      } else if (typeof window.refreshDisplayedPrices === 'function') {
+        // demande à achat.js de repeindre ses prix internes
+        window.refreshDisplayedPrices();
+      }
+    } catch(_) {}
+  }
+
+  // 1) Quand achat.js annonce que les produits sont prêts
+  document.addEventListener('iap-products-ready', function (e) {
+    var prods = (e && e.detail && e.detail.products) || window.IAP_PRODUCTS || [];
+    if (Array.isArray(prods) && prods.length) paintPricesFromProducts(prods);
+  });
+
+  // 2) Au chargement de la page, on tente de lire l’état courant (si l’IAP a déjà tourné)
+  document.addEventListener('DOMContentLoaded', function(){
+    // petit délai pour laisser le temps à la WebView de peupler les structures globales
+    setTimeout(paintFromIAPDump, 200);
+    setTimeout(paintFromIAPDump, 1200);
+  });
+})();
+</script>
+
 </body>
 </html>
