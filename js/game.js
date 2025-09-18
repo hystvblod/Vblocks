@@ -967,10 +967,14 @@ requestAnimationFrame(update);
        33,  33,  33,  33,  33,  33,  33,  33,  17
     ];
 
-    const scoreEl = document.getElementById('score');
-    const highEl  = document.getElementById('highscore') || document.getElementById('highscore-global');
-    if (scoreEl) scoreEl.textContent = '0';
-    if (highEl)  highEl.textContent  = '0';
+   const scoreEl = document.getElementById('score');
+if (scoreEl) scoreEl.textContent = '0';
+
+// Cherche l’élément à l’instant où on en a besoin (pas au chargement)
+function setHighText(val) {
+  const el = document.getElementById('highscore') || document.getElementById('highscore-global');
+  if (el) el.textContent = String(val);
+}
 
 async function updateHighscoreDisplay() {
   // essaie d’abord la RPC; si KO, fallback userData
@@ -986,13 +990,19 @@ async function updateHighscoreDisplay() {
   }
 
   highscoreCloud = Number(cloud) || 0;
-  if (highEl) highEl.textContent = String(highscoreCloud);
+  setHighText(highscoreCloud);
 }
-document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
 
-// 🔁 Alias pour couvrir les deux orthographes utilisées ailleurs
-window.updateHighscoreDisplay = updateHighscoreDisplay; // (score)
-window.updateHighScoreDisplay = updateHighscoreDisplay; // (Score)
+// Appel immédiat si le DOM est déjà prêt, sinon on attend
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
+} else {
+  updateHighscoreDisplay();
+}
+
+// Alias (deux orthographes utilisées ailleurs dans le code)
+window.updateHighscoreDisplay = updateHighscoreDisplay;
+window.updateHighScoreDisplay = updateHighscoreDisplay;
 
 
     // === SCORE: barème fixe (sans combo/enchaînement) ===
@@ -1097,12 +1107,12 @@ window.updateHighScoreDisplay = updateHighscoreDisplay; // (Score)
         score += pts;
         if (scoreEl) scoreEl.textContent = score;
 
-  if (score > highscoreCloud) {
+ if (score > highscoreCloud) {
   const newHS = score;
 
   // feedback immédiat à l'écran
   highscoreCloud = newHS;
-  if (highEl) highEl.textContent = String(newHS);
+  setHighText(newHS);
 
   // écriture en base (userData) + RPC Supabase, puis rafraîchit l'affichage
   Promise.resolve()
@@ -1110,10 +1120,10 @@ window.updateHighScoreDisplay = updateHighscoreDisplay; // (Score)
     .then(() => (typeof setHighScoreSupabase === 'function') ? setHighScoreSupabase(newHS) : null)
     .finally(() => {
       if (typeof window.updateHighscoreDisplay === 'function') window.updateHighscoreDisplay();
-      if (typeof window.updateHighScoreDisplay === 'function') window.updateHighScoreDisplay();
     })
     .catch(e => console.warn('[HS] save failed:', e));
 }
+
 
         if (mode === 'classic' || mode === 'duel') {
           let level = Math.floor(linesCleared / 7);
