@@ -972,11 +972,28 @@ requestAnimationFrame(update);
     if (scoreEl) scoreEl.textContent = '0';
     if (highEl)  highEl.textContent  = '0';
 
-    async function updateHighscoreDisplay() {
-      highscoreCloud = await userData.getHighScore?.() ?? 0;
-      if (highEl) highEl.textContent = highscoreCloud;
+async function updateHighscoreDisplay() {
+  // essaie d’abord la RPC; si KO, fallback userData
+  let cloud = null;
+  try {
+    if (typeof getHighScoreSupabase === 'function') {
+      cloud = await getHighScoreSupabase();
     }
-    document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
+  } catch (_) {}
+
+  if (cloud == null && userData?.getHighScore) {
+    try { cloud = await userData.getHighScore(); } catch (_) {}
+  }
+
+  highscoreCloud = Number(cloud) || 0;
+  if (highEl) highEl.textContent = String(highscoreCloud);
+}
+document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
+
+// 🔁 Alias pour couvrir les deux orthographes utilisées ailleurs
+window.updateHighscoreDisplay = updateHighscoreDisplay; // (score)
+window.updateHighScoreDisplay = updateHighscoreDisplay; // (Score)
+
 
     // === SCORE: barème fixe (sans combo/enchaînement) ===
     function computeScore(lines) {
@@ -1080,15 +1097,24 @@ requestAnimationFrame(update);
         score += pts;
         if (scoreEl) scoreEl.textContent = score;
 
-        if (score > highscoreCloud) {
-          highscoreCloud = score;
-          if (highEl) highEl.textContent = highscoreCloud;
-          if (userData.setHighScore) {
-            userData.setHighScore(score).then(() => {
-              if (window.updateHighScoreDisplay) window.updateHighScoreDisplay();
-            });
-          }
-        }
+  if (score > highscoreCloud) {
+  const newHS = score;
+
+  // feedback immédiat à l'écran
+  highscoreCloud = newHS;
+  if (highEl) highEl.textContent = String(newHS);
+
+  // écriture en base (userData) + RPC Supabase, puis rafraîchit l'affichage
+  Promise.resolve()
+    .then(() => userData?.setHighScore ? userData.setHighScore(newHS) : null)
+    .then(() => (typeof setHighScoreSupabase === 'function') ? setHighScoreSupabase(newHS) : null)
+    .finally(() => {
+      if (typeof window.updateHighscoreDisplay === 'function') window.updateHighscoreDisplay();
+      if (typeof window.updateHighScoreDisplay === 'function') window.updateHighScoreDisplay();
+    })
+    .catch(e => console.warn('[HS] save failed:', e));
+}
+
         if (mode === 'classic' || mode === 'duel') {
           let level = Math.floor(linesCleared / 7);
           if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
