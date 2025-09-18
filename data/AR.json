@@ -231,5 +231,7 @@
     "index.update.title": "تحديث متاح",
     "index.update.body": "هناك إصدار جديد جاهز. يمكنك تنزيله الآن.",
     "index.update.updateNow": "تحديث الآن",
-    "index.update.later": "لاحقًا"
+    "index.update.later": "لاحقًا",
+     "settings.credits.label": "Ucapan Terima Kasih",
+  "settings.credits.text": "VBoldStudio berterima kasih kepada Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, dan Lucas atas dukungan, kreativitas, dan saran mereka."
 }

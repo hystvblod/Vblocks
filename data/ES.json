@@ -231,5 +231,7 @@
     "index.update.title": "Actualización disponible",
     "index.update.body": "Hay una nueva versión lista. Puedes descargarla ahora.",
     "index.update.updateNow": "Actualizar ahora",
-    "index.update.later": "Más tarde"
+    "index.update.later": "Más tarde",
+     "settings.credits.label": "Agradecimientos",
+  "settings.credits.text": "VBoldStudio agradece a Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas y Lucas por su apoyo, creatividad y consejos."
 }

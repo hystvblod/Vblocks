@@ -231,5 +231,7 @@
     "index.update.title": "Pembaruan tersedia",
     "index.update.body": "Versi baru sudah siap. Kamu bisa mengunduhnya sekarang.",
     "index.update.updateNow": "Perbarui sekarang",
-    "index.update.later": "Nanti"
+    "index.update.later": "Nanti",
+    "settings.credits.label": "Ucapan Terima Kasih",
+  "settings.credits.text": "VBoldStudio berterima kasih kepada Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, dan Lucas atas dukungan, kreativitas, dan saran mereka."
 }

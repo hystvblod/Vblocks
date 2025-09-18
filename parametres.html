@@ -118,6 +118,16 @@
     }
     button.return-btn:hover { background: rgba(255, 255, 255, 0.1); }
     .music-btn-img { width: 32px; height: 32px; vertical-align: middle; }
+
+    /* Texte de remerciements un peu plus petit */
+    .credits-text {
+      margin: 0.2em 0 0;
+      line-height: 1.5;
+      font-size: 0.98em;
+      color: #f0f6ff;
+      opacity: 0.95;
+    }
+
     @media (max-width:480px) {
       .main-content, .top-bar { max-width: 100vw; }
       .top-bar { padding: 4px 3px 0 3px; max-width: 99vw; }
@@ -178,6 +188,16 @@
           </button>
           <span id="music-toggle-label" data-i18n="settings.music.on">Activée</span>
         </div>
+      </div>
+
+      <!-- Remerciements (NOUVEAU) -->
+      <div class="param-group">
+        <label data-i18n="settings.credits.label">Remerciements</label>
+        <p class="credits-text">
+          <span data-i18n="settings.credits.text">
+            VBoldStudio remercie pour leur soutien, leur créativité et leurs conseils : Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, Lucas.
+          </span>
+        </p>
       </div>
 
       <!-- Adresse mail seule -->
