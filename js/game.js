@@ -1107,22 +1107,24 @@ window.updateHighScoreDisplay = updateHighscoreDisplay;
         score += pts;
         if (scoreEl) scoreEl.textContent = score;
 
- if (score > highscoreCloud) {
-  const newHS = score;
+async function updateHighscoreDisplay() {
+  let cloud = null;
+  try {
+    cloud = await getHighScoreSupabase();
+  } catch (_) {}
 
-  // feedback immédiat à l'écran
-  highscoreCloud = newHS;
-  setHighText(newHS);
+  if (cloud == null && userData?.getHighScore) {
+    try { cloud = await userData.getHighScore(); } catch (_) {}
+  }
 
-  // écriture en base (userData) + RPC Supabase, puis rafraîchit l'affichage
-  Promise.resolve()
-    .then(() => userData?.setHighScore ? userData.setHighScore(newHS) : null)
-    .then(() => (typeof setHighScoreSupabase === 'function') ? setHighScoreSupabase(newHS) : null)
-    .finally(() => {
-      if (typeof window.updateHighscoreDisplay === 'function') window.updateHighscoreDisplay();
-    })
-    .catch(e => console.warn('[HS] save failed:', e));
+  highscoreCloud = Number(cloud) || 0;
+  if (highEl) highEl.textContent = String(highscoreCloud);
 }
+document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
+window.updateHighscoreDisplay = updateHighscoreDisplay;
+window.updateHighScoreDisplay = updateHighscoreDisplay;
+setTimeout(updateHighscoreDisplay, 0); // lance une fois tout de suite
+
 
 
         if (mode === 'classic' || mode === 'duel') {
@@ -1776,27 +1778,32 @@ window.updateHighScoreDisplay = updateHighscoreDisplay;
       await sb.rpc('set_lastscore_secure', { last_score: val });
     }
 
-    async function setHighScoreSupabase(score) {
-      if (!sb) return;
-      const val = parseInt(score, 10) || 0;
-      await sb.rpc('set_highscore_secure', { new_score: val });
-    }
-
-async function getHighScoreSupabase() {
-  if (!sb) return 0;
+async function setHighScoreSupabase(score) {
+  if (!sb) return;
+  const val = Number(score) || 0;
   try {
-    // RLS te limite à TON propre row → single() renvoie juste le tien
-    const { data, error } = await sb
-      .from('users')
-      .select('highscore')
-      .single();
+    const { error } = await sb.rpc('set_highscore_secure', { new_score: val });
+    if (!error) return; // OK via RPC
+    throw error;
+  } catch (e) {
+    // Fallback: écriture directe si la RPC n'est pas dispo
+    try {
+      const { data: { user } } = await sb.auth.getUser();
+      if (!user?.id) return;
+      const uid = user.id;
 
-    if (error) return 0;
-    return Number(data?.highscore ?? 0);
-  } catch {
-    return 0;
+      // tente 'users.id', sinon 'profiles.id', sinon 'users.user_id'
+      let res = await sb.from('users').update({ highscore: val }).eq('id', uid);
+      if (res.error) res = await sb.from('profiles').update({ highscore: val }).eq('id', uid);
+      if (res.error) res = await sb.from('users').update({ highscore: val }).eq('user_id', uid);
+
+      if (res.error) console.warn('[HS] write fallback error', res.error);
+    } catch (err) {
+      console.warn('[HS] write exception', err);
+    }
   }
 }
+
 
 
     // ===== BOOT (LOCAL UNIQUEMENT, SANS CLOUD) =====
