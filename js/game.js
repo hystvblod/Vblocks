@@ -1064,63 +1064,46 @@ requestAnimationFrame(update);
       clearLines();
       scheduleSave();
     }
+function clearLines() {
+  let lines = 0;
+  board = board.filter(row => {
+    if (row.every(cell => cell !== '')) { lines++; return false; }
+    return true;
+  });
+  while (board.length < ROWS) board.unshift(Array(COLS).fill(''));
 
-    function clearLines() {
-      let lines = 0;
-      board = board.filter(row => {
-        if (row.every(cell => cell !== '')) { lines++; return false; }
-        return true;
-      });
-      while (board.length < ROWS) board.unshift(Array(COLS).fill(''));
-      if (lines > 0) {
-        if (window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
-        combo++;
-        linesCleared += lines;
-        let pts = computeScore(lines, combo);
-        score += pts;
-        if (scoreEl) scoreEl.textContent = score;
+  if (lines > 0) {
+    if (window.vibrateIfEnabled) window.vibrateIfEnabled(lines >= 4 ? 200 : 70);
+    combo++;
+    linesCleared += lines;
 
-        if (score > highscoreCloud) {
-          highscoreCloud = score;
-          if (highEl) highEl.textContent = highscoreCloud;
-          if (userData.setHighScore) {
-            userData.setHighScore(score).then(() => {
-              if (window.updateHighScoreDisplay) window.updateHighScoreDisplay();
-            });
-          }
-        }
-        if (mode === 'classic' || mode === 'duel') {
-          let level = Math.floor(linesCleared / 7);
-          if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
-          dropInterval = SPEED_TABLE[level];
-        }
-      } else {
-        combo = 0;
+    let pts = computeScore(lines, combo);
+    score += pts;
+    if (scoreEl) scoreEl.textContent = String(score);
+
+    if (score > highscoreCloud) {
+      // feedback immédiat
+      highscoreCloud = score;
+      if (highEl) highEl.textContent = String(highscoreCloud);
+
+      // écriture en base puis relecture depuis la base pour l'affichage
+      if (userData.setHighScore) {
+        userData.setHighScore(score)
+          .then(() => { if (typeof updateHighscoreDisplay === 'function') updateHighscoreDisplay(); })
+          .catch(e => console.warn('[HS] save fail:', e));
       }
     }
 
-    function move(offset) {
-      currentPiece.x += offset;
-      if (collision()) currentPiece.x -= offset;
-      scheduleSave();
+    if (mode === 'classic' || mode === 'duel') {
+      let level = Math.floor(linesCleared / 7);
+      if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
+      dropInterval = SPEED_TABLE[level];
     }
+  } else {
+    combo = 0;
+  }
+}
 
-    function dropPiece() {
-      currentPiece.y++;
-      if (collision()) {
-        currentPiece.y--;
-        stopSoftDrop();
-        mustLiftFingerForNextSoftDrop = true;
-
-        merge();
-        saveHistory();
-        reset();
-        if (collision()) {
-          showEndPopup(score);
-          gameOver = true;
-        }
-      }
-    }
 
     // 🔒 rotation lock global (empêche rotation pendant glissements/softdrop/quickdrop)
     let rotationLocked = false;
