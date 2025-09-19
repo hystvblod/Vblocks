@@ -1109,20 +1109,19 @@ window.updateHighScoreDisplay = updateHighscoreDisplay;
 
 if (score > highscoreCloud) {
   const newHS = score;
-
-  // feedback immédiat à l'écran
   highscoreCloud = newHS;
-  setHighText(newHS);
+  if (highEl) highEl.textContent = String(newHS);
 
-  // écriture en base (userData) + RPC Supabase, puis rafraîchit l'affichage
   Promise.resolve()
     .then(() => userData?.setHighScore ? userData.setHighScore(newHS) : null)
     .then(() => (typeof setHighScoreSupabase === 'function') ? setHighScoreSupabase(newHS) : null)
     .finally(() => {
       if (typeof window.updateHighscoreDisplay === 'function') window.updateHighscoreDisplay();
+      if (typeof window.updateHighScoreDisplay === 'function') window.updateHighscoreDisplay();
     })
     .catch(e => console.warn('[HS] save failed:', e));
 }
+
 
         if (mode === 'classic' || mode === 'duel') {
           let level = Math.floor(linesCleared / 7);
