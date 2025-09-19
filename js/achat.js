@@ -135,18 +135,9 @@
   async function ensureAuthStrict() {
     if (!window.sb?.auth) return null;
     try {
-      // 1) Session actuelle ?
       let { data: { session } } = await sb.auth.getSession();
       if (session?.user?.id) return session;
 
-      // 2) Refresh d'abord (évite de créer un nouvel anonyme si l'ancien peut être rafraîchi)
-      try {
-        const { data: ref } = await sb.auth.refreshSession();
-        session = ref?.session || session;
-      } catch (_) {}
-      if (session?.user?.id) return session;
-
-      // 3) Dernier recours : session anonyme
       if (typeof sb.auth.signInAnonymously === 'function') {
         await sb.auth.signInAnonymously();
         ({ data: { session } } = await sb.auth.getSession());
@@ -438,24 +429,30 @@
         IN_FLIGHT_TX.add(txId);
 
         const found = PRODUCTS.find(x => x.id === productId) || { id: productId };
+        let credited = await creditUser(found, txId);
 
-        // 👉 Ajout en pending AVANT (pour rejouer si le crédit échoue)
-        addPending(txId, productId);
-
-        // 1) Crédit serveur (essaie avec session garantie)
-        const credited = await creditUser(found, txId);
-
-        // 2) 👉 Toujours finish (idempotence côté serveur: "ok" ou "already")
-        try { tx.finish && await tx.finish(); } catch (_) {}
-        FINISHED_TX.add(txId);
-
-        // 3) Nettoyage si crédit effectif
-        if (credited) removePending(txId);
-
-        ev('v13:finish:always', { productId, txId, credited });
-
-        IN_FLIGHT_TX.delete(txId);
-        ev('v13:approved', { productId, credited });
+        // FINISH si crédit OK… ou FORCÉ pour consommables si crédit KO (optionnel)
+        try {
+          if (credited) {
+            try { tx.finish && tx.finish(); } catch (_) {}
+            FINISHED_TX.add(txId);
+            removePending(txId);
+            ev('v13:finish:ok', { productId, txId });
+          } else if (DEV_FORCE_FINISH && productId !== 'nopub') {
+            addPending(txId, productId);
+            try { tx.finish && tx.finish(); } catch (_) {}
+            FINISHED_TX.add(txId);
+            ev('v13:finish:forced', { productId, txId });
+          } else {
+            addPending(txId, productId);
+            ev('v13:finish:skipped', { productId, txId });
+          }
+        } catch (e) {
+          warn('finish err', e?.message || e);
+        } finally {
+          IN_FLIGHT_TX.delete(txId);
+          ev('v13:approved', { productId, credited });
+        }
       });
     }
     if (S.when && S.when().finished) {
@@ -544,13 +541,9 @@
         if (err && err.isError) {
           ev('buy:error', { code: err.code, msg: err.message });
 
-          // 🎯 Rattrapage "déjà possédé" (6777003) → rejouer approved via update() + restore
+          // 🔁 Rattrapage "déjà possédé" (6777003) → rejouer approved via update()
           if (String(err.code) === '6777003' || /already/i.test(err.message || '')) {
-            try {
-              S.update && await S.update();
-              if (window.restorePurchases) await window.restorePurchases();
-              ev('recover:owned:restore');
-            } catch(_) {}
+            try { S.update && await S.update(); ev('recover:owned:update'); } catch(_) {}
           }
         } else {
           ev('buy:launched', productId);
@@ -656,23 +649,21 @@
 })();
 
 // Petit bloc de preuve (facultatif) pour vérifier la connectivité Supabase / RPC
-if (true && typeof DEBUG !== 'undefined' && DEBUG) {
-  setTimeout(async () => {
-    try {
-      const url = sb?.rest?.url;
-      const { data: { session } } = await sb.auth.getSession();
-      console.log('[PROOF] url=', url, 'uid=', session?.user?.id || null);
+setTimeout(async () => {
+  try {
+    const url = sb?.rest?.url;
+    const { data: { session } } = await sb.auth.getSession();
+    console.log('[PROOF] url=', url, 'uid=', session?.user?.id || null);
 
-      const r1 = await sb.from('iap_products').select('product_id').limit(1);
-      console.log('[PROOF] iap_products -> data:', r1.data, 'error:', r1.error);
+    const r1 = await sb.from('iap_products').select('product_id').limit(1);
+    console.log('[PROOF] iap_products -> data:', r1.data, 'error:', r1.error);
 
-      const r2 = await sb.rpc('iap_credit_once', {
-        p_tx_id: 'proof-' + Date.now(),
-        p_product_id: '__does_not_exist__'
-      });
-      console.log('[PROOF] rpc -> data:', r2.data, 'error:', r2.error);
-    } catch (e) {
-      console.log('[PROOF] exception', e?.message || e);
-    }
-  }, 1500);
-}
+    const r2 = await sb.rpc('iap_credit_once', {
+      p_tx_id: 'proof-' + Date.now(),
+      p_product_id: '__does_not_exist__'
+    });
+    console.log('[PROOF] rpc -> data:', r2.data, 'error:', r2.error);
+  } catch (e) {
+    console.log('[PROOF] exception', e?.message || e);
+  }
+}, 1500);
