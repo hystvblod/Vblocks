@@ -967,16 +967,43 @@ requestAnimationFrame(update);
        33,  33,  33,  33,  33,  33,  33,  33,  17
     ];
 
-    const scoreEl = document.getElementById('score');
-    const highEl  = document.getElementById('highscore') || document.getElementById('highscore-global');
-    if (scoreEl) scoreEl.textContent = '0';
-    if (highEl)  highEl.textContent  = '0';
+const scoreEl = document.getElementById('score');
+if (scoreEl) scoreEl.textContent = '0';
 
-    async function updateHighscoreDisplay() {
-      highscoreCloud = await userData.getHighScore?.() ?? 0;
-      if (highEl) highEl.textContent = highscoreCloud;
+// Cherche l’élément à l’instant où on en a besoin (pas au chargement)
+function setHighText(val) {
+  const el = document.getElementById('highscore') || document.getElementById('highscore-global');
+  if (el) el.textContent = String(val);
+}
+
+async function updateHighscoreDisplay() {
+  // essaie d’abord la RPC; si KO, fallback userData
+  let cloud = null;
+  try {
+    if (typeof getHighScoreSupabase === 'function') {
+      cloud = await getHighScoreSupabase();
     }
-    document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
+  } catch (_) {}
+
+  if (cloud == null && userData?.getHighScore) {
+    try { cloud = await userData.getHighScore(); } catch (_) {}
+  }
+
+  highscoreCloud = Number(cloud) || 0;
+  setHighText(highscoreCloud);
+}
+
+// Appel immédiat si le DOM est déjà prêt, sinon on attend
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
+} else {
+  updateHighscoreDisplay();
+}
+
+// Alias (deux orthographes utilisées ailleurs dans le code)
+window.updateHighscoreDisplay = updateHighscoreDisplay;
+window.updateHighScoreDisplay = updateHighscoreDisplay;
+
 
     // === SCORE: barème fixe (sans combo/enchaînement) ===
     function computeScore(lines) {
@@ -1080,15 +1107,23 @@ requestAnimationFrame(update);
         score += pts;
         if (scoreEl) scoreEl.textContent = score;
 
-        if (score > highscoreCloud) {
-          highscoreCloud = score;
-          if (highEl) highEl.textContent = highscoreCloud;
-          if (userData.setHighScore) {
-            userData.setHighScore(score).then(() => {
-              if (window.updateHighScoreDisplay) window.updateHighScoreDisplay();
-            });
-          }
-        }
+if (score > highscoreCloud) {
+  const newHS = score;
+
+  // feedback immédiat à l'écran
+  highscoreCloud = newHS;
+  setHighText(newHS);
+
+  // écriture en base (userData) + RPC Supabase, puis rafraîchit l'affichage
+  Promise.resolve()
+    .then(() => userData?.setHighScore ? userData.setHighScore(newHS) : null)
+    .then(() => (typeof setHighScoreSupabase === 'function') ? setHighScoreSupabase(newHS) : null)
+    .finally(() => {
+      if (typeof window.updateHighscoreDisplay === 'function') window.updateHighscoreDisplay();
+    })
+    .catch(e => console.warn('[HS] save failed:', e));
+}
+
         if (mode === 'classic' || mode === 'duel') {
           let level = Math.floor(linesCleared / 7);
           if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
