@@ -967,43 +967,16 @@ requestAnimationFrame(update);
        33,  33,  33,  33,  33,  33,  33,  33,  17
     ];
 
-   const scoreEl = document.getElementById('score');
-if (scoreEl) scoreEl.textContent = '0';
+    const scoreEl = document.getElementById('score');
+    const highEl  = document.getElementById('highscore') || document.getElementById('highscore-global');
+    if (scoreEl) scoreEl.textContent = '0';
+    if (highEl)  highEl.textContent  = '0';
 
-// Cherche l’élément à l’instant où on en a besoin (pas au chargement)
-function setHighText(val) {
-  const el = document.getElementById('highscore') || document.getElementById('highscore-global');
-  if (el) el.textContent = String(val);
-}
-
-async function updateHighscoreDisplay() {
-  // essaie d’abord la RPC; si KO, fallback userData
-  let cloud = null;
-  try {
-    if (typeof getHighScoreSupabase === 'function') {
-      cloud = await getHighScoreSupabase();
+    async function updateHighscoreDisplay() {
+      highscoreCloud = await userData.getHighScore?.() ?? 0;
+      if (highEl) highEl.textContent = highscoreCloud;
     }
-  } catch (_) {}
-
-  if (cloud == null && userData?.getHighScore) {
-    try { cloud = await userData.getHighScore(); } catch (_) {}
-  }
-
-  highscoreCloud = Number(cloud) || 0;
-  setHighText(highscoreCloud);
-}
-
-// Appel immédiat si le DOM est déjà prêt, sinon on attend
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
-} else {
-  updateHighscoreDisplay();
-}
-
-// Alias (deux orthographes utilisées ailleurs dans le code)
-window.updateHighscoreDisplay = updateHighscoreDisplay;
-window.updateHighScoreDisplay = updateHighscoreDisplay;
-
+    document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
 
     // === SCORE: barème fixe (sans combo/enchaînement) ===
     function computeScore(lines) {
@@ -1107,26 +1080,15 @@ window.updateHighScoreDisplay = updateHighscoreDisplay;
         score += pts;
         if (scoreEl) scoreEl.textContent = score;
 
-async function updateHighscoreDisplay() {
-  let cloud = null;
-  try {
-    cloud = await getHighScoreSupabase();
-  } catch (_) {}
-
-  if (cloud == null && userData?.getHighScore) {
-    try { cloud = await userData.getHighScore(); } catch (_) {}
-  }
-
-  highscoreCloud = Number(cloud) || 0;
-  if (highEl) highEl.textContent = String(highscoreCloud);
-}
-document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
-window.updateHighscoreDisplay = updateHighscoreDisplay;
-window.updateHighScoreDisplay = updateHighscoreDisplay;
-setTimeout(updateHighscoreDisplay, 0); // lance une fois tout de suite
-
-
-
+        if (score > highscoreCloud) {
+          highscoreCloud = score;
+          if (highEl) highEl.textContent = highscoreCloud;
+          if (userData.setHighScore) {
+            userData.setHighScore(score).then(() => {
+              if (window.updateHighScoreDisplay) window.updateHighScoreDisplay();
+            });
+          }
+        }
         if (mode === 'classic' || mode === 'duel') {
           let level = Math.floor(linesCleared / 7);
           if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
@@ -1778,33 +1740,19 @@ setTimeout(updateHighscoreDisplay, 0); // lance une fois tout de suite
       await sb.rpc('set_lastscore_secure', { last_score: val });
     }
 
-async function setHighScoreSupabase(score) {
-  if (!sb) return;
-  const val = Number(score) || 0;
-  try {
-    const { error } = await sb.rpc('set_highscore_secure', { new_score: val });
-    if (!error) return; // OK via RPC
-    throw error;
-  } catch (e) {
-    // Fallback: écriture directe si la RPC n'est pas dispo
-    try {
-      const { data: { user } } = await sb.auth.getUser();
-      if (!user?.id) return;
-      const uid = user.id;
-
-      // tente 'users.id', sinon 'profiles.id', sinon 'users.user_id'
-      let res = await sb.from('users').update({ highscore: val }).eq('id', uid);
-      if (res.error) res = await sb.from('profiles').update({ highscore: val }).eq('id', uid);
-      if (res.error) res = await sb.from('users').update({ highscore: val }).eq('user_id', uid);
-
-      if (res.error) console.warn('[HS] write fallback error', res.error);
-    } catch (err) {
-      console.warn('[HS] write exception', err);
+    async function setHighScoreSupabase(score) {
+      if (!sb) return;
+      const val = parseInt(score, 10) || 0;
+      await sb.rpc('set_highscore_secure', { new_score: val });
     }
-  }
-}
 
-
+    async function getHighScoreSupabase() {
+      if (!sb) return 0;
+      const { data, error } = await sb.rpc('get_balances'); // ou une RPC dédiée
+      if (error) return 0;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row?.highscore || 0;
+    }
 
     // ===== BOOT (LOCAL UNIQUEMENT, SANS CLOUD) =====
     (function boot() {
