@@ -1781,13 +1781,22 @@ if (score > highscoreCloud) {
       await sb.rpc('set_highscore_secure', { new_score: val });
     }
 
-    async function getHighScoreSupabase() {
-      if (!sb) return 0;
-      const { data, error } = await sb.rpc('get_balances'); // ou une RPC dédiée
-      if (error) return 0;
-      const row = Array.isArray(data) ? data[0] : data;
-      return row?.highscore || 0;
-    }
+ async function getHighScoreSupabase() {
+  if (!sb) return 0;
+  try {
+    // RLS te limite à TON propre row → single() renvoie juste le tien
+    const { data, error } = await sb
+      .from('users')
+      .select('highscore')
+      .single();
+
+    if (error) return 0;
+    return Number(data?.highscore ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
 
     // ===== BOOT (LOCAL UNIQUEMENT, SANS CLOUD) =====
     (function boot() {
