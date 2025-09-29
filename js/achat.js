@@ -190,26 +190,31 @@
   }
 
   // ----------- extraction productId robuste -----------
-  function getProductIdFromTx(tx) {
-    let pid =
-      tx?.product?.id ||
-      tx?.productId ||
-      tx?.sku ||
-      tx?.transaction?.productId ||
-      tx?.transaction?.lineItems?.[0]?.productId ||
-      null;
+function getProductIdFromTx(tx, p) {
+  let pid =
+    p?.id ||                                 // ← prioritaire (cordova-purchase v13)
+    tx?.productIds?.[0] ||                    // ← Play Billing récent
+    tx?.transaction?.productIds?.[0] ||
+    tx?.productId ||
+    tx?.sku ||
+    tx?.transaction?.productId ||
+    tx?.transaction?.lineItems?.[0]?.productId ||
+    null;
 
-    if (!pid) {
-      const rec = tx?.transaction?.receipt || tx?.receipt;
-      const r   = typeof rec === 'string' ? parseMaybeBase64Json(rec) : rec;
-      if (r?.productId) pid = r.productId;
-      else if (r?.payload) {
-        const p = typeof r.payload === 'string' ? parseMaybeBase64Json(r.payload) : r.payload;
-        pid = p?.productId || p?.product_id || pid;
-      }
+  if (!pid) {
+    const rec = tx?.transaction?.receipt || tx?.receipt;
+    const r   = typeof rec === 'string' ? parseMaybeBase64Json(rec) : rec;
+    if (Array.isArray(r?.productIds) && r.productIds[0]) pid = r.productIds[0];
+    else if (r?.productId) pid = r.productId;
+    else if (r?.payload) {
+      const pld = typeof r.payload === 'string' ? parseMaybeBase64Json(r.payload) : r.payload;
+      pid = pld?.productId || pld?.product_id ||
+            (Array.isArray(pld?.productIds) && pld.productIds[0]) || pid;
     }
-    return pid || null;
   }
+  return pid || null;
+}
+
 
   // ----------- CREDIT (via RPC serveur) -----------
   async function creditUser(found, txId) {
@@ -423,7 +428,15 @@
         } catch (_) {}
 
         if (!txId) { ev('v13:noTxId', { productId }); return; }
-        if (!productId) { addPending(txId, 'unknown'); ev('v13:noProductId', { txId }); return; }
+       if (!productId) {
+  addPending(txId, 'unknown');
+  ev('v13:noProductId', { txId });
+
+  // ✅ consommer quand même pour éviter l’état "owned"
+  try { tx.finish && await tx.finish(); } catch {}
+  FINISHED_TX.add(txId);
+  return;
+}
 
         // Anti-dup / Anti-finish fantôme
         if (FINISHED_TX.has(txId)) {
