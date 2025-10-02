@@ -190,31 +190,30 @@
   }
 
   // ----------- extraction productId robuste -----------
-function getProductIdFromTx(tx, p) {
-  let pid =
-    p?.id ||                                 // ← prioritaire (cordova-purchase v13)
-    tx?.productIds?.[0] ||                    // ← Play Billing récent
-    tx?.transaction?.productIds?.[0] ||
-    tx?.productId ||
-    tx?.sku ||
-    tx?.transaction?.productId ||
-    tx?.transaction?.lineItems?.[0]?.productId ||
-    null;
+  function getProductIdFromTx(tx, p) {
+    let pid =
+      p?.id ||                                 // ← prioritaire (cordova-purchase v13)
+      tx?.productIds?.[0] ||                    // ← Play Billing récent
+      tx?.transaction?.productIds?.[0] ||
+      tx?.productId ||
+      tx?.sku ||
+      tx?.transaction?.productId ||
+      tx?.transaction?.lineItems?.[0]?.productId ||
+      null;
 
-  if (!pid) {
-    const rec = tx?.transaction?.receipt || tx?.receipt;
-    const r   = typeof rec === 'string' ? parseMaybeBase64Json(rec) : rec;
-    if (Array.isArray(r?.productIds) && r.productIds[0]) pid = r.productIds[0];
-    else if (r?.productId) pid = r.productId;
-    else if (r?.payload) {
-      const pld = typeof r.payload === 'string' ? parseMaybeBase64Json(r.payload) : r.payload;
-      pid = pld?.productId || pld?.product_id ||
-            (Array.isArray(pld?.productIds) && pld.productIds[0]) || pid;
+    if (!pid) {
+      const rec = tx?.transaction?.receipt || tx?.receipt;
+      const r   = typeof rec === 'string' ? parseMaybeBase64Json(rec) : rec;
+      if (Array.isArray(r?.productIds) && r.productIds[0]) pid = r.productIds[0];
+      else if (r?.productId) pid = r.productId;
+      else if (r?.payload) {
+        const pld = typeof r.payload === 'string' ? parseMaybeBase64Json(r.payload) : r.payload;
+        pid = pld?.productId || pld?.product_id ||
+              (Array.isArray(pld?.productIds) && pld.productIds[0]) || pid;
+      }
     }
+    return pid || null;
   }
-  return pid || null;
-}
-
 
   // ----------- CREDIT (via RPC serveur) -----------
   async function creditUser(found, txId) {
@@ -408,39 +407,45 @@ function getProductIdFromTx(tx, p) {
       });
     }
 
-    // Transactions
+    // ----------- Transactions -----------
     if (S.when && S.when().approved) {
-      S.when().approved(async tx => {
-        const productId = getProductIdFromTx(tx);
+      // v13: on reçoit un PRODUIT "p" et la transaction est dans p.lastTransaction
+      S.when().approved(async (p) => {
+        const tx = p?.lastTransaction || {};
         const txId      = getPurchaseToken(tx);
+        const productId = p?.id || getProductIdFromTx(tx, p);
 
         try {
-          console.log('[IAP] TX RAW =>', {
-            id: tx?.id,
+          console.log('[IAP][approved] dump =>', {
+            p_id: p?.id,
+            hasTx: !!p?.lastTransaction,
+            txId,
             productId,
-            transactionId: tx?.transactionId,
-            orderId: tx?.orderId,
-            androidPurchaseToken: tx?.androidPurchaseToken,
-            purchaseToken: tx?.purchaseToken,
             tx_purchaseToken: tx?.transaction?.purchaseToken,
             rcpt_purchaseToken: tx?.receipt?.purchaseToken,
           });
         } catch (_) {}
 
-        if (!txId) { ev('v13:noTxId', { productId }); return; }
-       if (!productId) {
-  addPending(txId, 'unknown');
-  ev('v13:noProductId', { txId });
+        // Si pas de token, on consomme quand même pour éviter "owned" bloqué
+        if (!txId) {
+          ev('v13:noTxId', { productId });
+          try { p.finish && await p.finish(); } catch {}
+          FINISHED_TX.add(tx?.id || 'no-txid');
+          return;
+        }
 
-  // ✅ consommer quand même pour éviter l’état "owned"
-  try { tx.finish && await tx.finish(); } catch {}
-  FINISHED_TX.add(txId);
-  return;
-}
+        // Si pas d'ID produit, on consomme quand même et on stocke en pending
+        if (!productId) {
+          addPending(txId, 'unknown');
+          ev('v13:noProductId', { txId });
+          try { p.finish && await p.finish(); } catch {}
+          FINISHED_TX.add(txId);
+          return;
+        }
 
         // Anti-dup / Anti-finish fantôme
         if (FINISHED_TX.has(txId)) {
-          try { tx.finish && tx.finish(); } catch (_) {}
+          try { p.finish && await p.finish(); } catch {}
           ev('v13:dupTx:alreadyFinished', txId);
           return;
         }
@@ -452,17 +457,22 @@ function getProductIdFromTx(tx, p) {
 
         const found = PRODUCTS.find(x => x.id === productId) || { id: productId };
 
-        // 👉 Ajout en pending AVANT (pour rejouer si le crédit échoue)
+        // Ajout en pending AVANT (pour rejouer si le crédit échoue)
         addPending(txId, productId);
 
-        // 1) Crédit serveur (essaie avec session garantie)
-        const credited = await creditUser(found, txId);
+        // Crédit serveur (idempotent)
+        let credited = false;
+        try {
+          credited = await creditUser(found, txId);
+        } catch (e) {
+          warn('credit exception', e?.message || e);
+        }
 
-        // 2) 👉 Toujours finish (idempotence côté serveur: "ok" ou "already")
-        try { tx.finish && await tx.finish(); } catch (_) {}
+        // Toujours finish (idempotence côté serveur: "ok" ou "already")
+        try { p.finish && await p.finish(); } catch (_) {}
         FINISHED_TX.add(txId);
 
-        // 3) Nettoyage si crédit effectif
+        // Nettoyage si crédit effectif
         if (credited) removePending(txId);
 
         ev('v13:finish:always', { productId, txId, credited });
