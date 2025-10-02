@@ -3,73 +3,65 @@
 
 /**
  * achat.js — Cordova Purchase v13 (Google Play)
- * - Handlers branchés AVANT initialize (crucial)
- * - register → await initialize → await update/refresh
- * - Handlers v13: productUpdated / error / approved / finished
- * - INAPP: product.order() | SUBS: offer.order()
- * - Crédit via RPC: iap_credit_once (idempotent)
- * - Silencieux: aucune popup (logs console seulement)
+ * Crédit côté client comme les pubs (mêmes RPC) :
+ *   - points  → sb.rpc('secure_add_points', { p_user_id, p_amount, p_product })
+ *   - jetons  → sb.rpc('secure_add_jetons', { p_user_id, p_amount, p_product })
+ *   - nopub   → setNoAdsEnabled(true) (toggle DB + cache local)
+ * Dédoublonnage local par purchaseToken, finish() systématique.
  */
 
 (function () {
   const TAG    = '[IAP]';
-  const DEBUG  = true;     // logs console détaillés
-  const SILENT = true;     // forcer false pour toasts/alert
-  const DEV_FORCE_FINISH = false; // true en DEV pour purger les pendings coincés
+  const DEBUG  = true;
+  const SILENT = true;
 
-  const t0 = Date.now();
   const log   = (...a) => { if (DEBUG) console.log(TAG, ...a); };
   const warn  = (...a) => { if (DEBUG) console.warn(TAG, ...a); };
   const error = (...a) => { console.error(TAG, ...a); };
 
-  // Anti double init si le fichier est inclus sur plusieurs pages
-  if (window.__IAP_INITTED__) {
-    log('Déjà initialisé — skip');
-    return;
-  }
-  window.__IAP_INITTED__ = true;
+  // ---------- SKUs → action (ajuste montants ici) ----------
+  const SKU = {
+    points3000:  { kind: 'points', amount: 3000 },
+    points10000: { kind: 'points', amount: 12000 },
+    jetons12:    { kind: 'jetons', amount: 12 },
+    jetons50:    { kind: 'jetons', amount: 50 },
+    nopub:       { kind: 'nopub' }
+  };
 
-  // ----------- Produits (IDs Play Console) -----------
-  const PRODUCTS = [
-    { id: 'points3000',  type: 'CONSUMABLE',     credit: { vcoins: 5000  } },
-    { id: 'points10000', type: 'CONSUMABLE',     credit: { vcoins: 12000 } },
-    { id: 'jetons12',    type: 'CONSUMABLE',     credit: { jetons: 12    } },
-    { id: 'jetons50',    type: 'CONSUMABLE',     credit: { jetons: 50    } },
-    { id: 'nopub',       type: 'NON_CONSUMABLE', credit: { nopub: true   } },
-  ];
-
-  // ----------- État / Diags -----------
+  // ---------- État local ----------
   const PRICES_BY_ID = Object.create(null);
   const IN_FLIGHT_TX = new Set();
   const FINISHED_TX  = new Set();
   const NOTIFIED_TX  = new Set();
 
-  const PENDING_KEY = 'iap_pending_v2'; // crédits à rejouer côté app
+  const PENDING_KEY  = 'iap_pending_v2';   // [{txId, productId, ts}]
+  const CREDITED_KEY = 'iap_credited_v1';  // [txId] — anti double-crédit local
+  let STORE_READY    = false;
 
-  let STORE_READY = false;
-  let started     = false;
-  let retryTimer  = null;
+  const readJson  = (k, d=[]) => { try { return JSON.parse(localStorage.getItem(k)||'null') ?? d; } catch(_) { return d; } };
+  const writeJson = (k, v)    => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(_){} };
 
-  window.__IAP_READY__ = false;
+  function addPending(txId, productId) {
+    if (!txId) return;
+    const L = readJson(PENDING_KEY, []);
+    if (!L.find(x => x.txId === txId)) { L.push({ txId, productId, ts: Date.now() }); writeJson(PENDING_KEY, L.slice(-50)); }
+  }
+  function removePending(txId) {
+    if (!txId) return;
+    writeJson(PENDING_KEY, readJson(PENDING_KEY, []).filter(x => x.txId !== txId));
+  }
+  function isCredited(txId) {
+    if (!txId) return false;
+    const L = readJson(CREDITED_KEY, []);
+    return L.includes(txId);
+  }
+  function markCredited(txId) {
+    if (!txId) return;
+    const L = readJson(CREDITED_KEY, []);
+    if (!L.includes(txId)) { L.push(txId); writeJson(CREDITED_KEY, L.slice(-200)); }
+  }
 
-  window.IAPDiag = {
-    startAtMs: t0,
-    started: false,
-    apiKind: 'none',
-    storeReady: false,
-    devicereadySeen: !!(window.cordova && (window.cordova.deviceready?.fired)),
-    lastError: null,
-    lastEvents: [],
-    prices: PRICES_BY_ID,
-  };
-  const ev = (name, data) => {
-    const item = { t: Date.now() - t0, name, data };
-    window.IAPDiag.lastEvents.push(item);
-    if (window.IAPDiag.lastEvents.length > 400) window.IAPDiag.lastEvents.shift();
-    if (DEBUG) console.log(TAG, `EVT ${name}`, data || '');
-  };
-
-  // ----------- UI helpers (silencieux) -----------
+  // ---------- UI helpers (silencieux) ----------
   function safeAlertOnce(txId, msg) {
     try {
       if (!txId) return;
@@ -81,97 +73,39 @@
     } catch (_) {}
   }
 
-  // ----------- Pending local storage -----------
-  function readPending() {
-    try {
-      const raw = localStorage.getItem(PENDING_KEY);
-      const arr = JSON.parse(raw || '[]');
-      return Array.isArray(arr) ? arr : [];
-    } catch (_) { return []; }
-  }
-  function writePending(list) {
-    try { localStorage.setItem(PENDING_KEY, JSON.stringify(list.slice(-50))); } catch (_) {}
-  }
-  function addPending(txId, productId) {
-    if (!txId) return;
-    const list = readPending();
-    if (!list.find(x => x.txId === txId)) {
-      list.push({ txId, productId, ts: Date.now() });
-      writePending(list);
-      ev('pending:add', { txId, productId });
-    }
-  }
-  function removePending(txId) {
-    if (!txId) return;
-    const list = readPending().filter(x => x.txId !== txId);
-    writePending(list);
-    ev('pending:remove', txId);
-  }
-
-  // ----------- Utils -----------
-  function getApi() {
-    if (window.CdvPurchase && window.CdvPurchase.store) {
-      return { kind: 'v13', S: window.CdvPurchase.store };
-    }
-    return { kind: 'none', S: null };
-  }
-
-  function refreshDisplayedPrices() {
-    try {
-      document
-        .querySelectorAll('#achats-list .special-cartouche[data-product-id]')
-        .forEach(node => {
-          const id    = node.getAttribute('data-product-id');
-          const price = PRICES_BY_ID[id];
-          const label = node.querySelector('.prix-label');
-          if (label && price) label.textContent = price;
-        });
-    } catch (_) {}
-  }
-  document.addEventListener('DOMContentLoaded', refreshDisplayedPrices);
-  window.refreshDisplayedPrices = refreshDisplayedPrices;
-
-  // ----------- Auth helper (STRICT) -----------
+  // ---------- Auth stricte (même logique que pub.js) ----------
   async function ensureAuthStrict() {
     if (!window.sb?.auth) return null;
     try {
-      // 1) Session actuelle ?
+      // tente bootstrap si ton app l’expose
+      try { if (typeof window.bootstrapAuthAndProfile === 'function') await window.bootstrapAuthAndProfile(); } catch(_){}
       let { data: { session } } = await sb.auth.getSession();
-      if (session?.user?.id) return session;
-
-      // 2) Refresh d'abord (évite de créer un nouvel anonyme si l'ancien peut être rafraîchi)
+      if (session?.user?.id) return session.user.id;
       try {
-        const { data: ref } = await sb.auth.refreshSession();
-        session = ref?.session || session;
-      } catch (_) {}
-      if (session?.user?.id) return session;
-
-      // 3) Dernier recours : session anonyme
+        await sb.auth.refreshSession();
+        ({ data: { session } } = await sb.auth.getSession());
+      } catch(_){}
+      if (session?.user?.id) return session.user.id;
       if (typeof sb.auth.signInAnonymously === 'function') {
         await sb.auth.signInAnonymously();
         ({ data: { session } } = await sb.auth.getSession());
-        if (session?.user?.id) return session;
+        if (session?.user?.id) return session.user.id;
       }
-
-      console.warn('[AUTH] Pas de session et pas de signInAnonymously dans ce SDK');
       return null;
-    } catch (e) {
-      console.warn('[AUTH] erreur ensureAuthStrict', e?.message || e);
-      return null;
-    }
+    } catch (e) { warn('ensureAuthStrict err', e?.message||e); return null; }
   }
 
-  // ----------- parse JSON / base64 JSON -----------
+  // ---------- parse JSON / base64 JSON ----------
   function parseMaybeBase64Json(s) {
     if (!s || typeof s !== 'string') return null;
-    try { return JSON.parse(s); } catch (_) {}
-    try { return JSON.parse(atob(s)); } catch (_) {}
+    try { return JSON.parse(s); } catch(_) {}
+    try { return JSON.parse(atob(s)); } catch(_) {}
     return null;
   }
 
-  // ----------- extraction token Android 13 & co -----------
+  // ---------- extraction token Android 13 & co ----------
   function getPurchaseToken(tx) {
-    try { if (tx?.transaction?.purchaseToken) return tx.transaction.purchaseToken; } catch(e){}
+    try { if (tx?.transaction?.purchaseToken) return tx.transaction.purchaseToken; } catch(_){}
     try {
       const rec = tx?.transaction?.receipt || tx?.receipt;
       const r   = typeof rec === 'string' ? parseMaybeBase64Json(rec) : rec;
@@ -180,7 +114,7 @@
         const p = typeof r.payload === 'string' ? parseMaybeBase64Json(r.payload) : r.payload;
         if (p?.purchaseToken) return p.purchaseToken;
       }
-    } catch(e){}
+    } catch(_){}
     return tx?.purchaseToken
         || tx?.androidPurchaseToken
         || tx?.transactionId
@@ -189,17 +123,16 @@
         || null;
   }
 
-  // ----------- extraction productId robuste -----------
+  // ---------- extraction productId robuste ----------
   function getProductIdFromTx(tx, p) {
-    let pid =
-      p?.id ||                                 // ← prioritaire (cordova-purchase v13)
-      tx?.productIds?.[0] ||                    // ← Play Billing récent
-      tx?.transaction?.productIds?.[0] ||
-      tx?.productId ||
-      tx?.sku ||
-      tx?.transaction?.productId ||
-      tx?.transaction?.lineItems?.[0]?.productId ||
-      null;
+    let pid = p?.id
+      || tx?.productIds?.[0]
+      || tx?.transaction?.productIds?.[0]
+      || tx?.productId
+      || tx?.sku
+      || tx?.transaction?.productId
+      || tx?.transaction?.lineItems?.[0]?.productId
+      || null;
 
     if (!pid) {
       const rec = tx?.transaction?.receipt || tx?.receipt;
@@ -215,381 +148,255 @@
     return pid || null;
   }
 
-  // ----------- CREDIT (via RPC serveur) -----------
-  async function creditUser(found, txId) {
+  // =========================
+  //   CRÉDIT CLIENT (mêmes RPC que pub.js)
+  // =========================
+  async function addPointsClientSide(userId, amount, sku) {
+    const { data, error } = await sb.rpc('secure_add_points', {
+      p_user_id: userId,
+      p_amount: Number(amount || 0),
+      p_product: `iap:${sku}`
+    });
+    if (error) throw new Error(error.message || 'secure_add_points failed');
+    return data;
+  }
+  async function addJetonsClientSide(userId, amount, sku) {
+    const { data, error } = await sb.rpc('secure_add_jetons', {
+      p_user_id: userId,
+      p_amount: Number(amount || 0),
+      p_product: `iap:${sku}`
+    });
+    if (error) throw new Error(error.message || 'secure_add_jetons failed');
+    return data;
+  }
+
+  // ---------- Toggle pub (true/false) côté DB + cache local ----------
+  // Essaie d’abord une RPC SECURITY DEFINER si elle existe, sinon fallback UPDATE/UPSERT.
+  async function setNoAdsEnabled(enabled) {
+    const uid = await ensureAuthStrict();
+    if (!uid) throw new Error('no_session');
+
+    // 1) tentative RPC (recommandé côté serveur)
     try {
-      if (!found || !window.sb) return false;
-
-      const session = await ensureAuthStrict();
-      if (!session) {
-        ev('creditUser:noSession');
-        return false;
-      }
-
-      try { await sb.auth.refreshSession(); } catch (_) {}
-
-      const productId = found.id;
-
-      const tRpc = performance.now();
-      const { data: rpcData, error: rpcErr, status: httpStatus, statusText } =
-        await sb.rpc('iap_credit_once', {
-          p_tx_id: String(txId),
-          p_product_id: String(productId)
-        });
-      console.log('[IAP] RPC iap_credit_once →', {
-        httpStatus, statusText, rpcData, rpcErr, txId, productId
-      });
-
-      if (rpcErr) {
-        const msg = rpcErr.message || String(rpcErr);
-        error('iap_credit_once error', msg);
-        ev('creditUser:serverError', { productId, txId, err: msg, httpStatus });
-        return false;
-      }
-      if (!rpcData || !['ok', 'already'].includes(rpcData.status)) {
-        ev('creditUser:unexpectedStatus', { productId, txId, rpcData, httpStatus });
-        return false;
-      }
-
-      // UX locale pour nopub (l’état serveur reste la source)
-      if (productId === 'nopub') {
-        try {
-          localStorage.setItem('no_ads', '1');
-          if (window.setNoAds) window.setNoAds(true);
-        } catch (_) {}
-      }
-
-      ev('creditUser:serverOK', { productId, txId, status: rpcData.status, ms: Math.round(performance.now()-tRpc) });
-      return true;
-    } catch (e) {
-      error('creditUser exception', e);
-      ev('creditUser:serverException', e?.message || e);
-      return false;
-    }
-  }
-
-  // ----------- Helpers produits v13 -----------
-  function getProduct(S, id, PL) {
-    try {
-      if (!S || !id) return null;
-      if (S.get) return (S.get.length >= 2) ? S.get(id, PL && PL.GOOGLE_PLAY) : S.get(id);
-      return (S.products && S.products.byId && S.products.byId[id]) || null;
-    } catch (_) { return null; }
-  }
-  async function waitForProduct(S, id, PL, timeoutMs = 12000) {
-    const t0 = Date.now();
-    ev('waitForProduct:start', id);
-    while (Date.now() - t0 < timeoutMs) {
-      const p = getProduct(S, id, PL);
-      if (p) {
-        const price = p?.pricing?.price || p?.price || p?.pricing?.priceString;
-        if (price) { PRICES_BY_ID[id] = price; refreshDisplayedPrices(); }
-        ev('waitForProduct:ok', { id, price });
-        return p;
-      }
-      try { S.update ? await S.update() : (S.refresh && await S.refresh()); } catch(e) { warn('update during wait err', e?.message||e); }
-      await new Promise(r => setTimeout(r, 350));
-    }
-    ev('waitForProduct:timeout', id);
-    return null;
-  }
-  async function waitForOffer(S, product, timeoutMs = 12000) {
-    const t0 = Date.now();
-    const pid = product?.id;
-    ev('waitForOffer:start', pid);
-    while (Date.now() - t0 < timeoutMs) {
+      const { error: rpcErr } = await sb.rpc('set_nopub_enabled', { p_enabled: !!enabled });
+      if (rpcErr) throw rpcErr;
+    } catch (_e) {
+      // 2) fallback UPDATE/UPSERT (nécessite RLS qui autorise l’update de sa propre ligne)
       try {
-        const offer = product?.getOffer && product.getOffer();
-        if (offer) { ev('waitForOffer:ok', pid); return offer; }
-      } catch(e) { warn('getOffer err', e?.message||e); }
-      try { S.update ? await S.update() : (S.refresh && await S.refresh()); } catch(e) { warn('update during waitOffer err', e?.message||e); }
-      await new Promise(r => setTimeout(r, 350));
-    }
-    ev('waitForOffer:timeout', pid);
-    return null;
-  }
+        const { data, error } = await sb
+          .from('users')
+          .update({ nopub: !!enabled, ads_updated_at: new Date().toISOString() })
+          .or(`auth_id.eq.${uid},id.eq.${uid}`)
+          .select('id');
+        if (error || !Array.isArray(data)) throw error || new Error('users.update failed');
 
-  // ----------- Rejouer crédits en attente (localStorage) -----------
-  async function replayLocalPending() {
-    const pendings = readPending();
-    if (!pendings.length) return;
-    ev('pending:replay:start', pendings.length);
-
-    let anyCredited = false;
-    for (const item of pendings.slice()) {
-      try {
-        const found = PRODUCTS.find(x => x.id === item.productId) || { id: item.productId };
-        const ok = await creditUser(found, item.txId);
-        if (ok) {
-          removePending(item.txId);
-          anyCredited = true;
-          ev('pending:replay:credited', item.txId);
-        } else {
-          ev('pending:replay:stillKO', item.txId);
+        if (!data.length) {
+          const { error: upErr } = await sb
+            .from('users')
+            .upsert({ auth_id: uid, nopub: !!enabled, ads_updated_at: new Date().toISOString() }, { onConflict: 'auth_id' });
+          if (upErr) throw upErr;
         }
-      } catch (e) {
-        ev('pending:replay:exception', e?.message || e);
+      } catch (ee) {
+        throw new Error(ee?.message || 'setNoAdsEnabled failed');
       }
     }
 
-    if (anyCredited) {
-      const { S } = getApi();
-      try { S && S.update && await S.update(); ev('pending:replay:forceUpdate'); } catch (_) {}
+    try { localStorage.setItem('no_ads', enabled ? '1' : '0'); if (typeof window.setNoAds === 'function') window.setNoAds(!!enabled); } catch(_){}
+    return true;
+  }
+
+  // Crédit en fonction du produit (points/jetons/nopub)
+  async function creditByProductClientSide(productId, txId) {
+    const cfg = SKU[productId];
+    if (!cfg) throw new Error('unknown_sku');
+
+    const uid = await ensureAuthStrict();
+    if (!uid) throw new Error('no_session');
+
+    if (cfg.kind === 'points') {
+      await addPointsClientSide(uid, cfg.amount, productId);
+    } else if (cfg.kind === 'jetons') {
+      await addJetonsClientSide(uid, cfg.amount, productId);
+    } else if (cfg.kind === 'nopub') {
+      await setNoAdsEnabled(true);
+    } else {
+      throw new Error('unknown_kind');
+    }
+
+    if (txId) markCredited(txId);
+    return true;
+  }
+
+  async function replayLocalPending() {
+    const pendings = readJson(PENDING_KEY, []);
+    if (!pendings.length) return;
+    for (const it of pendings.slice()) {
+      try {
+        if (isCredited(it.txId)) { removePending(it.txId); continue; }
+        await creditByProductClientSide(it.productId, it.txId);
+        removePending(it.txId);
+      } catch (e) {
+        warn('pending replay KO', it.txId, e?.message||e);
+      }
     }
   }
 
-  // ----------- INITIALISATION (handlers AVANT initialize) -----------
+  // =========================
+  //   STORE V13
+  // =========================
+  function getApi() {
+    if (window.CdvPurchase?.store) return { kind: 'v13', S: window.CdvPurchase.store };
+    return { kind: 'none', S: null };
+  }
+
+  function refreshDisplayedPrices() {
+    try {
+      document
+        .querySelectorAll('#achats-list .special-cartouche[data-product-id]')
+        .forEach(node => {
+          const id    = node.getAttribute('data-product-id');
+          const price = PRICES_BY_ID[id];
+          const label = node.querySelector('.prix-label');
+          if (label && price) label.textContent = price;
+        });
+    } catch (_) {}
+  }
+
   async function start() {
-    if (started) return;
-
-    const { kind, S } = getApi();
-    window.IAPDiag.apiKind = kind;
-
-    if (kind === 'none' || !S) {
-      if (!retryTimer) {
-        warn('Plugin IAP absent. Retry…');
-        ev('plugin:absent');
-        retryTimer = setInterval(() => {
-          const g = getApi();
-          if (g.kind !== 'none' && g.S) {
-            clearInterval(retryTimer); retryTimer = null;
-            start();
-          }
-        }, 600);
-      }
+    const { S } = getApi();
+    if (!S) {
+      // réessaie tant que le plugin n’est pas prêt
+      let tries = 0;
+      const timer = setInterval(() => {
+        tries++;
+        const g = getApi();
+        if (g.S) { clearInterval(timer); start(); }
+        if (tries > 60) clearInterval(timer);
+      }, 600);
       return;
     }
 
-    started = true;
-    window.IAPDiag.started = true;
-    log('API =', kind);
-
-    const PT = S.ProductType || (window.CdvPurchase && CdvPurchase.ProductType);
-    const PL = S.Platform    || (window.CdvPurchase && CdvPurchase.Platform);
-    const mapType = t => (t === 'NON_CONSUMABLE' ? PT.NON_CONSUMABLE : PT.CONSUMABLE);
-
-    try { if (window.CdvPurchase?.log) CdvPurchase.log.level = CdvPurchase.LogLevel.WARN; } catch (_) {}
-
-    // ---- HANDLERS (avant tout) ----
-
     // Errors
-    if (S.error) S.error(err => {
-      window.IAPDiag.lastError = err;
-      error('Store error:', err && (err.code || ''), err && (err.message || err));
-      ev('v13:error', { code: err?.code, msg: err?.message });
+    S.error && S.error(err => {
+      error('Store error:', err?.code, err?.message || err);
     });
 
-    // Produits mis à jour
+    // Produits mis à jour → prix + marquer nopub local si owned
     const onProductUpdate = p => {
       const price = p?.pricing?.price || p?.price || p?.pricing?.priceString;
       if (p?.id && price) { PRICES_BY_ID[p.id] = price; refreshDisplayedPrices(); }
       if (p?.owned && p.id === 'nopub') {
-        try { localStorage.setItem('no_ads', '1'); if (window.setNoAds) window.setNoAds(true); } catch (_) {}
+        try { localStorage.setItem('no_ads','1'); if (window.setNoAds) window.setNoAds(true); } catch(_) {}
       }
-      ev('v13:productUpdated', { id: p?.id, price, state: p?.state, owned: p?.owned });
+      if (DEBUG) log('productUpdated', { id: p?.id, owned: !!p?.owned, state: p?.state, price });
     };
-    if (S.productUpdated) {
-      S.productUpdated(onProductUpdate);
-    } else if (S.when && S.when().productUpdated) {
-      S.when().productUpdated(onProductUpdate);
-    } else if (S.updated && S.updated.add) {
-      S.updated.add(() => {
-        try {
-          PRODUCTS.forEach(({ id }) => {
-            const p = getProduct(S, id, PL);
-            const price = p?.pricing?.price || p?.price || p?.pricing?.priceString;
-            if (price) PRICES_BY_ID[id] = price;
-            if (p?.owned && id === 'nopub') { localStorage.setItem('no_ads', '1'); if (window.setNoAds) window.setNoAds(true); }
-          });
-          refreshDisplayedPrices();
-          ev('v13:updated:scan');
-        } catch (e) { warn('updated scan err', e?.message || e); }
-      });
-    }
+    if (S.productUpdated) S.productUpdated(onProductUpdate);
+    else if (S.when?.().productUpdated) S.when().productUpdated(onProductUpdate);
 
-    // ----------- Transactions -----------
-    if (S.when && S.when().approved) {
-      // v13: on reçoit un PRODUIT "p" et la transaction est dans p.lastTransaction
+    // Transactions approuvées
+    if (S.when?.().approved) {
       S.when().approved(async (p) => {
         const tx = p?.lastTransaction || {};
         const txId      = getPurchaseToken(tx);
         const productId = p?.id || getProductIdFromTx(tx, p);
 
-        try {
-          console.log('[IAP][approved] dump =>', {
-            p_id: p?.id,
-            hasTx: !!p?.lastTransaction,
-            txId,
-            productId,
-            tx_purchaseToken: tx?.transaction?.purchaseToken,
-            rcpt_purchaseToken: tx?.receipt?.purchaseToken,
-          });
-        } catch (_) {}
+        if (DEBUG) log('[approved]', { productId, txId });
 
-        // Si pas de token, on consomme quand même pour éviter "owned" bloqué
+        // Pas de token → finish quand même (évite owned bloqué)
         if (!txId) {
-          ev('v13:noTxId', { productId });
-          try { p.finish && await p.finish(); } catch {}
-          FINISHED_TX.add(tx?.id || 'no-txid');
+          try { p.finish && await p.finish(); } catch(_) {}
+          FINISHED_TX.add('no-txid');
           return;
         }
 
-        // Si pas d'ID produit, on consomme quand même et on stocke en pending
+        // Pas d’ID produit → stocke pending + finish
         if (!productId) {
           addPending(txId, 'unknown');
-          ev('v13:noProductId', { txId });
-          try { p.finish && await p.finish(); } catch {}
+          try { p.finish && await p.finish(); } catch(_){}
           FINISHED_TX.add(txId);
           return;
         }
 
-        // Anti-dup / Anti-finish fantôme
-        if (FINISHED_TX.has(txId)) {
-          try { p.finish && await p.finish(); } catch {}
-          ev('v13:dupTx:alreadyFinished', txId);
-          return;
-        }
-        if (IN_FLIGHT_TX.has(txId)) {
-          ev('v13:dupTx:inFlight', txId);
-          return;
-        }
+        // Dé-doublonnage
+        if (FINISHED_TX.has(txId)) { try { p.finish && await p.finish(); } catch(_){ } return; }
+        if (IN_FLIGHT_TX.has(txId)) return;
         IN_FLIGHT_TX.add(txId);
 
-        const found = PRODUCTS.find(x => x.id === productId) || { id: productId };
-
-        // Ajout en pending AVANT (pour rejouer si le crédit échoue)
-        addPending(txId, productId);
-
-        // Crédit serveur (idempotent)
-        let credited = false;
-        try {
-          credited = await creditUser(found, txId);
-        } catch (e) {
-          warn('credit exception', e?.message || e);
+        // Si déjà crédité, finish direct
+        if (isCredited(txId)) {
+          try { p.finish && await p.finish(); } catch(_){}
+          FINISHED_TX.add(txId);
+          IN_FLIGHT_TX.delete(txId);
+          return;
         }
 
-        // Toujours finish (idempotence côté serveur: "ok" ou "already")
-        try { p.finish && await p.finish(); } catch (_) {}
+        // Ajoute en pending avant crédit
+        addPending(txId, productId);
+
+        let credited = false;
+        try {
+          await creditByProductClientSide(productId, txId);
+          credited = true;
+          if (!SILENT) safeAlertOnce(txId, 'Achat validé ✅');
+        } catch (e) {
+          warn('credit fail', productId, e?.message||e);
+          if (!SILENT) safeAlertOnce(txId, 'Erreur crédit, réessai plus tard');
+        }
+
+        // Toujours finish (idempotent côté client + prévention owned bloqué)
+        try { p.finish && await p.finish(); } catch(_) {}
         FINISHED_TX.add(txId);
 
-        // Nettoyage si crédit effectif
         if (credited) removePending(txId);
-
-        ev('v13:finish:always', { productId, txId, credited });
-
         IN_FLIGHT_TX.delete(txId);
-        ev('v13:approved', { productId, credited });
       });
     }
-    if (S.when && S.when().finished) {
-      S.when().finished(p => ev('v13:finished', p?.id || p?.productId));
-    }
 
-    // ---- REGISTER → await INITIALIZE → await UPDATE ----
+    // REGISTER → INITIALIZE → UPDATE
     try {
-      const regs = PRODUCTS.map(p => ({
-        id: p.id,
-        type: (p.type === 'NON_CONSUMABLE'
+      const regs = Object.keys(SKU).map(id => ({
+        id,
+        type: (id === 'nopub'
           ? (S.ProductType?.NON_CONSUMABLE || CdvPurchase.ProductType.NON_CONSUMABLE)
           : (S.ProductType?.CONSUMABLE     || CdvPurchase.ProductType.CONSUMABLE)),
         platform: (S.Platform?.GOOGLE_PLAY || CdvPurchase.Platform.GOOGLE_PLAY)
       }));
       S.register && S.register(regs);
-      ev('v13:register', regs.map(x => x.id));
-    } catch (e) { warn('register error', e?.message || e); ev('v13:registerErr', e?.message || e); }
+      if (DEBUG) log('register', regs.map(r => r.id));
+    } catch(e) { warn('register err', e?.message||e); }
 
-    try {
-      if (S.initialize) { await S.initialize([ (S.Platform?.GOOGLE_PLAY || CdvPurchase.Platform.GOOGLE_PLAY) ]); ev('v13:initialize'); }
-    } catch (e) { warn('initialize error', e?.message || e); ev('v13:initializeErr', e?.message || e); }
-
-    try {
-      if (S.update) { await S.update(); ev('v13:update'); }
-      else if (S.refresh) { await S.refresh(); ev('v13:refresh'); }
-      setTimeout(async () => {
-        try { S.update && (await S.update()); ev('v13:update+1s'); } catch (e) { warn('update+1s err', e?.message || e); }
-      }, 1000);
-    } catch (e) { warn('first sync err', e?.message || e); ev('v13:firstSyncErr', e?.message || e); }
+    try { S.initialize && await S.initialize([ S.Platform?.GOOGLE_PLAY || CdvPurchase.Platform.GOOGLE_PLAY ]); if (DEBUG) log('initialize'); } catch(e){ warn('init err', e?.message||e); }
+    try { S.update ? await S.update() : (S.refresh && await S.refresh()); if (DEBUG) log('first sync'); } catch(e){ warn('first sync err', e?.message||e); }
 
     // READY
     if (S.ready) {
       S.ready(async () => {
-        STORE_READY = true; window.__IAP_READY__ = true; window.IAPDiag.storeReady = true; ev('v13:ready');
+        STORE_READY = true;
         try {
-          PRODUCTS.forEach(({ id }) => {
-            const p = getProduct(S, id, (S.Platform || {}));
+          Object.keys(SKU).forEach(id => {
+            const p = S.get ? S.get(id, S.Platform?.GOOGLE_PLAY) : (S.products?.byId?.[id]);
             const price = p?.pricing?.price || p?.price || p?.pricing?.priceString;
             if (price) PRICES_BY_ID[id] = price;
-            if (p?.owned && id === 'nopub') { localStorage.setItem('no_ads','1'); if (window.setNoAds) window.setNoAds(true); }
+            if (p?.owned && id === 'nopub') { try { localStorage.setItem('no_ads','1'); if (window.setNoAds) window.setNoAds(true); } catch(_) {} }
           });
-        } catch (_) {}
-        refreshDisplayedPrices();
+          refreshDisplayedPrices();
+        } catch(_){}
 
-        try { await replayLocalPending(); } catch (_) {}
-
-        try { S.update && (await S.update()); ev('v13:update+ready'); } catch (_) {}
+        try { await replayLocalPending(); } catch(_){}
+        try { S.update && await S.update(); } catch(_){}
       });
     }
 
+    // Resync au resume + rejouer pendings
     document.addEventListener('resume', async () => {
-      try {
-        if (S.update) { await S.update(); ev('app:resume:update'); }
-        else if (S.refresh) { await S.refresh(); ev('app:resume:refresh'); }
-      } catch (e) { warn('resume sync err', e?.message || e); }
-      try { await replayLocalPending(); } catch (_) {}
+      try { S.update ? await S.update() : (S.refresh && await S.refresh()); } catch(_){}
+      try { await replayLocalPending(); } catch(_){}
     });
-
-    // Achat (INAPP ou SUBS)
-    window.buyProduct = async function (productId) {
-      try {
-        ev('buy:click', productId);
-
-        const session = await ensureAuthStrict();
-        if (!session) return;
-
-        if (!STORE_READY) {
-          try { S.update && await S.update(); ev('buy:preUpdate'); }
-          catch (e) { warn('buy preUpdate err', e?.message || e); }
-        }
-
-        const product = await waitForProduct(S, productId, (S.Platform || CdvPurchase.Platform), 12000);
-        if (!product) { ev('buy:notFound', productId); return; }
-
-        const price = product?.pricing?.price || product?.price || product?.pricing?.priceString;
-        if (price) { PRICES_BY_ID[productId] = price; refreshDisplayedPrices(); }
-
-        const offer = (product.getOffer && product.getOffer()) || await waitForOffer(S, product, 12000);
-
-        let err = null;
-        if (offer && offer.order)     { ev('buy:order:SUBS', productId);   err = await offer.order(); }
-        else if (product.order)       { ev('buy:order:INAPP', productId);  err = await product.order(); }
-        else { ev('buy:order:unsupported', productId); return; }
-
-        if (err && err.isError) {
-          ev('buy:error', { code: err.code, msg: err.message });
-
-          // 🎯 Rattrapage "déjà possédé" (6777003) → rejouer approved via update() + restore
-          if (String(err.code) === '6777003' || /already/i.test(err.message || '')) {
-            try {
-              S.update && await S.update();
-              if (window.restorePurchases) await window.restorePurchases();
-              ev('recover:owned:restore');
-            } catch(_) {}
-          }
-        } else {
-          ev('buy:launched', productId);
-        }
-      } catch (e) {
-        window.IAPDiag.lastError = e;
-        ev('buy:exception', e?.message || e);
-      }
-    };
-    window.safeOrder = window.buyProduct;
   }
 
-  // ----------- Démarrage robuste (multi-pages) -----------
+  // ---------- Démarrage quand prêt ----------
   function startWhenReady() {
-    const fire = () => { try { start(); } catch (e) { error(e); ev('start:exception', e?.message || e); } };
-
+    const fire = () => { try { start(); } catch (e) { error('start', e?.message||e); } };
     const already =
       (window.cordova && (
         (window.cordova.deviceready && window.cordova.deviceready.fired) ||
@@ -597,105 +404,49 @@
       )) ||
       window._cordovaReady === true;
 
-    if (already) {
-      ev('deviceready:already');
-      fire();
-    } else {
+    if (already) fire();
+    else {
       document.addEventListener('deviceready', function onDR() {
-        window._cordovaReady = true;
-        ev('deviceready:fired');
-        fire();
+        window._cordovaReady = true; fire();
       }, { once: true });
-
-      setTimeout(() => {
-        const readyNow = (window.cordova?.deviceready?.fired) || window._cordovaReady === true;
-        if (readyNow) { ev('deviceready:fallback'); fire(); }
-      }, 1200);
+      setTimeout(() => { if (window.cordova?.deviceready?.fired || window._cordovaReady) fire(); }, 1200);
     }
   }
   startWhenReady();
 
-  // ----------- Failsafe additionnel -----------
-  setTimeout(() => {
-    if (!window.__IAP_READY__) {
-      ev('failsafe:retryStartWhenReady');
-      try { startWhenReady(); } catch (e) { ev('failsafe:exception', e?.message || e); }
-    }
-  }, 2000);
+  // ---------- API utilitaires exportées ----------
+  window.restorePurchases = async function () {
+    try { await replayLocalPending(); const { S } = getApi(); S?.update && await S.update(); } catch(_){}
+  };
 
-  // ----------- API utilitaires -----------
-  window.restorePurchases = async function restorePurchases() {
+  // Achat manuel (si tu veux l’appeler depuis l’UI)
+  window.buyProduct = async function (productId) {
     try {
-      await replayLocalPending(); // crédite ce qui a raté (idempotent)
+      const uid = await ensureAuthStrict();
+      if (!uid) return;
+
       const { S } = getApi();
-      if (S && S.update) await S.update(); // déclenche approved → finish() pour les pendings
-      ev('restore:done');
-    } catch (e) {
-      warn('restorePurchases err', e?.message || e);
+      if (!S) return;
+      if (!STORE_READY) { try { S.update && await S.update(); } catch(_){ } }
+
+      const p = S.get ? S.get(productId, S.Platform?.GOOGLE_PLAY) : (S.products?.byId?.[productId]);
+      if (!p) { try { S.update && await S.update(); } catch(_){ } }
+
+      const offer = p?.getOffer && p.getOffer();
+      let err = null;
+      if (offer?.order) err = await offer.order();
+      else if (p?.order) err = await p.order();
+
+      if (err?.isError && DEBUG) warn('order err', err.code, err.message);
+    } catch(e) {
+      warn('buy exception', e?.message||e);
     }
   };
+  window.safeOrder = window.buyProduct;
 
-  // Recrédit manuel "legacy" si tu as les tokens d’anciens achats consommés
-  window.forceCredit = async function forceCredit(txId, productId) {
-    try {
-      if (!txId || !productId) { warn('forceCredit: missing txId/productId'); return false; }
-      const ok = await creditUser({ id: productId }, String(txId));
-      if (ok) { ev('forceCredit:ok', { txId, productId }); }
-      else    { ev('forceCredit:ko', { txId, productId }); }
-      return ok;
-    } catch (e) { warn('forceCredit err', e?.message || e); return false; }
-  };
-  window.bulkForceCredit = async function bulkForceCredit(list) {
-    try {
-      let okCount = 0;
-      for (const it of (list||[])) {
-        // eslint-disable-next-line no-await-in-loop
-        if (await window.forceCredit(it.txId, it.productId)) okCount++;
-      }
-      ev('bulkForceCredit:done', { total: (list||[]).length, ok: okCount });
-      return okCount;
-    } catch (e) { warn('bulkForceCredit err', e?.message || e); return 0; }
-  };
-
-  // ----------- Debug helpers -----------
-  window.IAPDump = function IAPDump() {
-    try {
-      const { kind, S } = getApi();
-      const arr = [];
-      PRODUCTS.forEach(({ id }) => {
-        const p = (kind === 'v13') ? getProduct(S, id, (S.Platform || {})) : (S && S.get && S.get(id));
-        arr.push({ id, price: PRICES_BY_ID[id] || p?.price || p?.pricing?.priceString, state: p?.state, owned: !!p?.owned });
-      });
-      console.log(TAG, 'DUMP', { kind, ready: STORE_READY, products: arr, diag: window.IAPDiag });
-      return arr;
-    } catch (e) {
-      console.error(TAG, 'DUMP error', e);
-      return [];
-    }
-  };
-  window.IAPList   = () => window.IAPDump();
-  window.IAPStatus = () => ({ ready: STORE_READY, diag: window.IAPDiag });
+  // Toggle publicitaire dispo côté app/UI
+  //   - true  => active "nopub"
+  //   - false => désactive "nopub"
+  window.setNoAdsEnabled = setNoAdsEnabled;
 
 })();
-
-// Petit bloc de preuve (facultatif) pour vérifier la connectivité Supabase / RPC
-if (true && typeof DEBUG !== 'undefined' && DEBUG) {
-  setTimeout(async () => {
-    try {
-      const url = sb?.rest?.url;
-      const { data: { session } } = await sb.auth.getSession();
-      console.log('[PROOF] url=', url, 'uid=', session?.user?.id || null);
-
-      const r1 = await sb.from('iap_products').select('product_id').limit(1);
-      console.log('[PROOF] iap_products -> data:', r1.data, 'error:', r1.error);
-
-      const r2 = await sb.rpc('iap_credit_once', {
-        p_tx_id: 'proof-' + Date.now(),
-        p_product_id: '__does_not_exist__'
-      });
-      console.log('[PROOF] rpc -> data:', r2.data, 'error:', r2.error);
-    } catch (e) {
-      console.log('[PROOF] exception', e?.message || e);
-    }
-  }, 1500);
-}
