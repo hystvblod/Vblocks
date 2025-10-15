@@ -295,12 +295,15 @@
       document.getElementById("jeton-amount").textContent = jetons ?? 0;
     }
     // Affichage record cloud (Supabase)
-    async function updateHighScoreDisplay() {
-      if (window.userData && userData.getHighScore) {
-        const score = await userData.getHighScore();
-        document.getElementById("highscore-global").textContent = score ?? 0;
-      }
-    }
+async function updateHighScoreDisplay() {
+  // Déléguée à concours.js (table concours uniquement)
+  if (typeof window.updateHighscoreDisplay === 'function') {
+    await window.updateHighscoreDisplay();
+  } else {
+    document.getElementById("highscore-global").textContent = '0';
+  }
+}
+
     // Score en live (partie locale)
     function updateScore(val) {
       document.getElementById("score").textContent = val;

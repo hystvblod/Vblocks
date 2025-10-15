@@ -696,7 +696,8 @@ overlay.querySelector('#resume-yes').onclick = () => {
           highscoreCloud = points;
           updateHighscoreDisplay();
         }
-        await userData.addVCoins?.(points);
+         // concours: désactiver le crédit VCoins si tu veux un classement pur
+ // await userData.addVCoins?.(points);
         updateBalancesHeader();
       } catch (err) {}
     }
@@ -976,22 +977,12 @@ function setHighText(val) {
   if (el) el.textContent = String(val);
 }
 
-async function updateHighscoreDisplay() {
-  // essaie d’abord la RPC; si KO, fallback userData
-  let cloud = null;
-  try {
-    if (typeof getHighScoreSupabase === 'function') {
-      cloud = await getHighScoreSupabase();
-    }
-  } catch (_) {}
-
-  if (cloud == null && userData?.getHighScore) {
-    try { cloud = await userData.getHighScore(); } catch (_) {}
-  }
-
-  highscoreCloud = Number(cloud) || 0;
-  setHighText(highscoreCloud);
-}
+ async function updateHighscoreDisplay() {
+   let cloud = 0;
+   try { cloud = await getHighScoreSupabase(); } catch (_) { cloud = 0; }
+   highscoreCloud = Number(cloud) || 0;
+   setHighText(highscoreCloud);
+ }
 
 // Appel immédiat si le DOM est déjà prêt, sinon on attend
 if (document.readyState === 'loading') {
@@ -1110,10 +1101,10 @@ window.updateHighScoreDisplay = updateHighscoreDisplay;
 if (score > highscoreCloud) {
   const newHS = score;
   highscoreCloud = newHS;
-  if (highEl) highEl.textContent = String(newHS);
+  setHighText(newHS); // ← utilise ton helper déjà défini
 
   Promise.resolve()
-    .then(() => userData?.setHighScore ? userData.setHighScore(newHS) : null)
+    
     .then(() => (typeof setHighScoreSupabase === 'function') ? setHighScoreSupabase(newHS) : null)
     .finally(() => {
       if (typeof window.updateHighscoreDisplay === 'function') window.updateHighscoreDisplay();
@@ -1768,33 +1759,27 @@ if (score > highscoreCloud) {
 
       return (window.sbUser && window.sbUser.id) || null;
     }
-    async function setLastScoreSupabase(score) {
-      if (!sb) return;
-      const val = parseInt(score, 10) || 0;
-      await sb.rpc('set_lastscore_secure', { last_score: val });
-    }
+ async function setLastScoreSupabase(score) {
+   if (!sb) return;
+   const val = parseInt(score, 10) || 0;
+   await sb.rpc('concours_set_lastscore', { new_last: val });
+ }
 
-    async function setHighScoreSupabase(score) {
-      if (!sb) return;
-      const val = parseInt(score, 10) || 0;
-      await sb.rpc('set_highscore_secure', { new_score: val });
-    }
+async function setHighScoreSupabase(score) {
+   if (!sb) return;
+  const val = parseInt(score, 10) || 0;
+   await sb.rpc('concours_set_highscore', { new_high: val });
+ }
 
  async function getHighScoreSupabase() {
-  if (!sb) return 0;
-  try {
-    // RLS te limite à TON propre row → single() renvoie juste le tien
-    const { data, error } = await sb
-      .from('users')
-      .select('highscore')
-      .single();
-
-    if (error) return 0;
-    return Number(data?.highscore ?? 0);
-  } catch {
-    return 0;
-  }
-}
+   if (!sb) return 0;
+   try {
+     // RLS => renverra la ligne de l'utilisateur courant
+     const { data, error } = await sb.from('concours_scores').select('highscore').single();
+     if (error) return 0;
+     return Number(data?.highscore ?? 0);
+   } catch { return 0; }
+ }
 
 
     // ===== BOOT (LOCAL UNIQUEMENT, SANS CLOUD) =====
