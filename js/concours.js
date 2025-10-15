@@ -358,6 +358,9 @@ function fillRectThemeSafe(c, px, py, size) {
     let linesCleared = 0;
     let history = [];
 
+    // ✅ mesure de durée
+    let gameStartMs = 0;
+
     // revive ramp
     let reviveRampActive = false;
     let reviveRampStart = 0;
@@ -544,12 +547,11 @@ function fillRectThemeSafe(c, px, py, size) {
           piecesUsed = s.piecesUsed;
         }
 
-    // Préfère TOUJOURS le thème actuel choisi par l’utilisateur
-const desiredTheme = localStorage.getItem('themeVBlocks') || s.theme || currentTheme;
-if (THEMES.includes(desiredTheme) && desiredTheme !== currentTheme) {
-  changeTheme(desiredTheme);
-}
-
+        // Préfère TOUJOURS le thème actuel choisi par l’utilisateur
+        const desiredTheme = localStorage.getItem('themeVBlocks') || s.theme || currentTheme;
+        if (THEMES.includes(desiredTheme) && desiredTheme !== currentTheme) {
+          changeTheme(desiredTheme);
+        }
 
         const scoreEl = document.getElementById('score');
         if (scoreEl) scoreEl.textContent = String(score);
@@ -580,52 +582,49 @@ if (THEMES.includes(desiredTheme) && desiredTheme !== currentTheme) {
     document.addEventListener('backbutton', saveStateNow, false);
 
 
- // Popup de reprise (locale)
-function showResumePopup(savedState) {
-  // Empêche de compter tant que la popup est ouverte
-  window.__ads_waiting_choice = true;
+    // Popup de reprise (locale)
+    function showResumePopup(savedState) {
+      // Empêche de compter tant que la popup est ouverte
+      window.__ads_waiting_choice = true;
 
-  const overlay = document.createElement('div');
-  overlay.id = 'resume-popup';
-  overlay.style = `
-    position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);
-    display:flex;align-items:center;justify-content:center;
-  `;
-  overlay.innerHTML = `
-    <div style="background:#23294a;border-radius:1em;padding:22px 18px;box-shadow:0 0 14px #3ff7;min-width:240px;max-width:92vw;text-align:center">
-      <div style="font-size:1.15em;font-weight:bold;margin-bottom:8px;">
-        ${tt('resume.title','Partie en cours')}
-      </div>
-      <div style="opacity:.9;margin-bottom:14px">
-        ${tt('resume.subtitle','Voulez-vous reprendre là où vous vous êtes arrêté ?')}
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button id="resume-yes" style="padding:.5em 1em;border-radius:.7em;border:none;background:#39f;color:#fff;cursor:pointer;">
-          ${tt('resume.resume','Reprendre')}
-        </button>
-        <button id="resume-restart" style="padding:.5em 1em;border-radius:.7em;border:none;background:#444;color:#fff;cursor:pointer;">
-          ${tt('resume.restart','Recommencer')}
-        </button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
+      const overlay = document.createElement('div');
+      overlay.id = 'resume-popup';
+      overlay.style = `
+        position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);
+        display:flex;align-items:center;justify-content:center;
+      `;
+      overlay.innerHTML = `
+        <div style="background:#23294a;border-radius:1em;padding:22px 18px;box-shadow:0 0 14px #3ff7;min-width:240px;max-width:92vw;text-align:center">
+          <div style="font-size:1.15em;font-weight:bold;margin-bottom:8px;">
+            ${tt('resume.title','Partie en cours')}
+          </div>
+          <div style="opacity:.9;margin-bottom:14px">
+            ${tt('resume.subtitle','Voulez-vous reprendre là où vous vous êtes arrêté ?')}
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button id="resume-yes" style="padding:.5em 1em;border-radius:.7em;border:none;background:#39f;color:#fff;cursor:pointer;">
+              ${tt('resume.resume','Reprendre')}
+            </button>
+            <button id="resume-restart" style="padding:.5em 1em;border-radius:.7em;border:none;background:#444;color:#fff;cursor:pointer;">
+              ${tt('resume.restart','Recommencer')}
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
 
-  const cleanup = () => { window.__ads_waiting_choice = false; overlay.remove(); };
+      const cleanup = () => { window.__ads_waiting_choice = false; overlay.remove(); };
 
-overlay.querySelector('#resume-yes').onclick = () => {
-  cleanup();  // remet __ads_waiting_choice = false
-  try { window.partieReprisee?.(mode); } catch(_){}
-  restoreFromSave(savedState);
-
-
-  };
-  overlay.querySelector('#resume-restart').onclick = () => {
-    clearSavedGame();
-    cleanup();
-    restartGameHard();
-  };
-
+      overlay.querySelector('#resume-yes').onclick = () => {
+        cleanup();  // remet __ads_waiting_choice = false
+        try { window.partieReprisee?.(mode); } catch(_){}
+        restoreFromSave(savedState);
+      };
+      overlay.querySelector('#resume-restart').onclick = () => {
+        clearSavedGame();
+        cleanup();
+        restartGameHard();
+      };
     }
 
     // URL index pour "Quitter"
@@ -692,12 +691,15 @@ overlay.querySelector('#resume-yes').onclick = () => {
         await setLastScoreSupabase(points);
         const cloudHigh = await getHighScoreSupabase();
         if (points > cloudHigh) {
-          await setHighScoreSupabase(points);
+          const durationMs = Math.max(0, Math.round((performance?.now?.() || Date.now()) - gameStartMs));
+          const linesAtEnd = linesCleared; // lignes de la partie courante
+          await setHighScoreSupabase(points, durationMs, linesAtEnd);
           highscoreCloud = points;
           updateHighscoreDisplay();
+          updateScoreToBeatUI();
         }
-         // concours: désactiver le crédit VCoins si tu veux un classement pur
- // await userData.addVCoins?.(points);
+        // ✅ Crédit VCoins activé pour le concours
+        await userData.addVCoins?.(points);
         updateBalancesHeader();
       } catch (err) {}
     }
@@ -716,8 +718,6 @@ overlay.querySelector('#resume-yes').onclick = () => {
 
       // on efface ttes sauvegardes → pas de "reprendre"
       clearSavedGame();
-
-      // ❌ Ancienne IIFE de crédit supprimée : on crédite au Restart/Quit
 
       const old = document.getElementById('gameover-popup');
       if (old) old.remove();
@@ -873,23 +873,23 @@ overlay.querySelector('#resume-yes').onclick = () => {
           clearInterval(tmr);
           overlay.remove();
 
-// 3) Restaure et démarre rampe de vitesse
-paused = false;
-gameOver = false;
+          // 3) Restaure et démarre rampe de vitesse
+          paused = false;
+          gameOver = false;
 
-reviveTargetInterval = dropInterval || 500;
-dropInterval = 1200; // très lent au départ
-reviveRampActive = true;
-reviveRampStart = performance.now();
+          reviveTargetInterval = dropInterval || 500;
+          dropInterval = 1200; // très lent au départ
+          reviveRampActive = true;
+          reviveRampStart = performance.now();
 
-lastTime = performance.now();
+          lastTime = performance.now();
 
-// ⬅️ Ne pas compter la reprise post-revive comme une action
-window.__ads_skip_next_action = true;
+          // ⬅️ Ne pas compter la reprise post-revive comme une action
+          window.__ads_skip_next_action = true;
 
-try { window.partieReprisee?.(mode); } catch(_) {}
+          try { window.partieReprisee?.(mode); } catch(_) {}
 
-requestAnimationFrame(update);
+          requestAnimationFrame(update);
 
         }
       }, 1000);
@@ -968,33 +968,48 @@ requestAnimationFrame(update);
        33,  33,  33,  33,  33,  33,  33,  33,  17
     ];
 
-const scoreEl = document.getElementById('score');
-if (scoreEl) scoreEl.textContent = '0';
+    const scoreEl = document.getElementById('score');
+    if (scoreEl) scoreEl.textContent = '0';
 
-// Cherche l’élément à l’instant où on en a besoin (pas au chargement)
-function setHighText(val) {
-  const el = document.getElementById('highscore') || document.getElementById('highscore-global');
-  if (el) el.textContent = String(val);
-}
+    // Cherche l’élément à l’instant où on en a besoin (pas au chargement)
+    function setHighText(val) {
+      const el = document.getElementById('highscore') || document.getElementById('highscore-global');
+      if (el) el.textContent = String(val);
+    }
 
- async function updateHighscoreDisplay() {
-   let cloud = 0;
-   try { cloud = await getHighScoreSupabase(); } catch (_) { cloud = 0; }
-   highscoreCloud = Number(cloud) || 0;
-   setHighText(highscoreCloud);
- }
+    async function updateHighscoreDisplay() {
+      let cloud = 0;
+      try { cloud = await getHighScoreSupabase(); } catch (_) { cloud = 0; }
+      highscoreCloud = Number(cloud) || 0;
+      setHighText(highscoreCloud);
+    }
 
-// Appel immédiat si le DOM est déjà prêt, sinon on attend
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
-} else {
-  updateHighscoreDisplay();
-}
+    // Appel immédiat si le DOM est déjà prêt, sinon on attend
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
+    } else {
+      updateHighscoreDisplay();
+    }
 
-// Alias (deux orthographes utilisées ailleurs dans le code)
-window.updateHighscoreDisplay = updateHighscoreDisplay;
-window.updateHighScoreDisplay = updateHighscoreDisplay;
+    // ——— Score à battre (max global concours_scores) ———
+    async function getScoreToBeat() {
+      if (!sb) return 0;
+      try {
+        const { data, error } = await sb.rpc('concours_get_score_to_beat');
+        if (error) throw error;
+        return Number(data ?? 0);
+      } catch { return 0; }
+    }
+    async function updateScoreToBeatUI() {
+      const el = document.getElementById('score-to-beat-value');
+      if (!el) return;
+      const val = await getScoreToBeat();
+      el.textContent = String(val);
+    }
 
+    // Alias (deux orthographes utilisées ailleurs dans le code)
+    window.updateHighscoreDisplay = updateHighscoreDisplay;
+    window.updateHighScoreDisplay = updateHighscoreDisplay;
 
     // === SCORE: barème fixe (sans combo/enchaînement) ===
     function computeScore(lines) {
@@ -1011,6 +1026,9 @@ window.updateHighScoreDisplay = updateHighscoreDisplay;
       reviveUsed = false; // ✅ nouvelle partie → re-autorise 1 revive
       endHandled = false;
       creditDone = false;
+
+      // ✅ mesure de durée
+      gameStartMs = (performance?.now?.() || Date.now());
 
       if (mode === 'duel') await setupDuelSequence();
       if (mode !== 'duel') {
@@ -1098,21 +1116,15 @@ window.updateHighScoreDisplay = updateHighscoreDisplay;
         score += pts;
         if (scoreEl) scoreEl.textContent = score;
 
-if (score > highscoreCloud) {
-  const newHS = score;
-  highscoreCloud = newHS;
-  setHighText(newHS); // ← utilise ton helper déjà défini
-
-  Promise.resolve()
-    
-    .then(() => (typeof setHighScoreSupabase === 'function') ? setHighScoreSupabase(newHS) : null)
-    .finally(() => {
-      if (typeof window.updateHighscoreDisplay === 'function') window.updateHighscoreDisplay();
-      if (typeof window.updateHighScoreDisplay === 'function') window.updateHighscoreDisplay();
-    })
-    .catch(e => console.warn('[HS] save failed:', e));
-}
-
+        if (score > highscoreCloud) {
+          const newHS = score;
+          highscoreCloud = newHS;
+          setHighText(newHS); // UI locale seulement; RPC en fin de partie
+          Promise.resolve().finally(() => {
+            if (typeof window.updateHighscoreDisplay === 'function') window.updateHighscoreDisplay();
+            if (typeof window.updateHighScoreDisplay === 'function') window.updateHighscoreDisplay();
+          }).catch(e => console.warn('[HS] save failed:', e));
+        }
 
         if (mode === 'classic' || mode === 'duel') {
           let level = Math.floor(linesCleared / 7);
@@ -1480,6 +1492,7 @@ if (score > highscoreCloud) {
 
       updateBalancesHeader();
       updateHighscoreDisplay();
+      updateScoreToBeatUI();
     });
 
     // ====================
@@ -1759,27 +1772,31 @@ if (score > highscoreCloud) {
 
       return (window.sbUser && window.sbUser.id) || null;
     }
- async function setLastScoreSupabase(score) {
-   if (!sb) return;
-   const val = parseInt(score, 10) || 0;
-   await sb.rpc('concours_set_lastscore', { new_last: val });
- }
+    async function setLastScoreSupabase(score) {
+      if (!sb) return;
+      const val = parseInt(score, 10) || 0;
+      await sb.rpc('concours_set_lastscore', { new_last: val });
+    }
 
-async function setHighScoreSupabase(score) {
-   if (!sb) return;
-  const val = parseInt(score, 10) || 0;
-   await sb.rpc('concours_set_highscore', { new_high: val });
- }
+    async function setHighScoreSupabase(score, durationMs, linesDone) {
+      if (!sb) return;
+      const val = parseInt(score, 10) || 0;
+      await sb.rpc('concours_set_highscore', {
+        new_high: val,
+        new_duration_ms: Number.isFinite(durationMs) ? Math.max(0, Math.round(durationMs)) : null,
+        new_lines: Number.isFinite(linesDone) ? Math.max(0, Math.round(linesDone)) : null
+      });
+    }
 
- async function getHighScoreSupabase() {
-   if (!sb) return 0;
-   try {
-     // RLS => renverra la ligne de l'utilisateur courant
-     const { data, error } = await sb.from('concours_scores').select('highscore').single();
-     if (error) return 0;
-     return Number(data?.highscore ?? 0);
-   } catch { return 0; }
- }
+    async function getHighScoreSupabase() {
+      if (!sb) return 0;
+      try {
+        // RLS => renverra la ligne de l'utilisateur courant
+        const { data, error } = await sb.from('concours_scores').select('highscore').single();
+        if (error) return 0;
+        return Number(data?.highscore ?? 0);
+      } catch { return 0; }
+    }
 
 
     // ===== BOOT (LOCAL UNIQUEMENT, SANS CLOUD) =====
