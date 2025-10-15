@@ -1,20 +1,19 @@
 <!DOCTYPE html>
-<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <title>VBlocks - Accueil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Bootstrap thème : défaut = retro + anti-flash (à placer AVANT CSS & JS) -->
+  <!-- Bootstrap thème : défaut = retro + anti-flash -->
   <script>
     (function () {
       try {
         var KEY = 'themeVBlocks';
         if (!localStorage.getItem(KEY)) {
-          localStorage.setItem(KEY, 'retro');   // Défaut la 1ère fois
+          localStorage.setItem(KEY, 'retro');
         }
         var th = localStorage.getItem(KEY) || 'retro';
-        document.documentElement.setAttribute('data-theme', th); // applique tout de suite
+        document.documentElement.setAttribute('data-theme', th);
       } catch(e) {}
     })();
   </script>
@@ -73,8 +72,8 @@
 
   <!-- Lib Supabase (UMD locale) — le client est créé dans userData.js -->
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
-  <script src="js/userData.js"></script>
   <script src="js/i18n.js"></script>
+  <script src="js/userData.js"></script>
 
   <!-- Cordova d'abord -->
   <script src="cordova.js"></script>
@@ -386,8 +385,74 @@
       } catch(e) {}
     }
 
+    // ------------ BOOT LANG (DB -> UI ; sinon DEVICE -> DB -> UI) ------------
+ // ------------ BOOT LANG (LOCAL -> DB si besoin ; sinon DB -> LOCAL ; sinon DEVICE -> DB -> LOCAL) ------------
+async function bootstrapLanguageLocalFirst() {
+  try {
+    if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+
+    // 1) si on a déjà une langue locale → on l’applique, pas de lecture DB
+    let local = (localStorage.getItem('langue') || '').toUpperCase();
+    if (local) {
+      if (window.setLang) await window.setLang(local);
+
+      // écriture DB uniquement si jamais synchronisé ou si ça a changé
+      const lastSynced = (localStorage.getItem('langue_synced_db') || '').toUpperCase();
+      if (lastSynced !== local && window.userData?.updateLangDirect) {
+        try {
+          await window.userData.updateLangDirect(local);
+          localStorage.setItem('langue_synced_db', local);
+        } catch(_) {}
+      }
+      return;
+    }
+
+    // 2) pas de local → on tente la DB (1 read)
+    const { data: authData } = await window.sb.auth.getUser();
+    const authId = authData?.user?.id || null;
+    let dbLang = null;
+
+    if (authId) {
+      let q = await window.sb.from('users').select('lang').eq('auth_id', authId).maybeSingle();
+      if (!q.error && q.data?.lang) dbLang = q.data.lang;
+      if (!dbLang) {
+        q = await window.sb.from('users').select('lang').eq('id', authId).maybeSingle();
+        if (!q.error && q.data?.lang) dbLang = q.data.lang;
+      }
+    }
+
+    if (dbLang) {
+      dbLang = (dbLang || '').toUpperCase();
+      if (window.setLang) await window.setLang(dbLang);
+      localStorage.setItem('langue', dbLang);
+      localStorage.setItem('langue_synced_db', dbLang);
+      return;
+    }
+
+// 3) rien en local ni en DB → DEVICE -> DB -> LOCAL (toujours en MAJ)
+const deviceLang = ((typeof getLangCode === "function" ? getLangCode() : "EN") || "EN").toUpperCase();
+if (window.setLang) await window.setLang(deviceLang);
+localStorage.setItem('langue', deviceLang);
+try {
+  if (window.userData && window.userData.updateLangDirect) {
+    await window.userData.updateLangDirect(deviceLang);
+    localStorage.setItem('langue_synced_db', deviceLang);
+  }
+} catch(_) {}
+
+  } catch (e) {
+    console.warn('[lang bootstrap local-first]', e?.message || e);
+  }
+}
+
+
     document.addEventListener('DOMContentLoaded', async () => {
       try {
+        // 1) langue : DB -> UI ; sinon DEVICE -> DB -> UI
+       await bootstrapLanguageLocalFirst();
+
+
+        // 2) boot app
         if (window.bootstrapAuthAndProfile) {
           await window.bootstrapAuthAndProfile();
         }
