@@ -74,7 +74,7 @@
       width: 42px; height: 42px;
       transition: background 0.15s;
     }
-    .btn-back img { width: 28px; height: 28px; filter: drop-shadow(0 1px 2px #0005);}
+    .btn-back img { width: 28px; height: 28px; filter: drop-shadow(0 1px 2px #0005); }
     .main-title {
       flex: 1;
       font-size: 1.25em; font-weight: 900;
@@ -108,18 +108,20 @@
       font-weight: 700;
       justify-content: center;
     }
-    .vcoins {
-      font-size: 1.19em;
-      color: #ffd800;
-    }
-    .jetons {
-      font-size: 1.07em;
-      color: #ffd800;
-    }
+    .vcoins { font-size: 1.19em; color: #ffd800; }
+    .jetons { font-size: 1.07em; color: #ffd800; }
     .vcoin-icon, .jeton-icon {
       width: 27px; height: 27px;
       vertical-align: middle;
       margin-right: 6px;
+    }
+
+    /* ✅ nouvelle ligne centrée entre wallet et bouton Pause */
+    .score-to-beat-row {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin: 4px 0 6px; /* pile entre le solde et le bouton pause */
     }
 
     @media (max-width:480px) {
@@ -132,7 +134,9 @@
       .vcoin-icon, .jeton-icon { width: 16px; height: 16px; margin-right: 3px; }
       .vcoins { font-size: .97em; }
       .jetons { font-size: .88em; }
+      .score-to-beat-row { margin: 2px 0 4px; }
     }
+
     .top-canvas-row {
       width: 100%; max-width: 410px;
       display: flex; justify-content: space-between; align-items: flex-end;
@@ -173,9 +177,9 @@
       width: 97vw; max-width: 430px; letter-spacing: 0.6px; flex-shrink: 0;
     }
     .score-group { display: flex; align-items: center; gap: 0.5em; }
-    .score-label { min-width: 50px; text-align: right; color: var(--score-color, #39ff14);}
-    .score-value { min-width: 30px; text-align: left; color: var(--score-color, #39ff14); font-weight: 700;}
-    .highscore-global { font-size: 1.12em; font-weight: bold; color: #ffd800; margin-left: 1.1em;}
+    .score-label { min-width: 50px; text-align: right; color: var(--score-color, #39ff14); }
+    .score-value { min-width: 30px; text-align: left; color: var(--score-color, #39ff14); font-weight: 700; }
+    .highscore-global { font-size: 1.12em; font-weight: bold; color: #ffd800; margin-left: 1.1em; }
     .highscore-value { color: var(--highscore-color, #ffd800); font-weight: 700; }
     #controls {
       display: flex; justify-content: center; gap: 1.1em; margin-top: 11px; flex-shrink: 0;
@@ -190,6 +194,18 @@
     #controls button:active {
       background: var(--btn-hover-bg, #181885);
       color: var(--btn-hover-color, #fff);
+    }
+
+    /* === Score à battre (pills) === */
+    .score-to-beat {
+      font-size: 1.1em;
+      font-weight: 900;
+      color: #ffeb3b;
+      letter-spacing: .5px;
+      text-shadow: 0 2px 6px rgba(0,0,0,.35);
+      padding: .45em .9em;
+      border-radius: 1.1em;
+      background: rgba(255,255,255,.06);
     }
   </style>
 </head>
@@ -222,7 +238,16 @@
           <span id="jeton-amount">0</span>
         </span>
       </div>
+
+      <!-- ✅ NOUVELLE LIGNE : Score à battre (entre solde et bouton Pause) -->
+      <div class="score-to-beat-row">
+        <div class="score-to-beat">
+          <span class="score-to-beat-label" data-i18n="game.score_to_beat">Score à battre</span>&nbsp;:
+          <span id="score-to-beat-value-top">--</span>
+        </div>
+      </div>
     </div>
+
     <!-- PIECES -->
     <div class="top-canvas-row">
       <div class="side-canvas-block">
@@ -230,6 +255,11 @@
         <canvas id="holdCanvas" width="48" height="48"></canvas>
       </div>
       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:54px;">
+        <!-- (ancien chip top conservé, id changé pour éviter doublons) -->
+        <div class="score-to-beat" style="margin-bottom:6px; display:none;">
+          <span class="score-to-beat-label" data-i18n="game.score_to_beat">Score à battre</span>&nbsp;:
+          <span id="score-to-beat-value-legacy">--</span>
+        </div>
         <button id="pause-btn"  style="background:none;border:none;cursor:pointer;padding:2px;border-radius:99px;" >
           <img src="assets/icons/pause.svg" alt="Pause" style="width:36px;height:36px;display:block;">
         </button>
@@ -242,7 +272,6 @@
     <!-- CANVAS PRINCIPAL -->
     <div class="game-flex-wrap">
       <canvas id="gameCanvas"></canvas>
-
     </div>
     <!-- SCORE -->
     <div class="score-row" id="score-row">
@@ -257,10 +286,16 @@
     </div>
     <div id="controls">
       <button id="music-btn" data-i18n="game.music">Musique</button>
-      <button onclick="location.reload()" data-i18n="game.replay">Rejouer</button>
+      <!-- ✨ Remplacement du bouton Rejouer par "Score à battre" -->
+      <div id="score-to-beat" class="score-to-beat">
+        <span class="score-to-beat-label" data-i18n="game.score_to_beat">Score à battre</span>&nbsp;:
+        <span id="score-to-beat-value">--</span>
+      </div>
     </div>
   </div>
+
   <audio id="music" src="assets/sounds/chill.mp3" loop></audio>
+
   <!-- ==== SCRIPTS ==== -->
   <script>
     // Musique bouton
@@ -294,15 +329,37 @@
       } catch(e) { jetons = 0; }
       document.getElementById("jeton-amount").textContent = jetons ?? 0;
     }
-    // Affichage record cloud (Supabase)
-async function updateHighScoreDisplay() {
-  // Déléguée à concours.js (table concours uniquement)
-  if (typeof window.updateHighscoreDisplay === 'function') {
-    await window.updateHighscoreDisplay();
-  } else {
-    document.getElementById("highscore-global").textContent = '0';
-  }
-}
+
+    // Record cloud (table concours) — délègue à concours.js
+    async function updateHighScoreDisplay() {
+      if (typeof window.updateHighscoreDisplay === 'function') {
+        await window.updateHighscoreDisplay();
+      } else {
+        document.getElementById("highscore-global").textContent = '0';
+      }
+    }
+
+    // Score à battre (max global concours) — met à jour BAS + HAUT
+    async function updateScoreToBeatUI() {
+      const bottomEl = document.getElementById('score-to-beat-value');
+      const topEl    = document.getElementById('score-to-beat-value-top');
+      const legacyEl = document.getElementById('score-to-beat-value-legacy');
+
+      // Si concours.js fournit sa fonction, on l'appelle (évite récursion)
+      if (typeof window.updateScoreToBeatUI === 'function' && window.updateScoreToBeatUI !== updateScoreToBeatUI) {
+        await window.updateScoreToBeatUI();
+        // copie bas -> haut
+        if (bottomEl && topEl)   topEl.textContent   = bottomEl.textContent;
+        if (bottomEl && legacyEl) legacyEl.textContent = bottomEl.textContent;
+        return;
+      }
+
+      // Fallback
+      const v = '--';
+      if (bottomEl) bottomEl.textContent = v;
+      if (topEl)    topEl.textContent    = v;
+      if (legacyEl) legacyEl.textContent = v;
+    }
 
     // Score en live (partie locale)
     function updateScore(val) {
@@ -313,27 +370,27 @@ async function updateHighScoreDisplay() {
       updateVCoinsDisplay();
       updateJetonsDisplay();
       updateHighScoreDisplay();
+      updateScoreToBeatUI();
     });
-    // Pour update live depuis le jeu (ex: tu bats le record)
+
+    // Expose pour mises à jour live
     window.updateHighScoreDisplay = updateHighScoreDisplay;
-    window.updateVCoinsDisplay = updateVCoinsDisplay;
-    window.updateJetonsDisplay = updateJetonsDisplay;
-    window.updateScore = updateScore;
+    window.updateScoreToBeatUI   = updateScoreToBeatUI;
+    window.updateVCoinsDisplay   = updateVCoinsDisplay;
+    window.updateJetonsDisplay   = updateJetonsDisplay;
+    window.updateScore           = updateScore;
   </script>
 
   <!-- SCRIPTS FONCTIONNELS -->
-<!-- Supabase client -->
-
-<script src="js/vendor/supabase-2.42.5.min.js"></script>
-<!-- App utils -->
-<script src="js/i18n.js"></script>
-<script src="js/userData.js"></script>
-
-<!-- Ads -->
-<script src="js/pub.js"></script>
-
-<!-- Jeu -->
-<script src="js/concours.js"></script>
+  <!-- Supabase client -->
+  <script src="js/vendor/supabase-2.42.5.min.js"></script>
+  <!-- App utils -->
+  <script src="js/i18n.js"></script>
+  <script src="js/userData.js"></script>
+  <!-- Ads -->
+  <script src="js/pub.js"></script>
+  <!-- Jeu (gère les scores concours + "score à battre") -->
+  <script src="js/concours.js"></script>
 
   <!-- Gestion du thème en synchro multi-onglet -->
   <script>
@@ -348,6 +405,7 @@ async function updateHighScoreDisplay() {
       }
     });
   </script>
+
   <!-- Lancement du jeu (doit rester APRES chargement des scripts précédents) -->
   <script>
     if (window.VBlocksGame && typeof window.VBlocksGame.initGame === "function") {
