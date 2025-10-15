@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html>
 <head>
   <meta charset="UTF-8" />
   <title>VBlocks - Accueil</title>
@@ -126,7 +127,7 @@
   <script src="js/i18n.js"></script>
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
   <script src="js/userData.js"></script>
-<script src="capacitor.js"></script>
+  <script src="capacitor.js"></script>
   <!-- Cordova/Capacitor bridge -->
   <script src="cordova.js"></script>
 
@@ -134,7 +135,6 @@
   <script src="js/achat.js"></script>
   <!-- Ensuite seulement les scripts qui peuvent dépendre de Cordova -->
   <script src="js/pub.js"></script>
- 
 </head>
 
 <body>
@@ -160,11 +160,15 @@
       </p>
       <small data-i18n="index.rgpd.body2">(Tu peux changer d'avis plus tard dans les paramètres)</small>
 
-      <!-- ✅ Choix publicités uniquement -->
+      <!-- ✅ Choix publicités + notifications -->
       <div style="text-align:left;margin-top:.75rem">
         <div class="row">
           <input type="checkbox" id="consent-ads" />
           <label for="consent-ads" data-i18n="index.rgpd.ads">Autoriser la personnalisation des publicités</label>
+        </div>
+        <div class="row">
+          <input type="checkbox" id="consent-push" />
+          <label for="consent-push" data-i18n="index.rgpd.push">Recevoir des notifications</label>
         </div>
       </div>
 
@@ -174,6 +178,7 @@
       </div>
     </div>
   </div>
+  <!-- -------- FIN POPUP RGPD/CONSENT -------- -->
 
   <!-- Trait bleu avec solde + score à battre -->
   <div class="barre-info">
@@ -222,7 +227,6 @@
         const uid = user?.id || null;
         if (!uid) return;
 
-        // solde
         let q1 = await window.sb.from('users')
           .select('vcoins, best_score')
           .or(`auth_id.eq.${uid},id.eq.${uid}`)
@@ -285,9 +289,7 @@
 
     function applyConsentFromLocal() {
       const consent = localStorage.getItem(CONSENT_KEY);
-      const ads     = localStorage.getItem(ADS_KEY);
       const enabled = localStorage.getItem(ADS_ENABLED);
-      // Ici tu peux activer/désactiver tes SDK pubs selon enabled === 'true'
       if (window.pub && window.pub.setPersonalized) {
         window.pub.setPersonalized(enabled === 'true');
       }
@@ -327,7 +329,6 @@
 
     async function checkAndShowPopupOnce() {
       try {
-        // Si déjà choisi → applique et sort
         if (localStorage.getItem(CONSENT_KEY)) {
           applyConsentFromLocal();
           return;
@@ -348,18 +349,31 @@
       const btnRefuse = document.getElementById("consent-refuse");
       const cbAds     = document.getElementById("consent-ads");
       const popup     = document.getElementById("popup-consent");
+      const cbPush    = document.getElementById("consent-push"); // 👈
 
       if (btnAccept) {
         btnAccept.onclick = async function() {
+          // pubs
           localStorage.setItem(CONSENT_KEY, "accept");
           localStorage.setItem(ADS_KEY,   cbAds && cbAds.checked ? "yes" : "no");
           localStorage.setItem(ADS_ENABLED, cbAds && cbAds.checked ? "true" : "false");
+
+          // push opt-in
+          const wantPush = cbPush && cbPush.checked;
+          localStorage.setItem('push_optin', wantPush ? 'yes' : 'no');
+
           if (popup) popup.style.display = "none";
           applyConsentFromLocal();
+
           try {
             if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
             if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "accept" });
           } catch(e) { console.warn('[consent] update accept RPC', e?.message || e); }
+
+          // Demande permission push uniquement si opt-in
+          if (wantPush && window.__initPushOnce) {
+            try { await window.__initPushOnce(); } catch(e) {}
+          }
         };
       }
       if (btnRefuse) {
@@ -367,6 +381,7 @@
           localStorage.setItem(CONSENT_KEY, "refuse");
           localStorage.setItem(ADS_KEY, "no");
           localStorage.setItem(ADS_ENABLED, "false");
+          localStorage.setItem('push_optin', 'no'); // 👈
           if (popup) popup.style.display = "none";
           applyConsentFromLocal();
           try {
@@ -380,7 +395,6 @@
     /* ==== AFFICHER CONCOURS SELON PAYS ==== */
     async function getUserCountryCode() {
       try {
-        // Prend la colonne users.country (renseignée par userData.js)
         const { data: { user } } = await window.sb.auth.getUser();
         const uid = user?.id || null;
         if (!uid) return null;
@@ -392,7 +406,6 @@
 
         let cc = (q?.data?.country || '').toUpperCase();
         if (!cc) {
-          // fallback léger: langue en 'fr-FR' -> 'FR'
           let lang = (q?.data?.lang || navigator.language || 'en-US').toUpperCase();
           cc = lang.includes('-') ? lang.split('-').pop() : (lang.length>2 ? lang.slice(-2) : lang);
         }
@@ -425,22 +438,18 @@
         btn.style.display = ok ? 'block' : 'none';
       } catch(e) {
         console.warn('[concours] status', e?.message || e);
-        document.getElementById('btnConcours')?.style && (document.getElementById('btnConcours').style.display = 'none');
+        const el = document.getElementById('btnConcours');
+        if (el && el.style) el.style.display = 'none';
       }
     }
 
     // ---- Boot langue local-first + auth/profile ----
     async function bootstrapLanguageLocalFirst() {
       try {
-        // 1) i18n auto (navigator/localStorage) + set <html lang dir>
         if (window.i18nBootstrap) await window.i18nBootstrap();
-
-        // 2) Auth + ensure user row
         if (window.bootstrapAuthAndProfile) {
           await window.bootstrapAuthAndProfile();
         }
-
-        // 3) Sync local → DB si nécessaire
         if (window.userData?.getProfileSecure && window.userData?.getLang && window.userData?.updateLangDirect) {
           const prof  = await window.userData.getProfileSecure();
           const local = window.userData.getLang();
@@ -457,79 +466,80 @@
       try {
         await bootstrapLanguageLocalFirst();
 
-        // boot app + auth/profile
-        if (window.bootstrapAuthAndProfile) {
-          await window.bootstrapAuthAndProfile();
-        }
-
-        await checkConcoursStatusByCountry();  /* ← activation Concours selon pays */
+        await checkConcoursStatusByCountry();
         await checkAndShowPopupOnce();
-        await listenPopupsRealtime();
+        await listenPopupsRealtime?.();
 
         if (window.i18nTranslateAll) window.i18nTranslateAll();
-        window.__initPushOnce && window.__initPushOnce();
-        if (window.__initPushOnce) window.__initPushOnce();  /* init push at boot */
-        await refreshBarreInfo();
+
+        // Relance auto push si l’utilisateur avait déjà opt-in
+        if (localStorage.getItem('push_optin') === 'yes' && window.__initPushOnce) {
+          try { await window.__initPushOnce(); } catch(e){}
+        }
+
+        if (typeof refreshBarreInfo === 'function') {
+          await refreshBarreInfo();
+        }
       } catch (e) {
         console.warn('[INDEX bootstrap]', e?.message || e);
       }
     });
   </script>
 
-  <!-- Push (FCM) : gardé mais n’est plus relié à la popup -->
-<script>
-  (function () {
-    const DEBUG_PUSH = false;
-    let inited = false;
+  <!-- Push (FCM) : init + enregistrement token dans Supabase -->
+  <script>
+    (function () {
+      const DEBUG_PUSH = false;
+      let inited = false;
 
-    function isNative() {
-      try { return window.Capacitor?.getPlatform?.() !== 'web'; }
-      catch(_) { return false; }
-    }
+      function isNative() {
+        try { return window.Capacitor?.getPlatform?.() !== 'web'; }
+        catch(_) { return false; }
+      }
 
-    async function savePushTokenToSupabase(token){
-      try{
-        if(!token || !window.sb) return;
-        const uid = await (window.userData?.getAuthUserId?.() || null);
-        if(!uid) return;
-        const lang = (localStorage.getItem('langue') || 'EN').toUpperCase();
-        const platform = window.Capacitor?.getPlatform?.() || 'android';
-        await window.sb.from('user_push_tokens').upsert(
-          [{ token, user_id: uid, platform, lang }],
-          { onConflict: 'token' }
-        );
-      }catch(e){ if (DEBUG_PUSH) console.warn('[Push] save token fail', e); }
-    }
+      async function savePushTokenToSupabase(token){
+        try{
+          if(!token || !window.sb) return;
+          const uid = await (window.userData?.getAuthUserId?.() || null);
+          if(!uid) return;
+          const lang = (localStorage.getItem('langue') || 'EN').toUpperCase();
+          const platform = window.Capacitor?.getPlatform?.() || 'android';
+          await window.sb.from('user_push_tokens').upsert(
+            [{ token, user_id: uid, platform, lang }],
+            { onConflict: 'token' }
+          );
+        }catch(e){ if (DEBUG_PUSH) console.warn('[Push] save token fail', e); }
+      }
 
-    async function initPush() {
-      if (inited) return; inited = true;
-      if (!isNative()) return;
-      const Push = window.Capacitor?.Plugins?.PushNotifications;
-      if (!Push) return;
-      try {
-        const perm = await Push.requestPermissions();
-        if (perm.receive !== 'granted') return;
-        await Push.register();
+      async function initPush() {
+        if (inited) return; inited = true;
+        if (!isNative()) return;
+        const Push = window.Capacitor?.Plugins?.PushNotifications;
+        if (!Push) return;
+        try {
+          const perm = await Push.requestPermissions();
+          if (perm.receive !== 'granted') return;
+          await Push.register();
 
-        Push.addListener('registration', async ({ value }) => {
-          localStorage.setItem('fcmToken', value || '');
-          if (DEBUG_PUSH) console.log('[Push] FCM token:', value);
-          await savePushTokenToSupabase(value);
-        });
-        Push.addListener('registrationError', (err) => {
-          if (DEBUG_PUSH) console.error('[Push] registration error', err);
-        });
-        Push.addListener('pushNotificationReceived', (n) => {
-          if (DEBUG_PUSH) console.log('[Push] reçu (FG)', n);
-        });
-        Push.addListener('pushNotificationActionPerformed', (a) => {
-          if (DEBUG_PUSH) console.log('[Push] action', a);
-        });
-      } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
-    }
-    window.__initPushOnce = initPush;
-  })();
-</script>
+          Push.addListener('registration', async ({ value }) => {
+            localStorage.setItem('fcmToken', value || '');
+            if (DEBUG_PUSH) console.log('[Push] FCM token:', value);
+            await savePushTokenToSupabase(value);
+          });
+          Push.addListener('registrationError', (err) => {
+            if (DEBUG_PUSH) console.error('[Push] registration error', err);
+          });
+          Push.addListener('pushNotificationReceived', (n) => {
+            if (DEBUG_PUSH) console.log('[Push] reçu (FG)', n);
+          });
+          Push.addListener('pushNotificationActionPerformed', (a) => {
+            if (DEBUG_PUSH) console.log('[Push] action', a);
+          });
+        } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
+      }
+      window.__initPushOnce = initPush;
+    })();
+  </script>
 
   <!-- ===== Bannière MAJ non bloquante + logique AppUpdate / Store ===== -->
   <div id="update-banner">
@@ -554,10 +564,8 @@
         try {
           const info = await Device.getInfo();
           if (info?.platform === 'ios') {
-            // Ouvre App Store (remplace par l’URL de ton app)
             await Browser.open({ url: 'https://apps.apple.com/app/idXXXXXXXXX' });
           } else {
-            // Ouvre Play Store (remplace par le package)
             await Browser.open({ url: 'https://play.google.com/store/apps/details?id=com.vblocks.app' });
           }
         } catch(e) { console.warn('[AppUpdate] openStore', e); }
