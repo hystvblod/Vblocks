@@ -168,7 +168,7 @@
 "menu.concours":"مسابقة",
 "menu.duel":"مبارزة",
 "menu.boutique":"المتجر",
-"tip.concours":"شارك وصوّت في مسابقات الصور",
+"tip.concours":"حقّق أعلى نتيجة واربح هدايا أو مزايا!",
 "tip.infini":"وضع استرخاء بلا نهاية، بلا تسريع",
 "tip.boutique":"خصص لعبتك",
 "index.rgpd.title":"الخصوصية & الإعلانات",
@@ -233,5 +233,7 @@
     "index.update.updateNow": "تحديث الآن",
     "index.update.later": "لاحقًا",
      "settings.credits.label": "Ucapan Terima Kasih",
+       "ads.cap_try_in_min": "تم بلوغ الحد: حاول مرة أخرى بعد ~{min} دقيقة",
+  "ads.cap_try_soon": "تم بلوغ الحد، حاول مرة أخرى قريبًا",
   "settings.credits.text": "VBoldStudio berterima kasih kepada Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, dan Lucas atas dukungan, kreativitas, dan saran mereka."
 }

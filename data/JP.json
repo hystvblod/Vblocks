@@ -168,7 +168,7 @@
 "menu.concours":"コンテスト",
 "menu.duel":"デュエル",
 "menu.boutique":"ショップ",
-"tip.concours":"フォトコンテストに参加して投票しよう",
+"tip.concours":"最高得点を出して、景品や特典を手に入れよう！",
 "tip.infini":"リラックスモード 無限、スピード上昇なし",
 "tip.boutique":"ゲームをカスタマイズ",
 "index.rgpd.title":"プライバシー & 広告",
@@ -233,5 +233,7 @@
     "index.update.updateNow": "今すぐ更新",
     "index.update.later": "後で",
     "settings.credits.label": "謝辞",
+      "ads.cap_try_in_min": "上限に達しました：およそ{min}分後に再試行してください",
+  "ads.cap_try_soon": "上限に達しました。しばらくしてからお試しください",
   "settings.credits.text": "VBoldStudio は、Arnaud、Angélique、Matthieu、Kimberley、Adrien、Tatiana、Matthieu、Thomas、Lucas の支援・創造性・助言に感謝いたします。"
 }

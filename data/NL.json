@@ -168,7 +168,7 @@
 "menu.concours":"Wedstrijd",
 "menu.duel":"Duel",
 "menu.boutique":"Winkel",
-"tip.concours":"Doe mee en stem in fotowedstrijden",
+"tip.concours":"Behaal de hoogste score en win cadeaus of voordelen!",
 "tip.infini":"Relaxmodus zonder einde, geen versnelling",
 "tip.boutique":"Personaliseer je spel",
 "index.rgpd.title":"Privacy & Advertenties",
@@ -233,5 +233,7 @@
     "index.update.updateNow": "Nu updaten",
     "index.update.later": "Later",
    "settings.credits.label": "Dankwoord",
+     "ads.cap_try_in_min": "Limiet bereikt: probeer het over ~{min} min opnieuw",
+  "ads.cap_try_soon": "Limiet bereikt, probeer het later opnieuw",
   "settings.credits.text": "VBoldStudio bedankt Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas en Lucas voor hun steun, creativiteit en advies."
 }

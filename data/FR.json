@@ -168,7 +168,7 @@
   "menu.concours": "Concours",
   "menu.duel": "Duel",
   "menu.boutique": "Boutique",
-  "tip.concours": "Participe et vote dans les concours photo",
+  "tip.concours": "Fais le meilleur score et gagne des cadeaux ou des avantages !",
   "tip.infini": "Mode relax sans fin, sans accélération",
   "tip.boutique": "Personnalise ton jeu",
   "index.rgpd.title": "Confidentialité & Publicités",
@@ -233,5 +233,7 @@
     "index.update.updateNow": "Mettre à jour",
     "index.update.later": "Plus tard",
      "settings.credits.label": "Remerciements",
+       "ads.cap_try_in_min": "Limite atteinte : réessaie dans ~{min} min",
+  "ads.cap_try_soon": "Limite atteinte, réessaie bientôt",
   "settings.credits.text": "VBoldStudio remercie pour leur soutien, leur créativité et leurs conseils : Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, Lucas."
 }

@@ -232,58 +232,98 @@ async function linkLegacyIfNeeded() {
 // ---------- ensure_user: anti-409 + anti-429 ----------
 async function ensureUserRow() {
   try {
-    const { data: { user } } = await sb.auth.getUser();
-    const uid = user?.id;
+    // UID
+    var auth = await sb.auth.getUser();
+    var uid = (auth && auth.data && auth.data.user) ? auth.data.user.id : null;
     if (!uid) return;
 
-    const flagKey = `ud:ensured:${uid}`;
-
-    // si déjà fait (dans cette session ou une précédente récente), on sort
+    var flagKey = 'ud:ensured:' + uid;
     if (sessionStorage.getItem(flagKey) === '1' || localStorage.getItem(flagKey) === '1') {
       return;
     }
 
-    const lang = getLang();
-    const pseudoFallback = getPseudoLocal();
-
-    const { error } = await sb.rpc('ensure_user', {
-      default_lang: lang,
-      default_pseudo: pseudoFallback
-    });
-
-    if (!error) {
-      sessionStorage.setItem(flagKey, '1');
-      localStorage.setItem(flagKey, '1');
-      return;
-    }
-
-    const code = String(error?.code || error?.status || '');
-    const msg  = String(error?.message || '').toLowerCase();
-
-    // Conflit d'unicité → l'utilisateur existe déjà (appel concurrent) ⇒ on marque OK
-    if (code === '409' || msg.includes('conflict') || msg.includes('duplicate')) {
-      sessionStorage.setItem(flagKey, '1');
-      localStorage.setItem(flagKey, '1');
-      return;
-    }
-
-    // Rate limit → backoff très court et 1 retry
-    if (code === '429' || msg.includes('too many')) {
-      await new Promise(r => setTimeout(r, 500));
-      const again = await sb.rpc('ensure_user', {
-        default_lang: lang,
-        default_pseudo: pseudoFallback
-      });
-      if (!again.error) {
-        sessionStorage.setItem(flagKey, '1');
-        localStorage.setItem(flagKey, '1');
+    // ---- LANG/LOCALE détectées côté device ----
+    // locale complète (ex: 'fr-FR', 'es-MX', 'en-US'), en minuscule
+    var localeFull = (navigator.language || 'en').toLowerCase();
+    try {
+      if (navigator.languages && navigator.languages.length) {
+        // prend une locale qui a un tiret si possible
+        var pref = null;
+        for (var i = 0; i < navigator.languages.length; i++) {
+          var cand = String(navigator.languages[i] || '');
+          if (cand.indexOf('-') !== -1) { pref = cand; break; }
+        }
+        if (!pref) pref = navigator.languages[0];
+        if (pref) localeFull = String(pref).toLowerCase();
       }
-      return;
+    } catch (_) {}
+
+    // langue normalisée pour la DB (toujours MAJ : 'FR','ES','PT-BR',…)
+    var langNorm = normalizeLangForCloud(localeFull) || getLang();
+
+    // Pays du device depuis les locales (ex: 'es-MX' -> 'MX')
+    var cc = (function () {
+      var cand = [];
+      try {
+        var ro = Intl.DateTimeFormat().resolvedOptions();
+        if (ro && ro.locale) cand.push(ro.locale);
+      } catch (_) {}
+      try {
+        if (navigator.languages && navigator.languages.length) {
+          for (var i = 0; i < navigator.languages.length; i++) cand.push(navigator.languages[i]);
+        }
+      } catch (_) {}
+      try {
+        if (navigator.language) cand.push(navigator.language);
+      } catch (_) {}
+      for (var j = 0; j < cand.length; j++) {
+        var m = String(cand[j] || '').match(/-([A-Za-z]{2})$/);
+        if (m) return m[1].toUpperCase(); // 'FR','BE','MX', ...
+      }
+      return null;
+    })();
+
+    // (Optionnel) fallback Capacitor Device.getLanguageTag() si dispo
+    try {
+      if (!cc && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Device && window.Capacitor.Plugins.Device.getLanguageTag) {
+        var dt = await window.Capacitor.Plugins.Device.getLanguageTag();
+        var tag = (dt && (dt.value || dt.tag || dt.languageTag)) ? (dt.value || dt.tag || dt.languageTag) : '';
+        var m2 = String(tag).match(/-([A-Za-z]{2})$/);
+        if (m2) cc = m2[1].toUpperCase();
+      }
+    } catch (_) {}
+
+    // ---- ensure_user RPC (création si besoin) ----
+    var pseudoFallback = getPseudoLocal();
+    var rpc = await sb.rpc('ensure_user', { default_lang: langNorm, default_pseudo: pseudoFallback });
+    if (rpc && rpc.error) {
+      var code = String(rpc.error.code || rpc.error.status || '');
+      var msg  = String(rpc.error.message || '').toLowerCase();
+      // Rate limit -> backoff 500ms et retry 1 fois
+      if (code === '429' || msg.indexOf('too many') !== -1) {
+        await new Promise(function (r) { setTimeout(r, 500); });
+        rpc = await sb.rpc('ensure_user', { default_lang: langNorm, default_pseudo: pseudoFallback });
+      }
+      // 409 = conflit = déjà créé ailleurs -> on continue, on fait juste l'update
     }
 
-    console.warn('[ensureUserRow] non bloquant:', error?.message || error);
+    // ---- Aligne la DB avec langue/locale/pays ----
+ // ---- Aligne la DB avec langue/pays (sans locale_full si elle n'existe pas) ----
+var update = { lang: langNorm };
+if (cc) update.country = cc;
+
+try {
+  await sb.from('users')
+    .update(update)
+    .or('id.eq.' + uid + ',auth_id.eq.' + uid);
+} catch (_) {}
+
+
+    // Marque comme fait
+    sessionStorage.setItem(flagKey, '1');
+    localStorage.setItem(flagKey, '1');
   } catch (e) {
-    console.warn('[ensureUserRow] exception:', e?.message || e);
+    console.warn('[ensureUserRow] exception:', (e && e.message) ? e.message : e);
   }
 }
 

@@ -168,7 +168,7 @@
 "menu.concours":"콘테스트",
 "menu.duel":"대결",
 "menu.boutique":"상점",
-"tip.concours":"사진 콘테스트에 참여하고 투표하세요",
+"tip.concours":"최고 점수를 달성하고 선물이나 혜택을 받으세요!",
 "tip.infini":"편안 모드, 끝없음, 가속 없음",
 "tip.boutique":"게임을 개인화하세요",
 "index.rgpd.title":"개인정보 & 광고",
@@ -233,5 +233,7 @@
     "index.update.updateNow": "지금 업데이트",
     "index.update.later": "나중에",
      "settings.credits.label": "감사의 말씀",
+       "ads.cap_try_in_min": "한도에 도달했습니다: 약 {min}분 후 다시 시도하세요",
+  "ads.cap_try_soon": "한도에 도달했습니다. 잠시 후 다시 시도하세요",
   "settings.credits.text": "VBoldStudio는 Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, Lucas에게 그들의 지원과 창의성, 조언에 감사드립니다."
 }

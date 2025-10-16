@@ -38,6 +38,90 @@
   var interActionsCount = parseInt(localStorage.getItem('inter_actions_count') || '0', 10);
   var lastInterTs = parseInt(localStorage.getItem('inter_last_ts') || '0', 10);
 
+  // ======================================================
+  // ✅ CAP REWARDED : 4 / HEURE (ajout)
+  //    - Stocke les timestamps d’ouvertures d’annonces rewarded
+  //    - Bloque proprement si la limite est atteinte
+  // ======================================================
+  var REWARD_CAP_PER_HOUR = 4;                     // ← Ajuste ici si besoin
+  var REWARD_WINDOW_MS    = 60 * 60 * 1000;        // 1h rolling window
+  var REWARD_HIST_KEY     = 'reward_hist_ms';      // localStorage key
+
+  function __readRewardHist() {
+    try {
+      var arr = JSON.parse(localStorage.getItem(REWARD_HIST_KEY) || '[]');
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(function (ts) { return typeof ts === 'number' && isFinite(ts); });
+    } catch (_) { return []; }
+  }
+  function __writeRewardHist(arr) {
+    try { localStorage.setItem(REWARD_HIST_KEY, JSON.stringify(arr || [])); } catch (_) {}
+  }
+  function __pruneRewardHist(arr) {
+    var now = Date.now();
+    var pruned = (arr || []).filter(function (ts) { return now - ts < REWARD_WINDOW_MS; });
+    if (pruned.length !== arr.length) __writeRewardHist(pruned);
+    return pruned;
+  }
+  function getRewardedViewsLastHour() {
+    return __pruneRewardHist(__readRewardHist()).length;
+  }
+  function canShowRewardedNow() {
+    return getRewardedViewsLastHour() < REWARD_CAP_PER_HOUR;
+  }
+  function markRewardedOpenedNow() {
+    var now = Date.now();
+    var arr = __pruneRewardHist(__readRewardHist());
+    arr.push(now);
+    __writeRewardHist(arr);
+  }
+  function msUntilNextRewardSlot() {
+    var now = Date.now();
+    var arr = __pruneRewardHist(__readRewardHist()).sort(function(a,b){ return a-b; });
+    if (arr.length < REWARD_CAP_PER_HOUR) return 0;
+    var oldest = arr[0];
+    return Math.max(0, REWARD_WINDOW_MS - (now - oldest));
+  }
+function informCapBlocked() {
+  var ms = msUntilNextRewardSlot();
+  var min = Math.ceil(ms / 60000);
+
+  var tpl = (min > 0)
+    ? (window.i18nGet ? i18nGet('ads.cap_try_in_min') : 'Limit reached: try again in ~{min} min')
+    : (window.i18nGet ? i18nGet('ads.cap_try_soon')   : 'Limit reached, try again soon');
+
+  var txt = String(tpl).replace('{min}', String(min));
+
+  if (typeof window.showToast === 'function') {
+    try { window.showToast(txt); } catch(_) {}
+  } else {
+    // fallback mini-toast DOM
+    try {
+      var id='__reward_cap_toast', el=document.getElementById(id);
+      if (!el) {
+        el = document.createElement('div');
+        el.id = id;
+        el.style.cssText =
+          'position:fixed;left:50%;bottom:12%;transform:translateX(-50%);' +
+          'background:rgba(0,0,0,.85);color:#fff;padding:10px 14px;border-radius:10px;' +
+          'font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;' +
+          'z-index:2147483647;max-width:80vw;text-align:center';
+        document.body.appendChild(el);
+      }
+      el.textContent = txt;
+      el.style.opacity = '1';
+      clearTimeout(el.__t1); clearTimeout(el.__t2);
+      el.__t1 = setTimeout(function(){ el.style.transition='opacity .25s'; el.style.opacity='0'; }, 2300);
+      el.__t2 = setTimeout(function(){ try{ el.remove(); }catch(_){} }, 2600);
+    } catch(_) {}
+  }
+}
+
+  // Expose (utile pour UI/diag)
+  window.getRewardedViewsLastHour = getRewardedViewsLastHour;
+  window.msUntilNextRewardSlot    = msUntilNextRewardSlot;
+  window.REWARD_CAP_PER_HOUR      = REWARD_CAP_PER_HOUR;
+
   // =============================
   // Utils / Auth / Consent
   // =============================
@@ -407,6 +491,7 @@
   // =============================
   // Rewarded (LOAD/SHOW) — SANS SSV
   //  ⚠️ Crédit déclenché sur onRewarded (fiable), pas sur dismissed
+  //  ⚠️ CAP 4/h appliqué AVANT l’appel, comptage à l’OUVERTURE
   // =============================
   async function showRewardedType(type, amount, onDone) {
     var unlocked = false;
@@ -423,7 +508,13 @@
     try {
       if (!isNative()) { onDone&&onDone(false); return; }
       if (!AdMob || !AdMob.prepareRewardVideoAd || !AdMob.showRewardVideoAd) {
-        onDone&&onDone(false);
+        onDone&&onDone(false); return;
+      }
+
+      // ⛔ CAP REWARDED : bloque si limite atteinte
+      if (!canShowRewardedNow()) {
+        informCapBlocked();
+        onDone && onDone(false);
         return;
       }
 
@@ -446,6 +537,9 @@
       watchdog = setTimeout(function(){ unlockUI(); }, 120000);
 
       var showPromise = AdMob.showRewardVideoAd();
+
+      // 👉 Dès que l’annonce s’ouvre réellement, on compte pour le cap
+      openedP.then(function(opened){ if (opened) markRewardedOpenedNow(); }).catch(function(){});
 
       if (String(type) === 'revive') {
         try {

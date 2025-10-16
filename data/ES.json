@@ -168,7 +168,7 @@
 "menu.concours":"Concurso",
 "menu.duel":"Duelo",
 "menu.boutique":"Tienda",
-"tip.concours":"Participa y vota en los concursos de fotos",
+"tip.concours":"Consigue la máxima puntuación y gana regalos o ventajas.",
 "tip.infini":"Modo relax sin fin, sin aceleración",
 "tip.boutique":"Personaliza tu juego",
 "index.rgpd.title":"Privacidad & Anuncios",
@@ -233,5 +233,7 @@
     "index.update.updateNow": "Actualizar ahora",
     "index.update.later": "Más tarde",
      "settings.credits.label": "Agradecimientos",
+       "ads.cap_try_in_min": "Límite alcanzado: inténtalo de nuevo en ~{min} min",
+  "ads.cap_try_soon": "Límite alcanzado, inténtalo de nuevo pronto",
   "settings.credits.text": "VBoldStudio agradece a Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas y Lucas por su apoyo, creatividad y consejos."
 }
