@@ -343,47 +343,109 @@
       }
     }
 
-    // --- PAYS (pour afficher/masquer le bouton Concours)
-    async function getUserCountryCode(){
-      try{
+    /* ---- Pays/lang : utilitaires sûrs ---- */
+    function resolveCountryFromEnv() {
+      try {
+        const cand = (Array.isArray(navigator.languages) && navigator.languages.length)
+          ? navigator.languages : [navigator.language || ''];
+        for (const c of cand) {
+          try {
+            const loc = new Intl.Locale(c);
+            if (loc.region) return String(loc.region).toUpperCase();
+          } catch(_) {}
+        }
+      } catch(_) {}
+      const m = String(navigator.language || '').match(/-([A-Za-z]{2})$/);
+      if (m) return m[1].toUpperCase();
+      const langLocal = (localStorage.getItem('langue') || 'EN').toUpperCase();
+      const map = { 'PT-BR':'BR', FR:'FR', ES:'ES', DE:'DE', IT:'IT', NL:'NL', PT:'PT' };
+      if (map[langLocal]) return map[langLocal];
+      if (langLocal === 'EN') return 'GB'; // ou 'US' selon ton choix
+      return null;
+    }
+
+    async function ensureCountryFilled() {
+      try {
         const { data: { user } } = await window.sb.auth.getUser();
         const uid = user?.id || null;
-        if (!uid) return null;
+        if (!uid) return;
 
         const q = await window.sb.from('users')
           .select('country,lang')
           .or(`auth_id.eq.${uid},id.eq.${uid}`)
           .maybeSingle();
 
-        let cc = (q?.data?.country || '').toUpperCase();
-        if (!cc) {
-          let lang = (q?.data?.lang || navigator.language || 'en-US').toUpperCase();
-          cc = lang.includes('-') ? lang.split('-').pop() : (lang.length>2 ? lang.slice(-2) : lang);
+        const curCountry = (q?.data?.country || '').toUpperCase();
+        const curLang = (q?.data?.lang || '').toUpperCase();
+
+        if (curCountry && curLang) return;
+
+        const update = {};
+        if (!curLang) {
+          update.lang = (localStorage.getItem('langue') || navigator.language || 'EN').toUpperCase();
         }
-        return cc || null;
-      } catch { return null; }
+        if (!curCountry) {
+          const cc = resolveCountryFromEnv();
+          if (cc) update.country = cc;
+        }
+
+        if (Object.keys(update).length) {
+          await window.sb.from('users')
+            .update(update)
+            .or(`auth_id.eq.${uid},id.eq.${uid}`);
+        }
+      } catch(_) {}
+    }
+
+    async function getUserCountryCode(){
+      try{
+        const { data: { user } } = await window.sb.auth.getUser();
+        const uid = user?.id || null;
+        if (uid) {
+          const q = await window.sb.from('users')
+            .select('country,lang')
+            .or(`auth_id.eq.${uid},id.eq.${uid}`)
+            .maybeSingle();
+          let cc = (q?.data?.country || '').toUpperCase();
+          if (!cc) {
+            let lang = (q?.data?.lang || navigator.language || 'en-US').toUpperCase();
+            cc = lang.includes('-') ? lang.split('-').pop() : (lang.length>2 ? lang.slice(-2) : lang);
+          }
+          return cc || null;
+        }
+      } catch {}
+      return resolveCountryFromEnv();
     }
 
     async function checkConcoursStatusByCountry() {
       const btn = document.getElementById('btnConcours');
       if (!btn) return;
       try {
-        const { data, error } = await window.sb
+        // accepte GLOBAL ou global, sans risque de maybeSingle() avec 2 lignes
+        let row = (await window.sb
           .from('config')
           .select('concours_enabled, concours_countries')
           .eq('id', 'GLOBAL')
-          .maybeSingle();
-        if (error) throw error;
+          .maybeSingle()).data;
 
-        const enabled = !!data?.concours_enabled;
-        if (!enabled) { btn.style.display = 'none'; return; }
+        if (!row) {
+          row = (await window.sb
+            .from('config')
+            .select('concours_enabled, concours_countries')
+            .eq('id', 'global')
+            .maybeSingle()).data;
+        }
 
-        const cc = await getUserCountryCode();
-        if (!cc) { btn.style.display = 'none'; return; }
+        if (!row || !row.concours_enabled) { btn.style.display = 'none'; return; }
 
-        const list = Array.isArray(data?.concours_countries) ? data.concours_countries : null;
-        btn.style.display = (!list || list.includes(cc)) ? 'block' : 'none';
-      } catch { document.getElementById("btnConcours").style.display = 'none'; }
+        const list = Array.isArray(row.concours_countries) ? row.concours_countries : null;
+        if (!list || list.length === 0) { btn.style.display = 'block'; return; }
+
+        const cc = (await getUserCountryCode()) || '';
+        btn.style.display = list.includes(cc) ? 'block' : 'none';
+      } catch {
+        document.getElementById("btnConcours").style.display = 'none';
+      }
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -403,7 +465,13 @@
           } catch(e) {}
         }
 
-        await checkConcoursStatusByCountry();   // ← pays
+        // s'assurer que country/lang sont bien remplis si manquants
+        await ensureCountryFilled();
+
+        // Affichage Concours robuste
+        await checkConcoursStatusByCountry();
+
+        // Popup message
         await checkAndShowPopupOnce();
 
         if (window.i18nTranslateAll) window.i18nTranslateAll();
