@@ -5,14 +5,16 @@
   <title>VBlocks - Accueil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Thème par défaut très tôt -->
+  <!-- Bootstrap thème : défaut = retro + anti-flash (à placer AVANT CSS & JS) -->
   <script>
     (function () {
       try {
         var KEY = 'themeVBlocks';
-        if (!localStorage.getItem(KEY)) localStorage.setItem(KEY, 'retro');
+        if (!localStorage.getItem(KEY)) {
+          localStorage.setItem(KEY, 'retro');   // Défaut la 1ère fois
+        }
         var th = localStorage.getItem(KEY) || 'retro';
-        document.documentElement.setAttribute('data-theme', th);
+        document.documentElement.setAttribute('data-theme', th); // applique tout de suite
       } catch(e) {}
     })();
   </script>
@@ -20,72 +22,70 @@
   <!-- Styles -->
   <link rel="stylesheet" href="style/main.css" />
   <style>
-    .menu-btn.green  { background:#72eb63!important; color:#fff!important; box-shadow:0 3px 15px #2fd7b144; }
-    .menu-btn.orange { background:#f0d642!important; color:#fff!important; box-shadow:0 3px 15px #2fd7b144; }
-    .prix-blanc { color:#fff; font-size:.9em; display:block; margin-top:5px; }
+    .menu-btn.green  { background: #72eb63 !important; color: #ffffff !important; box-shadow: 0 3px 15px #2fd7b144; }
+    .menu-btn.orange { background: #f0d642  !important; color: #fff !important; box-shadow: 0 3px 15px #2fd7b144; }
+    .prix-blanc { color: white; font-size: 0.9em; display: block; margin-top: 5px; }
 
-    /* Bannière MAJ */
-    #update-banner{ position:fixed; left:16px; right:16px; bottom:16px; background:rgba(17,17,17,.95); color:#fff;
-      border-radius:14px; padding:14px; z-index:99998; box-shadow:0 8px 30px rgba(0,0,0,.35); display:none; }
-    #update-banner h4{ margin:0 0 6px; font-size:1rem; }
-    #update-banner p{ margin:0 0 10px; opacity:.9; font-size:.95rem; }
-    #update-banner .actions{ display:flex; gap:10px; justify-content:flex-end; }
-    #btn-update-now,#btn-update-later{ border:0; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; }
-    #btn-update-now{ background:#4caf50; color:#fff; } #btn-update-later{ background:#333; color:#fff; }
-
-    /* Popup consent (clics captés au-dessus de tout) */
-    #popup-consent, .popup-consent-bg{
-      position:fixed; inset:0; display:none; z-index:100050; pointer-events:auto;
-      align-items:center; justify-content:center; background:rgba(0,0,0,.35);
+    /* Bannière MAJ non bloquante */
+    #update-banner {
+      position: fixed; left: 16px; right: 16px; bottom: 16px;
+      background: rgba(17,17,17,.95); color: #fff;
+      border-radius: 14px; padding: 14px; z-index: 99998;
+      box-shadow: 0 8px 30px rgba(0,0,0,.35); display: none;
     }
-    .popup-consent-box{
-      position:relative; z-index:100051; background:#1d1d1f; color:#fff; border-radius:16px; padding:16px;
-      width:min(92vw,420px); box-shadow:0 10px 40px rgba(0,0,0,.45); text-align:center;
+    #update-banner h4 { margin: 0 0 6px; font-size: 1rem; }
+    #update-banner p  { margin: 0 0 10px; opacity: .9; font-size: .95rem; }
+    #update-banner .actions { display:flex; gap:10px; justify-content:flex-end; }
+    #btn-update-now {
+      border:0; border-radius: 10px; padding: 8px 12px; font-weight:700; cursor:pointer;
+      background:#4caf50; color:#fff;
+    }
+    #btn-update-later {
+      border:0; border-radius: 10px; padding: 8px 12px; font-weight:700; cursor:pointer;
+      background:#333; color:#fff;
     }
 
-    /* Petits éléments UI utilisés par la page */
-    .top-buttons{ position:fixed; top:14px; right:14px; z-index:9999; display:flex; gap:8px; }
-    .btn-icon{ background:rgba(0,0,0,.5); border-radius:12px; padding:8px; display:inline-flex; align-items:center; justify-content:center; }
-    .btn-icon img{ width:24px; height:24px; filter:invert(100%); }
-    .container{ max-width:680px; margin:0 auto; padding:14px; }
-    .menu-list{ display:grid; grid-template-columns:1fr; gap:12px; }
-    @media(min-width:560px){ .menu-list{ grid-template-columns:repeat(2,1fr); } }
-    .menu-btn{ border:0; border-radius:14px; padding:14px; cursor:pointer; text-align:center; }
-    .tooltip-box{ position:absolute; z-index:9999; display:none; background:#1d1d1d; color:#fff; padding:10px 12px; border-radius:12px; }
-    .tooltip-box.visible{ display:block; }
+    /* Popup consent (au-dessus de tous les calques pour capter les clics) */
+    #popup-consent,
+    .popup-consent-bg {
+      position: fixed;
+      inset: 0;
+      display: none;              /* affichée en 'flex' par showPopupOnce() */
+      z-index: 100050;            /* > #update-banner (99998) */
+      pointer-events: auto;       /* capter les clics */
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,.35);
+    }
+    .popup-consent-box {
+      position: relative;
+      z-index: 100051;            /* la boîte au-dessus du fond */
+      pointer-events: auto;
+      background: #1d1d1f;
+      color: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      width: min(92vw, 420px);
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+      text-align: center;
+    }
   </style>
 
-  <!-- Libs -->
+  <!-- Lib Supabase (UMD locale) — le client est créé dans userData.js -->
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/userData.js"></script>
 
-  <!-- Charger capacitor/cordova UNIQUEMENT en natif (évite les 404 sur web) -->
+  <!-- Cordova d'abord (inchangé) -->
+  <script src="cordova.js"></script>
+  <script src="js/achat.js"></script> 
   <script>
-    (function(){
-      try{
-        var isCap = location.href.indexOf('capacitor://') === 0;
-        var isCordova = location.protocol === 'file:';
-        function add(src){
-          var s=document.createElement('script'); s.src=src; s.defer=true; document.head.appendChild(s);
-        }
-        if (isCap) add('capacitor.js');
-        if (isCordova) add('cordova.js');
-      }catch(e){}
-    })();
+    document.addEventListener('deviceready', function(){
+      console.log('[IAPCHK]', 'CdvPurchase=', !!window.CdvPurchase, 'store=', !!(window.CdvPurchase && CdvPurchase.store));
+    });
   </script>
 
-  <!-- Stub anti-AdBlock: si js/pub.js est bloqué, pas d'erreur -->
-  <script>
-    window.pub = window.pub || {
-      setPersonalized:function(){},
-      showRewarded:async function(){ return { ok:false, reason:'blocked' }; },
-      showInterstitial:async function(){ return { ok:false, reason:'blocked' }; }
-    };
-  </script>
-
-  <!-- Achats / pubs -->
-  <script src="js/achat.js"></script>
+  <!-- Ensuite seulement les scripts qui peuvent dépendre de Cordova -->
   <script src="js/pub.js"></script>
 </head>
 
@@ -93,15 +93,17 @@
   <!-- Boutons top-bar -->
   <div class="top-buttons top-buttons-home">
     <a href="profil.html" class="btn-icon" title="Profil">
-      <img src="assets/icons/user.svg" alt="Profil" /><span style="display:none;">Profil</span>
+      <img src="assets/icons/user.svg" alt="Profil" />
+      <span style="display:none;">Profil</span>
     </a>
     <a href="parametres.html" class="btn-icon" title="Paramètres">
-      <img src="assets/icons/settings.svg" alt="Paramètres" /><span style="display:none;">Paramètres</span>
+      <img src="assets/icons/settings.svg" alt="Paramètres" />
+      <span style="display:none;">Paramètres</span>
     </a>
   </div>
 
-  <!-- -------- POPUP RGPD/CONSENT (ads + push) -------- -->
-  <div id="popup-consent" class="popup-consent-bg">
+  <!-- -------- POPUP RGPD/CONSENT -------- -->
+  <div id="popup-consent" class="popup-consent-bg" style="display:none;">
     <div class="popup-consent-box">
       <h2 data-i18n="index.rgpd.title">Confidentialité & Publicités</h2>
       <p data-i18n="index.rgpd.body1">
@@ -110,14 +112,11 @@
       </p>
       <small data-i18n="index.rgpd.body2">(Tu peux changer d'avis plus tard dans les paramètres)</small>
 
+      <!-- ✅ Choix publicités uniquement (inchangé visuellement) -->
       <div style="text-align:left;margin-top:.75rem">
         <label style="display:flex;gap:.5em;align-items:center;margin:.25rem 0">
           <input id="consent-ads" type="checkbox" checked />
           <span data-i18n="index.rgpd.ads">Publicités personnalisées</span>
-        </label>
-        <label style="display:flex;gap:.5em;align-items:center;margin:.25rem 0">
-          <input id="consent-push" type="checkbox" />
-          <span data-i18n="index.rgpd.push">Recevoir des notifications</span>
         </label>
       </div>
 
@@ -127,7 +126,9 @@
       </div>
 
       <div style="margin-top:0.75rem;text-align:center;">
-        <a href="https://hystvblod.github.io/Vboldstudio/vblocks.html" target="_blank" rel="noopener" class="link-accords" data-i18n="index.rgpd.manage">Gérer les accords publicitaires</a>
+        <a href="https://hystvblod.github.io/Vboldstudio/vblocks.html"
+           target="_blank" rel="noopener"
+           class="link-accords" data-i18n="index.rgpd.manage">Gérer les accords publicitaires</a>
       </div>
     </div>
   </div>
@@ -138,7 +139,7 @@
     <div class="menu-list">
       <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="location.href='concours.html'">
         <span class="btn-label" data-i18n="menu.concours">Concours</span>
-        <span class="info-btn" tabindex="0" data-i18n-tip="tip.concours" data-tip="Fais le meilleur score et gagne des cadeaux ou des avantages !">?</span>
+        <span class="info-btn" tabindex="0" data-i18n-tip="tip.concours" data-tip="Participe et vote dans les concours photo">?</span>
       </button>
 
       <button class="menu-btn blue" onclick="location.href='classic.html'">
@@ -166,55 +167,56 @@
   <div class="tooltip-box" id="tooltip"></div>
 
   <script>
-    // ---------------- Tooltips ----------------
-    (function(){
-      var tooltip = document.getElementById('tooltip');
-      function hideTip(){
+    // ---------------- Tooltips (inchangé) ----------------
+    const tooltip = document.getElementById('tooltip');
+    document.querySelectorAll('.info-btn').forEach(el => {
+      el.addEventListener('click', function (e) {
+        e.stopPropagation();
+        let text = el.getAttribute('data-tip');
+        if (window.i18nGet) {
+          const key = el.getAttribute('data-i18n-tip');
+          const translated = key ? window.i18nGet(key) : null;
+          if (translated) text = translated;
+        }
+        const parentBtn = el.closest('.menu-btn');
+        const rect = parentBtn.getBoundingClientRect();
+        tooltip.innerHTML = text;
+        tooltip.style.width = '';
+        tooltip.style.display = 'block';
+        const scrollTop = window.scrollY || window.pageYOffset;
+        const scrollLeft = window.scrollX || window.pageXOffset;
+        tooltip.style.top = (rect.bottom + scrollTop) + 'px';
+        tooltip.style.left = (rect.left + rect.width/2 + scrollLeft) + 'px';
+        tooltip.classList.add('visible');
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (!tooltip.contains(e.target)) {
         tooltip.classList.remove('visible');
-        tooltip.style.display='none';
+        tooltip.style.display = 'none';
       }
-      Array.prototype.forEach.call(document.querySelectorAll('.info-btn'), function(el){
-        el.addEventListener('click', function (e) {
-          e.stopPropagation();
-          var text = el.getAttribute('data-tip') || '';
-          if (window.i18nGet) {
-            var key = el.getAttribute('data-i18n-tip');
-            var translated = key ? window.i18nGet(key) : null;
-            if (translated) text = translated;
-          }
-          var parentBtn = el.closest('.menu-btn');
-          var rect = parentBtn.getBoundingClientRect();
-          tooltip.innerHTML = text;
-          tooltip.style.width = '';
-          tooltip.style.display = 'block';
-          var scrollTop = window.scrollY || window.pageYOffset;
-          var scrollLeft = window.scrollX || window.pageXOffset;
-          tooltip.style.top = (rect.bottom + scrollTop) + 'px';
-          tooltip.style.left = (rect.left + rect.width/2 + scrollLeft) + 'px';
-          tooltip.classList.add('visible');
-        });
+    });
+    ['resize','scroll'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        tooltip.classList.remove('visible');
+        tooltip.style.display = 'none';
       });
-      document.addEventListener('click', function(e){ if (!tooltip.contains(e.target)) hideTip(); });
-      ['resize','scroll'].forEach(function(evt){
-        window.addEventListener(evt, function(){ if (tooltip.classList.contains('visible')) hideTip(); });
-      });
-    })();
+    });
   </script>
 
-  <!-- --------------- RGPD & consents --------------- -->
+  <!-- --------------- RGPD & Consents (inchangé visuellement) --------------- -->
   <script>
     (function(){
-      var CONSENT_KEY  = "rgpdConsent";   // "accept" | "refuse"
-      var ADS_KEY      = "adsConsent";    // "yes" | "no"
-      var ADS_ENABLED  = "adsEnabled";    // "true" | "false"
-      var SHOWN_FLAG   = "consentPopupShown"; // session-only
+      const CONSENT_KEY  = "rgpdConsent";   // "accept" | "refuse"
+      const ADS_KEY      = "adsConsent";    // "yes" | "no"
+      const ADS_ENABLED  = "adsEnabled";    // "true" | "false"
+      const SHOWN_FLAG   = "consentPopupShown"; // session-only
 
-      // synchro anciennes clés éventuelles
-      (function(){
+      (function syncConsentKeys() {
         try {
-          var rg = localStorage.getItem(CONSENT_KEY);
-          var ae = localStorage.getItem(ADS_ENABLED);
-          var ads = localStorage.getItem(ADS_KEY);
+          const rg = localStorage.getItem(CONSENT_KEY);
+          const ae = localStorage.getItem(ADS_ENABLED);
+          const ads = localStorage.getItem(ADS_KEY);
           if (!rg && ae !== null) {
             localStorage.setItem(CONSENT_KEY, ae === 'true' ? 'accept' : 'refuse');
             if (!ads) localStorage.setItem(ADS_KEY, ae === 'true' ? 'yes' : 'no');
@@ -223,12 +225,12 @@
       })();
 
       function hasLocalConsent() {
-        var c = localStorage.getItem(CONSENT_KEY);
+        const c = localStorage.getItem(CONSENT_KEY);
         return c === 'accept' || c === 'refuse';
       }
       function applyConsentFromLocal() {
-        var consent = localStorage.getItem(CONSENT_KEY);
-        var personalized = localStorage.getItem(ADS_KEY) === "yes";
+        const consent = localStorage.getItem(CONSENT_KEY);
+        const personalized = localStorage.getItem(ADS_KEY) === "yes";
         if (consent === "accept" && personalized && typeof window.initAds === "function") {
           try { window.initAds(); } catch(e){}
         }
@@ -236,109 +238,104 @@
       async function syncConsentFromCloud() {
         try {
           if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-          if (!(window.sb && window.sb.rpc)) return null;
-          var r = await window.sb.rpc('get_ads_consent');
-          if (r && !r.error) {
-            var data = r.data;
-            if (data === 'accept' || data === 'refuse') {
-              localStorage.setItem(CONSENT_KEY, data);
-              if (data === 'accept') {
-                if (!localStorage.getItem(ADS_KEY)) localStorage.setItem(ADS_KEY, 'yes');
-                if (!localStorage.getItem(ADS_ENABLED)) localStorage.setItem(ADS_ENABLED, 'true');
-              } else {
-                localStorage.setItem(ADS_KEY, 'no');
-                localStorage.setItem(ADS_ENABLED, 'false');
-              }
-              return data;
+          if (!window.sb?.rpc) return null;
+          const { data, error } = await window.sb.rpc('get_ads_consent');
+          if (error) { console.warn('[consent] get_ads_consent error', error.message || error); return null; }
+          if (data === 'accept' || data === 'refuse') {
+            localStorage.setItem(CONSENT_KEY, data);
+            if (data === 'accept') {
+              if (!localStorage.getItem(ADS_KEY)) localStorage.setItem(ADS_KEY, 'yes');
+              if (!localStorage.getItem(ADS_ENABLED)) localStorage.setItem(ADS_ENABLED, 'true');
+            } else {
+              localStorage.setItem(ADS_KEY, 'no');
+              localStorage.setItem(ADS_ENABLED, 'false');
             }
+            return data;
           }
           return null;
         } catch(e) { return null; }
       }
       function showPopupOnce() {
         if (sessionStorage.getItem(SHOWN_FLAG) === '1') return;
-        var popup = document.getElementById("popup-consent");
-        if (popup) { popup.style.display = "flex"; sessionStorage.setItem(SHOWN_FLAG, '1'); }
+        const popup = document.getElementById("popup-consent");
+        if (popup) {
+          popup.style.display = "flex";
+          sessionStorage.setItem(SHOWN_FLAG, '1');
+        }
       }
 
       window.applyConsentFromStorage = applyConsentFromLocal;
 
       window.addEventListener("DOMContentLoaded", async function() {
         try {
-          if (hasLocalConsent()) { applyConsentFromLocal(); }
-          else {
-            var cloud = await syncConsentFromCloud();
+          if (hasLocalConsent()) {
+            applyConsentFromLocal();
+          } else {
+            const cloud = await syncConsentFromCloud();
             if (cloud) applyConsentFromLocal(); else showPopupOnce();
           }
         } catch(e) { showPopupOnce(); }
 
-        // Boutons popup
-        var btnAccept = document.getElementById("consent-accept");
-        var btnRefuse = document.getElementById("consent-refuse");
-        var cbAds     = document.getElementById("consent-ads");
-        var cbPush    = document.getElementById("consent-push");
-        var popup     = document.getElementById("popup-consent");
+        // Boutons popup (inchangé)
+        const btnAccept = document.getElementById("consent-accept");
+        const btnRefuse = document.getElementById("consent-refuse");
+        const cbAds     = document.getElementById("consent-ads");
+        const popup     = document.getElementById("popup-consent");
 
         if (btnAccept) {
           btnAccept.onclick = async function() {
             localStorage.setItem(CONSENT_KEY, "accept");
-            localStorage.setItem(ADS_KEY,   (cbAds && cbAds.checked) ? "yes" : "no");
-            localStorage.setItem(ADS_ENABLED, (cbAds && cbAds.checked) ? "true" : "false");
-            var wantPush = cbPush && cbPush.checked;
-            localStorage.setItem('push_optin', wantPush ? 'yes' : 'no');
+            localStorage.setItem(ADS_KEY,   cbAds && cbAds.checked ? "yes" : "no");
+            localStorage.setItem(ADS_ENABLED, cbAds && cbAds.checked ? "true" : "false");
             if (popup) popup.style.display = "none";
             applyConsentFromLocal();
-
             try {
               if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-              if (window.sb && window.sb.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "accept" });
-            } catch(e){}
-
-            if (wantPush && window.__initPushOnce) { try{ await window.__initPushOnce(); }catch(e){} }
+              if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "accept" });
+            } catch(e) {}
           };
         }
         if (btnRefuse) {
           btnRefuse.onclick = async function() {
             localStorage.setItem(CONSENT_KEY, "refuse");
-            localStorage.setItem(ADS_KEY, "no");
+            localStorage.setItem(ADS_KEY,   "no");
             localStorage.setItem(ADS_ENABLED, "false");
-            localStorage.setItem('push_optin','no');
             if (popup) popup.style.display = "none";
             try {
               if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-              if (window.sb && window.sb.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "refuse" });
-            } catch(e){}
+              if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "refuse" });
+            } catch(e) {}
           };
         }
       });
     })();
   </script>
 
-  <!-- ========= Helpers POPUP (messages, concours par pays) ========= -->
+  <!-- ========= Helpers POPUP (messages) + Concours par pays ========= -->
   <script>
     async function getUsersTableIdForCurrentAuth() {
-      var r = await (window.sb && window.sb.auth ? window.sb.auth.getUser() : { data:{ user:null }});
-      var authId = r && r.data && r.data.user ? r.data.user.id : null;
+      const { data: { user } } = await window.sb.auth.getUser();
+      const authId = user?.id || null;
       if (!authId) return null;
 
-      var q = await window.sb.from('users').select('id').eq('auth_id', authId).maybeSingle();
-      if (!q.error && q.data && q.data.id) return q.data.id;
-      q = await window.sb.from('users').select('id').eq('id', authId).maybeSingle();
-      if (!q.error && q.data && q.data.id) return q.data.id;
+      let { data, error } = await window.sb.from('users').select('id').eq('auth_id', authId).maybeSingle();
+      if (!error && data?.id) return data.id;
+      ({ data, error } = await window.sb.from('users').select('id').eq('id', authId).maybeSingle());
+      if (!error && data?.id) return data.id;
       return null;
     }
 
     async function checkAndShowPopupOnce() {
-      var usersTableId = await getUsersTableIdForCurrentAuth();
+      const usersTableId = await getUsersTableIdForCurrentAuth();
       if (!usersTableId) return;
-      var r = await window.sb
+      const { data, error } = await window.sb
         .from('messages_popup')
         .select('id,message,vue,created_at,userid')
         .eq('userid', usersTableId)
         .order('created_at', { ascending: false })
         .limit(1);
-      if (!r.error && r.data && r.data.length) {
-        var msg = r.data[0];
+      if (!error && data?.length) {
+        const msg = data[0];
         if (!msg.vue) {
           alert(msg.message);
           await window.sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
@@ -346,125 +343,127 @@
       }
     }
 
+    // --- PAYS (pour afficher/masquer le bouton Concours)
     async function getUserCountryCode(){
       try{
-        var g = await (window.sb && window.sb.auth ? window.sb.auth.getUser() : { data:{ user:null }});
-        var uid = g && g.data && g.data.user ? g.data.user.id : null;
+        const { data: { user } } = await window.sb.auth.getUser();
+        const uid = user?.id || null;
         if (!uid) return null;
 
-        var q = await window.sb.from('users')
+        const q = await window.sb.from('users')
           .select('country,lang')
-          .or('auth_id.eq.'+uid+',id.eq.'+uid)
+          .or(`auth_id.eq.${uid},id.eq.${uid}`)
           .maybeSingle();
 
-        var cc = q && q.data && q.data.country ? String(q.data.country).toUpperCase() : '';
+        let cc = (q?.data?.country || '').toUpperCase();
         if (!cc) {
-          var lang = (q && q.data && q.data.lang ? q.data.lang : (navigator.language || 'en-US')).toUpperCase();
-          cc = lang.indexOf('-')>-1 ? lang.split('-').pop() : (lang.length>2 ? lang.slice(-2) : lang);
+          let lang = (q?.data?.lang || navigator.language || 'en-US').toUpperCase();
+          cc = lang.includes('-') ? lang.split('-').pop() : (lang.length>2 ? lang.slice(-2) : lang);
         }
         return cc || null;
-      } catch(e){ return null; }
+      } catch { return null; }
     }
 
     async function checkConcoursStatusByCountry() {
-      var btn = document.getElementById('btnConcours');
+      const btn = document.getElementById('btnConcours');
       if (!btn) return;
-      try{
-        var s = await window.sb
+      try {
+        const { data, error } = await window.sb
           .from('config')
           .select('concours_enabled, concours_countries')
-          .eq('id','GLOBAL')
+          .eq('id', 'GLOBAL')
           .maybeSingle();
+        if (error) throw error;
 
-        if (s.error) throw s.error;
-        var enabled = !!(s.data && s.data.concours_enabled);
-        if (!enabled){ btn.style.display='none'; return; }
+        const enabled = !!data?.concours_enabled;
+        if (!enabled) { btn.style.display = 'none'; return; }
 
-        var cc = await getUserCountryCode();
-        if (!cc){ btn.style.display='none'; return; }
+        const cc = await getUserCountryCode();
+        if (!cc) { btn.style.display = 'none'; return; }
 
-        var list = (s.data && Array.isArray(s.data.concours_countries)) ? s.data.concours_countries : null;
-        btn.style.display = (!list || list.indexOf(cc) !== -1) ? 'block' : 'none';
-      } catch(e){ btn.style.display='none'; }
+        const list = Array.isArray(data?.concours_countries) ? data.concours_countries : null;
+        btn.style.display = (!list || list.includes(cc)) ? 'block' : 'none';
+      } catch { document.getElementById("btnConcours").style.display = 'none'; }
     }
 
-    document.addEventListener('DOMContentLoaded', async function(){
-      try{
-        if (window.i18nBootstrap) { try{ await window.i18nBootstrap(); }catch(e){} }
-
-        if (window.bootstrapAuthAndProfile) { try{ await window.bootstrapAuthAndProfile(); }catch(e){} }
-
-        // Aligne lang côté DB si besoin (utilise userData.js)
-        if (window.userData && window.userData.getProfileSecure && window.userData.getLang && window.userData.updateLangDirect) {
-          try{
-            var prof  = await window.userData.getProfileSecure();
-            var local = window.userData.getLang();
-            if (!(prof && prof.lang) || prof.lang !== local) { await window.userData.updateLangDirect(local); }
-          }catch(e){}
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        // Langue : bootstrap + sync DB si différence (pas d'UI changée)
+        if (window.i18nBootstrap) { try { await window.i18nBootstrap(); } catch(e) {} }
+        if (window.bootstrapAuthAndProfile) {
+          try { await window.bootstrapAuthAndProfile(); } catch(e) {}
+        }
+        if (window.userData?.getProfileSecure && window.userData?.getLang && window.userData?.updateLangDirect) {
+          try {
+            const prof  = await window.userData.getProfileSecure();
+            const local = window.userData.getLang();
+            if (!prof?.lang || prof.lang !== local) {
+              await window.userData.updateLangDirect(local);
+            }
+          } catch(e) {}
         }
 
-        await checkConcoursStatusByCountry();
+        await checkConcoursStatusByCountry();   // ← pays
         await checkAndShowPopupOnce();
+
         if (window.i18nTranslateAll) window.i18nTranslateAll();
 
-        // Relance auto des push si déjà opt-in
-        if (localStorage.getItem('push_optin') === 'yes' && window.__initPushOnce) {
-          try{ await window.__initPushOnce(); }catch(e){}
-        }
-      }catch(e){}
+        // Autorisation push au chargement (natif uniquement)
+        if (window.__initPushOnce) { try { await window.__initPushOnce(); } catch(e) {} }
+      } catch (e) {
+        console.warn('[INDEX bootstrap]', e?.message || e);
+      }
     });
   </script>
 
-  <!-- Push (FCM) : init + sauvegarde token Supabase -->
+  <!-- Push (FCM) : init + enregistrement token (JS only, pas d'UI) -->
   <script>
-    (function(){
-      var DEBUG_PUSH = false;
-      var inited = false;
+    (function () {
+      const DEBUG_PUSH = false;
+      let inited = false;
 
-      function isNative(){
+      function isNative() {
         try {
-          return (window.location.href.indexOf('capacitor://')===0) || (window.location.protocol==='file:');
+          return (window.location.href.indexOf('capacitor://') === 0) || (window.location.protocol === 'file:');
         } catch(e){ return false; }
       }
 
       async function savePushTokenToSupabase(token){
         try{
           if(!token || !window.sb) return;
-          var uid = null;
-          try { uid = await (window.userData && window.userData.getAuthUserId ? window.userData.getAuthUserId() : null); } catch(e){}
+          let uid = null;
+          try { uid = await (window.userData?.getAuthUserId?.() || null); } catch(e){}
           if(!uid) return;
-          var lang = (localStorage.getItem('langue') || 'EN').toUpperCase();
-          var platform = 'android';
+          const lang = (localStorage.getItem('langue') || 'EN').toUpperCase();
+          let platform = 'android';
           try { platform = (window.Capacitor && window.Capacitor.getPlatform) ? window.Capacitor.getPlatform() : platform; } catch(e){}
           await window.sb.from('user_push_tokens').upsert(
-            [{ token: token, user_id: uid, platform: platform, lang: lang }],
+            [{ token, user_id: uid, platform, lang }],
             { onConflict: 'token' }
           );
         }catch(e){ if (DEBUG_PUSH) console.warn('[Push] save token fail', e); }
       }
 
-      async function initPush(){
+      async function initPush() {
         if (inited) return; inited = true;
         if (!isNative()) return;
-        var Push = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.PushNotifications : null;
+        const Push = window.Capacitor?.Plugins?.PushNotifications;
         if (!Push) return;
-        try{
-          var perm = await Push.requestPermissions();
+        try {
+          const perm = await Push.requestPermissions();
           if (!perm || perm.receive !== 'granted') return;
           await Push.register();
 
-          Push.addListener('registration', async function(ev){
-            var value = ev && ev.value ? ev.value : '';
-            localStorage.setItem('fcmToken', value);
+          Push.addListener('registration', async ({ value }) => {
+            localStorage.setItem('fcmToken', value || '');
             if (DEBUG_PUSH) console.log('[Push] FCM token:', value);
-            try{ await savePushTokenToSupabase(value); }catch(e){}
+            try { await savePushTokenToSupabase(value); } catch(e){}
           });
-          Push.addListener('registrationError', function(err){ if (DEBUG_PUSH) console.error('[Push] registration error', err); });
-          Push.addListener('pushNotificationReceived', function(n){ if (DEBUG_PUSH) console.log('[Push] reçu (FG)', n); });
-          Push.addListener('pushNotificationActionPerformed', function(a){ if (DEBUG_PUSH) console.log('[Push] action', a); });
-        }catch(e){ if (DEBUG_PUSH) console.error('[Push] init error', e); }
+          Push.addListener('registrationError', (err) => { if (DEBUG_PUSH) console.error('[Push] registration error', err); });
+          Push.addListener('pushNotificationReceived', (n) => { if (DEBUG_PUSH) console.log('[Push] reçu (FG)', n); });
+          Push.addListener('pushNotificationActionPerformed', (a) => { if (DEBUG_PUSH) console.log('[Push] action', a); });
+        } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
       }
-
       window.__initPushOnce = initPush;
     })();
   </script>
@@ -481,15 +480,15 @@
 
   <script>
     (function(){
-      var PLAY_URL = "https://play.google.com/store/apps/details?id=com.vboldstudio.VBlocks";
-      var banner   = document.getElementById('update-banner');
-      var btnNow   = document.getElementById('btn-update-now');
-      var btnLater = document.getElementById('btn-update-later');
+      const PLAY_URL = "https://play.google.com/store/apps/details?id=com.vboldstudio.VBlocks";
+      const banner   = document.getElementById('update-banner');
+      const btnNow   = document.getElementById('btn-update-now');
+      const btnLater = document.getElementById('btn-update-later');
 
       function i18nApply() {
         try {
           if (!window.i18nGet) return;
-          function t(k,def){ try{ return window.i18nGet(k) || def; }catch(e){ return def; } }
+          const t = (k, def)=> window.i18nGet(k) || def;
           banner.querySelector('[data-i18n="index.update.title"]').textContent = t('index.update.title','Mise à jour disponible');
           banner.querySelector('[data-i18n="index.update.body"]').textContent  = t('index.update.body','Une nouvelle version est prête. Tu peux la télécharger maintenant.');
           btnNow.textContent   = t('index.update.updateNow','Mettre à jour');
@@ -498,30 +497,33 @@
       }
 
       async function openStore(){
-        var AppLauncher = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.AppLauncher : null;
+        const AppLauncher = window.Capacitor?.Plugins?.AppLauncher;
         if (AppLauncher) { try { await AppLauncher.openUrl({ url: PLAY_URL }); return; } catch(_){} }
         location.href = PLAY_URL; // fallback web
       }
 
       async function checkPlayUpdateAndMaybeShow() {
-        var AppUpdate = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.AppUpdate : null;
+        const AppUpdate = window.Capacitor?.Plugins?.AppUpdate; // @capawesome/capacitor-app-update
         if (!AppUpdate) { return; }
         try {
-          var info = await AppUpdate.getAppUpdateInfo();
+          const info = await AppUpdate.getAppUpdateInfo();
           if (info && info.updateAvailability === 2) {
             banner.style.display = 'block';
             i18nApply();
-            btnNow.onclick = async function(){
+
+            btnNow.onclick = async () => {
               try {
                 if (info.flexibleUpdateAllowed) {
-                  await AppUpdate.startFlexibleUpdate();
+                  await AppUpdate.startFlexibleUpdate(); // téléchargement en arrière-plan
                   banner.style.display = 'none';
-                } else { await openStore(); }
+                } else {
+                  await openStore(); // pas flexible → fiche Play
+                }
               } catch (e) {
                 await openStore();
               }
             };
-            btnLater.onclick = function(){ banner.style.display='none'; };
+            btnLater.onclick = ()=>{ banner.style.display='none'; };
           }
         } catch (e) {}
       }
