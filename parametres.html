@@ -118,7 +118,16 @@
     }
     button.return-btn:hover { background: rgba(255, 255, 255, 0.1); }
     .music-btn-img { width: 32px; height: 32px; vertical-align: middle; }
-    .credits-text { margin: 0.2em 0 0; line-height: 1.5; font-size: 0.98em; color: #f0f6ff; opacity: 0.95; }
+
+    /* Texte de remerciements un peu plus petit */
+    .credits-text {
+      margin: 0.2em 0 0;
+      line-height: 1.5;
+      font-size: 0.98em;
+      color: #f0f6ff;
+      opacity: 0.95;
+    }
+
     @media (max-width:480px) {
       .main-content, .top-bar { max-width: 100vw; }
       .top-bar { padding: 4px 3px 0 3px; max-width: 99vw; }
@@ -173,14 +182,15 @@
       <div class="param-group">
         <label data-i18n="settings.music.label">Musique :</label>
         <div class="switch" style="gap:0.6em;">
-          <button id="music-toggle-btn" aria-label="Musique" style="background:none;border:none;cursor:pointer;padding:0;">
+          <button id="music-toggle-btn" aria-label="Musique"
+            style="background:none;border:none;cursor:pointer;padding:0;">
             <img id="music-toggle-img" src="assets/icons/volume-2.svg" alt="Musique activée" class="music-btn-img">
           </button>
           <span id="music-toggle-label" data-i18n="settings.music.on">Activée</span>
         </div>
       </div>
 
-      <!-- Remerciements -->
+      <!-- Remerciements (NOUVEAU) -->
       <div class="param-group">
         <label data-i18n="settings.credits.label">Remerciements</label>
         <p class="credits-text">
@@ -190,7 +200,7 @@
         </p>
       </div>
 
-      <!-- Adresse mail -->
+      <!-- Adresse mail seule -->
       <div style="text-align:center;margin:12px 0;">
         <a href="mailto:help.vblocks@gmail.com">help.vblocks@gmail.com</a>
       </div>
@@ -222,8 +232,11 @@
         btnBack.addEventListener('click', function(e) {
           e.preventDefault();
           if (window.vibrateIfEnabled) window.vibrateIfEnabled(40);
-          if (window.history.length > 1) window.history.back();
-          else window.location.href = "index.html";
+          if (window.history.length > 1) {
+            window.history.back();
+          } else {
+            window.location.href = "index.html";
+          }
         });
       }
       const btnProfile = document.getElementById('btn-profile');
@@ -234,50 +247,44 @@
       }
     });
 
-    // ====== LANG (UNIFIÉ — codes MAJ, DB + UI alignées) ======
-    const LANGS = [
-      { code: "FR",   label: "Français",        flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#0055a4"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ef4135"/></svg>` },
-      { code: "EN",   label: "English (US)",    flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#b22234"/><g><rect width="22" height="1.23" y="1.23" fill="#fff"/><rect width="22" height="1.23" y="3.69" fill="#fff"/><rect width="22" height="1.23" y="6.15" fill="#fff"/><rect width="22" height="1.23" y="8.61" fill="#fff"/><rect width="22" height="1.23" y="11.07" fill="#fff"/><rect width="22" height="1.23" y="13.53" fill="#fff"/></g><rect width="8.8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.2" cy="1" r="0.35"/><circle cx="2.4" cy="1" r="0.35"/><circle cx="3.6" cy="1" r="0.35"/><circle cx="4.8" cy="1" r="0.35"/><circle cx="6" cy="1" r="0.35"/><circle cx="7.2" cy="1" r="0.35"/><circle cx="1.8" cy="2" r="0.35"/><circle cx="3" cy="2" r="0.35"/><circle cx="4.2" cy="2" r="0.35"/><circle cx="5.4" cy="2" r="0.35"/><circle cx="6.6" cy="2" r="0.35"/><circle cx="2.4" cy="3" r="0.35"/><circle cx="3.6" cy="3" r="0.35"/><circle cx="4.8" cy="3" r="0.35"/><circle cx="6" cy="3" r="0.35"/><circle cx="7.2" cy="3" r="0.35"/></g></svg>` },
-      { code: "DE",   label: "Deutsch",         flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="5.33" fill="#000"/><rect y="5.33" width="22" height="5.33" fill="#dd0000"/><rect y="10.67" width="22" height="5.33" fill="#ffce00"/></svg>` },
-      { code: "IT",   label: "Italiano",        flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#009246"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ce2b37"/></svg>` },
-      { code: "ES",   label: "Español",         flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#aa151b"/><rect y="4" width="22" height="8" fill="#f1bf00"/></svg>` },
-      { code: "PT",   label: "Português",       flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="8" height="16" fill="#00874B"/><rect x="8" width="14" height="16" fill="#FF0000"/><circle cx="9.5" cy="8" r="3.3" fill="#fff" stroke="#FFD700" stroke-width="1"/><rect x="8.6" y="5.5" width="1.8" height="5" fill="#00874B" stroke="#FFD700" stroke-width="0.5"/><circle cx="9.5" cy="8" r="1.2" fill="#00874B" stroke="#FFD700" stroke-width="0.4"/></svg>` },
-      { code: "PT-BR",label: "Português (BR)",  flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#3eae47"/><ellipse cx="11" cy="8" rx="8" ry="6" fill="#ffcc29"/><circle cx="11" cy="8" r="4" fill="#3e4095"/><path d="M8.3 8.4a3 3 0 0 1 5.4 0" stroke="#fff" stroke-width=".8" fill="none"/><text x="11" y="10.5" font-size="3.3" fill="#fff" text-anchor="middle" alignment-baseline="middle" font-family="Arial">BR</text></svg>` },
-      { code: "NL",   label: "Nederlands",      flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="5.33" fill="#ae1e28"/><rect y="5.33" width="22" height="5.33" fill="#fff"/><rect y="10.67" width="22" height="5.33" fill="#21468b"/></svg>` },
-      { code: "AR",   label: "العربية",         flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><rect width="22" height="8" y="0" fill="#198754"/><polygon points="5,8 13,4 13,12" fill="#fff"/><circle cx="16" cy="8" r="3" fill="#198754"/></svg>` },
-      { code: "IDN",  label: "Bahasa Indonesia",flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="8" y="0" fill="#ff0000"/><rect width="22" height="8" y="8" fill="#fff"/></svg>` },
-      { code: "JP",   label: "日本語",          flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><circle cx="11" cy="8" r="4" fill="#bc002d"/></svg>` },
-      { code: "KO",   label: "한국어",           flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><circle cx="11" cy="8" r="4" fill="#003478"/><circle cx="11" cy="8" r="2.5" fill="#c60c30"/></svg>` },
+    // ====== LANG ======
+    const langues = [
+      { code: "fr", label: "Français", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#0055a4"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ef4135"/></svg>` },
+      { code: "en", label: "English (US)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#b22234"/><g><rect width="22" height="1.23" y="1.23" fill="#fff"/><rect width="22" height="1.23" y="3.69" fill="#fff"/><rect width="22" height="1.23" y="6.15" fill="#fff"/><rect width="22" height="1.23" y="8.61" fill="#fff"/><rect width="22" height="1.23" y="11.07" fill="#fff"/><rect width="22" height="1.23" y="13.53" fill="#fff"/></g><rect width="8.8" height="7" fill="#3c3b6e"/><g fill="#fff"><circle cx="1.2" cy="1" r="0.35"/><circle cx="2.4" cy="1" r="0.35"/><circle cx="3.6" cy="1" r="0.35"/><circle cx="4.8" cy="1" r="0.35"/><circle cx="6" cy="1" r="0.35"/><circle cx="7.2" cy="1" r="0.35"/><circle cx="1.8" cy="2" r="0.35"/><circle cx="3" cy="2" r="0.35"/><circle cx="4.2" cy="2" r="0.35"/><circle cx="5.4" cy="2" r="0.35"/><circle cx="6.6" cy="2" r="0.35"/><circle cx="2.4" cy="3" r="0.35"/><circle cx="3.6" cy="3" r="0.35"/><circle cx="4.8" cy="3" r="0.35"/><circle cx="6" cy="3" r="0.35"/><circle cx="7.2" cy="3" r="0.35"/></g></svg>` },
+      { code: "de", label: "Deutsch", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="5.33" fill="#000"/><rect y="5.33" width="22" height="5.33" fill="#dd0000"/><rect y="10.67" width="22" height="5.33" fill="#ffce00"/></svg>` },
+      { code: "it", label: "Italiano", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="7.33" height="16" fill="#009246"/><rect x="7.33" width="7.34" height="16" fill="#fff"/><rect x="14.67" width="7.33" height="16" fill="#ce2b37"/></svg>` },
+      { code: "es", label: "Español", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#aa151b"/><rect y="4" width="22" height="8" fill="#f1bf00"/></svg>` },
+      { code: "pt", label: "Português", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="8" height="16" fill="#00874B"/><rect x="8" width="14" height="16" fill="#FF0000"/><circle cx="9.5" cy="8" r="3.3" fill="#fff" stroke="#FFD700" stroke-width="1"/><rect x="8.6" y="5.5" width="1.8" height="5" fill="#00874B" stroke="#FFD700" stroke-width="0.5"/><circle cx="9.5" cy="8" r="1.2" fill="#00874B" stroke="#FFD700" stroke-width="0.4"/></svg>` },
+      { code: "ptbr", label: "Português (BR)", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#3eae47"/><ellipse cx="11" cy="8" rx="8" ry="6" fill="#ffcc29"/><circle cx="11" cy="8" r="4" fill="#3e4095"/><path d="M8.3 8.4a3 3 0 0 1 5.4 0" stroke="#fff" stroke-width=".8" fill="none"/><text x="11" y="10.5" font-size="3.3" fill="#fff" text-anchor="middle" alignment-baseline="middle" font-family="Arial">BR</text></svg>` },
+      { code: "ar", label: "العربية", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><rect width="22" height="8" y="0" fill="#198754"/><polygon points="5,8 13,4 13,12" fill="#fff"/><circle cx="16" cy="8" r="3" fill="#198754"/></svg>` },
+      { code: "idn", label: "Bahasa Indonesia", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="8" y="0" fill="#ff0000"/><rect width="22" height="8" y="8" fill="#fff"/></svg>` },
+      { code: "ja", label: "日本語", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><circle cx="11" cy="8" r="4" fill="#bc002d"/></svg>` },
+      { code: "ko", label: "한국어", flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><circle cx="11" cy="8" r="4" fill="#003478"/><circle cx="11" cy="8" r="2.5" fill="#c60c30"/></svg>` },
     ];
-
     const langueSelect = document.getElementById("langue-select");
-    // On lit l’override éventuel en MAJ, sinon on peut laisser vide (l’UI reste cliquable)
-    let selectedLang = (localStorage.getItem("langue") || "").toUpperCase();
-
-    // Construit la liste et branche le handler unifié
-    LANGS.forEach(l => {
+    let selectedLang = localStorage.getItem("langue") || "fr";
+    langues.forEach(l => {
       const opt = document.createElement('div');
       opt.className = 'lang-option' + (l.code === selectedLang ? ' selected' : '');
       opt.innerHTML = l.flag + '<span style="margin-left:0.35em;">' + l.label + '</span>';
       opt.onclick = async () => {
-        // 1) on applique via i18n (écrit l’override en MAJ dans localStorage)
-        if (window.setLang) await window.setLang(l.code);
-
-        // 2) on met la même valeur en DB
-        try {
-          if (window.userData?.updateLangDirect) await window.userData.updateLangDirect(l.code);
-        } catch(e){}
-
-        // 3) feedback UI
+        localStorage.setItem("langue", l.code);
         document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
         opt.classList.add('selected');
+        if (window.setLang) window.setLang(l.code);
+        // Mise à jour en base (users.lang)
+        try {
+          if (window.userData?.updateLangDirect) {
+            await window.userData.updateLangDirect(l.code);
+          }
+        } catch(e){}
       };
       langueSelect.appendChild(opt);
     });
   </script>
 
   <script>
-    // ====== ADS CONSENT (inchangé fonctionnellement) ======
+    // ====== ADS CONSENT (toggle) ======
     (function(){
       const CONSENT_KEY = "rgpdConsent";
       const ADS_KEY     = "adsConsent";
@@ -299,6 +306,7 @@
           if (window.sb?.rpc) {
             const { data, error } = await window.sb.rpc('get_ads_consent');
             if (!error && data) {
+              // data = 'accept' | 'refuse'
               localStorage.setItem(CONSENT_KEY, data);
               if (data === 'accept') {
                 localStorage.setItem(ADS_KEY, 'yes');
@@ -309,16 +317,18 @@
               }
             }
           }
-        } catch(e) {}
+        } catch(e) { /* non bloquant */ }
 
+        // Applique au toggle
         try {
           const consent = localStorage.getItem(CONSENT_KEY);
           const adsYes  = localStorage.getItem(ADS_KEY) === 'yes';
           if (consent === 'accept') {
-            adsToggle.checked = adsYes;
+            adsToggle.checked = adsYes; // si accept mais pas personnalisée → off
           } else if (consent === 'refuse') {
             adsToggle.checked = false;
           } else {
+            // jamais choisi → on reflète l'état local
             adsToggle.checked = (localStorage.getItem(ADS_ENABLED) === 'true');
           }
         } catch(_) {}
@@ -326,16 +336,28 @@
       }
 
       async function persistConsent(toChecked) {
+        // Règle choisie :
+        // - Toggle = ON  → consent global = accept + publicités personnalisées YES
+        // - Toggle = OFF → consent global = refuse
         const willAccept = !!toChecked;
+
         localStorage.setItem(CONSENT_KEY, willAccept ? 'accept' : 'refuse');
         localStorage.setItem(ADS_KEY,     willAccept ? 'yes' : 'no');
         localStorage.setItem(ADS_ENABLED, willAccept ? 'true' : 'false');
+
+        // Cloud
         try {
           if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-          if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: willAccept ? 'accept' : 'refuse' });
+          if (window.sb?.rpc) {
+            await window.sb.rpc('update_ads_consent', { new_consent: willAccept ? 'accept' : 'refuse' });
+          }
         } catch(e) { console.warn('[param] update_ads_consent', e?.message || e); }
+
+        // Si on vient de passer en accept+yes, on peut initialiser les pubs
         try {
-          if (willAccept && typeof window.applyConsentFromStorage === 'function') window.applyConsentFromStorage();
+          if (willAccept && typeof window.applyConsentFromStorage === 'function') {
+            window.applyConsentFromStorage();
+          }
         } catch(_){}
       }
 
@@ -353,6 +375,7 @@
   <!-- Ghost + Music (inchangés) -->
   <script>
     document.addEventListener('DOMContentLoaded', function(){
+      // Ghost toggle (existant)
       const ghostToggle = document.getElementById('ghost-toggle');
       const ghostLabel  = document.getElementById('ghost-label');
       try {
@@ -367,6 +390,7 @@
         });
       } catch(_){}
 
+      // Music toggle (existant via userData.js)
       const btn = document.getElementById('music-toggle-btn');
       const img = document.getElementById('music-toggle-img');
       const lbl = document.getElementById('music-toggle-label');
