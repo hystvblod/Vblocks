@@ -1,19 +1,20 @@
 <!DOCTYPE html>
+<html>
 <head>
   <meta charset="UTF-8" />
   <title>VBlocks - Accueil</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Bootstrap thème : défaut = retro + anti-flash (à placer AVANT CSS & JS) -->
+  <!-- Bootstrap thème : défaut = retro + anti-flash -->
   <script>
     (function () {
       try {
         var KEY = 'themeVBlocks';
         if (!localStorage.getItem(KEY)) {
-          localStorage.setItem(KEY, 'retro');   // Défaut la 1ère fois
+          localStorage.setItem(KEY, 'retro');
         }
         var th = localStorage.getItem(KEY) || 'retro';
-        document.documentElement.setAttribute('data-theme', th); // applique tout de suite
+        document.documentElement.setAttribute('data-theme', th);
       } catch(e) {}
     })();
   </script>
@@ -24,6 +25,16 @@
     .menu-btn.green  { background: #72eb63 !important; color: #ffffff !important; box-shadow: 0 3px 15px #2fd7b144; }
     .menu-btn.orange { background: #f0d642  !important; color: #fff !important; box-shadow: 0 3px 15px #2fd7b144; }
     .prix-blanc { color: white; font-size: 0.9em; display: block; margin-top: 5px; }
+
+    /* Aligne le ? à droite et réserve la place pour le texte */
+    .menu-btn { position: relative; }
+    .menu-btn .btn-label { display:block; text-align:center; width:100%; padding: 0.9em 3.2em; }
+    .menu-btn .info-btn{
+      position:absolute; right:12px; top:50%; transform:translateY(-50%);
+      width:28px; height:28px; border-radius:50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,.25); color:#fff; font-weight:900; line-height:1; user-select:none;
+    }
 
     /* Bannière MAJ non bloquante */
     #update-banner {
@@ -49,45 +60,81 @@
     .popup-consent-bg {
       position: fixed;
       inset: 0;
-      display: none;              /* affichée en 'flex' par showPopupOnce() */
-      z-index: 100050;            /* > #update-banner (99998) */
-      pointer-events: auto;       /* capter les clics */
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,.35);
+      display: none;
+      z-index: 100050;
     }
+    .popup-consent-bg { background: rgba(0,0,0,.45); backdrop-filter: blur(2px); }
     .popup-consent-box {
-      position: relative;
-      z-index: 100051;            /* la boîte au-dessus du fond */
-      pointer-events: auto;
-      background: #1d1d1f;
-      color: #fff;
-      border-radius: 16px;
-      padding: 16px;
-      width: min(92vw, 420px);
-      box-shadow: 0 10px 40px rgba(0,0,0,.45);
-      text-align: center;
+      position: absolute; left: 50%; top: 50%; transform:translate(-50%, -50%);
+      width: min(560px, 92vw); background: #121212; color: #fff; border-radius: 18px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.45); padding: 18px;
     }
+    .popup-consent-box h2 { margin: 0 0 8px; font-size: 1.2rem; }
+    .popup-consent-box .row { display:flex; align-items:center; gap:12px; margin: 10px 0; }
+    .popup-consent-box .row label { flex:1; }
+    .popup-consent-box .row input[type="checkbox"] { width: 18px; height: 18px; }
+    .popup-consent-box .actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 12px; }
+    .popup-consent-box button {
+      border:0; border-radius: 12px; padding: 10px 14px; font-weight: 700; cursor: pointer;
+      background: #2a2a2a; color: #fff;
+    }
+    .popup-consent-box button.primary { background: #4caf50; }
+
+    /* Tooltip */
+    .tooltip {
+      position: absolute; z-index: 9999; background: #1d1d1d; color: #fff; padding: 10px 12px; border-radius: 12px; display:none;
+      transform: translate(-50%, 6px); box-shadow: 0 10px 30px rgba(0,0,0,.35); max-width: min(320px, 90vw);
+    }
+    .tooltip.visible { display: block; }
+    .tooltip:before {
+      content: ""; position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+      border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 8px solid #1d1d1d;
+    }
+
+    /* “trait bleu” pour solde + score à battre */
+    .barre-info {
+      width: 100%; height: 44px; background: linear-gradient(90deg, #0e3a5d, #0b64b4); color:#fff;
+      display:flex; align-items:center; justify-content:space-between; border-radius: 12px; padding: 0 12px; margin: 12px 0 18px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 6px 18px rgba(11,100,180,.25);
+    }
+    .barre-info .gauche, .barre-info .droite { display:flex; align-items:center; gap:10px; }
+    .barre-info .pill {
+      background: rgba(255,255,255,.18); border-radius:100px; padding: 6px 10px; font-weight: 700;
+    }
+
+    .menu-grid { display:grid; grid-template-columns:1fr; gap:14px; margin-top: 6px; }
+    @media (min-width:560px){ .menu-grid { grid-template-columns: repeat(2,1fr); } }
+
+    .menu-btn {
+      display:block; text-decoration:none; background:#1f1f1f; color:#fff; border-radius: 14px; padding: 0; overflow:hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+    .menu-btn .thumb { height: 110px; background:#101010; display:flex; align-items:center; justify-content:center; }
+    .menu-btn .thumb img { width:auto; height:100%; object-fit:cover; }
+    .menu-btn .btn-label strong { display:block; font-size:1.05rem; }
+    .menu-btn small { opacity:.85; display:block; margin-top: 4px; }
+
+    /* Top buttons */
+    .top-buttons { position: fixed; top: 14px; right: 14px; z-index: 9999; display:flex; gap: 8px; }
+    .btn-icon { background: rgba(0,0,0,.5); border-radius: 12px; padding: 8px; display:inline-flex; align-items:center; justify-content:center; }
+    .btn-icon img { width: 24px; height: 24px; filter: invert(100%); }
+
+    /* Info-bulle */
+    .info-score { font-size:.95rem; opacity:.9; }
   </style>
 
-  <!-- Lib Supabase (UMD locale) — le client est créé dans userData.js -->
+  <!-- i18n + libs -->
+  <script src="js/i18n.js"></script>
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
-    <script src="js/i18n.js"></script>
   <script src="js/userData.js"></script>
-
-
-  <!-- Cordova d'abord -->
+  <script src="capacitor.js"></script>
+  <!-- Cordova/Capacitor bridge -->
   <script src="cordova.js"></script>
-  <script src="js/achat.js"></script> 
-  <script>
-  document.addEventListener('deviceready', function(){
-    console.log('[IAPCHK]', 'CdvPurchase=', !!window.CdvPurchase, 'store=', !!(window.CdvPurchase && CdvPurchase.store));
-  });
-  </script>
 
+  <!-- Achats / pubs (après bridge) -->
+  <script src="js/achat.js"></script>
   <!-- Ensuite seulement les scripts qui peuvent dépendre de Cordova -->
   <script src="js/pub.js"></script>
- 
 </head>
 
 <body>
@@ -113,61 +160,90 @@
       </p>
       <small data-i18n="index.rgpd.body2">(Tu peux changer d'avis plus tard dans les paramètres)</small>
 
-      <!-- ✅ Choix publicités uniquement -->
+      <!-- ✅ Choix publicités + notifications -->
       <div style="text-align:left;margin-top:.75rem">
-        <label style="display:flex;gap:.5em;align-items:center;margin:.25rem 0">
-          <input id="consent-ads" type="checkbox" checked />
-          <span data-i18n="index.rgpd.ads">Publicités personnalisées</span>
-        </label>
+        <div class="row">
+          <input type="checkbox" id="consent-ads" />
+          <label for="consent-ads" data-i18n="index.rgpd.ads">Autoriser la personnalisation des publicités</label>
+        </div>
+        <div class="row">
+          <input type="checkbox" id="consent-push" />
+          <label for="consent-push" data-i18n="index.rgpd.push">Recevoir des notifications</label>
+        </div>
       </div>
 
-      <div style="display:flex;gap:1em;justify-content:center;margin-top:1em;">
-        <button id="consent-accept" class="btn-accept" data-i18n="index.rgpd.accept">Accepter</button>
-        <button id="consent-refuse" class="btn-refuse" data-i18n="index.rgpd.refuse">Refuser</button>
-      </div>
-
-      <div style="margin-top:0.75rem;text-align:center;">
-        <a href="https://hystvblod.github.io/Vboldstudio/vblocks.html"
-           target="_blank" rel="noopener"
-           class="link-accords" data-i18n="index.rgpd.manage">Gérer les accords publicitaires</a>
+      <div class="actions">
+        <button id="consent-refuse" data-i18n="index.rgpd.refuse">Refuser</button>
+        <button id="consent-accept" class="primary" data-i18n="index.rgpd.accept">Accepter</button>
       </div>
     </div>
   </div>
   <!-- -------- FIN POPUP RGPD/CONSENT -------- -->
 
-  <div class="container">
-    <img class="vblocks-logo" src="assets/images/vblocks-logo.png" alt="VBlocks Logo" draggable="false" />
-    <div class="menu-list">
-      <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="location.href='concours.html'">
-        <span class="btn-label" data-i18n="menu.concours">Concours</span>
-        <span class="info-btn" tabindex="0" data-i18n-tip="tip.concours" data-tip="Participe et vote dans les concours photo">?</span>
-      </button>
-
-      <button class="menu-btn blue" onclick="location.href='classic.html'">
-        <span class="btn-label" data-i18n="menu.classic">Classic</span>
-        <span class="info-btn" tabindex="0" data-i18n-tip="tip.classic" data-tip="Mode classique avec montée de vitesse progressive">?</span>
-      </button>
-
-      <button class="menu-btn purple" onclick="location.href='infini.html'">
-        <span class="btn-label" data-i18n="menu.infini">Infini</span>
-        <span class="info-btn" tabindex="0" data-i18n-tip="tip.infini" data-tip="Mode relax sans fin, sans accélération">?</span>
-      </button>
-
-      <button class="menu-btn yellow" onclick="location.href='duel.html'">
-        <span class="btn-label" data-i18n="menu.duel">Duel</span>
-        <span class="info-btn" tabindex="0" data-i18n-tip="tip.duel" data-tip="Défie des amis en face à face">?</span>
-      </button>
-
-      <button class="menu-btn green" onclick="location.href='boutique.html'">
-        <span class="btn-label" data-i18n="menu.boutique">Boutique</span>
-        <span class="info-btn" tabindex="0" data-i18n-tip="tip.boutique" data-tip="Personnalise ton jeu">?</span>
-      </button>
+  <!-- Trait bleu avec solde + score à battre -->
+  <div class="barre-info">
+    <div class="gauche">
+      <span class="pill" id="soldeVCoins" data-i18n="index.balance">Solde : 0 VCoins</span>
+    </div>
+    <div class="droite">
+      <span class="pill info-score" id="scoreABattre" data-i18n="index.highscore">Score à battre : —</span>
     </div>
   </div>
 
-  <div class="tooltip-box" id="tooltip"></div>
+  <!-- MENU -->
+  <main style="max-width: 680px; margin: 0 auto; padding: 14px;">
+    <a href="lobby.html" class="menu-btn green">
+      <div class="thumb">
+        <img src="assets/thumbs/clicker.jpg" alt="Clicker VPlay" />
+      </div>
+      <span class="btn-label">
+        <strong data-i18n="index.menu.clicker">Clicker VPlay</strong>
+        <small data-i18n="index.menu.clicker_desc">Clique pour gagner des VCoins</small>
+      </span>
+      <span class="info-btn" data-i18n-tip="index.menu.clicker_tip" data-tip="Clique pour gagner rapidement">?</span>
+    </a>
+
+    <a id="btnConcours" href="concours.html" class="menu-btn orange" style="display:none;">
+      <div class="thumb">
+        <img src="assets/thumbs/concours.jpg" alt="Concours Photo" />
+      </div>
+      <span class="btn-label">
+        <strong data-i18n="index.menu.concours">Concours Photo</strong>
+        <small data-i18n="index.menu.concours_desc">Publie une photo, vote, gagne !</small>
+        <span class="prix-blanc" data-i18n="index.menu.concours_prize">Prix du moment : 50€</span>
+      </span>
+      <span class="info-btn" data-i18n-tip="index.menu.concours_tip" data-tip="Concours selon pays éligibles">?</span>
+    </a>
+
+    <div id="tooltip" class="tooltip"></div>
+  </main>
 
   <script>
+    // --------- MAJ du solde/score affichés sur la barre bleue ----------
+    async function refreshBarreInfo() {
+      try {
+        if (!window.sb || !window.sb.auth) return;
+        const { data: { user } } = await window.sb.auth.getUser();
+        const uid = user?.id || null;
+        if (!uid) return;
+
+        let q1 = await window.sb.from('users')
+          .select('vcoins, best_score')
+          .or(`auth_id.eq.${uid},id.eq.${uid}`)
+          .maybeSingle();
+
+        const solde = q1?.data?.vcoins ?? 0;
+        const best  = q1?.data?.best_score ?? null;
+
+        const elSolde = document.getElementById('soldeVCoins');
+        const elScore = document.getElementById('scoreABattre');
+        if (elSolde) elSolde.textContent = `${solde} VCoins`;
+        if (elScore) elScore.textContent = best ? `Score à battre : ${best}` : 'Score à battre : —';
+      } catch(e) {
+        console.warn('[barre-info] refresh', e?.message || e);
+      }
+    }
+
     // ---------------- Tooltips ----------------
     const tooltip = document.getElementById('tooltip');
     document.querySelectorAll('.info-btn').forEach(el => {
@@ -199,218 +275,242 @@
     });
     ['resize','scroll'].forEach(evt => {
       window.addEventListener(evt, () => {
-        tooltip.classList.remove('visible');
-        tooltip.style.display = 'none';
+        if (tooltip.classList.contains('visible')) {
+          tooltip.style.display = 'none';
+          tooltip.classList.remove('visible');
+        }
       });
     });
-  </script>
 
-  <!-- --------------- RGPD & Consents (version robuste) --------------- -->
-  <script>
-    (function(){
-      const CONSENT_KEY  = "rgpdConsent";   // "accept" | "refuse"
-      const ADS_KEY      = "adsConsent";    // "yes" | "no"
-      const ADS_ENABLED  = "adsEnabled";    // "true" | "false"
-      const SHOWN_FLAG   = "consentPopupShown"; // session-only
+    // --------- POPUP consent (RGPD) ----------
+    const CONSENT_KEY = 'consent';       // accept | refuse
+    const ADS_KEY = 'ads_personalized';  // yes | no
+    const ADS_ENABLED = 'ads_enabled';   // true | false
 
-      // 0) Garde-fou: aligne anciennes clés locales si besoin
-      (function syncConsentKeys() {
-        try {
-          const rg = localStorage.getItem(CONSENT_KEY);
-          const ae = localStorage.getItem(ADS_ENABLED);
-          const ads = localStorage.getItem(ADS_KEY);
-          if (!rg && ae !== null) {
-            localStorage.setItem(CONSENT_KEY, ae === 'true' ? 'accept' : 'refuse');
-            if (!ads) localStorage.setItem(ADS_KEY, ae === 'true' ? 'yes' : 'no');
-          }
-        } catch(_) {}
-      })();
-
-      function hasLocalConsent() {
-        const c = localStorage.getItem(CONSENT_KEY);
-        return c === 'accept' || c === 'refuse';
+    function applyConsentFromLocal() {
+      const consent = localStorage.getItem(CONSENT_KEY);
+      const enabled = localStorage.getItem(ADS_ENABLED);
+      if (window.pub && window.pub.setPersonalized) {
+        window.pub.setPersonalized(enabled === 'true');
       }
-      function applyConsentFromLocal() {
-        const consent = localStorage.getItem(CONSENT_KEY);
-        const personalized = localStorage.getItem(ADS_KEY) === "yes";
-        if (consent === "accept" && personalized && typeof window.initAds === "function") {
-          try { window.initAds(); } catch(e){}
-        }
-      }
-      async function syncConsentFromCloud() {
-        try {
-          if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-          if (!window.sb?.rpc) return null;
-          const { data, error } = await window.sb.rpc('get_ads_consent');
-          if (error) { console.warn('[consent] get_ads_consent error', error.message || error); return null; }
-          if (data === 'accept' || data === 'refuse') {
-            localStorage.setItem(CONSENT_KEY, data);
-            if (data === 'accept') {
-              if (!localStorage.getItem(ADS_KEY)) localStorage.setItem(ADS_KEY, 'yes');
-              if (!localStorage.getItem(ADS_ENABLED)) localStorage.setItem(ADS_ENABLED, 'true');
-            } else {
-              localStorage.setItem(ADS_KEY, 'no');
-              localStorage.setItem(ADS_ENABLED, 'false');
-            }
-            return data;
-          }
-          return null;
-        } catch(e) {
-          console.warn('[consent] syncConsentFromCloud exception', e?.message || e);
-          return null;
-        }
-      }
-      function showPopupOnce() {
-        if (sessionStorage.getItem(SHOWN_FLAG) === '1') return;
-        const popup = document.getElementById("popup-consent");
-        if (popup) {
-          popup.style.display = "flex";
-          sessionStorage.setItem(SHOWN_FLAG, '1');
-        }
-      }
+    }
 
-      // expose pour d’autres pages si besoin
-      window.applyConsentFromStorage = applyConsentFromLocal;
+    function showPopupOnce() {
+      try {
+        const popup = document.getElementById('popup-consent');
+        if (!popup) return;
+        if (localStorage.getItem(CONSENT_KEY)) return; // déjà choisi
+        popup.style.display = 'block';
+      } catch(_) {}
+    }
 
-      // Décision d’amorçage stricte:
-      // 1) si local ok -> appliquer et basta
-      // 2) sinon, on tente la base; si base ok -> on écrit local et on applique
-      // 3) sinon, popup (mais jamais 2x dans la même session)
-      window.addEventListener("DOMContentLoaded", async function() {
-        try {
-          if (hasLocalConsent()) {
-            applyConsentFromLocal();
-            return;
-          }
-          const cloud = await syncConsentFromCloud();
-          if (cloud) {
-            applyConsentFromLocal();
-            return;
-          }
-          showPopupOnce();
-        } catch(e) {
-          console.warn('[consent] bootstrap error', e?.message || e);
-          // en cas d’erreur inattendue, pour ne pas bloquer l’accès, on montre la popup une seule fois
-          showPopupOnce();
+    async function syncConsentFromCloud() {
+      try {
+        if (!window.sb) return false;
+        const { data: { user } } = await window.sb.auth.getUser();
+        const uid = user?.id || null;
+        if (!uid) return false;
+
+        let q = await window.sb.from('users')
+          .select('ads_consent')
+          .or(`auth_id.eq.${uid},id.eq.${uid}`)
+          .maybeSingle();
+
+        const c = q?.data?.ads_consent || null;
+        if (c) {
+          localStorage.setItem(CONSENT_KEY, c);
+          localStorage.setItem(ADS_ENABLED, c === 'accept' ? 'true' : 'false');
+          localStorage.setItem(ADS_KEY, c === 'accept' ? 'yes' : 'no');
+          return true;
         }
-
-        // Boutons popup
-        const btnAccept = document.getElementById("consent-accept");
-        const btnRefuse = document.getElementById("consent-refuse");
-        const cbAds     = document.getElementById("consent-ads");
-        const popup     = document.getElementById("popup-consent");
-
-        if (btnAccept) {
-          btnAccept.onclick = async function() {
-            localStorage.setItem(CONSENT_KEY, "accept");
-            localStorage.setItem(ADS_KEY,   cbAds && cbAds.checked ? "yes" : "no");
-            localStorage.setItem(ADS_ENABLED, cbAds && cbAds.checked ? "true" : "false");
-            if (popup) popup.style.display = "none";
-            applyConsentFromLocal();
-            try {
-              if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-              if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "accept" });
-            } catch(e) { console.warn('[consent] update accept RPC', e?.message || e); }
-          };
-        }
-        if (btnRefuse) {
-          btnRefuse.onclick = async function() {
-            localStorage.setItem(CONSENT_KEY, "refuse");
-            localStorage.setItem(ADS_KEY,   "no");
-            localStorage.setItem(ADS_ENABLED, "false");
-            if (popup) popup.style.display = "none";
-            try {
-              if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-              if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "refuse" });
-            } catch(e) { console.warn('[consent] update refuse RPC', e?.message || e); }
-          };
-        }
-      });
-    })();
-  </script>
-
-  <!-- ========= Helpers POPUP (messages, concours) ========= -->
-  <script>
-    async function getUsersTableIdForCurrentAuth() {
-      const { data: { user } } = await window.sb.auth.getUser();
-      const authId = user?.id || null;
-      if (!authId) return null;
-
-      let { data, error } = await window.sb.from('users').select('id').eq('auth_id', authId).maybeSingle();
-      if (!error && data?.id) return data.id;
-      ({ data, error } = await window.sb.from('users').select('id').eq('id', authId).maybeSingle());
-      if (!error && data?.id) return data.id;
-      console.warn('[popup] users.id introuvable pour auth_id', authId);
-      return null;
+      } catch(e) { console.warn('[consent] cloud sync', e?.message || e); }
+      return false;
     }
 
     async function checkAndShowPopupOnce() {
-      const usersTableId = await getUsersTableIdForCurrentAuth();
-      if (!usersTableId) return;
-      const { data, error } = await window.sb
-        .from('messages_popup')
-        .select('id,message,vue,created_at,userid')
-        .eq('userid', usersTableId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (!error && data?.length) {
-        const msg = data[0];
-        if (!msg.vue) {
-          alert(msg.message);
-          await window.sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
+      try {
+        if (localStorage.getItem(CONSENT_KEY)) {
+          applyConsentFromLocal();
+          return;
         }
+        const cloud = await syncConsentFromCloud();
+        if (cloud) {
+          applyConsentFromLocal();
+          return;
+        }
+        showPopupOnce();
+      } catch(e) {
+        console.warn('[consent] bootstrap error', e?.message || e);
+        showPopupOnce();
+      }
+
+      // Boutons popup
+      const btnAccept = document.getElementById("consent-accept");
+      const btnRefuse = document.getElementById("consent-refuse");
+      const cbAds     = document.getElementById("consent-ads");
+      const popup     = document.getElementById("popup-consent");
+      const cbPush    = document.getElementById("consent-push"); // 👈
+
+      if (btnAccept) {
+        btnAccept.onclick = async function() {
+          // pubs
+          localStorage.setItem(CONSENT_KEY, "accept");
+          localStorage.setItem(ADS_KEY,   cbAds && cbAds.checked ? "yes" : "no");
+          localStorage.setItem(ADS_ENABLED, cbAds && cbAds.checked ? "true" : "false");
+
+          // push opt-in
+          const wantPush = cbPush && cbPush.checked;
+          localStorage.setItem('push_optin', wantPush ? 'yes' : 'no');
+
+          if (popup) popup.style.display = "none";
+          applyConsentFromLocal();
+
+          try {
+            if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+            if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "accept" });
+          } catch(e) { console.warn('[consent] update accept RPC', e?.message || e); }
+
+          // Demande permission push uniquement si opt-in
+          if (wantPush && window.__initPushOnce) {
+            try { await window.__initPushOnce(); } catch(e) {}
+          }
+        };
+      }
+      if (btnRefuse) {
+        btnRefuse.onclick = async function() {
+          localStorage.setItem(CONSENT_KEY, "refuse");
+          localStorage.setItem(ADS_KEY, "no");
+          localStorage.setItem(ADS_ENABLED, "false");
+          localStorage.setItem('push_optin', 'no'); // 👈
+          if (popup) popup.style.display = "none";
+          applyConsentFromLocal();
+          try {
+            if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+            if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "refuse" });
+          } catch(e) { console.warn('[consent] update refuse RPC', e?.message || e); }
+        };
       }
     }
 
-    async function listenPopupsRealtime() {
-      const usersTableId = await getUsersTableIdForCurrentAuth();
-      if (!usersTableId) return;
-      window.sb.channel('popups_for_' + usersTableId)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages_popup', filter: `userid=eq.${usersTableId}` },
-          async (payload) => {
-            const m = payload.new;
-            alert(m.message);
-            await window.sb.from('messages_popup').update({ vue: true }).eq('id', m.id);
-          }
-        ).subscribe();
+    /* ==== AFFICHER CONCOURS SELON PAYS ==== */
+    async function getUserCountryCode() {
+      try {
+        const { data: { user } } = await window.sb.auth.getUser();
+        const uid = user?.id || null;
+        if (!uid) return null;
+
+        let q = await window.sb.from('users')
+          .select('country,lang')
+          .or(`auth_id.eq.${uid},id.eq.${uid}`)
+          .maybeSingle();
+
+        let cc = (q?.data?.country || '').toUpperCase();
+        if (!cc) {
+          let lang = (q?.data?.lang || navigator.language || 'en-US').toUpperCase();
+          cc = lang.includes('-') ? lang.split('-').pop() : (lang.length>2 ? lang.slice(-2) : lang);
+        }
+        return cc || null;
+      } catch { return null; }
     }
 
-    async function checkConcoursStatusFixed() {
+    async function checkConcoursStatusByCountry() {
+      const btn = document.getElementById('btnConcours');
+      if (!btn) return;
+
       try {
         const { data, error } = await window.sb
-          .from('config').select('concours_enabled')
-          .eq('id', 'global').single();
-        if (!error) {
-          document.getElementById("btnConcours").style.display = data?.concours_enabled ? "block" : "none";
+          .from('config')
+          .select('concours_enabled, concours_countries')
+          .eq('id', 'GLOBAL')
+          .maybeSingle();
+
+        if (error) throw error;
+
+        const enabled = !!data?.concours_enabled;
+        const list    = Array.isArray(data?.concours_countries) ? data.concours_countries : null;
+
+        if (!enabled) { btn.style.display = 'none'; return; }
+
+        const cc = await getUserCountryCode();
+        if (!cc) { btn.style.display = 'none'; return; }
+
+        const ok = !list || list.includes(cc);
+        btn.style.display = ok ? 'block' : 'none';
+      } catch(e) {
+        console.warn('[concours] status', e?.message || e);
+        const el = document.getElementById('btnConcours');
+        if (el && el.style) el.style.display = 'none';
+      }
+    }
+
+    // ---- Boot langue local-first + auth/profile ----
+    async function bootstrapLanguageLocalFirst() {
+      try {
+        if (window.i18nBootstrap) await window.i18nBootstrap();
+        if (window.bootstrapAuthAndProfile) {
+          await window.bootstrapAuthAndProfile();
         }
-      } catch(e) {}
+        if (window.userData?.getProfileSecure && window.userData?.getLang && window.userData?.updateLangDirect) {
+          const prof  = await window.userData.getProfileSecure();
+          const local = window.userData.getLang();
+          if (!prof?.lang || prof.lang !== local) {
+            await window.userData.updateLangDirect(local);
+          }
+        }
+      } catch (e) {
+        console.warn('[lang bootstrap local-first]', e?.message || e);
+      }
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        if (window.bootstrapAuthAndProfile) {
-          await window.bootstrapAuthAndProfile();
-        }
-        await checkConcoursStatusFixed();
+        await bootstrapLanguageLocalFirst();
+
+        await checkConcoursStatusByCountry();
         await checkAndShowPopupOnce();
-        await listenPopupsRealtime();
+        await listenPopupsRealtime?.();
 
         if (window.i18nTranslateAll) window.i18nTranslateAll();
+
+        // Relance auto push si l’utilisateur avait déjà opt-in
+        if (localStorage.getItem('push_optin') === 'yes' && window.__initPushOnce) {
+          try { await window.__initPushOnce(); } catch(e){}
+        }
+
+        if (typeof refreshBarreInfo === 'function') {
+          await refreshBarreInfo();
+        }
       } catch (e) {
         console.warn('[INDEX bootstrap]', e?.message || e);
       }
     });
   </script>
 
-  <!-- Push (FCM) : gardé mais n’est plus relié à la popup -->
+  <!-- Push (FCM) : init + enregistrement token dans Supabase -->
   <script>
     (function () {
       const DEBUG_PUSH = false;
       let inited = false;
+
       function isNative() {
-        try { return window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() !== 'web'; }
-        catch(e){ return false; }
+        try { return window.Capacitor?.getPlatform?.() !== 'web'; }
+        catch(_) { return false; }
       }
+
+      async function savePushTokenToSupabase(token){
+        try{
+          if(!token || !window.sb) return;
+          const uid = await (window.userData?.getAuthUserId?.() || null);
+          if(!uid) return;
+          const lang = (localStorage.getItem('langue') || 'EN').toUpperCase();
+          const platform = window.Capacitor?.getPlatform?.() || 'android';
+          await window.sb.from('user_push_tokens').upsert(
+            [{ token, user_id: uid, platform, lang }],
+            { onConflict: 'token' }
+          );
+        }catch(e){ if (DEBUG_PUSH) console.warn('[Push] save token fail', e); }
+      }
+
       async function initPush() {
         if (inited) return; inited = true;
         if (!isNative()) return;
@@ -420,9 +520,20 @@
           const perm = await Push.requestPermissions();
           if (perm.receive !== 'granted') return;
           await Push.register();
-          Push.addListener('registration', (token) => {
-            localStorage.setItem('fcmToken', token.value || '');
-            if (DEBUG_PUSH) console.log('[Push] FCM token:', token.value);
+
+          Push.addListener('registration', async ({ value }) => {
+            localStorage.setItem('fcmToken', value || '');
+            if (DEBUG_PUSH) console.log('[Push] FCM token:', value);
+            await savePushTokenToSupabase(value);
+          });
+          Push.addListener('registrationError', (err) => {
+            if (DEBUG_PUSH) console.error('[Push] registration error', err);
+          });
+          Push.addListener('pushNotificationReceived', (n) => {
+            if (DEBUG_PUSH) console.log('[Push] reçu (FG)', n);
+          });
+          Push.addListener('pushNotificationActionPerformed', (a) => {
+            if (DEBUG_PUSH) console.log('[Push] action', a);
           });
         } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
       }
@@ -433,59 +544,46 @@
   <!-- ===== Bannière MAJ non bloquante + logique AppUpdate / Store ===== -->
   <div id="update-banner">
     <h4 data-i18n="index.update.title">Mise à jour disponible</h4>
-    <p data-i18n="index.update.body">Une nouvelle version est prête. Tu peux la télécharger maintenant.</p>
+    <p data-i18n="index.update.body">Une nouvelle version est prête. Tu peux l’installer maintenant.</p>
     <div class="actions">
       <button id="btn-update-later" data-i18n="index.update.later">Plus tard</button>
-      <button id="btn-update-now"  data-i18n="index.update.updateNow">Mettre à jour</button>
+      <button id="btn-update-now" class="primary" data-i18n="index.update.now">Mettre à jour</button>
     </div>
   </div>
 
   <script>
     (function(){
-      const PLAY_URL = "https://play.google.com/store/apps/details?id=com.vboldstudio.VBlocks";
-      const banner   = document.getElementById('update-banner');
-      const btnNow   = document.getElementById('btn-update-now');
-      const btnLater = document.getElementById('btn-update-later');
+      const AppUpdate = window.Capacitor?.Plugins?.AppUpdate;
+      const Browser   = window.Capacitor?.Plugins?.Browser;
+      const Device    = window.Capacitor?.Plugins?.Device;
+      const banner    = document.getElementById('update-banner');
+      const btnNow    = document.getElementById('btn-update-now');
+      const btnLater  = document.getElementById('btn-update-later');
 
-      function i18nApply() {
+      async function openStore() {
         try {
-          if (!window.i18nGet) return;
-          const t = (k, def)=> window.i18nGet(k) || def;
-          banner.querySelector('[data-i18n="index.update.title"]').textContent = t('index.update.title','Mise à jour disponible');
-          banner.querySelector('[data-i18n="index.update.body"]').textContent  = t('index.update.body','Une nouvelle version est prête. Tu peux la télécharger maintenant.');
-          btnNow.textContent   = t('index.update.updateNow','Mettre à jour');
-          btnLater.textContent = t('index.update.later','Plus tard');
-        } catch(_) {}
-      }
-
-      async function openStore(){
-        const AppLauncher = window.Capacitor?.Plugins?.AppLauncher;
-        if (AppLauncher) { try { await AppLauncher.openUrl({ url: PLAY_URL }); return; } catch(_){} }
-        location.href = PLAY_URL; // fallback web
+          const info = await Device.getInfo();
+          if (info?.platform === 'ios') {
+            await Browser.open({ url: 'https://apps.apple.com/app/idXXXXXXXXX' });
+          } else {
+            await Browser.open({ url: 'https://play.google.com/store/apps/details?id=com.vblocks.app' });
+          }
+        } catch(e) { console.warn('[AppUpdate] openStore', e); }
       }
 
       async function checkPlayUpdateAndMaybeShow() {
-        const AppUpdate = window.Capacitor?.Plugins?.AppUpdate; // @capawesome/capacitor-app-update
-        if (!AppUpdate) {
-          console.warn('[AppUpdate] plugin absent → on ne montre rien');
-          return;
-        }
         try {
+          if (!AppUpdate) return;
           const info = await AppUpdate.getAppUpdateInfo();
-          console.log('[AppUpdate] info', info);
-
-          // Affiche uniquement si Google dit "update dispo"
-          if (info.updateAvailability === 2) {
+          if (info?.updateAvailability === 2 /* UPDATE_AVAILABLE */) {
             banner.style.display = 'block';
-            i18nApply();
-
             btnNow.onclick = async () => {
               try {
                 if (info.flexibleUpdateAllowed) {
-                  await AppUpdate.startFlexibleUpdate(); // téléchargement en arrière-plan
+                  await AppUpdate.startFlexibleUpdate();
                   banner.style.display = 'none';
                 } else {
-                  await openStore(); // pas flexible → on ouvre la fiche Play
+                  await openStore();
                 }
               } catch (e) {
                 console.warn('[AppUpdate] startFlexibleUpdate error', e);
