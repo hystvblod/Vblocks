@@ -235,5 +235,16 @@
     "settings.credits.label": "Ucapan Terima Kasih",
       "ads.cap_try_in_min": "Batas tercapai: coba lagi dalam ~{min} menit",
   "ads.cap_try_soon": "Batas tercapai, coba lagi nanti",
-  "settings.credits.text": "VBoldStudio berterima kasih kepada Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, dan Lucas atas dukungan, kreativitas, dan saran mereka."
+  "settings.credits.text": "VBoldStudio berterima kasih kepada Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, dan Lucas atas dukungan, kreativitas, dan saran mereka.",
+
+   "onboarding.skip": "Lewati",
+    "onboarding.prev": "Sebelumnya",
+    "onboarding.next": "Berikutnya",
+    "onboarding.start": "Mulai",
+    "onboarding.s1.title": "Personalisasikan game-mu",
+    "onboarding.s1.text": "Di Toko kamu bisa membeli tema. Di Pengaturan kamu bisa mengaktifkannya.",
+    "onboarding.s2.title": "Ganti tema dan nama panggilanmu",
+    "onboarding.s2.text": "Ubah nama panggilanmu dan pilih tema yang ingin kamu gunakan saat bermain.",
+    "onboarding.s3.title": "Memahami permainan",
+    "onboarding.s3.text": "Untuk menahan sebuah keping, ketuk tombol «Tahan». Koin digunakan untuk membeli tema, dan token memungkinkan kamu melanjutkan setelah game over dengan mengembalikan 5 baris."
 }

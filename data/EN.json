@@ -235,7 +235,18 @@
   "settings.credits.label": "Acknowledgments",
   "ads.cap_try_in_min": "Limit reached: try again in ~{min} min",
   "ads.cap_try_soon": "Limit reached, try again soon",
-  "settings.credits.text": "VBoldStudio thanks Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, and Lucas for their support, creativity, and advice."
+  "settings.credits.text": "VBoldStudio thanks Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, and Lucas for their support, creativity, and advice.",
+
+   "onboarding.skip": "Skip",
+    "onboarding.prev": "Previous",
+    "onboarding.next": "Next",
+    "onboarding.start": "Start",
+    "onboarding.s1.title": "Personalize your game",
+    "onboarding.s1.text": "In the shop you can buy themes. In settings you can enable them.",
+    "onboarding.s2.title": "Change your themes and nickname",
+    "onboarding.s2.text": "Edit your nickname and choose the themes you want to play with.",
+    "onboarding.s3.title": "Understand the game",
+    "onboarding.s3.text": "To hold a piece, tap the “Hold” button. Coins are used to buy themes, and tokens let you continue after a game over by rolling back 5 lines."
 
 
 }

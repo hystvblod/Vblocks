@@ -235,5 +235,16 @@
     "settings.credits.label": "謝辞",
       "ads.cap_try_in_min": "上限に達しました：およそ{min}分後に再試行してください",
   "ads.cap_try_soon": "上限に達しました。しばらくしてからお試しください",
-  "settings.credits.text": "VBoldStudio は、Arnaud、Angélique、Matthieu、Kimberley、Adrien、Tatiana、Matthieu、Thomas、Lucas の支援・創造性・助言に感謝いたします。"
+  "settings.credits.text": "VBoldStudio は、Arnaud、Angélique、Matthieu、Kimberley、Adrien、Tatiana、Matthieu、Thomas、Lucas の支援・創造性・助言に感謝いたします。",
+
+   "onboarding.skip": "スキップ",
+    "onboarding.prev": "戻る",
+    "onboarding.next": "次へ",
+    "onboarding.start": "はじめる",
+    "onboarding.s1.title": "ゲームをカスタマイズ",
+    "onboarding.s1.text": "ショップでテーマを購入できます。設定で有効にできます。",
+    "onboarding.s2.title": "テーマとニックネームを変更",
+    "onboarding.s2.text": "ニックネームを編集して、プレイしたいテーマを選びましょう。",
+    "onboarding.s3.title": "ゲームの仕組み",
+    "onboarding.s3.text": "ブロックをホールドするには「ホールド」ボタンを押してください。コインはテーマの購入に使え、トークンはゲームオーバー後に5列戻して続行できます."
 }

@@ -235,5 +235,17 @@
      "settings.credits.label": "Ucapan Terima Kasih",
        "ads.cap_try_in_min": "تم بلوغ الحد: حاول مرة أخرى بعد ~{min} دقيقة",
   "ads.cap_try_soon": "تم بلوغ الحد، حاول مرة أخرى قريبًا",
-  "settings.credits.text": "VBoldStudio berterima kasih kepada Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, dan Lucas atas dukungan, kreativitas, dan saran mereka."
+  "settings.credits.text": "تشكر VBoldStudio كُلًّا من Arnaud و Angélique و Matthieu و Kimberley و Adrien و Tatiana و Matthieu و Thomas و Lucas على دعمهم وإبداعهم ونصائحهم.",
+
+
+    "onboarding.skip": "تخطي",
+    "onboarding.prev": "السابق",
+    "onboarding.next": "التالي",
+    "onboarding.start": "بدء",
+    "onboarding.s1.title": "خصّص لعبتك",
+    "onboarding.s1.text": "في المتجر يمكنك شراء السمات. وفي الإعدادات يمكنك تفعيلها.",
+    "onboarding.s2.title": "غيّر السمات ولقبك",
+    "onboarding.s2.text": "عدّل لقبك واختر السمات التي تريد اللعب بها.",
+    "onboarding.s3.title": "فهم اللعبة",
+    "onboarding.s3.text": "لوضع قطعة في الاحتفاظ، اضغط زر «الاحتفاظ». تُستخدم العملات لشراء السمات، وتمكّنك الرموز من المتابعة بعد انتهاء اللعبة بالرجوع 5 صفوف إلى الخلف."
 }

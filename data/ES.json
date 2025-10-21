@@ -235,5 +235,16 @@
      "settings.credits.label": "Agradecimientos",
        "ads.cap_try_in_min": "Límite alcanzado: inténtalo de nuevo en ~{min} min",
   "ads.cap_try_soon": "Límite alcanzado, inténtalo de nuevo pronto",
-  "settings.credits.text": "VBoldStudio agradece a Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas y Lucas por su apoyo, creatividad y consejos."
+  "settings.credits.text": "VBoldStudio agradece a Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas y Lucas por su apoyo, creatividad y consejos.",
+
+   "onboarding.skip": "Omitir",
+    "onboarding.prev": "Anterior",
+    "onboarding.next": "Siguiente",
+    "onboarding.start": "Empezar",
+    "onboarding.s1.title": "Personaliza tu juego",
+    "onboarding.s1.text": "En la tienda puedes comprar temas. En ajustes puedes activarlos.",
+    "onboarding.s2.title": "Cambia tus temas y tu apodo",
+    "onboarding.s2.text": "Modifica tu apodo y elige los temas con los que quieres jugar.",
+    "onboarding.s3.title": "Entender el juego",
+    "onboarding.s3.text": "Para guardar una pieza, pulsa el botón «Mantener». Las monedas sirven para comprar temas y las fichas permiten continuar tras el fin de la partida retrocediendo 5 líneas."
 }

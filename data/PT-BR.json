@@ -235,5 +235,16 @@
      "settings.credits.label": "Agradecimentos",
        "ads.cap_try_in_min": "Limite atingido: tente novamente em ~{min} min",
   "ads.cap_try_soon": "Limite atingido, tente novamente em breve",
-  "settings.credits.text": "A VBoldStudio agradece a Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas e Lucas pelo apoio, pela criatividade e pelos conselhos."
+  "settings.credits.text": "A VBoldStudio agradece a Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas e Lucas pelo apoio, pela criatividade e pelos conselhos.",
+
+   "onboarding.skip": "Ignorar",
+    "onboarding.prev": "Anterior",
+    "onboarding.next": "Próximo",
+    "onboarding.start": "Começar",
+    "onboarding.s1.title": "Personalize seu jogo",
+    "onboarding.s1.text": "Na loja você pode comprar temas. Nas configurações você pode ativá-los.",
+    "onboarding.s2.title": "Mude seus temas e seu apelido",
+    "onboarding.s2.text": "Altere seu apelido e escolha os temas com os quais quer jogar.",
+    "onboarding.s3.title": "Entender o jogo",
+    "onboarding.s3.text": "Para colocar uma peça em reserva, toque no botão «Segurar». As moedas servem para comprar temas e os tokens permitem continuar após o game over, voltando 5 linhas."
 }

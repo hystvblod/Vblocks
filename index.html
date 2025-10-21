@@ -768,39 +768,45 @@
   </script>
   <!-- ====== FIN AJOUT logique onboarding ====== -->
 
-  <!-- ===== ONBOARDING — OVERRIDES VISUELS (taille carte + image non rognée) ===== -->
+  <!-- ===== ONBOARDING — OVERRIDES VISUELS (taille carte + image non rognée + texte adaptatif) ===== -->
   <style>
     .onb-card{
       display:flex; flex-direction:column; align-items:center;
-      width:min(96vw, 820px);
-      min-height: 72vh;
+      width:min(98vw, 860px);
+      min-height: 82vh;                    /* plus grand pour accueillir l'image */
       padding:18px; border-radius:22px;
       background: rgba(255,255,255,.07);
       backdrop-filter: blur(8px);
       box-shadow: 0 10px 40px rgba(0,0,0,.45);
+      gap:.35rem;                           /* espace compact entre image / titres / texte */
     }
     .onb-slider{ padding: 72px 14px 132px; }
-    .onb-title{ font-size:1.28rem; margin:.85rem .25rem .25rem; }
-    .onb-text{  font-size: .98rem; line-height:1.35; opacity:.95; }
 
+    /* police un peu plus grande */
+    .onb-title{ font-size:1.40rem; font-weight:800; margin:.9rem .25rem .15rem; }
+    .onb-text{  font-size:1.06rem; line-height:1.35; opacity:.95; margin:0 .25rem .25rem; }
+
+    /* image beaucoup plus grande, visible entièrement */
     .onb-hero{
       width:100%;
-      height: clamp(240px, 46vh, 520px);
-      object-fit: contain;               /* image entière visible */
+      height: clamp(320px, 62vh, 740px);    /* plus haut que la version précédente */
+      object-fit: contain;                  /* image entière visible */
       border-radius:16px;
       box-shadow: 0 3px 20px rgba(0,0,0,.12);
       background: radial-gradient(closest-side, rgba(255,255,255,.06), transparent);
     }
+
     .onb-footer{ bottom: 18px; }
     .onb-dot{ width:10px; height:10px; }
     .onb-dot.active{ width:28px; }
 
+    /* Petits téléphones */
     @media (max-width: 420px){
-      .onb-card{ min-height: 75vh; padding:14px; }
-      .onb-hero{ height: clamp(220px, 50vh, 500px); }
+      .onb-card{ min-height: 86vh; padding:14px; }
+      .onb-hero{ height: clamp(300px, 68vh, 680px); }
       .onb-slider{ padding: 64px 10px 128px; }
-      .onb-title{ font-size:1.2rem; }
-      .onb-text{ font-size:.95rem; }
+      .onb-title{ font-size:1.28rem; }
+      .onb-text{  font-size:1.02rem; }
     }
   </style>
   <script>
@@ -808,11 +814,10 @@
       const FIT = ()=> {
         const vh = Math.max(window.innerHeight || 0, 540);
         document.querySelectorAll('.onb-card').forEach(c=>{
-          c.style.minHeight = Math.round(vh * 0.72) + 'px';
+          c.style.minHeight = Math.round(vh * 0.82) + 'px';  // était 0.72 → plus grand
         });
         document.querySelectorAll('.onb-hero').forEach(img=>{
-          const vh2 = Math.max(window.innerHeight || 0, 540);
-          img.style.height = Math.round(vh2 * 0.46) + 'px';
+          img.style.height = Math.round(vh * 0.62) + 'px';   // était 0.46 → image plus haute
         });
       };
       window.addEventListener('resize', FIT);
@@ -820,76 +825,6 @@
     })();
   </script>
   <!-- ===== FIN OVERRIDES ===== -->
-
-  <!-- ===== AJOUT FINAL — autosize image + texte, police un peu plus grande ===== -->
-  <style id="onb-autosize">
-    /* Permet de scroller si le contenu est plus grand que l'écran (sinon rognage) */
-    #onboarding{ overflow:auto !important; -webkit-overflow-scrolling: touch; }
-
-    /* La zone centrale ne force plus de hauteur : elle s'adapte au contenu */
-    .onb-slider{ align-items:flex-start !important; padding:72px 16px 140px !important; }
-
-    /* Carte flexible (pas d'espace vide si texte court, grandit si texte long) */
-    .onb-card{
-      min-height:auto !important;
-      display:flex !important;
-      flex-direction:column !important;
-      align-items:center !important;
-      gap:12px !important;
-      width:min(96vw, 820px) !important;
-    }
-
-    /* Image 100% visible, garde son ratio, limite pour éviter de dépasser */
-    .onb-hero{
-      width:100% !important;
-      height:auto !important;
-      max-height: min(58vh, 560px) !important;
-      object-fit: contain !important;
-      margin: 6px auto 2px !important;
-      background:none !important;
-    }
-
-    /* Texte un peu plus gros et plus lisible, s'adapte à la longueur */
-    .onb-title{
-      font-size: clamp(1.35rem, 2.4vw + 0.6rem, 1.65rem) !important;
-      line-height: 1.25 !important;
-      margin:.6rem .25rem .2rem !important;
-    }
-    .onb-text{
-      font-size: clamp(1.04rem, 1.2vw + 0.7rem, 1.18rem) !important;
-      line-height: 1.45 !important;
-      margin: .05rem .25rem .6rem !important;
-      opacity: .98 !important;
-      overflow-wrap: anywhere !important;
-      text-wrap: pretty;
-    }
-    /* Si pas de texte, on évite un espace vide */
-    .onb-text:empty{ display:none !important; }
-  </style>
-
-  <script id="onb-clear-inline">
-    /* Neutralise proprement les hauteurs forcées par le script FIT ci-dessus
-       (on garde ton code, on retire juste les styles inline qu'il pose). */
-    (function(){
-      function clearHeights(){
-        document.querySelectorAll('.onb-hero').forEach(el=>{
-          el.style.removeProperty('height');
-          el.style.removeProperty('max-height');
-        });
-        document.querySelectorAll('.onb-card').forEach(el=>{
-          el.style.removeProperty('min-height');
-        });
-      }
-      document.addEventListener('DOMContentLoaded', function(){
-        clearHeights();
-        // On clear aussi juste après le FIT et après un petit délai
-        setTimeout(clearHeights, 0);
-        setTimeout(clearHeights, 150);
-      });
-      window.addEventListener('resize', clearHeights);
-    })();
-  </script>
-  <!-- ===== FIN AJOUT FINAL ===== -->
 
 </body>
 </html>

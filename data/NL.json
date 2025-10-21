@@ -235,5 +235,18 @@
    "settings.credits.label": "Dankwoord",
      "ads.cap_try_in_min": "Limiet bereikt: probeer het over ~{min} min opnieuw",
   "ads.cap_try_soon": "Limiet bereikt, probeer het later opnieuw",
-  "settings.credits.text": "VBoldStudio bedankt Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas en Lucas voor hun steun, creativiteit en advies."
+  "settings.credits.text": "VBoldStudio bedankt Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas en Lucas voor hun steun, creativiteit en advies.",
+
+  
+  
+ "onboarding.skip": "Overslaan",
+    "onboarding.prev": "Vorige",
+    "onboarding.next": "Volgende",
+    "onboarding.start": "Starten",
+    "onboarding.s1.title": "Personaliseer je spel",
+    "onboarding.s1.text": "In de winkel kun je thema’s kopen. In de instellingen kun je ze activeren.",
+    "onboarding.s2.title": "Wijzig je thema’s en bijnaam",
+    "onboarding.s2.text": "Pas je bijnaam aan en kies de thema’s waarmee je wilt spelen.",
+    "onboarding.s3.title": "Het spel begrijpen",
+    "onboarding.s3.text": "Om een stuk te reserveren, tik op de knop «Vasthouden». Munten gebruik je om thema’s te kopen, en met tokens kun je na game over doorgaan door 5 rijen terug te zetten."
 }

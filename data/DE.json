@@ -235,5 +235,16 @@
     "settings.credits.label": "Danksagung",
       "ads.cap_try_in_min": "Limit erreicht: Versuche es in ~{min} Min erneut",
   "ads.cap_try_soon": "Limit erreicht, versuche es bald erneut",
-  "settings.credits.text": "VBoldStudio dankt Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas und Lucas für ihre Unterstützung, Kreativität und ihre Ratschläge."
+  "settings.credits.text": "VBoldStudio dankt Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas und Lucas für ihre Unterstützung, Kreativität und ihre Ratschläge.",
+
+   "onboarding.skip": "Überspringen",
+    "onboarding.prev": "Zurück",
+    "onboarding.next": "Weiter",
+    "onboarding.start": "Starten",
+    "onboarding.s1.title": "Personalisiere dein Spiel",
+    "onboarding.s1.text": "Im Shop kannst du Themen kaufen. In den Einstellungen kannst du sie aktivieren.",
+    "onboarding.s2.title": "Themen und Spitznamen ändern",
+    "onboarding.s2.text": "Ändere deinen Spitznamen und wähle die Themen, mit denen du spielen möchtest.",
+    "onboarding.s3.title": "Das Spiel verstehen",
+    "onboarding.s3.text": "Um ein Teil zu halten, tippe auf die Schaltfläche «Halten». Münzen dienen zum Kauf von Themen, und Marken ermöglichen es, nach einem Game Over fortzufahren, indem 5 Reihen zurückgesetzt werden."
 }

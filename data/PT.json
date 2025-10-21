@@ -235,5 +235,17 @@
     "settings.credits.label": "Agradecimentos",
       "ads.cap_try_in_min": "Limite atingido: tenta de novo dentro de ~{min} min",
   "ads.cap_try_soon": "Limite atingido, tenta novamente em breve",
-  "settings.credits.text": "A VBoldStudio agradece a Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas e Lucas pelo apoio, criatividade e conselhos."
+  "settings.credits.text": "A VBoldStudio agradece a Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas e Lucas pelo apoio, criatividade e conselhos.",
+
+
+     "onboarding.skip": "Ignorar",
+    "onboarding.prev": "Anterior",
+    "onboarding.next": "Seguinte",
+    "onboarding.start": "Começar",
+    "onboarding.s1.title": "Personaliza o teu jogo",
+    "onboarding.s1.text": "Na loja podes comprar temas. Nas definições podes ativá-los.",
+    "onboarding.s2.title": "Muda os teus temas e a tua alcunha",
+    "onboarding.s2.text": "Altera a tua alcunha e escolhe os temas com que queres jogar.",
+    "onboarding.s3.title": "Perceber o jogo",
+    "onboarding.s3.text": "Para colocar uma peça em reserva, toca no botão «Guardar». As moedas servem para comprar temas e as fichas permitem continuar após o fim do jogo, recuando 5 linhas."
 }

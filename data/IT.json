@@ -235,6 +235,18 @@
      "settings.credits.label": "Ringraziamenti",
        "ads.cap_try_in_min": "Limite raggiunto: riprova tra ~{min} min",
   "ads.cap_try_soon": "Limite raggiunto, riprova più tardi",
-  "settings.credits.text": "VBoldStudio ringrazia Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas e Lucas per il loro sostegno, la loro creatività e i loro consigli."
+  "settings.credits.text": "VBoldStudio ringrazia Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas e Lucas per il loro sostegno, la loro creatività e i loro consigli.",
+
+
+  "onboarding.skip": "Ignora",
+    "onboarding.prev": "Precedente",
+    "onboarding.next": "Avanti",
+    "onboarding.start": "Inizia",
+    "onboarding.s1.title": "Personalizza il tuo gioco",
+    "onboarding.s1.text": "Nel negozio puoi acquistare temi. Nelle impostazioni puoi attivarli.",
+    "onboarding.s2.title": "Cambia temi e nickname",
+    "onboarding.s2.text": "Modifica il tuo nickname e scegli i temi con cui vuoi giocare.",
+    "onboarding.s3.title": "Capire il gioco",
+    "onboarding.s3.text": "Per mettere un pezzo in riserva, tocca il pulsante «Tieni». Le monete servono per acquistare temi e i gettoni permettono di continuare dopo il game over tornando indietro di 5 righe."
 
 }
