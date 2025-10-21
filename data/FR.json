@@ -238,15 +238,17 @@
   "settings.credits.text": "VBoldStudio remercie pour leur soutien, leur créativité et leurs conseils : Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, Lucas.",
 
 
+  
   "onboarding.skip": "Ignorer",
-    "onboarding.prev": "Précédent",
-    "onboarding.next": "Suivant",
-    "onboarding.start": "Commencer",
-    "onboarding.s1.title": "Bienvenue sur VBlocks",
-    "onboarding.s1.text": "Joue, détends-toi et collectionne des VCoins pour personnaliser ton expérience.",
-    "onboarding.s2.title": "Plusieurs modes",
-    "onboarding.s2.text": "Classic, Infini, Duel… choisis ton style et monte dans les classements.",
-    "onboarding.s3.title": "Boutique & Concours",
-    "onboarding.s3.text": "Dépense tes VCoins, débloque des thèmes et participe aux concours photo."
+  "onboarding.prev": "Précédent",
+  "onboarding.next": "Suivant",
+  "onboarding.start": "Commencer",
+  "onboarding.s1.title": "Personnalise ton jeu",
+  "onboarding.s1.text": "Dans la boutique, tu peux acheter des thèmes. Dans les paramètres, tu peux les activer.",
+  "onboarding.s2.title": "Change tes thèmes et ton pseudo",
+  "onboarding.s2.text": "Modifie ton pseudo et choisis les thèmes avec lesquels tu veux jouer.",
+  "onboarding.s3.title": "Comprendre le jeu",
+  "onboarding.s3.text": "Pour mettre une pièce en réserve, appuie sur le bouton « Réserve ». Les Vcoins servent à acheter des thèmes et les jetons permettent de recommencer après une fin de partie, en revenant 5 lignes en arrière."
+
 
 }
