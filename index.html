@@ -768,5 +768,58 @@
   </script>
   <!-- ====== FIN AJOUT logique onboarding ====== -->
 
+  <!-- ===== ONBOARDING — OVERRIDES VISUELS (taille carte + image non rognée) ===== -->
+  <style>
+    .onb-card{
+      display:flex; flex-direction:column; align-items:center;
+      width:min(96vw, 820px);
+      min-height: 72vh;
+      padding:18px; border-radius:22px;
+      background: rgba(255,255,255,.07);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+    }
+    .onb-slider{ padding: 72px 14px 132px; }
+    .onb-title{ font-size:1.28rem; margin:.85rem .25rem .25rem; }
+    .onb-text{  font-size: .98rem; line-height:1.35; opacity:.95; }
+
+    .onb-hero{
+      width:100%;
+      height: clamp(240px, 46vh, 520px);
+      object-fit: contain;               /* image entière visible */
+      border-radius:16px;
+      box-shadow: 0 3px 20px rgba(0,0,0,.12);
+      background: radial-gradient(closest-side, rgba(255,255,255,.06), transparent);
+    }
+    .onb-footer{ bottom: 18px; }
+    .onb-dot{ width:10px; height:10px; }
+    .onb-dot.active{ width:28px; }
+
+    @media (max-width: 420px){
+      .onb-card{ min-height: 75vh; padding:14px; }
+      .onb-hero{ height: clamp(220px, 50vh, 500px); }
+      .onb-slider{ padding: 64px 10px 128px; }
+      .onb-title{ font-size:1.2rem; }
+      .onb-text{ font-size:.95rem; }
+    }
+  </style>
+  <script>
+    (function(){
+      const FIT = ()=> {
+        const vh = Math.max(window.innerHeight || 0, 540);
+        document.querySelectorAll('.onb-card').forEach(c=>{
+          c.style.minHeight = Math.round(vh * 0.72) + 'px';
+        });
+        document.querySelectorAll('.onb-hero').forEach(img=>{
+          const vh2 = Math.max(window.innerHeight || 0, 540);
+          img.style.height = Math.round(vh2 * 0.46) + 'px';
+        });
+      };
+      window.addEventListener('resize', FIT);
+      document.addEventListener('DOMContentLoaded', FIT);
+    })();
+  </script>
+  <!-- ===== FIN OVERRIDES ===== -->
+
 </body>
 </html>
