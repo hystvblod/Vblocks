@@ -821,5 +821,75 @@
   </script>
   <!-- ===== FIN OVERRIDES ===== -->
 
+  <!-- ===== AJOUT FINAL — autosize image + texte, police un peu plus grande ===== -->
+  <style id="onb-autosize">
+    /* Permet de scroller si le contenu est plus grand que l'écran (sinon rognage) */
+    #onboarding{ overflow:auto !important; -webkit-overflow-scrolling: touch; }
+
+    /* La zone centrale ne force plus de hauteur : elle s'adapte au contenu */
+    .onb-slider{ align-items:flex-start !important; padding:72px 16px 140px !important; }
+
+    /* Carte flexible (pas d'espace vide si texte court, grandit si texte long) */
+    .onb-card{
+      min-height:auto !important;
+      display:flex !important;
+      flex-direction:column !important;
+      align-items:center !important;
+      gap:12px !important;
+      width:min(96vw, 820px) !important;
+    }
+
+    /* Image 100% visible, garde son ratio, limite pour éviter de dépasser */
+    .onb-hero{
+      width:100% !important;
+      height:auto !important;
+      max-height: min(58vh, 560px) !important;
+      object-fit: contain !important;
+      margin: 6px auto 2px !important;
+      background:none !important;
+    }
+
+    /* Texte un peu plus gros et plus lisible, s'adapte à la longueur */
+    .onb-title{
+      font-size: clamp(1.35rem, 2.4vw + 0.6rem, 1.65rem) !important;
+      line-height: 1.25 !important;
+      margin:.6rem .25rem .2rem !important;
+    }
+    .onb-text{
+      font-size: clamp(1.04rem, 1.2vw + 0.7rem, 1.18rem) !important;
+      line-height: 1.45 !important;
+      margin: .05rem .25rem .6rem !important;
+      opacity: .98 !important;
+      overflow-wrap: anywhere !important;
+      text-wrap: pretty;
+    }
+    /* Si pas de texte, on évite un espace vide */
+    .onb-text:empty{ display:none !important; }
+  </style>
+
+  <script id="onb-clear-inline">
+    /* Neutralise proprement les hauteurs forcées par le script FIT ci-dessus
+       (on garde ton code, on retire juste les styles inline qu'il pose). */
+    (function(){
+      function clearHeights(){
+        document.querySelectorAll('.onb-hero').forEach(el=>{
+          el.style.removeProperty('height');
+          el.style.removeProperty('max-height');
+        });
+        document.querySelectorAll('.onb-card').forEach(el=>{
+          el.style.removeProperty('min-height');
+        });
+      }
+      document.addEventListener('DOMContentLoaded', function(){
+        clearHeights();
+        // On clear aussi juste après le FIT et après un petit délai
+        setTimeout(clearHeights, 0);
+        setTimeout(clearHeights, 150);
+      });
+      window.addEventListener('resize', clearHeights);
+    })();
+  </script>
+  <!-- ===== FIN AJOUT FINAL ===== -->
+
 </body>
 </html>
