@@ -71,6 +71,48 @@
     }
   </style>
 
+  <!-- ====== AJOUT: styles onboarding ====== -->
+  <style>
+    /* Onboarding overlay (3 slides) */
+    #onboarding {
+      position: fixed; inset: 0; z-index: 200000;
+      display: none; background: linear-gradient(180deg, rgba(10,13,28,.96), rgba(18,21,38,.96));
+      color: #fff; overflow: hidden;
+    }
+    #onb-inner { position:relative; height:100%; width:100%; max-width:900px; margin:0 auto; }
+    .onb-header { position:absolute; top:16px; left:16px; right:16px; display:flex; justify-content:flex-end; }
+    .onb-skip { background:transparent; border:0; color:#fff; opacity:.9; font-weight:700; cursor:pointer; padding:10px 14px; border-radius:12px; }
+    .onb-skip:hover{ opacity:1 }
+    .onb-slider { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:84px 16px 120px; }
+    .onb-track { display:flex; height:100%; width:300%; transition: transform .35s ease; }
+    .onb-slide { width:100%; flex:0 0 100%; display:flex; align-items:center; justify-content:center; }
+    .onb-card {
+      width:min(92vw,780px); max-width:780px; border-radius:22px; padding:18px;
+      background: rgba(255,255,255,.07); backdrop-filter: blur(8px);
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+      text-align:center;
+    }
+    .onb-hero { width:100%; border-radius:16px; display:block; aspect-ratio: 16/9; object-fit:cover; }
+    .onb-title { font-size:1.35rem; font-weight:800; margin:.9rem .25rem .25rem; }
+    .onb-text  { opacity:.9; line-height:1.35; margin:0 .25rem .25rem; }
+
+    .onb-footer {
+      position:absolute; left:0; right:0; bottom:18px; display:flex; align-items:center; justify-content:space-between; padding:0 16px;
+    }
+    .onb-dots { display:flex; gap:8px; align-items:center; justify-content:center; flex:1; }
+    .onb-dot { width:8px; height:8px; border-radius:999px; background:#7b86a6; opacity:.6; transition:all .25s; }
+    .onb-dot.active { width:26px; opacity:1; background:#67e3ff; }
+
+    .onb-actions { display:flex; gap:10px; }
+    .onb-btn {
+      border:0; border-radius:12px; padding:10px 14px; font-weight:800; cursor:pointer;
+    }
+    #onb-prev { background:#2a2f45; color:#fff; }
+    #onb-next { background:#37cfff; color:#0a0d1c; }
+    #onb-start { background:#72eb63; color:#08210d; display:none; }
+  </style>
+  <!-- ====== FIN AJOUT styles onboarding ====== -->
+
   <!-- Lib Supabase (UMD locale) — le client est créé dans userData.js -->
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
   <script src="js/i18n.js"></script>
@@ -90,6 +132,61 @@
 </head>
 
 <body>
+
+  <!-- ====== AJOUT: HTML onboarding ====== -->
+  <div id="onboarding" aria-hidden="true">
+    <div id="onb-inner">
+      <div class="onb-header">
+        <button class="onb-skip" id="onb-skip" data-i18n="onboarding.skip">Ignorer</button>
+      </div>
+
+      <div class="onb-slider" id="onb-slider">
+        <div class="onb-track" id="onb-track">
+          <!-- Slide 1 -->
+          <section class="onb-slide" data-index="0">
+            <article class="onb-card">
+              <img class="onb-hero" src="assets/slide1.webp" alt="VBlocks slide 1" loading="eager" />
+              <h3 class="onb-title" data-i18n="onboarding.s1.title">Bienvenue sur VBlocks</h3>
+              <p class="onb-text" data-i18n="onboarding.s1.text">Joue, détends-toi et collectionne des VCoins pour personnaliser ton expérience.</p>
+            </article>
+          </section>
+          <!-- Slide 2 -->
+          <section class="onb-slide" data-index="1">
+            <article class="onb-card">
+              <img class="onb-hero" src="assets/slide2.webp" alt="VBlocks slide 2" loading="lazy" />
+              <h3 class="onb-title" data-i18n="onboarding.s2.title">Plusieurs modes</h3>
+              <p class="onb-text" data-i18n="onboarding.s2.text">Classic, Infini, Duel… choisis ton style et monte dans les classements.</p>
+            </article>
+          </section>
+          <!-- Slide 3 -->
+          <section class="onb-slide" data-index="2">
+            <article class="onb-card">
+              <img class="onb-hero" src="assets/slide3.webp" alt="VBlocks slide 3" loading="lazy" />
+              <h3 class="onb-title" data-i18n="onboarding.s3.title">Boutique & Concours</h3>
+              <p class="onb-text" data-i18n="onboarding.s3.text">Dépense tes VCoins, débloque des thèmes et participe aux concours photo.</p>
+            </article>
+          </section>
+        </div>
+      </div>
+
+      <div class="onb-footer">
+        <div class="onb-actions">
+          <button id="onb-prev" class="onb-btn" data-i18n="onboarding.prev">Précédent</button>
+        </div>
+        <div class="onb-dots">
+          <div class="onb-dot" data-dot="0"></div>
+          <div class="onb-dot" data-dot="1"></div>
+          <div class="onb-dot" data-dot="2"></div>
+        </div>
+        <div class="onb-actions">
+          <button id="onb-next" class="onb-btn" data-i18n="onboarding.next">Suivant</button>
+          <button id="onb-start" class="onb-btn" data-i18n="onboarding.start">Commencer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ====== FIN AJOUT HTML onboarding ====== -->
+
   <!-- Boutons top-bar -->
   <div class="top-buttons top-buttons-home">
     <a href="profil.html" class="btn-icon" title="Profil">
@@ -599,5 +696,77 @@
       document.addEventListener('DOMContentLoaded', checkPlayUpdateAndMaybeShow);
     })();
   </script>
+
+  <!-- ====== AJOUT: logique onboarding ====== -->
+  <script>
+    (function(){
+      function trApply(){
+        if(!window.i18nGet) return;
+        const map = {
+          'onboarding.skip':'Ignorer','onboarding.prev':'Précédent','onboarding.next':'Suivant','onboarding.start':'Commencer',
+          'onboarding.s1.title':'Bienvenue sur VBlocks','onboarding.s1.text':"Joue, détends-toi et collectionne des VCoins pour personnaliser ton expérience.",
+          'onboarding.s2.title':'Plusieurs modes','onboarding.s2.text':'Classic, Infini, Duel… choisis ton style et monte dans les classements.',
+          'onboarding.s3.title':'Boutique & Concours','onboarding.s3.text':'Dépense tes VCoins, débloque des thèmes et participe aux concours photo.'
+        };
+        document.querySelectorAll('[data-i18n]').forEach(n=>{
+          const k=n.getAttribute('data-i18n');
+          const t=window.i18nGet(k)||map[k]||n.textContent;
+          if(typeof t==='string') n.textContent=t;
+        });
+      }
+
+      function initOnboarding(){
+        const KEY='vblocks.onboarding.v1';
+        const seen = localStorage.getItem(KEY)==='1';
+        const el = document.getElementById('onboarding');
+        if(!el) return;
+        if(seen){ el.style.display='none'; el.setAttribute('aria-hidden','true'); return; }
+        el.style.display='block'; el.setAttribute('aria-hidden','false');
+
+        const track=document.getElementById('onb-track');
+        const dots=[...document.querySelectorAll('.onb-dot')];
+        const btnPrev=document.getElementById('onb-prev');
+        const btnNext=document.getElementById('onb-next');
+        const btnStart=document.getElementById('onb-start');
+        const btnSkip=document.getElementById('onb-skip');
+        let idx=0, max=2;
+
+        function update(){
+          track.style.transform=`translateX(-${idx*100}%)`;
+          dots.forEach((d,i)=>d.classList.toggle('active', i===idx));
+          btnPrev.disabled = idx===0;
+          btnNext.style.display = idx<max ? 'inline-block' : 'none';
+          btnStart.style.display= idx===max ? 'inline-block' : 'none';
+        }
+        function done(){
+          localStorage.setItem(KEY,'1');
+          el.style.display='none'; el.setAttribute('aria-hidden','true');
+        }
+
+        // Touch swipe
+        let sx=0, dx=0, touching=false;
+        function onTouchStart(e){ touching=true; sx=e.touches?e.touches[0].clientX:e.clientX; }
+        function onTouchMove(e){ if(!touching) return; dx=(e.touches?e.touches[0].clientX:e.clientX)-sx; }
+        function onTouchEnd(){ if(!touching) return; touching=false; if(Math.abs(dx)>50){ if(dx<0 && idx<max) idx++; if(dx>0 && idx>0) idx--; update(); } dx=0; }
+
+        document.getElementById('onb-slider').addEventListener('touchstart',onTouchStart,{passive:true});
+        document.getElementById('onb-slider').addEventListener('touchmove',onTouchMove,{passive:true});
+        document.getElementById('onb-slider').addEventListener('touchend',onTouchEnd);
+
+        btnPrev.addEventListener('click',()=>{ if(idx>0){ idx--; update(); }});
+        btnNext.addEventListener('click',()=>{ if(idx<max){ idx++; update(); }});
+        btnStart.addEventListener('click',done);
+        btnSkip.addEventListener('click',done);
+
+        trApply();
+        window.addEventListener && window.addEventListener('i18n:changed', trApply);
+        update();
+      }
+
+      document.addEventListener('DOMContentLoaded', initOnboarding);
+    })();
+  </script>
+  <!-- ====== FIN AJOUT logique onboarding ====== -->
+
 </body>
 </html>
