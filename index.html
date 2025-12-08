@@ -587,11 +587,15 @@
       const DEBUG_PUSH = false;
       let inited = false;
 
-      function isNative() {
-        try {
-          return (window.location.href.indexOf('capacitor://') === 0) || (window.location.protocol === 'file:');
-        } catch(e){ return false; }
-      }
+ function isNative(){
+  try {
+    // fiable sur Capacitor 3/4/5
+    if (window.Capacitor?.isNativePlatform) return window.Capacitor.isNativePlatform();
+    // fallback raisonnable : si le plugin est chargé, on est en natif
+    return !!window.Capacitor?.Plugins?.PushNotifications;
+  } catch(e){ return false; }
+}
+
 
       async function savePushTokenToSupabase(token){
         try{
