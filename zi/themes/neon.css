@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+:root {
+  --box-bg: rgba(40, 40, 40, 0.6); /* gris sombre semi-transparent */
+  --box-border: #666666;           /* gris clair */
+  --canvas-bg: #000;               /* AJOUTÉ : fond du canvas pour Dark/Nuit */
+}
+
+body, h1, h2, h3, h4, h5, h6, p, div, span, button {
+  font-family: 'Orbitron', sans-serif !important;
+}
+
+body {
+  background-color: #111;
+  color: #ccc;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo, h1 {
+  font-size: 32px;
+  color: #ccc;
+  margin: 20px 0;
+}
+
+#game-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 10px;
+  gap: 40px;
+}
+
+canvas {
+  background: var(--canvas-bg); /* Corrigé pour suivre la variable */
+  border: 2px solid #444;
+}
+
+#hold-container,
+#next-container {
+  background-color: #1a1a1a;
+  border: 2px solid #555;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 0 6px #000;
+}
+
+#holdCanvas,
+#nextCanvas {
+  background-color: #000;
+  border: 2px dashed #555;
+  border-radius: 8px;
+}
+
+#hold-container p,
+#next-container p {
+  font-weight: bold;
+  font-size: 16px;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+
+.infos-box {
+  background: var(--box-bg);
+  border: 2px solid var(--box-border);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+  text-align: center;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.1);
+}
+
+#score {
+  font-size: 20px;
+  margin-top: 10px;
+  color: #00ff00;
+  font-weight: bold;
+  text-shadow: 0 0 3px #00ff00;
+}
+
+#highscore {
+  font-size: 18px;
+  color: #00ff00;
+  margin-top: 5px;
+}
+
+button {
+  background-color: #222;
+  color: #ccc;
+  border: 2px solid #ccc;
+  padding: 8px 16px;
+  margin: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 8px;
+  font-family: 'Orbitron', sans-serif;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: #333;
+  border-color: #fff;
+}
+
+@media (max-width: 768px) {
+  #game-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  canvas {
+    max-width: 90vw !important;
+    height: auto !important;
+  }
+
+  #holdCanvas, #nextCanvas {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  #score, #highscore {
+    font-size: 18px !important;
+  }
+
+  button {
+    font-size: 14px !important;
+    padding: 6px 10px !important;
+  }
+}

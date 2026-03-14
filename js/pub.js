@@ -19,8 +19,9 @@
   var AD_UNIT_ID_REWARDED     = 'ca-app-pub-6837328794080297/3006407791';
 
   // --- Réglages interstitiels ---
-  var INTERSTITIEL_APRES_X_ACTIONS = 2; // pub AU DÉBUT de la 3ᵉ action réelle
-  var INTER_COOLDOWN_MS = 0; // anti-spam (0 = off)
+  var INTERSTITIEL_APRES_X_ACTIONS = 2;        // pub au début de la 3e action réelle
+  var INTERSTITIEL_APRES_MS = 3 * 60 * 1000;   // ou toutes les 3 minutes
+  var INTER_COOLDOWN_MS = 0;                   // garde-fou optionnel
 
   // --- Récompenses par défaut (affichage/UI) ---
   window.REWARD_JETONS = typeof window.REWARD_JETONS === 'number'  ? window.REWARD_JETONS : 1;
@@ -34,9 +35,17 @@
   var isRewardShowing = false;
   window.__ads_active = false; // flag global anti-back/anti-overlays côté app
 
-  // --- Compteur unifié persisté (interstitiels) ---
+  // --- Compteurs persistés (interstitiels) ---
   var interActionsCount = parseInt(localStorage.getItem('inter_actions_count') || '0', 10);
   var lastInterTs = parseInt(localStorage.getItem('inter_last_ts') || '0', 10);
+  var interCycleStartedTs = parseInt(localStorage.getItem('inter_cycle_started_ts') || '0', 10);
+
+  if (!Number.isFinite(interActionsCount)) interActionsCount = 0;
+  if (!Number.isFinite(lastInterTs)) lastInterTs = 0;
+  if (!Number.isFinite(interCycleStartedTs) || interCycleStartedTs <= 0) {
+    interCycleStartedTs = Date.now();
+    localStorage.setItem('inter_cycle_started_ts', String(interCycleStartedTs));
+  }
 
   // ======================================================
   // ✅ CAP REWARDED : 4 / HEURE (ajout)
@@ -605,12 +614,27 @@ function informCapBlocked() {
   function canShowInterstitialNow() {
     if (!INTER_COOLDOWN_MS) return true;
     var now = Date.now();
-    if (now - lastInterTs < INTER_COOLDOWN_MS) return false;
-    return true;
+    return (now - lastInterTs) >= INTER_COOLDOWN_MS;
   }
+
+  function ensureInterstitialCycleStarted() {
+    if (!Number.isFinite(interCycleStartedTs) || interCycleStartedTs <= 0) {
+      interCycleStartedTs = Date.now();
+      localStorage.setItem('inter_cycle_started_ts', String(interCycleStartedTs));
+    }
+  }
+
+  function resetInterstitialCounters() {
+    interActionsCount = 0;
+    interCycleStartedTs = Date.now();
+    localStorage.setItem('inter_actions_count', '0');
+    localStorage.setItem('inter_cycle_started_ts', String(interCycleStartedTs));
+  }
+
   function markInterstitialShownNow() {
     lastInterTs = Date.now();
     localStorage.setItem('inter_last_ts', String(lastInterTs));
+    resetInterstitialCounters();
   }
 
   async function showInterstitial() {
@@ -673,15 +697,23 @@ function informCapBlocked() {
       return;
     }
 
-    // Vérifie si une pub doit partir AVANT de compter la nouvelle action (pub au début de la 3e)
-    var needAd = interActionsCount >= INTERSTITIEL_APRES_X_ACTIONS;
-    if (needAd) {
-      interActionsCount = 0;
-      localStorage.setItem('inter_actions_count', '0');
-      await showInterstitial();
+    ensureInterstitialCycleStarted();
+
+    var now = Date.now();
+    var needAdByActions = interActionsCount >= INTERSTITIEL_APRES_X_ACTIONS;
+    var needAdByTime = (now - interCycleStartedTs) >= INTERSTITIEL_APRES_MS;
+
+    if (needAdByActions || needAdByTime) {
+      var shown = await showInterstitial();
+
+      // si la pub a vraiment été affichée, les compteurs sont déjà remis à zéro
+      // et on ne recompte pas cette action pour éviter le spam
+      if (shown) {
+        return;
+      }
     }
 
-    // Compte l'action réelle (game lancée / reprise / recommencée)
+    // Compte l'action réelle seulement si aucune pub n'a été affichée
     interActionsCount++;
     localStorage.setItem('inter_actions_count', String(interActionsCount));
   }

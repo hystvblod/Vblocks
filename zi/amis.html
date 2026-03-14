@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title data-i18n="amis.title">VBlocks - Amis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    /* Même CSS que précédemment, pas de changement */
+    body {
+      margin: 0;
+      font-family: 'Quicksand', Arial, sans-serif;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 60% 40%, #7061e8 0%, #5db9e3 55%, #483070 100%);
+    }
+    .top-buttons {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 10px 0 8px;
+      gap: 16px; z-index: 2;
+      pointer-events: none;
+    }
+    .top-buttons .btn-back,
+    .top-buttons .btn-icon {
+      pointer-events: all;
+    }
+    .btn-back {
+      background: none; border: none;
+      display: flex; align-items: center; justify-content: center;
+      padding: 6px; cursor: pointer; border-radius: 50%;
+      transition: background 0.15s; width: 44px; height: 44px;
+    }
+    .btn-back img, .btn-back svg {
+      width: 26px; height: 26px; display: block;
+      filter: drop-shadow(0 1px 2px #2228);
+    }
+    .btn-back:hover { background: #23236022; }
+    .btn-icon {
+      background: none; border: none;
+      display: flex; align-items: center; justify-content: center;
+      padding: 6px; cursor: pointer; border-radius: 50%;
+      transition: background 0.15s; width: 44px; height: 44px;
+    }
+    .btn-icon img, .btn-icon svg {
+      width: 26px; height: 26px; display: block;
+      filter: drop-shadow(0 1px 2px #2228);
+    }
+    .btn-icon:hover { background: #23236022; }
+    .container {
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      min-height: 100vh; padding-top: 5.5em; gap: 2.3em;
+    }
+    .vblocks-logo {
+      width: 90px; margin-bottom: 0.5em; user-select: none; pointer-events: none;
+      filter: drop-shadow(0 5px 18px #a3c8fd44);
+      border-radius: 1.1em;
+    }
+    .titre-page {
+      color: #fff; font-size: 2em; font-weight: bold; text-align: center; margin-bottom: 0.3em;
+      text-shadow: 0 3px 16px #2e6ead44, 0 1px 1px #fff7;
+      letter-spacing: 0.03em;
+    }
+    .bloc-section {
+      width: 100%; max-width: 370px; background: #fff4; border-radius: 1.3em;
+      padding: 1.3em 1.1em 1.3em 1.1em; margin-bottom: 1.5em; box-shadow: 0 3px 18px #1a14331a;
+      backdrop-filter: blur(2px);
+    }
+    .bloc-section:last-child { margin-bottom: 0; }
+    .titre-section {
+      font-weight: 900; font-size: 1.08em; margin-bottom: 0.7em; color: #fff;
+      letter-spacing: 0.02em;
+    }
+    .search-friends {
+      display: flex; gap: 0.8em; align-items: center; margin-bottom: 0.5em;
+    }
+    .search-friends input {
+      flex: 1; padding: 0.75em 1em; border-radius: 1em; border: none;
+      font-size: 1em;
+      background: #fff;
+      box-shadow: 0 2px 8px #3bbce755;
+    }
+    .search-friends button {
+      background: #4ea6ff; color: #fff; border: none; border-radius: 1em; font-weight: bold;
+      font-size: 1.05em; padding: 0.72em 1.25em; cursor: pointer;
+      box-shadow: 0 2px 8px #4ea6ff55; transition: background 0.12s;
+    }
+    .search-friends button:active { background: #2369a1; }
+    .liste-amis {
+      display: flex; flex-direction: column; gap: 0.8em; margin-top: 0.8em;
+    }
+    .ami-item {
+      background: #fff;
+      border-radius: 1.1em;
+      box-shadow: 0 2px 8px #38a75f22;
+      display: flex; align-items: center; gap: 1em;
+      padding: 0.75em 1.1em;
+    }
+    .ami-avatar {
+      width: 42px; height: 42px; border-radius: 50%; background: #b2d6ff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.15em;
+      color: #26528a;
+    }
+    .ami-nom {
+      font-weight: 700; font-size: 1.08em; color: #1d1f28;
+    }
+    .ami-suppr {
+      margin-left: auto;
+      background: #fa4772; color: #fff; border: none; border-radius: 1em;
+      font-size: 0.95em; font-weight: 700; padding: 0.58em 1.1em; cursor: pointer; transition: background 0.13s;
+    }
+    .ami-suppr:active { background: #be185d; }
+    .i8n { font-weight: bold; color: #246133; }
+    .empty-msg {
+      color: #226; font-size: 1em; text-align: center; opacity: 0.66; margin: 0.9em 0 0.5em 0;
+    }
+    @media (max-width: 520px) {
+      .vblocks-logo { width: 120px;}
+      .titre-page { font-size: 1.17em;}
+      .container { padding-top: 3.6em; }
+      .bloc-section { padding: 1em 0.4em 1em 0.4em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-buttons">
+    <a href="index.html" class="btn-back" title="Retour" data-i18n="menu.retour">
+      <img src="assets/icons/arrow_back.svg" alt="Retour" data-i18n="menu.retour" />
+    </a>
+    <div style="display: flex; gap: 16px;">
+      <a href="profil.html" class="btn-icon" title="Profil" data-i18n="menu.profil">
+        <img src="assets/icons/user.svg" alt="Profil" data-i18n="menu.profil" />
+      </a>
+      <a href="parametres.html" class="btn-icon" title="Paramètres" data-i18n="menu.parametres">
+        <img src="assets/icons/settings.svg" alt="Paramètres" data-i18n="menu.parametres" />
+      </a>
+    </div>
+  </div>
+  <div class="container">
+    <img class="vblocks-logo" src="assets/images/vblocks-logo.png" alt="VBlocks Logo" draggable="false" />
+    <div class="titre-page" data-i18n="amis.titre">Tes amis</div>
+
+    <!-- Recherche d'ami -->
+    <div class="bloc-section">
+      <div class="titre-section" data-i18n="amis.rechercheTitre">Rechercher un ami</div>
+      <form class="search-friends" id="searchFriendForm">
+        <input type="text" placeholder="Pseudo ou ID" id="searchFriendInput" data-i18n="amis.recherchePlaceholder" />
+        <button type="submit" data-i18n="amis.btnRechercher">Rechercher</button>
+      </form>
+      <div class="empty-msg" id="searchFriendMsg" data-i18n="amis.rechercheAucun">Aucun résultat pour le moment.</div>
+      <div id="searchFriendResult"></div>
+    </div>
+
+    <!-- Liste d'amis -->
+    <div class="bloc-section">
+      <div class="titre-section" data-i18n="amis.listeTitre">Liste de mes amis</div>
+      <div class="liste-amis" id="listeAmis"></div>
+      <div class="empty-msg" id="emptyListMsg" style="display:none;" data-i18n="amis.listeVide">Tu n’as pas encore d’amis.</div>
+    </div>
+  </div>
+  <script>
+    // === SUPABASE CONFIG ===
+    const SUPABASE_URL = 'https://youhealyblgbwjhsskca.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let user = null;
+    // Récupère l'utilisateur connecté (auth anonyme ou non)
+    async function getUser() {
+      const { data, error } = await sb.auth.getUser();
+      if (data?.user) user = data.user;
+      return user;
+    }
+
+    // Affiche la liste des amis
+    async function refreshFriends() {
+      const list = document.getElementById("listeAmis");
+      const emptyMsg = document.getElementById("emptyListMsg");
+      list.innerHTML = "";
+      emptyMsg.style.display = "none";
+      if (!user) return;
+      const { data, error } = await sb
+        .from('friends')
+        .select('id, friend_id, friend_pseudo')
+        .eq('user_id', user.id);
+      if (!data || data.length === 0) {
+        emptyMsg.style.display = "block";
+        return;
+      }
+      data.forEach(friend => {
+        const li = document.createElement("div");
+        li.className = "ami-item";
+        li.innerHTML = `
+          <div class="ami-avatar">${friend.friend_pseudo ? friend.friend_pseudo[0].toUpperCase() : "?"}</div>
+          <div class="ami-nom">${friend.friend_pseudo || friend.friend_id}</div>
+          <button class="ami-suppr" data-id="${friend.id}" data-i18n="amis.btnSupprimer">${window.i18nGet ? window.i18nGet("amis.btnSupprimer") : "Supprimer"}</button>
+        `;
+        li.querySelector(".ami-suppr").onclick = async () => {
+          await sb.from('friends').delete().eq('id', friend.id);
+          refreshFriends();
+        };
+        list.appendChild(li);
+      });
+    }
+
+    // Recherche d'un utilisateur
+    document.getElementById("searchFriendForm").onsubmit = async function(e) {
+      e.preventDefault();
+      const val = document.getElementById("searchFriendInput").value.trim();
+      const resultDiv = document.getElementById("searchFriendResult");
+      const msg = document.getElementById("searchFriendMsg");
+      resultDiv.innerHTML = "";
+      msg.textContent = "";
+      if (!val) {
+        msg.setAttribute("data-i18n", "amis.erreurChamp");
+        msg.textContent = window.i18nGet ? window.i18nGet("amis.erreurChamp") : "Veuillez entrer un pseudo ou un ID.";
+        return;
+      }
+      // Cherche par pseudo ou ID (insensible à la casse)
+      const { data, error } = await sb
+        .from('users')
+        .select('id, pseudo')
+        .or(`pseudo.ilike.*${val}*,id.eq.${val}`);
+      if (error || !data || data.length === 0) {
+        msg.setAttribute("data-i18n", "amis.rechercheAucun");
+        msg.textContent = window.i18nGet ? window.i18nGet("amis.rechercheAucun") : "Aucun résultat pour le moment.";
+        return;
+      }
+      // Affiche tous les résultats
+      data.forEach(u => {
+        const d = document.createElement("div");
+        d.className = "ami-item";
+        d.innerHTML = `
+          <div class="ami-avatar">${u.pseudo ? u.pseudo[0].toUpperCase() : "?"}</div>
+          <div class="ami-nom">${u.pseudo || u.id}</div>
+          <button class="ami-suppr" data-id="${u.id}" data-pseudo="${u.pseudo}" data-i18n="amis.btnAjouter">${window.i18nGet ? window.i18nGet("amis.btnAjouter") : "Ajouter"}</button>
+        `;
+        d.querySelector("button").onclick = async () => {
+          if (!user) return;
+          await sb.from('friends').insert([{ user_id: user.id, friend_id: u.id, friend_pseudo: u.pseudo }]);
+          refreshFriends();
+        };
+        resultDiv.appendChild(d);
+      });
+    };
+
+    // Init au chargement
+    window.addEventListener("DOMContentLoaded", async () => {
+      await getUser();
+      refreshFriends();
+    });
+  </script>
+  <script src="js/i18n.js"></script>
+
+</body>
+</html>
