@@ -1802,5 +1802,5 @@ if (score > highscoreCloud) {
     return null;
   }
 
-  global.initGame = initGame;
+ global.VBlocksGame = { initGame };
 })(window);
