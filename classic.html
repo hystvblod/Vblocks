@@ -28,22 +28,33 @@
       height: 100%;
     }
     body {
-      display: flex; flex-direction: column;
-      min-height: 100dvh; height: 100dvh;
+      min-height: 100dvh;
+      height: 100dvh;
       width: 100vw;
-      align-items: center; justify-content: flex-start;
     }
+
+    .game-viewport {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
     .main-content {
       display: flex;
       flex-direction: column;
-      width: 100vw;
-      max-width: 430px;
-      height: 100dvh;
-      min-height: 100dvh;
+      width: 430px;
+      max-width: none;
+      height: auto;
+      min-height: 0;
       box-sizing: border-box;
       align-items: center;
       justify-content: flex-start;
       margin: 0 auto;
+      transform-origin: top center;
+      will-change: transform;
     }
     .top-bar {
       width: 100%;
@@ -154,16 +165,27 @@
       display: block; margin: 0 auto;
     }
     .game-flex-wrap {
-      width: 100%; flex: 1 1 0; min-height: 0; min-width: 0;
-      display: flex; justify-content: center; align-items: center;
+      width: 100%;
+      flex: 0 0 auto;
+      min-height: 0;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       margin-bottom: 4px;
     }
+
     #gameCanvas {
-      width: 100%; max-width: 330px; aspect-ratio: 10/20;
-      height: auto; max-height: 100%;
+      width: 100%;
+      max-width: 330px;
+      aspect-ratio: 10/20;
+      height: auto;
+      max-height: none;
       background: var(--canvas-bg, #180654);
-      border-radius: 0.4em; box-shadow: 0 6px 32px #39ff1411;
-      display: block; margin: 0 auto;
+      border-radius: 0.4em;
+      box-shadow: 0 6px 32px #39ff1411;
+      display: block;
+      margin: 0 auto;
       touch-action: none;
     }
     .score-row {
@@ -195,6 +217,7 @@
 </head>
 <body>
   <canvas id="starfield" style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-1; display:none;"></canvas>
+  <div class="game-viewport">
   <div class="main-content">
     <!-- BARRE TOP -->
     <div class="top-bar">
@@ -260,7 +283,8 @@
       <button onclick="location.reload()" data-i18n="game.replay">Rejouer</button>
     </div>
   </div>
-  <audio id="music" src="assets/sounds/chill.mp3" loop></audio>
+</div>
+<audio id="music" src="assets/sounds/chill.mp3" loop></audio>
   <!-- ==== SCRIPTS ==== -->
   <script>
     // Musique bouton
