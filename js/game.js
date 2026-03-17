@@ -183,9 +183,12 @@ function fillRectThemeSafe(c, px, py, size) {
       c2d.restore();
     }
 
+    const mainContent = document.querySelector('.main-content');
+    let resizeRAF = null;
+
     function fitCanvasToCSS() {
-      const rect = canvas.getBoundingClientRect();
-      const cssW = Math.round(rect.width);
+      const cssW = Math.round(canvas.clientWidth || canvas.getBoundingClientRect().width);
+      if (!cssW) return;
 
       BLOCK_SIZE = cssW / COLS;
 
@@ -194,10 +197,36 @@ function fillRectThemeSafe(c, px, py, size) {
 
       canvas.style.height = usedH + 'px';
 
-      canvas.width  = Math.round(usedW * DPR);
+      canvas.width = Math.round(usedW * DPR);
       canvas.height = Math.round(usedH * DPR);
 
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+
+    function fitWholeGameUI() {
+      if (!mainContent) return;
+
+      mainContent.style.transform = 'scale(1)';
+      mainContent.style.marginTop = '0px';
+
+      requestAnimationFrame(() => {
+        const baseW = mainContent.offsetWidth || 430;
+        const baseH = Math.max(mainContent.scrollHeight, mainContent.offsetHeight, 1);
+
+        const scale = Math.min(
+          window.innerWidth / baseW,
+          window.innerHeight / baseH,
+          1
+        );
+
+        const top = Math.max(
+          0,
+          Math.floor((window.innerHeight - (baseH * scale)) / 2)
+        );
+
+        mainContent.style.transform = `scale(${scale})`;
+        mainContent.style.marginTop = `${top}px`;
+      });
     }
 
     function boardOffsets() {
@@ -224,12 +253,26 @@ function fillRectThemeSafe(c, px, py, size) {
     fitCanvasToCSS();
     sizeMiniCanvas(holdCanvas, holdCtx, 48);
     sizeMiniCanvas(nextCanvas, nextCtx, 48);
+    fitWholeGameUI();
 
     window.addEventListener('resize', () => {
-      fitCanvasToCSS();
-      sizeMiniCanvas(holdCanvas, holdCtx, 48);
-      sizeMiniCanvas(nextCanvas, nextCtx, 48);
-      safeRedraw();
+      cancelAnimationFrame(resizeRAF);
+      resizeRAF = requestAnimationFrame(() => {
+        if (mainContent) {
+          mainContent.style.transform = 'scale(1)';
+          mainContent.style.marginTop = '0px';
+        }
+
+        fitCanvasToCSS();
+        sizeMiniCanvas(holdCanvas, holdCtx, 48);
+        sizeMiniCanvas(nextCanvas, nextCtx, 48);
+
+        safeRedraw();
+        drawMiniPiece(holdCtx, heldPiece);
+        drawMiniPiece(nextCtx, nextPiece);
+
+        fitWholeGameUI();
+      });
     });
 
     const THEMES = ['cyber', 'neon', 'nuit', 'nature', 'bubble', 'retro', 'space', 'vitraux', 'luxury', 'grece', 'arabic', 'angelique', 'japon'];
