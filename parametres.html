@@ -195,12 +195,11 @@
       </div>
 
       <!-- Publicités -->
-      <div class="param-group">
+      <div class="param-group" id="ads-privacy-group">
         <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
-        <div class="switch">
-          <input type="checkbox" id="ads-toggle">
-          <span id="ads-label" data-i18n="settings.ads.on">Activée</span>
-        </div>
+        <button id="ads-privacy-btn" type="button" class="return-btn" data-i18n="index.rgpd.manage" style="margin-top:0;">
+          Gérer les accords publicitaires
+        </button>
       </div>
 
       <!-- Pièce fantôme -->
@@ -294,104 +293,99 @@
     ];
 
     const langueSelect = document.getElementById("langue-select");
-    // On lit l’override éventuel en MAJ, sinon on peut laisser vide (l’UI reste cliquable)
-    let selectedLang = (localStorage.getItem("langue") || "").toUpperCase();
 
-    // Construit la liste et branche le handler unifié
-    LANGS.forEach(l => {
-      const opt = document.createElement('div');
-      opt.className = 'lang-option' + (l.code === selectedLang ? ' selected' : '');
-      opt.innerHTML = l.flag + '<span style="margin-left:0.35em;">' + l.label + '</span>';
-      opt.onclick = async () => {
-        // 1) on applique via i18n (écrit l’override en MAJ dans localStorage)
-        if (window.setLang) await window.setLang(l.code);
+function getSelectedLangForSettings() {
+  if (window.VRI18n?.getLang) {
+    return String(window.VRI18n.getLang() || "").toUpperCase();
+  }
+  return String(localStorage.getItem("langue") || "").toUpperCase();
+}
 
-        // 2) on met la même valeur en DB
-        try {
-          if (window.userData?.updateLangDirect) await window.userData.updateLangDirect(l.code);
-        } catch(e){}
+function renderLanguageOptions() {
+  const selectedLang = getSelectedLangForSettings();
+  langueSelect.innerHTML = "";
 
-        // 3) feedback UI
-        document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
-        opt.classList.add('selected');
-      };
-      langueSelect.appendChild(opt);
-    });
+  LANGS.forEach(l => {
+    const opt = document.createElement('div');
+    opt.className = 'lang-option' + (l.code === selectedLang ? ' selected' : '');
+    opt.innerHTML = l.flag + '<span style="margin-left:0.35em;">' + l.label + '</span>';
+
+    opt.onclick = async () => {
+      if (window.setLang) {
+        await window.setLang(l.code);
+      }
+
+      document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+    };
+
+    langueSelect.appendChild(opt);
+  });
+}
+
+renderLanguageOptions();
+
+window.addEventListener("vblocks:i18n:changed", renderLanguageOptions);
   </script>
 
   <script>
-    // ====== ADS CONSENT (inchangé fonctionnellement) ======
-    (function(){
-      const CONSENT_KEY = "rgpdConsent";
-      const ADS_KEY     = "adsConsent";
-      const ADS_ENABLED = "adsEnabled";
+  (function(){
+    function isNativePlatformSafe() {
+      try {
+        if (window.Capacitor && typeof window.Capacitor.isNativePlatform === "function") {
+          return !!window.Capacitor.isNativePlatform();
+        }
+      } catch (_) {}
+      return false;
+    }
 
-      const adsToggle = document.getElementById('ads-toggle');
-      const adsLabel  = document.getElementById('ads-label');
+    async function syncAdsPrivacyUI() {
+      const group = document.getElementById("ads-privacy-group");
+      const btn = document.getElementById("ads-privacy-btn");
+      if (!group || !btn) return;
 
-      function refreshAdsLabel() {
-        const on = adsToggle.checked;
-        adsLabel.textContent = on
-          ? (window.i18nGet ? window.i18nGet('settings.ads.on') || 'Activée' : 'Activée')
-          : (window.i18nGet ? window.i18nGet('settings.ads.off') || 'Désactivée' : 'Désactivée');
+      group.style.display = "";
+
+      const nativeOk = isNativePlatformSafe();
+      const hasOfficialApi =
+        !!window.VRAds &&
+        typeof window.VRAds.getGoogleConsentInfo === "function" &&
+        typeof window.VRAds.showGooglePrivacyOptionsForm === "function";
+
+      if (!nativeOk || !hasOfficialApi) {
+        btn.disabled = true;
+        btn.style.opacity = "0.55";
+        btn.style.cursor = "default";
+        return;
       }
 
-      async function loadConsentFromCloudThenLocal() {
-        try {
-          if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-          if (window.sb?.rpc) {
-            const { data, error } = await window.sb.rpc('get_ads_consent');
-            if (!error && data) {
-              localStorage.setItem(CONSENT_KEY, data);
-              if (data === 'accept') {
-                localStorage.setItem(ADS_KEY, 'yes');
-                localStorage.setItem(ADS_ENABLED, 'true');
-              } else {
-                localStorage.setItem(ADS_KEY, 'no');
-                localStorage.setItem(ADS_ENABLED, 'false');
-              }
-            }
-          }
-        } catch(e) {}
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      btn.style.cursor = "pointer";
+    }
 
-        try {
-          const consent = localStorage.getItem(CONSENT_KEY);
-          const adsYes  = localStorage.getItem(ADS_KEY) === 'yes';
-          if (consent === 'accept') {
-            adsToggle.checked = adsYes;
-          } else if (consent === 'refuse') {
-            adsToggle.checked = false;
-          } else {
-            adsToggle.checked = (localStorage.getItem(ADS_ENABLED) === 'true');
-          }
-        } catch(_) {}
-        refreshAdsLabel();
-      }
+    document.addEventListener("DOMContentLoaded", async function(){
+      await syncAdsPrivacyUI();
 
-      async function persistConsent(toChecked) {
-        const willAccept = !!toChecked;
-        localStorage.setItem(CONSENT_KEY, willAccept ? 'accept' : 'refuse');
-        localStorage.setItem(ADS_KEY,     willAccept ? 'yes' : 'no');
-        localStorage.setItem(ADS_ENABLED, willAccept ? 'true' : 'false');
-        try {
-          if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-          if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: willAccept ? 'accept' : 'refuse' });
-        } catch(e) { console.warn('[param] update_ads_consent', e?.message || e); }
-        try {
-          if (willAccept && typeof window.applyConsentFromStorage === 'function') window.applyConsentFromStorage();
-        } catch(_){}
-      }
+      const btn = document.getElementById("ads-privacy-btn");
+      if (btn) {
+        btn.addEventListener("click", async function(){
+          if (btn.disabled) return;
 
-      if (adsToggle) {
-        adsToggle.addEventListener('change', async function(){
-          refreshAdsLabel();
-          await persistConsent(adsToggle.checked);
+          try {
+            await window.VRAds.showGooglePrivacyOptionsForm();
+          } catch (_) {}
+
+          await syncAdsPrivacyUI();
         });
       }
+    });
 
-      document.addEventListener('DOMContentLoaded', loadConsentFromCloudThenLocal);
-    })();
-  </script>
+    document.addEventListener("visibilitychange", function(){
+      if (!document.hidden) syncAdsPrivacyUI();
+    });
+  })();
+</script>
 
   <!-- Ghost + Music (inchangés) -->
   <script>

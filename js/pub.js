@@ -34,6 +34,8 @@
   // --- Flags d'état ---
   var isRewardShowing = false;
   window.__ads_active = false; // flag global anti-back/anti-overlays côté app
+  var __googleConsentInfo = null;
+  var __googleConsentInfoPromise = null;
 
   // --- Compteurs persistés (interstitiels) ---
   var interActionsCount = parseInt(localStorage.getItem('inter_actions_count') || '0', 10);
@@ -155,7 +157,7 @@ function informCapBlocked() {
     }
   }
 
-  function getPersonalizedAdsGranted() {
+  function getPersonalizedAdsGrantedLegacy() {
     var rgpd = localStorage.getItem('rgpdConsent'); // "accept"|"refuse"|null
     var adsConsent = (localStorage.getItem('adsConsent') || '').toLowerCase();
     var adsEnabled = (localStorage.getItem('adsEnabled') || '').toLowerCase();
@@ -169,8 +171,91 @@ function informCapBlocked() {
     if (adsEnabled) return adsEnabled === 'true';
     return false;
   }
+
+  function hasOfficialUmpSupport() {
+    return !!(AdMob && AdMob.requestConsentInfo && AdMob.showConsentForm && AdMob.showPrivacyOptionsForm);
+  }
+
   function buildAdMobRequestOptions() {
-    return { npa: getPersonalizedAdsGranted() ? '0' : '1' };
+    if (isNative() && hasOfficialUmpSupport()) return {};
+    return { npa: getPersonalizedAdsGrantedLegacy() ? '0' : '1' };
+  }
+
+  async function syncLegacyConsentMirror(info) {
+    try {
+      if (!info) return;
+      var accepted = !!info.canRequestAds;
+      localStorage.setItem('rgpdConsent', accepted ? 'accept' : 'refuse');
+      localStorage.setItem('adsConsent', accepted ? 'yes' : 'no');
+      localStorage.setItem('adsEnabled', accepted ? 'true' : 'false');
+    } catch (_) {}
+
+    try {
+      if (!info) return;
+      if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
+      if (window.sb && window.sb.rpc) {
+        await window.sb.rpc('update_ads_consent', { new_consent: info.canRequestAds ? 'accept' : 'refuse' });
+      }
+    } catch (_) {}
+  }
+
+  async function getGoogleConsentInfo(forceRefresh) {
+    if (!isNative() || !hasOfficialUmpSupport()) return null;
+    if (__googleConsentInfo && !forceRefresh) return __googleConsentInfo;
+    if (__googleConsentInfoPromise) return __googleConsentInfoPromise;
+
+    __googleConsentInfoPromise = AdMob.requestConsentInfo()
+      .then(async function (info) {
+        __googleConsentInfo = info || null;
+        await syncLegacyConsentMirror(__googleConsentInfo);
+        return __googleConsentInfo;
+      })
+      .catch(function () {
+        return __googleConsentInfo;
+      })
+      .finally(function () {
+        __googleConsentInfoPromise = null;
+      });
+
+    return __googleConsentInfoPromise;
+  }
+
+  async function ensureCanRequestAds() {
+    var info = await getGoogleConsentInfo(false);
+    if (!info) return true;
+    return !!info.canRequestAds;
+  }
+
+  async function maybeShowGoogleConsentFormOnIndexAfterIntro() {
+    if (!isNative() || !hasOfficialUmpSupport()) return null;
+
+    var info = await getGoogleConsentInfo(true);
+    if (!info) return null;
+    if (info.canRequestAds) return info;
+
+    try {
+      info = await AdMob.showConsentForm();
+      __googleConsentInfo = info || __googleConsentInfo;
+      await syncLegacyConsentMirror(__googleConsentInfo);
+      return __googleConsentInfo;
+    } catch (_) {
+      return __googleConsentInfo;
+    }
+  }
+
+  async function showGooglePrivacyOptionsForm() {
+    if (!isNative() || !hasOfficialUmpSupport()) return false;
+
+    var info = await getGoogleConsentInfo(true);
+    if (!info || info.privacyOptionsRequirementStatus !== 'REQUIRED') return false;
+
+    try {
+      await AdMob.showPrivacyOptionsForm();
+      await getGoogleConsentInfo(true);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   // =============================
@@ -185,10 +270,8 @@ function informCapBlocked() {
   // Helpers anti-surcouches avant/après show() — WHITELIST SAFE
   // =============================
   var APP_OVERLAYS = [
-    '#popup-consent',
     '#update-banner',
     '.tooltip-box',
-    '.popup-consent-bg',
     '.modal-app',
     '.dialog-app',
     '.backdrop-app',
@@ -350,6 +433,7 @@ function informCapBlocked() {
         initializeForTesting: __DEV_ADS__
       });
       registerAdEventsOnce();
+      await getGoogleConsentInfo(true);
     } catch (_e) {}
   })();
 
@@ -572,6 +656,7 @@ function informCapBlocked() {
       }
 
       await ensureAuth();
+      if (!(await ensureCanRequestAds())) { onDone&&onDone(false); return; }
 
       var adId = AD_UNIT_ID_REWARDED;
 
@@ -690,6 +775,7 @@ function informCapBlocked() {
         return false;
       }
       if (!canShowInterstitialNow()) { return false; }
+      if (!(await ensureCanRequestAds())) { return false; }
 
       var adId = AD_UNIT_ID_INTERSTITIEL;
 
@@ -824,6 +910,11 @@ function informCapBlocked() {
   window.partieTerminee       = partieTerminee;
 
   window.hasNoAds             = hasNoAds;
+  window.VRAds                = Object.assign({}, window.VRAds || {}, {
+    getGoogleConsentInfo: getGoogleConsentInfo,
+    maybeShowGoogleConsentFormOnIndexAfterIntro: maybeShowGoogleConsentFormOnIndexAfterIntro,
+    showGooglePrivacyOptionsForm: showGooglePrivacyOptionsForm
+  });
 
   // (Optionnel) expose un helper pour ton UI de reprise
   window.adsSetResumePopupOpen = function (isOpen) {

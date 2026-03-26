@@ -45,30 +45,6 @@
       background:#333; color:#fff;
     }
 
-    /* Popup consent (au-dessus de tous les calques pour capter les clics) */
-    #popup-consent,
-    .popup-consent-bg {
-      position: fixed;
-      inset: 0;
-      display: none;              /* affichée en 'flex' par showPopupOnce() */
-      z-index: 100050;            /* > #update-banner (99998) */
-      pointer-events: auto;       /* capter les clics */
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,.35);
-    }
-    .popup-consent-box {
-      position: relative;
-      z-index: 100051;            /* la boîte au-dessus du fond */
-      pointer-events: auto;
-      background: #1d1d1f;
-      color: #fff;
-      border-radius: 16px;
-      padding: 16px;
-      width: min(92vw, 420px);
-      box-shadow: 0 10px 40px rgba(0,0,0,.45);
-      text-align: center;
-    }
   </style>
 
   <!-- ====== AJOUT: styles onboarding ====== -->
@@ -122,6 +98,7 @@
 
   <!-- Cordova d'abord (inchangé) -->
   <script src="cordova.js"></script>
+  <script src="js/onesignal.js"></script>
   <script src="js/achat.js"></script> 
   <script>
     document.addEventListener('deviceready', function(){
@@ -205,37 +182,6 @@
     </a>
   </div>
 
-  <!-- -------- POPUP RGPD/CONSENT -------- -->
-  <div id="popup-consent" class="popup-consent-bg" style="display:none;">
-    <div class="popup-consent-box">
-      <h2 data-i18n="index.rgpd.title">Confidentialité & Publicités</h2>
-      <p data-i18n="index.rgpd.body1">
-        VBlocks utilise des identifiants publicitaires pour diffuser des pubs personnalisées.<br>
-        Tu peux refuser ou accepter la personnalisation.
-      </p>
-      <small data-i18n="index.rgpd.body2">(Tu peux changer d'avis plus tard dans les paramètres)</small>
-
-      <!-- ✅ Choix publicités uniquement (inchangé visuellement) -->
-      <div style="text-align:left;margin-top:.75rem">
-        <label style="display:flex;gap:.5em;align-items:center;margin:.25rem 0">
-          <input id="consent-ads" type="checkbox" checked />
-          <span data-i18n="index.rgpd.ads">Publicités personnalisées</span>
-        </label>
-      </div>
-
-      <div style="display:flex;gap:1em;justify-content:center;margin-top:1em;">
-        <button id="consent-accept" class="btn-accept" data-i18n="index.rgpd.accept">Accepter</button>
-        <button id="consent-refuse" class="btn-refuse" data-i18n="index.rgpd.refuse">Refuser</button>
-      </div>
-
-      <div style="margin-top:0.75rem;text-align:center;">
-        <a href="https://hystvblod.github.io/Vboldstudio/vblocks.html"
-           target="_blank" rel="noopener"
-           class="link-accords" data-i18n="index.rgpd.manage">Gérer les accords publicitaires</a>
-      </div>
-    </div>
-  </div>
-  <!-- -------- FIN POPUP RGPD/CONSENT -------- -->
 
   <div class="container">
     <img class="vblocks-logo" src="assets/images/vblocks-logo.png" alt="VBlocks Logo" draggable="false" />
@@ -305,113 +251,6 @@
         tooltip.style.display = 'none';
       });
     });
-  </script>
-
-  <!-- --------------- RGPD & Consents (inchangé visuellement) --------------- -->
-  <script>
-    (function(){
-      const CONSENT_KEY  = "rgpdConsent";   // "accept" | "refuse"
-      const ADS_KEY      = "adsConsent";    // "yes" | "no"
-      const ADS_ENABLED  = "adsEnabled";    // "true" | "false"
-      const SHOWN_FLAG   = "consentPopupShown"; // session-only
-
-      (function syncConsentKeys() {
-        try {
-          const rg = localStorage.getItem(CONSENT_KEY);
-          const ae = localStorage.getItem(ADS_ENABLED);
-          const ads = localStorage.getItem(ADS_KEY);
-          if (!rg && ae !== null) {
-            localStorage.setItem(CONSENT_KEY, ae === 'true' ? 'accept' : 'refuse');
-            if (!ads) localStorage.setItem(ADS_KEY, ae === 'true' ? 'yes' : 'no');
-          }
-        } catch(_) {}
-      })();
-
-      function hasLocalConsent() {
-        const c = localStorage.getItem(CONSENT_KEY);
-        return c === 'accept' || c === 'refuse';
-      }
-      function applyConsentFromLocal() {
-        const consent = localStorage.getItem(CONSENT_KEY);
-        const personalized = localStorage.getItem(ADS_KEY) === "yes";
-        if (consent === "accept" && personalized && typeof window.initAds === "function") {
-          try { window.initAds(); } catch(e){}
-        }
-      }
-      async function syncConsentFromCloud() {
-        try {
-          if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-          if (!window.sb?.rpc) return null;
-          const { data, error } = await window.sb.rpc('get_ads_consent');
-          if (error) { console.warn('[consent] get_ads_consent error', error.message || error); return null; }
-          if (data === 'accept' || data === 'refuse') {
-            localStorage.setItem(CONSENT_KEY, data);
-            if (data === 'accept') {
-              if (!localStorage.getItem(ADS_KEY)) localStorage.setItem(ADS_KEY, 'yes');
-              if (!localStorage.getItem(ADS_ENABLED)) localStorage.setItem(ADS_ENABLED, 'true');
-            } else {
-              localStorage.setItem(ADS_KEY, 'no');
-              localStorage.setItem(ADS_ENABLED, 'false');
-            }
-            return data;
-          }
-          return null;
-        } catch(e) { return null; }
-      }
-      function showPopupOnce() {
-        if (sessionStorage.getItem(SHOWN_FLAG) === '1') return;
-        const popup = document.getElementById("popup-consent");
-        if (popup) {
-          popup.style.display = "flex";
-          sessionStorage.setItem(SHOWN_FLAG, '1');
-        }
-      }
-
-      window.applyConsentFromStorage = applyConsentFromLocal;
-
-      window.addEventListener("DOMContentLoaded", async function() {
-        try {
-          if (hasLocalConsent()) {
-            applyConsentFromLocal();
-          } else {
-            const cloud = await syncConsentFromCloud();
-            if (cloud) applyConsentFromLocal(); else showPopupOnce();
-          }
-        } catch(e) { showPopupOnce(); }
-
-        // Boutons popup (inchangé)
-        const btnAccept = document.getElementById("consent-accept");
-        const btnRefuse = document.getElementById("consent-refuse");
-        const cbAds     = document.getElementById("consent-ads");
-        const popup     = document.getElementById("popup-consent");
-
-        if (btnAccept) {
-          btnAccept.onclick = async function() {
-            localStorage.setItem(CONSENT_KEY, "accept");
-            localStorage.setItem(ADS_KEY,   cbAds && cbAds.checked ? "yes" : "no");
-            localStorage.setItem(ADS_ENABLED, cbAds && cbAds.checked ? "true" : "false");
-            if (popup) popup.style.display = "none";
-            applyConsentFromLocal();
-            try {
-              if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-              if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "accept" });
-            } catch(e) {}
-          };
-        }
-        if (btnRefuse) {
-          btnRefuse.onclick = async function() {
-            localStorage.setItem(CONSENT_KEY, "refuse");
-            localStorage.setItem(ADS_KEY,   "no");
-            localStorage.setItem(ADS_ENABLED, "false");
-            if (popup) popup.style.display = "none";
-            try {
-              if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-              if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: "refuse" });
-            } catch(e) {}
-          };
-        }
-      });
-    })();
   </script>
 
   <!-- ========= Helpers POPUP (messages) + Concours par pays ========= -->
@@ -580,67 +419,10 @@
         if (window.i18nTranslateAll) window.i18nTranslateAll();
 
         // Autorisation push au chargement (natif uniquement)
-        if (window.__initPushOnce) { try { await window.__initPushOnce(); } catch(e) {} }
       } catch (e) {
         console.warn('[INDEX bootstrap]', e?.message || e);
       }
     });
-  </script>
-
-  <!-- Push (FCM) : init + enregistrement token (JS only, pas d'UI) -->
-  <script>
-    (function () {
-      const DEBUG_PUSH = false;
-      let inited = false;
-
- function isNative(){
-  try {
-    // fiable sur Capacitor 3/4/5
-    if (window.Capacitor?.isNativePlatform) return window.Capacitor.isNativePlatform();
-    // fallback raisonnable : si le plugin est chargé, on est en natif
-    return !!window.Capacitor?.Plugins?.PushNotifications;
-  } catch(e){ return false; }
-}
-
-
-      async function savePushTokenToSupabase(token){
-        try{
-          if(!token || !window.sb) return;
-          let uid = null;
-          try { uid = await (window.userData?.getAuthUserId?.() || null); } catch(e){}
-          if(!uid) return;
-          const lang = (localStorage.getItem('langue') || 'EN').toUpperCase();
-          let platform = 'android';
-          try { platform = (window.Capacitor && window.Capacitor.getPlatform) ? window.Capacitor.getPlatform() : platform; } catch(e){}
-          await window.sb.from('user_push_tokens').upsert(
-            [{ token, user_id: uid, platform, lang }],
-            { onConflict: 'token' }
-          );
-        }catch(e){ if (DEBUG_PUSH) console.warn('[Push] save token fail', e); }
-      }
-
-      async function initPush() {
-        if (inited) return; inited = true;
-        if (!isNative()) return;
-        const Push = window.Capacitor?.Plugins?.PushNotifications;
-        if (!Push) return;
-        try {
-          const perm = await Push.requestPermissions();
-          if (!perm || perm.receive !== 'granted') return;
-          await Push.register();
-
-          Push.addListener('registration', async ({ value }) => {
-            localStorage.setItem('fcmToken', value || '');
-            if (DEBUG_PUSH) console.log('[Push] FCM token:', value);
-            try { await savePushTokenToSupabase(value); } catch(e){}
-          });
-          Push.addListener('registrationError', (err) => { if (DEBUG_PUSH) console.error('[Push] registration error', err); });
-          Push.addListener('pushNotificationReceived', (n) => { if (DEBUG_PUSH) console.log('[Push] reçu (FG)', n); });
-          Push.addListener('pushNotificationActionPerformed', (a) => { if (DEBUG_PUSH) console.log('[Push] action', a); });
-        } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
-      }
-      window.__initPushOnce = initPush;
-    })();
   </script>
 
   <!-- ===== Bannière MAJ non bloquante + logique AppUpdate / Store ===== -->
