@@ -34,8 +34,16 @@
     .btn-icon:hover { background: #23236022; }
 
     .profil-content {
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-      min-height: 100vh; padding-top: 6.2em; gap: 1.8em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      width: min(760px, 100%);
+      margin: 0 auto;
+      box-sizing: border-box;
+      padding: 6.2em 16px 28px;
+      gap: 1.8em;
     }
     .profil-logo {
       width: 94px; margin-bottom: 0.3em; margin-top: -1.1em;
@@ -145,11 +153,32 @@
     }
 
     @media (min-width: 768px) {
-      .vr-referral-card{
+      .profil-content {
+        padding-top: 7em;
+        gap: 2em;
+      }
+
+      .profil-logo {
+        width: 108px;
+        margin-top: -0.3em;
+      }
+
+      .profil-title {
+        font-size: 2.2em;
+      }
+
+      .theme-btn-vb,
+      .applis-btn-vb {
+        max-width: 520px;
+      }
+
+      .vr-referral-card,
+      .vb-referral-card {
         width: min(720px, 100%);
         margin: 16px auto 28px;
         padding: 24px 24px 22px;
         border-radius: 28px;
+        box-sizing: border-box;
       }
     }
 
@@ -192,10 +221,10 @@
 </button>
 
 <div class="vb-referral-card" style="width:98%;margin:0.5em auto 0 auto;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.16);border-radius:1.35em;padding:1em 1em 1.05em;box-shadow:0 8px 28px rgba(0,0,0,0.15);">
-  <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
-    <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;background:rgba(15,25,48,0.28);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:8px 12px;font-weight:900;color:#fff;margin:0 auto;">
+  <div style="width:100%;display:grid;place-items:center;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;width:fit-content;max-width:100%;background:rgba(15,25,48,0.28);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:8px 12px;font-weight:900;color:#fff;text-align:center;">
       <span data-i18n="referral.invite_and_earn_title">Inviter et gagner :</span>
-      <img src="assets/images/crosspromo/vcoins.webp" alt="" draggable="false" style="width:22px;height:22px;object-fit:contain;" />
+      <img src="assets/images/crosspromo/vcoins.webp" alt="" draggable="false" style="width:22px;height:22px;object-fit:contain;display:block;" />
       <span>+ 200</span>
     </div>
   </div>
