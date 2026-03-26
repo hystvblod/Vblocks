@@ -195,12 +195,11 @@
       </div>
 
       <!-- Publicités -->
-      <div class="param-group">
+      <div class="param-group" id="ads-privacy-group" style="display:none;">
         <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
-        <div class="switch">
-          <input type="checkbox" id="ads-toggle">
-          <span id="ads-label" data-i18n="settings.ads.on">Activée</span>
-        </div>
+        <button id="ads-privacy-btn" type="button" class="return-btn" data-i18n="index.rgpd.manage" style="margin-top:0;">
+          Gérer les accords publicitaires
+        </button>
       </div>
 
       <!-- Pièce fantôme -->
@@ -320,78 +319,40 @@
   </script>
 
   <script>
-    // ====== ADS CONSENT (inchangé fonctionnellement) ======
-    (function(){
-      const CONSENT_KEY = "rgpdConsent";
-      const ADS_KEY     = "adsConsent";
-      const ADS_ENABLED = "adsEnabled";
+  (function(){
+    async function syncAdsPrivacyUI() {
+      const group = document.getElementById("ads-privacy-group");
+      const btn = document.getElementById("ads-privacy-btn");
+      if (!group || !btn) return;
 
-      const adsToggle = document.getElementById('ads-toggle');
-      const adsLabel  = document.getElementById('ads-label');
-
-      function refreshAdsLabel() {
-        const on = adsToggle.checked;
-        adsLabel.textContent = on
-          ? (window.i18nGet ? window.i18nGet('settings.ads.on') || 'Activée' : 'Activée')
-          : (window.i18nGet ? window.i18nGet('settings.ads.off') || 'Désactivée' : 'Désactivée');
+      try {
+        const info = await window.VRAds?.getGoogleConsentInfo?.();
+        const mustShow = !!(info && info.privacyOptionsRequirementStatus === "REQUIRED");
+        group.style.display = mustShow ? "" : "none";
+      } catch (_) {
+        group.style.display = "none";
       }
+    }
 
-      async function loadConsentFromCloudThenLocal() {
-        try {
-          if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-          if (window.sb?.rpc) {
-            const { data, error } = await window.sb.rpc('get_ads_consent');
-            if (!error && data) {
-              localStorage.setItem(CONSENT_KEY, data);
-              if (data === 'accept') {
-                localStorage.setItem(ADS_KEY, 'yes');
-                localStorage.setItem(ADS_ENABLED, 'true');
-              } else {
-                localStorage.setItem(ADS_KEY, 'no');
-                localStorage.setItem(ADS_ENABLED, 'false');
-              }
-            }
-          }
-        } catch(e) {}
+    document.addEventListener("DOMContentLoaded", async function(){
+      await syncAdsPrivacyUI();
 
-        try {
-          const consent = localStorage.getItem(CONSENT_KEY);
-          const adsYes  = localStorage.getItem(ADS_KEY) === 'yes';
-          if (consent === 'accept') {
-            adsToggle.checked = adsYes;
-          } else if (consent === 'refuse') {
-            adsToggle.checked = false;
-          } else {
-            adsToggle.checked = (localStorage.getItem(ADS_ENABLED) === 'true');
-          }
-        } catch(_) {}
-        refreshAdsLabel();
-      }
-
-      async function persistConsent(toChecked) {
-        const willAccept = !!toChecked;
-        localStorage.setItem(CONSENT_KEY, willAccept ? 'accept' : 'refuse');
-        localStorage.setItem(ADS_KEY,     willAccept ? 'yes' : 'no');
-        localStorage.setItem(ADS_ENABLED, willAccept ? 'true' : 'false');
-        try {
-          if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
-          if (window.sb?.rpc) await window.sb.rpc('update_ads_consent', { new_consent: willAccept ? 'accept' : 'refuse' });
-        } catch(e) { console.warn('[param] update_ads_consent', e?.message || e); }
-        try {
-          if (willAccept && typeof window.applyConsentFromStorage === 'function') window.applyConsentFromStorage();
-        } catch(_){}
-      }
-
-      if (adsToggle) {
-        adsToggle.addEventListener('change', async function(){
-          refreshAdsLabel();
-          await persistConsent(adsToggle.checked);
+      const btn = document.getElementById("ads-privacy-btn");
+      if (btn) {
+        btn.addEventListener("click", async function(){
+          try {
+            await window.VRAds?.showGooglePrivacyOptionsForm?.();
+          } catch (_) {}
+          await syncAdsPrivacyUI();
         });
       }
+    });
 
-      document.addEventListener('DOMContentLoaded', loadConsentFromCloudThenLocal);
-    })();
-  </script>
+    document.addEventListener("visibilitychange", function(){
+      if (!document.hidden) syncAdsPrivacyUI();
+    });
+  })();
+</script>
 
   <!-- Ghost + Music (inchangés) -->
   <script>
