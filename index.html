@@ -98,6 +98,7 @@
 
   <!-- Cordova d'abord (inchangé) -->
   <script src="cordova.js"></script>
+  <script src="js/onesignal.js"></script>
   <script src="js/achat.js"></script> 
   <script>
     document.addEventListener('deviceready', function(){
@@ -418,67 +419,10 @@
         if (window.i18nTranslateAll) window.i18nTranslateAll();
 
         // Autorisation push au chargement (natif uniquement)
-        if (window.__initPushOnce) { try { await window.__initPushOnce(); } catch(e) {} }
       } catch (e) {
         console.warn('[INDEX bootstrap]', e?.message || e);
       }
     });
-  </script>
-
-  <!-- Push (FCM) : init + enregistrement token (JS only, pas d'UI) -->
-  <script>
-    (function () {
-      const DEBUG_PUSH = false;
-      let inited = false;
-
- function isNative(){
-  try {
-    // fiable sur Capacitor 3/4/5
-    if (window.Capacitor?.isNativePlatform) return window.Capacitor.isNativePlatform();
-    // fallback raisonnable : si le plugin est chargé, on est en natif
-    return !!window.Capacitor?.Plugins?.PushNotifications;
-  } catch(e){ return false; }
-}
-
-
-      async function savePushTokenToSupabase(token){
-        try{
-          if(!token || !window.sb) return;
-          let uid = null;
-          try { uid = await (window.userData?.getAuthUserId?.() || null); } catch(e){}
-          if(!uid) return;
-          const lang = (localStorage.getItem('langue') || 'EN').toUpperCase();
-          let platform = 'android';
-          try { platform = (window.Capacitor && window.Capacitor.getPlatform) ? window.Capacitor.getPlatform() : platform; } catch(e){}
-          await window.sb.from('user_push_tokens').upsert(
-            [{ token, user_id: uid, platform, lang }],
-            { onConflict: 'token' }
-          );
-        }catch(e){ if (DEBUG_PUSH) console.warn('[Push] save token fail', e); }
-      }
-
-      async function initPush() {
-        if (inited) return; inited = true;
-        if (!isNative()) return;
-        const Push = window.Capacitor?.Plugins?.PushNotifications;
-        if (!Push) return;
-        try {
-          const perm = await Push.requestPermissions();
-          if (!perm || perm.receive !== 'granted') return;
-          await Push.register();
-
-          Push.addListener('registration', async ({ value }) => {
-            localStorage.setItem('fcmToken', value || '');
-            if (DEBUG_PUSH) console.log('[Push] FCM token:', value);
-            try { await savePushTokenToSupabase(value); } catch(e){}
-          });
-          Push.addListener('registrationError', (err) => { if (DEBUG_PUSH) console.error('[Push] registration error', err); });
-          Push.addListener('pushNotificationReceived', (n) => { if (DEBUG_PUSH) console.log('[Push] reçu (FG)', n); });
-          Push.addListener('pushNotificationActionPerformed', (a) => { if (DEBUG_PUSH) console.log('[Push] action', a); });
-        } catch (e) { if (DEBUG_PUSH) console.error('[Push] init error', e); }
-      }
-      window.__initPushOnce = initPush;
-    })();
   </script>
 
   <!-- ===== Bannière MAJ non bloquante + logique AppUpdate / Store ===== -->
