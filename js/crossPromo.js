@@ -298,9 +298,6 @@
 
           <div class="cp-card-actions">
             <button class="cp-claim-btn" type="button" data-app-main="${app.id}"></button>
-            <button class="cp-secondary-btn" type="button" data-app-open="${app.id}">
-              ${t("crosspromo.cta_open", "Ouvrir")}
-            </button>
           </div>
         </div>
       </article>
@@ -309,7 +306,6 @@
 
   async function refreshButtons(root) {
     const mainButtons = root.querySelectorAll("[data-app-main]");
-    const openButtons = root.querySelectorAll("[data-app-open]");
 
     for (const btn of mainButtons) {
       const appId = btn.getAttribute("data-app-main");
@@ -323,16 +319,11 @@
       } else if (state === "claim") {
         btn.textContent = t("crosspromo.cta_claim", "Réclamer");
       } else if (state === "open") {
-        btn.textContent = t("crosspromo.cta_open", "Ouvrir");
+        btn.textContent = t("crosspromo.cta_installed", "Déjà installé");
+        btn.disabled = true;
       } else {
         btn.textContent = t("crosspromo.cta_install", "Télécharger");
       }
-    }
-
-    for (const btn of openButtons) {
-      const appId = btn.getAttribute("data-app-open");
-      const installed = await canOpenTargetApp(APPS[appId]);
-      btn.disabled = !installed;
     }
   }
 
@@ -396,16 +387,6 @@
         }
 
         await openStore(appId);
-      });
-    });
-
-    root.querySelectorAll("[data-app-open]").forEach((btn) => {
-      if (btn.dataset.bound === "1") return;
-      btn.dataset.bound = "1";
-
-      btn.addEventListener("click", async () => {
-        const appId = btn.getAttribute("data-app-open");
-        await openInstalledApp(APPS[appId]);
       });
     });
 

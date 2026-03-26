@@ -254,6 +254,7 @@
   "crosspromo.page_note": "افتح تطبيقًا شريكًا ثم ارجع إلى VBlocks لإكمال التحقق.",
   "crosspromo.cta_install": "تثبيت",
   "crosspromo.cta_open": "فتح",
+  "crosspromo.cta_installed": "مثبت بالفعل",
   "crosspromo.cta_claim": "استلام",
   "crosspromo.cta_claiming": "جارٍ الاستلام...",
   "crosspromo.cta_claimed": "تم الاستلام بالفعل",
