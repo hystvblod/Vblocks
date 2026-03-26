@@ -7,8 +7,9 @@
 
   <!-- Libs / app -->
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/userData.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/userData.js"></script>
+<script src="js/crossPromo.js"></script>
 
   <!-- Cordova (404 en web = normal) -->
   <script src="cordova.js"></script>
@@ -272,9 +273,18 @@ async function renderModalActions(themeKey){
     buy.onclick=async()=>{ try{
       if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
       const ok=await window.userData?.purchaseTheme?.(themeKey, THEME_PRICE);
-      if(!ok) return; await renderThemes(); closeThemeModal(); if(window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
-    }catch(e){ const msg=(e?.message||"").toLowerCase();
-      if(msg.includes("not enough vcoins")) alert(t("boutique.alert.pasassez")||"Pas assez de VCoins."); else alert("Erreur : "+(e?.message||e));
+      if(!ok) return;
+      await renderThemes();
+      closeThemeModal();
+      if(window.applyI18n && window.I18N_MAP) window.applyI18n(window.I18N_MAP);
+    }catch(e){
+      const msg=(e?.message||"").toLowerCase();
+      if(msg.includes("not enough vcoins")){
+        try { await window.VRCrossPromo?.showLowVcoinsPopupNow?.(); } catch(_) {}
+        alert(t("boutique.alert.pasassez")||"Pas assez de VCoins.");
+      } else {
+        alert("Erreur : "+(e?.message||e));
+      }
     }};
     $actions.appendChild(buy);
   }

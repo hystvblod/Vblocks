@@ -117,6 +117,8 @@
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/userData.js"></script>
+  <script src="js/crossPromo.js"></script>
+  <script src="js/referral.js"></script>
 
   <!-- Cordova d'abord (inchangé) -->
   <script src="cordova.js"></script>
@@ -197,6 +199,10 @@
       <img src="assets/icons/settings.svg" alt="Paramètres" />
       <span style="display:none;">Paramètres</span>
     </a>
+      <a href="cross-promo.html" class="btn-icon" title="Nos applis">
+      <img src="assets/images/crosspromo/btn_crosspromo.webp" alt="Nos applis" />
+      <span style="display:none;">Nos applis</span>
+    </a>
   </div>
 
   <!-- -------- POPUP RGPD/CONSENT -------- -->
@@ -234,22 +240,22 @@
   <div class="container">
     <img class="vblocks-logo" src="assets/images/vblocks-logo.png" alt="VBlocks Logo" draggable="false" />
     <div class="menu-list">
-      <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="location.href='concours.html'">
+      <button class="menu-btn orange" id="btnConcours" style="display:none;" onclick="launchMode('concours.html')">
         <span class="btn-label" data-i18n="menu.concours">Concours</span>
         <span class="info-btn" tabindex="0" data-i18n-tip="tip.concours" data-tip="Participe et vote dans les concours photo">?</span>
       </button>
 
-      <button class="menu-btn blue" onclick="location.href='classic.html'">
+      <button class="menu-btn blue" onclick="launchMode('classic.html')">
         <span class="btn-label" data-i18n="menu.classic">Classic</span>
         <span class="info-btn" tabindex="0" data-i18n-tip="tip.classic" data-tip="Mode classique avec montée de vitesse progressive">?</span>
       </button>
 
-      <button class="menu-btn purple" onclick="location.href='infini.html'">
+      <button class="menu-btn purple" onclick="launchMode('infini.html')">
         <span class="btn-label" data-i18n="menu.infini">Infini</span>
         <span class="info-btn" tabindex="0" data-i18n-tip="tip.infini" data-tip="Mode relax sans fin, sans accélération">?</span>
       </button>
 
-      <button class="menu-btn yellow" onclick="location.href='duel.html'">
+      <button class="menu-btn yellow" onclick="launchMode('duel.html')">
         <span class="btn-label" data-i18n="menu.duel">Duel</span>
         <span class="info-btn" tabindex="0" data-i18n-tip="tip.duel" data-tip="Défie des amis en face à face">?</span>
       </button>
@@ -830,5 +836,11 @@
   </script>
   <!-- ===== FIN OVERRIDES ===== -->
 
+<script>
+  function launchMode(url) {
+    try { window.VRCrossPromo?.notifySessionStart?.(); } catch (_) {}
+    window.location.href = url;
+  }
+</script>
 </body>
 </html>

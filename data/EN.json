@@ -246,7 +246,44 @@
     "onboarding.s2.title": "Change your themes and nickname",
     "onboarding.s2.text": "Edit your nickname and choose the themes you want to play with.",
     "onboarding.s3.title": "Understand the game",
-    "onboarding.s3.text": "To hold a piece, tap the “Hold” button. Coins are used to buy themes, and tokens let you continue after a game over by rolling back 5 lines."
-
-
+    "onboarding.s3.text": "To hold a piece, tap the “Hold” button. Coins are used to buy themes, and tokens let you continue after a game over by rolling back 5 lines.",
+  "crosspromo.page_title": "Discover more games",
+  "crosspromo.page_subtitle": "Explore our other worlds and earn rewards.",
+  "crosspromo.section_title": "Our other games",
+  "crosspromo.page_note": "Open a partner app, then come back to VBlocks to complete detection.",
+  "crosspromo.cta_install": "Install",
+  "crosspromo.cta_open": "Open",
+  "crosspromo.cta_claim": "Claim",
+  "crosspromo.cta_claiming": "Claiming...",
+  "crosspromo.cta_claimed": "Already claimed",
+  "crosspromo.cta_later": "Later",
+  "crosspromo.reward_prefix": "EARN:",
+  "crosspromo.reward_granted": "{app} detected. +{amount} credited.",
+  
+  "crosspromo.apps.vuniverse.name": "VUniverse",
+  "crosspromo.apps.vuniverse.store_desc": "Discover an ambitious narrative game with multiple worlds, choices, and rewards.",
+  "crosspromo.apps.vuniverse.popup1.title": "Discover VUniverse",
+  "crosspromo.apps.vuniverse.popup1.body": "Try VUniverse and come back to VBlocks to collect your reward.",
+  "crosspromo.apps.vuniverse.popup2.title": "Need VCoins?",
+  "crosspromo.apps.vuniverse.popup2.body": "Install VUniverse, open it once, then come back to VBlocks to try to collect your reward.",
+  "crosspromo.apps.vuniverse.popup3.title": "You can still earn more",
+  "crosspromo.apps.vuniverse.popup3.body": "Try VUniverse and collect your reward on VBlocks.",
+  
+  "crosspromo.apps.vchronicles.name": "VChronicles",
+  "crosspromo.apps.vchronicles.store_desc": "Dive into a dark and immersive interactive world with choices and progression.",
+  "crosspromo.apps.vchronicles.popup1.title": "Discover VChronicles",
+  "crosspromo.apps.vchronicles.popup1.body": "Try VChronicles and come back to VBlocks to collect your reward.",
+  "crosspromo.apps.vchronicles.popup2.title": "Need VCoins?",
+  "crosspromo.apps.vchronicles.popup2.body": "Install VChronicles, open it once, then come back to VBlocks to try to collect your reward.",
+  "crosspromo.apps.vchronicles.popup3.title": "You can still earn more",
+  "crosspromo.apps.vchronicles.popup3.body": "Try VChronicles and collect your reward on VBlocks.",
+  
+  "referral.invite_and_earn_title": "Invite and earn:",
+  "referral.invite_and_earn_btn": "Invite and earn",
+  "referral.share_title": "Invite a friend",
+  "referral.share_text": "Download VBlocks here: {url}",
+  "referral.link_copied": "Link copied",
+  "referral.crosspromo_desc": "Invite a friend to install VBlocks and earn a reward.",
+  "referral.android_only_popup.text": "Only the Android version is available for now. The iOS version is in progress and cannot be downloaded yet.",
+  "common.continue": "Continue"
 }
