@@ -26,6 +26,13 @@
       padding: 0 10px 24px;
     }
 
+    @media (min-width: 768px) {
+      .cp-shell {
+        max-width: 760px;
+        padding: 0 18px 34px;
+      }
+    }
+
     .cp-title {
       text-align: center;
       font-size: 1.8rem;
@@ -60,10 +67,12 @@
     }
 
     .cp-pill {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      width: fit-content;
+      max-width: 100%;
       background: rgba(15,25,48,0.28);
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 999px;
@@ -71,6 +80,7 @@
       font-weight: 900;
       color: #fff;
       margin: 0 auto 10px;
+      text-align: center;
     }
 
     @keyframes cpPulseCta {
@@ -122,7 +132,6 @@
       background: linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);
       color: #fff;
       box-shadow: 0 4px 18px #1e64a772;
-      animation: cpPulseCta 1.15s infinite;
     }
 
     .cp-secondary-btn {
@@ -197,10 +206,12 @@
     }
 
     .cp-reward {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      width: fit-content;
+      max-width: 100%;
       background: rgba(15,25,48,0.28);
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 999px;
@@ -208,6 +219,7 @@
       font-weight: 900;
       color: #fff;
       margin: 0 auto 12px;
+      text-align: center;
       animation: cpPulseCta 1.15s infinite;
     }
 
@@ -305,6 +317,58 @@
       cursor: pointer;
       box-shadow: 0 8px 20px rgba(0,0,0,.22);
     }
+    @media (min-width: 768px) {
+      .cp-title {
+        font-size: 2.15rem;
+        margin-top: 14px;
+      }
+
+      .cp-subtitle,
+      .cp-note {
+        max-width: 52ch;
+        font-size: 1.05rem;
+      }
+
+      .cp-referral-card,
+      .cp-app-card {
+        border-radius: 1.8em;
+      }
+
+      .cp-referral-card {
+        padding: 1.3em 1.3em 1.2em;
+      }
+
+      .cp-body {
+        padding: 16px 16px 18px;
+      }
+
+      .cp-app-name {
+        font-size: 1.28rem;
+      }
+
+      .cp-app-desc {
+        font-size: 1rem;
+        min-height: 0;
+      }
+
+      .cp-shots {
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .cp-card-actions {
+        gap: 12px;
+      }
+
+      .cp-main-btn,
+      .cp-secondary-btn,
+      .cp-claim-btn {
+        min-height: 54px;
+        padding: 0 1.4em;
+        font-size: 1.06rem;
+      }
+    }
+
   </style>
 
   <script src="js/vendor/supabase-2.42.5.min.js"></script>

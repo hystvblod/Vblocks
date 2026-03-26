@@ -702,3 +702,50 @@ body[data-universe="new_world_explorer"].vr-body-game #view-game .vr-choice-labe
   hyphens: auto !important;
   text-wrap: balance !important;
 }
+
+@media (min-width: 768px) {
+  .top-buttons,
+  .top-buttons-home {
+    top: 16px;
+    right: 16px;
+    gap: 18px;
+  }
+
+  .container {
+    padding-top: 2.5vh;
+    padding-left: 18px;
+    padding-right: 18px;
+    box-sizing: border-box;
+  }
+
+  .vblocks-logo {
+    width: min(320px, 42vw);
+    max-width: 320px;
+    margin-top: 0.5vh;
+    margin-bottom: 7vh;
+  }
+
+  .menu-list {
+    width: min(620px, 100%);
+    max-width: 620px;
+    margin-top: 3vh;
+    gap: 2rem;
+  }
+
+  .menu-btn {
+    min-height: 78px;
+    font-size: 1.2rem;
+    padding: 0 1.5rem;
+    border-radius: 2rem;
+  }
+
+  .btn-label {
+    font-size: 1.08em;
+  }
+
+  .info-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.12rem;
+  }
+}
