@@ -253,6 +253,7 @@
   "crosspromo.page_note": "提携アプリを開いてから、VBlocks に戻って検出を完了してください。",
   "crosspromo.cta_install": "インストール",
   "crosspromo.cta_open": "開く",
+  "crosspromo.cta_installed": "インストール済み",
   "crosspromo.cta_claim": "受け取る",
   "crosspromo.cta_claiming": "受け取り中...",
   "crosspromo.cta_claimed": "受け取り済み",

@@ -253,6 +253,7 @@
   "crosspromo.page_note": "Open a partner app, then come back to VBlocks to complete detection.",
   "crosspromo.cta_install": "Install",
   "crosspromo.cta_open": "Open",
+  "crosspromo.cta_installed": "Already installed",
   "crosspromo.cta_claim": "Claim",
   "crosspromo.cta_claiming": "Claiming...",
   "crosspromo.cta_claimed": "Already claimed",
