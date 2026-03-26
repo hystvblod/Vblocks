@@ -333,7 +333,7 @@
       try {
         const { data: { session } } = await sb.auth.getSession();
         if (!session) await sb.auth.signInAnonymously();
-        await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
+        await sb.rpc('ensure_user', { default_lang: (localStorage.getItem('langue') || 'EN'), default_pseudo: null });
       } catch (e) {}
       const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
       if (error) throw error;
@@ -349,7 +349,7 @@
       try {
         const { data: { session } } = await sb.auth.getSession();
         if (!session) await sb.auth.signInAnonymously();
-        await sb.rpc('ensure_user', { default_lang: 'fr', default_pseudo: null });
+        await sb.rpc('ensure_user', { default_lang: (localStorage.getItem('langue') || 'EN'), default_pseudo: null });
       } catch (e) {}
 
       // ✅ Applique le thème local au boot (visuel uniquement)

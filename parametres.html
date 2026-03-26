@@ -293,29 +293,39 @@
     ];
 
     const langueSelect = document.getElementById("langue-select");
-    // On lit l’override éventuel en MAJ, sinon on peut laisser vide (l’UI reste cliquable)
-    let selectedLang = (localStorage.getItem("langue") || "").toUpperCase();
 
-    // Construit la liste et branche le handler unifié
-    LANGS.forEach(l => {
-      const opt = document.createElement('div');
-      opt.className = 'lang-option' + (l.code === selectedLang ? ' selected' : '');
-      opt.innerHTML = l.flag + '<span style="margin-left:0.35em;">' + l.label + '</span>';
-      opt.onclick = async () => {
-        // 1) on applique via i18n (écrit l’override en MAJ dans localStorage)
-        if (window.setLang) await window.setLang(l.code);
+function getSelectedLangForSettings() {
+  if (window.VRI18n?.getLang) {
+    return String(window.VRI18n.getLang() || "").toUpperCase();
+  }
+  return String(localStorage.getItem("langue") || "").toUpperCase();
+}
 
-        // 2) on met la même valeur en DB
-        try {
-          if (window.userData?.updateLangDirect) await window.userData.updateLangDirect(l.code);
-        } catch(e){}
+function renderLanguageOptions() {
+  const selectedLang = getSelectedLangForSettings();
+  langueSelect.innerHTML = "";
 
-        // 3) feedback UI
-        document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
-        opt.classList.add('selected');
-      };
-      langueSelect.appendChild(opt);
-    });
+  LANGS.forEach(l => {
+    const opt = document.createElement('div');
+    opt.className = 'lang-option' + (l.code === selectedLang ? ' selected' : '');
+    opt.innerHTML = l.flag + '<span style="margin-left:0.35em;">' + l.label + '</span>';
+
+    opt.onclick = async () => {
+      if (window.setLang) {
+        await window.setLang(l.code);
+      }
+
+      document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+    };
+
+    langueSelect.appendChild(opt);
+  });
+}
+
+renderLanguageOptions();
+
+window.addEventListener("vblocks:i18n:changed", renderLanguageOptions);
   </script>
 
   <script>
