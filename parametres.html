@@ -195,7 +195,7 @@
       </div>
 
       <!-- Publicités -->
-      <div class="param-group" id="ads-privacy-group" style="display:none;">
+      <div class="param-group" id="ads-privacy-group">
         <label data-i18n="settings.ads.label">Publicités personnalisées :</label>
         <button id="ads-privacy-btn" type="button" class="return-btn" data-i18n="index.rgpd.manage" style="margin-top:0;">
           Gérer les accords publicitaires
@@ -320,18 +320,38 @@
 
   <script>
   (function(){
+    function isNativePlatformSafe() {
+      try {
+        if (window.Capacitor && typeof window.Capacitor.isNativePlatform === "function") {
+          return !!window.Capacitor.isNativePlatform();
+        }
+      } catch (_) {}
+      return false;
+    }
+
     async function syncAdsPrivacyUI() {
       const group = document.getElementById("ads-privacy-group");
       const btn = document.getElementById("ads-privacy-btn");
       if (!group || !btn) return;
 
-      try {
-        const info = await window.VRAds?.getGoogleConsentInfo?.();
-        const mustShow = !!(info && info.privacyOptionsRequirementStatus === "REQUIRED");
-        group.style.display = mustShow ? "" : "none";
-      } catch (_) {
-        group.style.display = "none";
+      group.style.display = "";
+
+      const nativeOk = isNativePlatformSafe();
+      const hasOfficialApi =
+        !!window.VRAds &&
+        typeof window.VRAds.getGoogleConsentInfo === "function" &&
+        typeof window.VRAds.showGooglePrivacyOptionsForm === "function";
+
+      if (!nativeOk || !hasOfficialApi) {
+        btn.disabled = true;
+        btn.style.opacity = "0.55";
+        btn.style.cursor = "default";
+        return;
       }
+
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      btn.style.cursor = "pointer";
     }
 
     document.addEventListener("DOMContentLoaded", async function(){
@@ -340,9 +360,12 @@
       const btn = document.getElementById("ads-privacy-btn");
       if (btn) {
         btn.addEventListener("click", async function(){
+          if (btn.disabled) return;
+
           try {
-            await window.VRAds?.showGooglePrivacyOptionsForm?.();
+            await window.VRAds.showGooglePrivacyOptionsForm();
           } catch (_) {}
+
           await syncAdsPrivacyUI();
         });
       }
