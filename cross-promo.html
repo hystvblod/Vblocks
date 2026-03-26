@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>VBlocks - Nos applis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="style/main.css" />
+
+  <style>
+    html, body {
+      overflow-y: auto;
+      min-height: 100vh;
+      height: auto;
+    }
+
+    body.cp-page {
+      padding-bottom: 32px;
+    }
+
+    .cp-shell {
+      width: 100%;
+      max-width: 430px;
+      margin: 0 auto;
+      box-sizing: border-box;
+      padding: 0 10px 24px;
+    }
+
+    .cp-title {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #fff;
+      margin: 10px 0 6px;
+      text-shadow: 0 2px 10px rgba(0,0,0,.22);
+    }
+
+    .cp-subtitle {
+      text-align: center;
+      color: rgba(255,255,255,.92);
+      font-size: 1rem;
+      line-height: 1.4;
+      margin: 0 auto 16px;
+      max-width: 34ch;
+    }
+
+    .cp-referral-card,
+    .cp-app-card {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 1.45em;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .cp-referral-card {
+      padding: 1em;
+      margin-bottom: 1em;
+    }
+
+    .cp-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15,25,48,0.28);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .cp-pill img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .cp-referral-desc {
+      margin: 0 0 12px;
+      color: rgba(255,255,255,0.92);
+      line-height: 1.4;
+    }
+
+    .cp-main-btn,
+    .cp-secondary-btn,
+    .cp-claim-btn {
+      border: none;
+      border-radius: 999px;
+      font-size: 1.03em;
+      font-weight: 800;
+      cursor: pointer;
+      min-height: 48px;
+      padding: 0 1.15em;
+      transition: transform .13s, box-shadow .15s, opacity .15s;
+      font-family: inherit;
+    }
+
+    .cp-main-btn:hover,
+    .cp-secondary-btn:hover,
+    .cp-claim-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .cp-main-btn,
+    .cp-claim-btn {
+      background: linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);
+      color: #fff;
+      box-shadow: 0 4px 18px #1e64a772;
+    }
+
+    .cp-secondary-btn {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    .cp-main-btn[disabled],
+    .cp-secondary-btn[disabled],
+    .cp-claim-btn[disabled] {
+      opacity: .55;
+      cursor: default;
+      transform: none;
+    }
+
+    .cp-actions-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .cp-section-title {
+      font-size: 1.08rem;
+      font-weight: 900;
+      color: #fff;
+      margin: 14px 0 10px;
+      text-align: center;
+      letter-spacing: .2px;
+    }
+
+    .cp-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .cp-app-card {
+      overflow: hidden;
+    }
+
+    .cp-cover {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: rgba(0,0,0,0.16);
+    }
+
+    .cp-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .cp-body {
+      padding: 12px;
+    }
+
+    .cp-app-name {
+      color: #fff;
+      font-size: 1.18rem;
+      font-weight: 900;
+      margin: 0 0 6px;
+    }
+
+    .cp-app-desc {
+      color: rgba(255,255,255,.92);
+      line-height: 1.38;
+      margin: 0 0 12px;
+      min-height: 38px;
+    }
+
+    .cp-reward {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15,25,48,0.28);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .cp-reward img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .cp-shots {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .cp-shot {
+      border: none;
+      background: none;
+      padding: 0;
+      border-radius: 1em;
+      overflow: hidden;
+      cursor: pointer;
+      aspect-ratio: 9 / 16;
+      box-shadow: 0 5px 16px rgba(0,0,0,.16);
+    }
+
+    .cp-shot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .cp-card-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .cp-note {
+      margin: 16px auto 0;
+      text-align: center;
+      color: rgba(255,255,255,.82);
+      font-size: .93rem;
+      line-height: 1.35;
+      max-width: 34ch;
+    }
+
+    .cp-lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 100200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(8px);
+    }
+
+    .cp-lightbox.active {
+      display: flex;
+    }
+
+    .cp-lightbox-inner {
+      position: relative;
+      width: min(92vw, 500px);
+      max-height: 92vh;
+    }
+
+    .cp-lightbox-inner img {
+      width: 100%;
+      max-height: 92vh;
+      object-fit: contain;
+      border-radius: 1.2em;
+      display: block;
+      box-shadow: 0 18px 36px rgba(0,0,0,.32);
+    }
+
+    .cp-lightbox-close {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 42px;
+      height: 42px;
+      border: none;
+      border-radius: 50%;
+      background: #fff;
+      color: #25325d;
+      font-size: 1.25rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,.22);
+    }
+  </style>
+
+  <script src="js/vendor/supabase-2.42.5.min.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/userData.js"></script>
+  <script src="js/crossPromo.js"></script>
+  <script src="js/referral.js"></script>
+</head>
+<body class="cp-page" data-page="cross_promo">
+
+  <div class="top-bar">
+    <div class="top-left">
+      <a href="index.html" class="btn-icon" title="Retour">
+        <img src="assets/images/crosspromo/btn_home.webp" alt="Retour" />
+      </a>
+    </div>
+    <div class="top-right">
+      <a href="profil.html" class="btn-icon" title="Profil">
+        <img src="assets/icons/user.svg" alt="Profil" />
+      </a>
+      <a href="parametres.html" class="btn-icon" title="Paramètres">
+        <img src="assets/icons/settings.svg" alt="Paramètres" />
+      </a>
+    </div>
+  </div>
+
+  <div class="cp-shell">
+    <div class="cp-title" data-i18n="crosspromo.page_title">Découvre d'autres jeux</div>
+    <p class="cp-subtitle" data-i18n="crosspromo.page_subtitle">
+      Découvre nos autres univers et gagne des récompenses.
+    </p>
+
+    <section class="cp-referral-card">
+      <div class="cp-pill">
+        <span data-i18n="referral.invite_and_earn_title">Inviter et gagner :</span>
+        <img src="assets/images/crosspromo/vcoins.webp" alt="" draggable="false" />
+        <span>+ 200</span>
+      </div>
+
+      <p class="cp-referral-desc" data-i18n="referral.crosspromo_desc">
+        Invite un ami à installer VBlocks et gagne une récompense.
+      </p>
+
+      <div class="cp-actions-row">
+        <button class="cp-main-btn" id="cp_invite_btn" type="button">
+          <span data-i18n="referral.invite_and_earn_btn">Inviter et gagner</span>
+        </button>
+      </div>
+    </section>
+
+    <div class="cp-section-title" data-i18n="crosspromo.section_title">Nos autres jeux</div>
+
+    <section id="crosspromo-apps" class="cp-list"></section>
+
+    <p class="cp-note" data-i18n="crosspromo.page_note">
+      Ouvre une app partenaire, puis reviens sur VBlocks pour finaliser la détection.
+    </p>
+  </div>
+
+  <div id="cp-lightbox" class="cp-lightbox" aria-hidden="true">
+    <div class="cp-lightbox-inner">
+      <button id="cp-lightbox-close" class="cp-lightbox-close" type="button">×</button>
+      <img id="cp-lightbox-img" src="" alt="" />
+    </div>
+  </div>
+</body>
+</html>

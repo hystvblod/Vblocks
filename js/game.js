@@ -945,14 +945,29 @@ overlay.querySelector('#resume-yes').onclick = () => {
       }
 
       document.getElementById('end-restart').onclick = async function () {
-        await commitEndRewards(points); // ✅ crédit au moment de confirmer la fin
+        await commitEndRewards(points);
         endHandled = true;
+
+        try {
+          await window.VRCrossPromo?.maybeShowPostGamePromo?.({
+            skipBecauseRewardAd: false
+          });
+        } catch (_) {}
+
         popup.remove();
         restartGameHard();
       };
+
       document.getElementById('end-quit').onclick = async function () {
-        await commitEndRewards(points); // ✅ crédit au moment de confirmer la fin
+        await commitEndRewards(points);
         endHandled = true;
+
+        try {
+          await window.VRCrossPromo?.maybeShowPostGamePromo?.({
+            skipBecauseRewardAd: false
+          });
+        } catch (_) {}
+
         window.location.href = INDEX_URL;
       };
       const btnTok = document.getElementById('end-revive-token');
