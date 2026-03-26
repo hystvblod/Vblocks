@@ -270,42 +270,65 @@ function informCapBlocked() {
       if (!AdMob || !AdMob.addListener || window.__adListenersRegistered) return;
       window.__adListenersRegistered = true;
 
-      if (typeof window.onRewardClosed !== 'function') {
-        window.onRewardClosed = function () {
-          try { postAdCleanup(); } catch (_) {}
+      var SAFE = function (fn) {
+        return function (arg) {
+          try { fn && fn(arg); } catch (_) {}
         };
-      }
-
-      var SAFE = function(fn){ return function(arg){ try { fn && fn(arg); } catch(e) {} }; };
+      };
 
       var map = [
-        ['onAdFullScreenContentOpened', function () {
-          isRewardShowing = true;
+        ["interstitialAdShowed", function () {
           window.__ads_active = true;
-          diag('Ad opened');
+          diag("Interstitial showed");
         }],
-        ['onAdDismissedFullScreenContent', function () {
-          diag('Ad dismissed');
-          isRewardShowing = false;
-          postAdCleanup();
-          window.onRewardClosed && window.onRewardClosed();
+        ["interstitialAdDismissed", function () {
+          diag("Interstitial dismissed");
+          if (currentAdKind === "interstitial") {
+            currentAdKind = null;
+            __showLock = false;
+            postAdCleanup();
+          }
         }],
-        ['onAdFailedToShowFullScreenContent', function () {
-          diag('Ad failed to show');
-          isRewardShowing = false;
-          postAdCleanup();
-          window.onRewardClosed && window.onRewardClosed();
+        ["interstitialAdFailedToShow", function () {
+          diag("Interstitial failed to show");
+          if (currentAdKind === "interstitial") {
+            currentAdKind = null;
+            __showLock = false;
+            postAdCleanup();
+          }
         }],
-        ['onRewarded', function () {
-          diag('Rewarded granted');
+
+        ["onRewardedVideoAdShowed", function () {
+          window.__ads_active = true;
+          diag("Rewarded showed");
         }],
+        ["onRewardedVideoAdDismissed", function () {
+          diag("Rewarded dismissed");
+          if (currentAdKind === "rewarded") {
+            isRewardShowing = false;
+            currentAdKind = null;
+            __showLock = false;
+            postAdCleanup();
+          }
+        }],
+        ["onRewardedVideoAdFailedToShow", function () {
+          diag("Rewarded failed to show");
+          if (currentAdKind === "rewarded") {
+            isRewardShowing = false;
+            currentAdKind = null;
+            __showLock = false;
+            postAdCleanup();
+          }
+        }],
+        ["onRewardedVideoAdReward", function () {
+          diag("Rewarded granted");
+        }]
       ];
 
-      for (var i=0;i<map.length;i++) {
-        var evt = map[i][0], handler = map[i][1];
-        try { AdMob.addListener(evt, SAFE(handler)); } catch(e) {}
+      for (var i = 0; i < map.length; i++) {
+        try { AdMob.addListener(map[i][0], SAFE(map[i][1])); } catch (_) {}
       }
-    } catch (_e) {}
+    } catch (_) {}
   }
 
   // =============================
@@ -378,18 +401,30 @@ function informCapBlocked() {
     return false;
   }
 
-  function waitDismissedOnce() {
-    return new Promise(function(resolve) {
-      var off1 = AdMob.addListener && AdMob.addListener('onAdDismissedFullScreenContent', function(){
-        try { off1 && off1.remove && off1.remove(); } catch(_) {}
-        try { off2 && off2.remove && off2.remove(); } catch(_) {}
-        resolve(true);
-      });
-      var off2 = AdMob.addListener && AdMob.addListener('onAdFailedToShowFullScreenContent', function(){
-        try { off1 && off1.remove && off1.remove(); } catch(_) {}
-        try { off2 && off2.remove && off2.remove(); } catch(_) {}
-        resolve(false);
-      });
+  function waitDismissedOnce(kind) {
+    return new Promise(function (resolve) {
+      var off1 = null, off2 = null;
+
+      function done(ok) {
+        try { off1 && off1.remove && off1.remove(); } catch (_) {}
+        try { off2 && off2.remove && off2.remove(); } catch (_) {}
+        resolve(!!ok);
+      }
+
+      var dismissedEvt = kind === "rewarded"
+        ? "onRewardedVideoAdDismissed"
+        : "interstitialAdDismissed";
+
+      var failedEvt = kind === "rewarded"
+        ? "onRewardedVideoAdFailedToShow"
+        : "interstitialAdFailedToShow";
+
+      try {
+        off1 = AdMob.addListener(dismissedEvt, function () { done(true); });
+        off2 = AdMob.addListener(failedEvt, function () { done(false); });
+      } catch (_) {
+        done(false);
+      }
     });
   }
 
@@ -417,20 +452,29 @@ function informCapBlocked() {
 
   function waitRewardedOnce(timeoutMs) {
     return new Promise(function (resolve) {
-      var off = null, timer = null;
+      var off = null;
+      var timer = null;
+
+      function done(ok) {
+        try { off && off.remove && off.remove(); } catch (_) {}
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        resolve(!!ok);
+      }
+
       try {
-        off = AdMob.addListener('onRewarded', function () {
-          try { off && off.remove && off.remove(); } catch(_) {}
-          if (timer) { clearTimeout(timer); timer = null; }
-          resolve(true);
+        off = AdMob.addListener("onRewardedVideoAdReward", function () {
+          done(true);
         });
-      } catch(_) {
-        resolve(false);
+      } catch (_) {
+        done(false);
         return;
       }
-      timer = setTimeout(function(){
-        try { off && off.remove && off.remove(); } catch(_) {}
-        resolve(false);
+
+      timer = setTimeout(function () {
+        done(false);
       }, timeoutMs || 30000);
     });
   }
@@ -532,7 +576,7 @@ function informCapBlocked() {
       var adId = AD_UNIT_ID_REWARDED;
 
       var rewardedP  = waitRewardedOnce(30000);
-      var dismissedP = waitDismissedOnce();
+      var dismissedP = waitDismissedOnce("rewarded");
       var openedP    = waitOpenedOnce(4000);
 
       await AdMob.prepareRewardVideoAd({
@@ -660,7 +704,7 @@ function informCapBlocked() {
         postAdCleanup();
       }, 120000);
 
-      var dismissedP = waitDismissedOnce();
+      var dismissedP = waitDismissedOnce("interstitial");
 
       var res = await AdMob.showInterstitial();
 

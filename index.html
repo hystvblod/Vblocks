@@ -842,5 +842,34 @@
     window.location.href = url;
   }
 </script>
+<script>
+window.addEventListener("load", async function () {
+  try {
+    await window.VRI18n?.initI18n?.();
+  } catch (_) {}
+
+  try {
+    const introJustFinished = localStorage.getItem("vrealms_intro_just_finished") === "1";
+
+    if (introJustFinished) {
+      try {
+        await window.VRAds?.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
+      } catch (_) {}
+
+      try {
+        localStorage.removeItem("vrealms_intro_just_finished");
+      } catch (_) {}
+    }
+
+    try {
+      await window.VRIndexMusicPrompt?.maybeShowAfterRealGame?.();
+    } catch (_) {}
+
+    try {
+      await window.VROneSignal?.maybePromptOnIndexAfterGameReturn?.();
+    } catch (_) {}
+  } catch (_) {}
+});
+</script>
 </body>
 </html>
