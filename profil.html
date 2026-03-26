@@ -116,6 +116,28 @@
     .vb-btn-cancel { background:#eee; color:#6d787a; } .vb-btn-cancel:active{ background:#c7c7c7; }
 
     @keyframes popupfade { from { opacity:0; transform: translateY(38px) scale(.96);} to { opacity:1; transform:none; } }
+
+    .vr-referral-card{
+      width:min(560px,100%);
+      margin: 12px auto 18px;
+      padding: 18px 16px 16px;
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(10,16,28,.28);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      box-shadow:0 16px 40px rgba(0,0,0,.28);
+    }
+
+    @media (min-width: 768px) {
+      .vr-referral-card{
+        width: min(720px, 100%);
+        margin: 16px auto 28px;
+        padding: 24px 24px 22px;
+        border-radius: 28px;
+      }
+    }
+
   </style>
 </head>
 <body>
