@@ -6,6 +6,13 @@
   <title>VBlocks - Profil</title>
   <link rel="stylesheet" href="style/main.css"/>
   <style>
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      height: auto !important;
+      overflow-x: hidden;
+      overflow-y: auto !important;
+    }
     body {
       margin: 0;
       min-height: 100vh;
@@ -39,11 +46,12 @@
       align-items: center;
       justify-content: flex-start;
       min-height: 100vh;
-      width: min(760px, 100%);
+      width: 100%;
+      max-width: 430px;
       margin: 0 auto;
       box-sizing: border-box;
-      padding: 6.2em 16px 28px;
-      gap: 1.8em;
+      padding: 6.2em 10px 28px;
+      gap: 1.2em;
     }
     .profil-logo {
       width: 94px; margin-bottom: 0.3em; margin-top: -1.1em;
@@ -56,10 +64,16 @@
       text-shadow: 0 3px 16px #2e6ead44, 0 1px 1px #fff7;
     }
     .profil-id {
+      width: 100%;
+      max-width: 100%;
       font-size: 1.13em; color: #d6ffe6; font-weight: 800; letter-spacing: 0.09em;
       background: rgba(55,192,120,0.17);
       padding: 0.36em 1.1em; border-radius: 1.3em;
       box-shadow: 0 2px 12px #0ae58c20; text-shadow: 0 1px 2px #2223;
+      box-sizing: border-box;
+      text-align: center;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
     .profil-change-pseudo {
       background: none; border: 2px dashed #b8ffdb88; color: #ffffffee; border-radius: 1.3em;
@@ -69,21 +83,26 @@
     .profil-change-pseudo:hover { background: rgba(255,255,255,0.1); transform: scale(1.03); }
 
     .theme-btn-vb, .applis-btn-vb {
-      width: 98%; margin: 0.5em auto 0 auto;
+      width: 100%; margin: 0.5em auto 0 auto;
       background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%); color: #246133;
-      border: none; border-radius: 1.2em; font-size: 1.13em; font-weight: 900; padding: 0.94em 0;
+      border: none; border-radius: 1.2em; font-size: 1.13em; font-weight: 900; padding: 0.94em 0.9em;
       cursor: pointer; box-shadow: 0 2px 16px #b7ffe644; transition: background 0.15s, color 0.13s, transform 0.14s;
       outline: none; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: center; gap: 0.67em; text-align: center;
+      box-sizing: border-box;
+      max-width: 100%;
     }
     .theme-btn-vb:active, .applis-btn-vb:active { background: linear-gradient(90deg,#47bcd3 0%,#a6f382 100%); color: #143e1a; }
 
     @media (max-width: 520px) {
       .profil-title { font-size: 1.18em;}
       .profil-logo { width: 68px; margin-top: 0.1em;}
-      .profil-content { padding-top: 3.7em; }
+      .profil-content { padding-top: 4.6em; padding-left: 8px; padding-right: 8px; }
       .top-bar { padding-left: 2px; padding-right: 2px; }
+      .top-right { gap: 8px; }
+      .profil-id { font-size: 1em; }
+      .popup-box { width: calc(100vw - 20px); max-width: 350px; box-sizing: border-box; }
+      .popup-theme-vb { width: calc(100vw - 20px); max-width: 370px; box-sizing: border-box; }
     }
-
     /* ===== POPUP PSEUDO ===== */
     .popup-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5);
       display: none; justify-content: center; align-items: center; z-index: 5000; }
@@ -140,6 +159,38 @@
       animation: vbPulseCta 1.15s infinite;
     }
 
+    .vb-referral-card,
+    .vr-referral-card{
+      width: 100%;
+      max-width: 100%;
+      margin: 12px auto 18px;
+      padding: 18px 16px 16px;
+      border-radius: 22px;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .vb-referral-pill {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: fit-content;
+      max-width: 100%;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    .vb-referral-desc {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      text-align: center;
+    }
+
     .vr-referral-card{
       width:min(560px,100%);
       margin: 12px auto 18px;
@@ -154,7 +205,10 @@
 
     @media (min-width: 768px) {
       .profil-content {
+        max-width: 760px;
         padding-top: 7em;
+        padding-left: 18px;
+        padding-right: 18px;
         gap: 2em;
       }
 
@@ -169,18 +223,19 @@
 
       .theme-btn-vb,
       .applis-btn-vb {
-        max-width: 520px;
+        max-width: 720px;
       }
 
       .vr-referral-card,
       .vb-referral-card {
-        width: min(720px, 100%);
+        width: 100%;
         margin: 16px auto 28px;
         padding: 24px 24px 22px;
         border-radius: 28px;
         box-sizing: border-box;
       }
     }
+
 
   </style>
 </head>
@@ -220,16 +275,16 @@
   <span data-i18n="profil.btn.theme">Thèmes</span>
 </button>
 
-<div class="vb-referral-card" style="width:98%;margin:0.5em auto 0 auto;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.16);border-radius:1.35em;padding:1em 1em 1.05em;box-shadow:0 8px 28px rgba(0,0,0,0.15);">
+<div class="vb-referral-card" style="margin:0.5em auto 0 auto;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.16);border-radius:1.35em;box-shadow:0 8px 28px rgba(0,0,0,0.15);">
   <div style="width:100%;display:grid;place-items:center;margin-bottom:10px;">
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;width:fit-content;max-width:100%;background:rgba(15,25,48,0.28);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:8px 12px;font-weight:900;color:#fff;text-align:center;">
+    <div class="vb-referral-pill" style="background:rgba(15,25,48,0.28);border:1px solid rgba(255,255,255,0.12);border-radius:999px;padding:8px 12px;font-weight:900;color:#fff;">
       <span data-i18n="referral.invite_and_earn_title">Inviter et gagner :</span>
       <img src="assets/images/crosspromo/vcoins.webp" alt="" draggable="false" style="width:22px;height:22px;object-fit:contain;display:block;" />
       <span>+ 200</span>
     </div>
   </div>
 
-  <p style="margin:0 0 12px;color:rgba(255,255,255,0.92);line-height:1.4;" data-i18n="referral.crosspromo_desc">
+  <p class="vb-referral-desc" style="margin:0 0 12px;color:rgba(255,255,255,0.92);line-height:1.4;" data-i18n="referral.crosspromo_desc">
     Invite un ami à installer VBlocks et gagne une récompense.
   </p>
 
