@@ -676,3 +676,29 @@ html, body {
   vertical-align: middle;
   margin-right: 6px;
 }
+
+/* Universe-specific adjustments */
+body.vr-body-game[data-universe="heaven_king"] .vr-hud-left .vr-hud-value{
+  transform: translate(-6px, 0px) !important;
+}
+
+body[data-universe="hell_king"].vr-body-game #view-game .vr-card-text{
+  font-family: "VR_LoveSister", cursive !important;
+  font-size: clamp(15px, 2.7vmin, 29px) !important;
+  line-height: 1.16 !important;
+  font-weight: 700 !important;
+}
+
+body[data-universe="new_world_explorer"].vr-body-game #view-game .vr-choice-label{
+  font-family: var(--vr-explorer-font-ui) !important;
+  color:#000 !important;
+  text-shadow:none !important;
+  text-align:center !important;
+  line-height: 1.12 !important;
+  font-weight: 600 !important;
+  opacity: 1 !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  hyphens: auto !important;
+  text-wrap: balance !important;
+}
