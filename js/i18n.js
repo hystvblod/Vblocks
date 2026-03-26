@@ -1,15 +1,15 @@
-// i18n.js — auto-détection + override utilisateur + fallback + gestion RTL/LTR + lang BCP47 + HTML-safe rendering
 (function (global) {
-  // Emplacement des JSON de langue
+  "use strict";
+
   const LANG_PATH = "data/";
+  const DEFAULT_LANG = "EN";
 
-  // Langues supportées (noms de fichiers disponibles)
+  const STORAGE_KEY = "langue";
+  const EXPLICIT_KEY = "vblocks_lang_selected";
+
   const SUP = ["FR","EN","ES","DE","IT","PT","PT-BR","NL","AR","IDN","JP","KO"];
-
-  // Langues en écriture droite→gauche
   const RTL = new Set(["AR"]);
 
-  // Mapping code-fichier -> code BCP47 pour <html lang="...">
   const HTML_LANG = {
     "FR": "fr",
     "EN": "en",
@@ -25,37 +25,114 @@
     "KO": "ko"
   };
 
-  // Normalise un code navigateur -> code de fichier
+  const LANGUAGE_CHOICES = [
+    {
+      code: "FR",
+      ui: "FR",
+      aria: "Français",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="10" height="20" x="0" y="0" fill="#1f4fbf"/><rect width="10" height="20" x="10" y="0" fill="#ffffff"/><rect width="10" height="20" x="20" y="0" fill="#d11f2e"/></svg>`
+    },
+    {
+      code: "EN",
+      ui: "EN",
+      aria: "English",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#fff"/><g fill="#b22234"><rect y="0" width="30" height="1.538"/><rect y="3.076" width="30" height="1.538"/><rect y="6.152" width="30" height="1.538"/><rect y="9.228" width="30" height="1.538"/><rect y="12.304" width="30" height="1.538"/><rect y="15.38" width="30" height="1.538"/><rect y="18.456" width="30" height="1.544"/></g><rect width="12.6" height="10.77" fill="#3c3b6e"/><g fill="#fff" opacity="0.95"><circle cx="1.8" cy="1.6" r=".35"/><circle cx="3.6" cy="1.6" r=".35"/><circle cx="5.4" cy="1.6" r=".35"/><circle cx="7.2" cy="1.6" r=".35"/><circle cx="9.0" cy="1.6" r=".35"/><circle cx="10.8" cy="1.6" r=".35"/><circle cx="2.7" cy="2.8" r=".35"/><circle cx="4.5" cy="2.8" r=".35"/><circle cx="6.3" cy="2.8" r=".35"/><circle cx="8.1" cy="2.8" r=".35"/><circle cx="9.9" cy="2.8" r=".35"/><circle cx="1.8" cy="4.0" r=".35"/><circle cx="3.6" cy="4.0" r=".35"/><circle cx="5.4" cy="4.0" r=".35"/><circle cx="7.2" cy="4.0" r=".35"/><circle cx="9.0" cy="4.0" r=".35"/><circle cx="10.8" cy="4.0" r=".35"/><circle cx="2.7" cy="5.2" r=".35"/><circle cx="4.5" cy="5.2" r=".35"/><circle cx="6.3" cy="5.2" r=".35"/><circle cx="8.1" cy="5.2" r=".35"/><circle cx="9.9" cy="5.2" r=".35"/><circle cx="1.8" cy="6.4" r=".35"/><circle cx="3.6" cy="6.4" r=".35"/><circle cx="5.4" cy="6.4" r=".35"/><circle cx="7.2" cy="6.4" r=".35"/><circle cx="9.0" cy="6.4" r=".35"/><circle cx="10.8" cy="6.4" r=".35"/><circle cx="2.7" cy="7.6" r=".35"/><circle cx="4.5" cy="7.6" r=".35"/><circle cx="6.3" cy="7.6" r=".35"/><circle cx="8.1" cy="7.6" r=".35"/><circle cx="9.9" cy="7.6" r=".35"/><circle cx="1.8" cy="8.8" r=".35"/><circle cx="3.6" cy="8.8" r=".35"/><circle cx="5.4" cy="8.8" r=".35"/><circle cx="7.2" cy="8.8" r=".35"/><circle cx="9.0" cy="8.8" r=".35"/><circle cx="10.8" cy="8.8" r=".35"/></g></svg>`
+    },
+    {
+      code: "DE",
+      ui: "DE",
+      aria: "Deutsch",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="6.67" y="0" fill="#111"/><rect width="30" height="6.67" y="6.67" fill="#d11f2e"/><rect width="30" height="6.66" y="13.34" fill="#f4c300"/></svg>`
+    },
+    {
+      code: "ES",
+      ui: "ES",
+      aria: "Español",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="5" y="0" fill="#c8102e"/><rect width="30" height="10" y="5" fill="#f4c300"/><rect width="30" height="5" y="15" fill="#c8102e"/></svg>`
+    },
+    {
+      code: "PT",
+      ui: "PT",
+      aria: "Português",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="12" height="20" x="0" y="0" fill="#1a7f3b"/><rect width="18" height="20" x="12" y="0" fill="#c8102e"/><circle cx="12" cy="10" r="4.5" fill="#f4c300" opacity="0.95"/></svg>`
+    },
+    {
+      code: "PT-BR",
+      ui: "PTBR",
+      aria: "Português (BR)",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#1a7f3b"/><path d="M15 3 L26 10 L15 17 L4 10 Z" fill="#f4c300"/><circle cx="15" cy="10" r="4" fill="#1f4fbf"/></svg>`
+    },
+    {
+      code: "IT",
+      ui: "IT",
+      aria: "Italiano",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="10" height="20" x="0" y="0" fill="#1a7f3b"/><rect width="10" height="20" x="10" y="0" fill="#ffffff"/><rect width="10" height="20" x="20" y="0" fill="#c8102e"/></svg>`
+    },
+    {
+      code: "NL",
+      ui: "NL",
+      aria: "Nederlands",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="6.67" y="0" fill="#ae1e28"/><rect width="30" height="6.67" y="6.67" fill="#ffffff"/><rect width="30" height="6.66" y="13.34" fill="#21468b"/></svg>`
+    },
+    {
+      code: "AR",
+      ui: "AR",
+      aria: "العربية",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#ffffff"/><rect width="30" height="10" y="0" fill="#198754"/><polygon points="7,10 16,5 16,15" fill="#fff"/><circle cx="21" cy="10" r="3.2" fill="#198754"/></svg>`
+    },
+    {
+      code: "IDN",
+      ui: "ID",
+      aria: "Bahasa Indonesia",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="10" y="0" fill="#d11f2e"/><rect width="30" height="10" y="10" fill="#ffffff"/></svg>`
+    },
+    {
+      code: "JP",
+      ui: "JP",
+      aria: "日本語",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#ffffff"/><circle cx="15" cy="10" r="5" fill="#d11f2e"/></svg>`
+    },
+    {
+      code: "KO",
+      ui: "KO",
+      aria: "한국어",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#ffffff"/><circle cx="15" cy="10" r="5" fill="#c8102e"/><path d="M15 5a5 5 0 0 0 0 10a2.5 2.5 0 0 1 0-5a2.5 2.5 0 0 0 0-5Z" fill="#0a3a87" opacity="0.95"/></svg>`
+    }
+  ];
+
+  let CURRENT_LANG = DEFAULT_LANG;
+  let I18N_MAP = {};
+  let bootPromise = null;
+  let pickerPromise = null;
+
   function normalize(code) {
     if (!code) return null;
+
     let c = String(code).trim();
-    c = c.replace('_','-');
+    c = c.replace("_", "-");
     const lower = c.toLowerCase();
 
-    // cas spéciaux vers nos fichiers
     if (lower.startsWith("pt-br")) return "PT-BR";
-    if (lower.startsWith("pt"))    return "PT";
-    if (lower.startsWith("en"))    return "EN";
-    if (lower.startsWith("fr"))    return "FR";
-    if (lower.startsWith("de"))    return "DE";
-    if (lower.startsWith("es"))    return "ES";
-    if (lower.startsWith("it"))    return "IT";
-    if (lower.startsWith("nl"))    return "NL";
+    if (lower.startsWith("pt")) return "PT";
+    if (lower.startsWith("en")) return "EN";
+    if (lower.startsWith("fr")) return "FR";
+    if (lower.startsWith("de")) return "DE";
+    if (lower.startsWith("es")) return "ES";
+    if (lower.startsWith("it")) return "IT";
+    if (lower.startsWith("nl")) return "NL";
     if (lower === "ar" || lower.startsWith("ar-")) return "AR";
     if (lower === "id" || lower.startsWith("id-")) return "IDN";
     if (lower === "ja" || lower.startsWith("ja-")) return "JP";
     if (lower === "ko" || lower.startsWith("ko-")) return "KO";
 
-    // si on nous passe déjà un code fichier valide
     const up = lower.toUpperCase();
     if (SUP.includes(up)) return up;
 
     return null;
   }
 
-  // Détecte la meilleure langue côté device
   function detectPreferredLang() {
-    const list = Array.isArray(navigator.languages) && navigator.languages.length
+    const list = (Array.isArray(navigator.languages) && navigator.languages.length)
       ? navigator.languages
       : [navigator.language || navigator.userLanguage];
 
@@ -63,54 +140,69 @@
       const n = normalize(c);
       if (n && SUP.includes(n)) return n;
     }
-    return "EN"; // fallback global (mets "FR" si tu veux forcer FR par défaut)
+
+    return DEFAULT_LANG;
   }
 
-  // Lit l'override utilisateur (Paramètres) OU auto-détection
-  function getLangCode() {
-    const stored = localStorage.getItem("langue"); // override manuel
-    const nStored = normalize(stored);
-    if (nStored && SUP.includes(nStored)) return nStored;
+  function getSavedLang() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const nStored = normalize(stored);
+      return nStored && SUP.includes(nStored) ? nStored : "";
+    } catch (_) {
+      return "";
+    }
+  }
 
-    const detected = detectPreferredLang();
-    try { localStorage.setItem("langue", detected); } catch (_) {}
-    return detected;
+  function hasExplicitLanguageChoice() {
+    try {
+      return localStorage.getItem(EXPLICIT_KEY) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function markExplicitLanguageChoice() {
+    try {
+      localStorage.setItem(EXPLICIT_KEY, "1");
+    } catch (_) {}
   }
 
   async function loadLang(langCode) {
+    const normalized = normalize(langCode) || DEFAULT_LANG;
+
     try {
-      const res = await fetch(`${LANG_PATH}${langCode}.json`, { cache: "no-store" });
+      const res = await fetch(`${LANG_PATH}${normalized}.json`, { cache: "no-store" });
       if (!res.ok) throw new Error("Not OK");
       return await res.json();
     } catch (_) {
-      // Fallback final si fichier manquant
-      if (langCode !== "EN") {
+      if (normalized !== DEFAULT_LANG) {
         try {
-          const res2 = await fetch(`${LANG_PATH}EN.json`, { cache: "no-store" });
+          const res2 = await fetch(`${LANG_PATH}${DEFAULT_LANG}.json`, { cache: "no-store" });
           if (res2.ok) return await res2.json();
-        } catch {}
+        } catch (_) {}
       }
       return {};
     }
   }
 
-  // Applique lang & direction sur <html> et classe utilitaire sur <body>
   function applyDocumentLangAndDir(langCode) {
-    const htmlLang = HTML_LANG[langCode] || langCode.toLowerCase();
+    const htmlLang = HTML_LANG[langCode] || String(langCode || DEFAULT_LANG).toLowerCase();
     document.documentElement.setAttribute("lang", htmlLang);
 
     const isRtl = RTL.has(langCode);
     document.documentElement.setAttribute("dir", isRtl ? "rtl" : "ltr");
-    document.body && document.body.classList.toggle("rtl", !!isRtl);
+    if (document.body) {
+      document.body.classList.toggle("rtl", !!isRtl);
+    }
   }
 
-  // Insère le texte : si la chaîne contient du HTML (ex. <br>), on utilise innerHTML
   function setElementText(el, txt) {
     if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
       el.placeholder = txt;
       return;
     }
-    // rendu HTML contrôlé (les JSON sont sous ton contrôle)
+
     if (typeof txt === "string" && txt.indexOf("<") !== -1) {
       el.innerHTML = txt;
     } else {
@@ -129,32 +221,316 @@
     });
   }
 
+  function emitLangChanged() {
+    try {
+      global.dispatchEvent(new CustomEvent("vblocks:i18n:changed", {
+        detail: {
+          lang: CURRENT_LANG,
+          map: I18N_MAP
+        }
+      }));
+    } catch (_) {}
+  }
+
+  async function syncRemoteLang(langCode) {
+    try {
+      if (global.userData?.updateLangDirect) {
+        await global.userData.updateLangDirect(langCode);
+      }
+    } catch (e) {
+      console.warn("[i18n] remote lang sync failed:", e?.message || e);
+    }
+  }
+
+  function ensureLanguagePickerStyles() {
+    if (document.getElementById("vb-language-picker-style")) return;
+
+    const style = document.createElement("style");
+    style.id = "vb-language-picker-style";
+    style.textContent = `
+      .vrLangOverlay{
+        position:fixed;
+        inset:0;
+        z-index:999999;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:16px;
+        background:rgba(7,10,18,.82);
+        backdrop-filter:blur(10px);
+      }
+
+      .vrLangModal{
+        width:min(92vw,560px);
+        background:linear-gradient(180deg,rgba(18,25,43,.98),rgba(11,16,28,.98));
+        border:1px solid rgba(255,255,255,.12);
+        border-radius:24px;
+        box-shadow:0 20px 60px rgba(0,0,0,.45);
+        padding:18px 16px 16px;
+        color:#fff;
+      }
+
+      .vrLangTitle{
+        text-align:center;
+        font-weight:900;
+        font-size:clamp(24px,4.8vw,34px);
+        line-height:1.1;
+        margin:0 0 16px;
+      }
+
+      .vrLangOverlay .vr-langGrid{
+        display:grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap:10px;
+        margin-top:22px;
+        margin-bottom:6px;
+      }
+
+      @media (min-width: 520px){
+        .vrLangOverlay .vr-langGrid{
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+      }
+
+      .vrLangOverlay .vr-langBtn{
+        width:100%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:0;
+        padding:10px 6px;
+        border-radius:14px;
+        border:0 !important;
+        background:transparent !important;
+        box-shadow:none !important;
+        color:inherit;
+        cursor:pointer;
+        -webkit-tap-highlight-color: transparent;
+        text-align:center;
+        appearance:none;
+      }
+
+      .vrLangOverlay .vr-langBtn:active{
+        transform:scale(.98);
+      }
+
+      .vrLangOverlay .vr-langBtn.isActive{
+        outline:0;
+        box-shadow:0 0 0 2px rgba(255,255,255,.22), 0 14px 34px rgba(0,0,0,.26) !important;
+        background:transparent !important;
+        border:0 !important;
+      }
+
+      .vrLangOverlay .vr-flagBox{
+        width:46px;
+        height:32px;
+        border-radius:8px;
+        overflow:hidden;
+        border:0 !important;
+        outline:0 !important;
+        box-shadow:none !important;
+        background:transparent !important;
+        flex:0 0 auto;
+      }
+
+      .vrLangOverlay .vr-flagBox svg{
+        width:100%;
+        height:100%;
+        display:block;
+      }
+
+      .vrLangOverlay .vr-langText{
+        display:none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function showLanguagePicker() {
+    if (pickerPromise) return pickerPromise;
+
+    pickerPromise = new Promise((resolve) => {
+      ensureLanguagePickerStyles();
+
+      const overlay = document.createElement("div");
+      overlay.className = "vrLangOverlay";
+      overlay.setAttribute("role", "dialog");
+      overlay.setAttribute("aria-modal", "true");
+      overlay.setAttribute("aria-label", "Choose your language");
+
+      const modal = document.createElement("div");
+      modal.className = "vrLangModal";
+
+      const title = document.createElement("div");
+      title.className = "vrLangTitle";
+      title.textContent = "Choose your language";
+      modal.appendChild(title);
+
+      const grid = document.createElement("div");
+      grid.className = "vr-langGrid";
+
+      const active = detectPreferredLang() || DEFAULT_LANG;
+
+      LANGUAGE_CHOICES.forEach((item) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "vr-langBtn" + (active === item.code ? " isActive" : "");
+        btn.setAttribute("data-lang", item.code);
+        btn.setAttribute("aria-label", item.aria || item.ui);
+
+        const flag = document.createElement("div");
+        flag.className = "vr-flagBox";
+        flag.innerHTML = item.flag;
+
+        const txt = document.createElement("div");
+        txt.className = "vr-langText";
+
+        const code = document.createElement("div");
+        code.textContent = item.ui;
+        txt.appendChild(code);
+
+        btn.appendChild(flag);
+        btn.appendChild(txt);
+
+        btn.addEventListener("click", async () => {
+          try {
+            await setLang(item.code, { markExplicit: true, syncRemote: true });
+          } catch (_) {}
+
+          overlay.remove();
+          pickerPromise = null;
+          resolve(item.code);
+        });
+
+        grid.appendChild(btn);
+      });
+
+      modal.appendChild(grid);
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+    });
+
+    return pickerPromise;
+  }
+
+  async function resolveInitialLang(forcedLang) {
+    const forced = normalize(forcedLang);
+    if (forced && SUP.includes(forced)) return forced;
+
+    const saved = getSavedLang();
+    if (saved && hasExplicitLanguageChoice()) return saved;
+
+    return await showLanguagePicker();
+  }
+
+  async function applyCurrentLang(langCode) {
+    CURRENT_LANG = normalize(langCode) || DEFAULT_LANG;
+    applyDocumentLangAndDir(CURRENT_LANG);
+
+    I18N_MAP = await loadLang(CURRENT_LANG);
+    global.I18N_MAP = I18N_MAP;
+
+    applyI18n(I18N_MAP);
+    emitLangChanged();
+
+    return CURRENT_LANG;
+  }
+
+  async function initI18n(forcedLang) {
+    const wanted = await resolveInitialLang(forcedLang);
+    return await applyCurrentLang(wanted);
+  }
+
+  async function setLang(code, options) {
+    const opts = Object.assign(
+      { markExplicit: true, syncRemote: true },
+      options || {}
+    );
+
+    const n = normalize(code) || DEFAULT_LANG;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, n);
+    } catch (_) {}
+
+    if (opts.markExplicit) {
+      markExplicitLanguageChoice();
+    }
+
+    await applyCurrentLang(n);
+
+    if (opts.syncRemote) {
+      await syncRemoteLang(n);
+    }
+
+    return CURRENT_LANG;
+  }
+
+  function getCurrentLangCode() {
+    return CURRENT_LANG || getSavedLang() || detectPreferredLang() || DEFAULT_LANG;
+  }
+
+  async function retranslateCurrentPage() {
+    const langCode = getCurrentLangCode();
+    return await applyCurrentLang(langCode);
+  }
+
+  function i18nGet(key) {
+    return (I18N_MAP && I18N_MAP[key]) || key;
+  }
+
+  function boot() {
+    if (bootPromise) return bootPromise;
+
+    bootPromise = initI18n().catch(async (e) => {
+      console.warn("[i18n] boot failed:", e);
+
+      const fallback = getSavedLang() || detectPreferredLang() || DEFAULT_LANG;
+
+      try {
+        await applyCurrentLang(fallback);
+      } catch (_) {
+        CURRENT_LANG = DEFAULT_LANG;
+        I18N_MAP = {};
+        global.I18N_MAP = I18N_MAP;
+        applyDocumentLangAndDir(DEFAULT_LANG);
+      }
+
+      return CURRENT_LANG;
+    });
+
+    return bootPromise;
+  }
+
   global.i18nTranslateAll = async function () {
-    const langCode = getLangCode();
-    applyDocumentLangAndDir(langCode);
-
-    const i18nMap = await loadLang(langCode);
-    global.I18N_MAP = i18nMap;
-    applyI18n(i18nMap);
+    if (!bootPromise) {
+      return await boot();
+    }
+    return await retranslateCurrentPage();
   };
 
-  global.i18nGet = function (key) {
-    return (global.I18N_MAP && global.I18N_MAP[key]) || key;
-  };
+  global.i18nGet = i18nGet;
 
   global.setLang = async function (code) {
-    const n = normalize(code);
-    if (n && SUP.includes(n)) {
-      localStorage.setItem("langue", n); // on stocke AU FORMAT FICHIER (FR, EN, PT-BR…)
-    } else {
-      localStorage.removeItem("langue");
-    }
-    await global.i18nTranslateAll();
-    // à toi de rafraîchir l’écran si nécessaire
+    return await setLang(code, { markExplicit: true, syncRemote: true });
   };
 
-  window.addEventListener("DOMContentLoaded", global.i18nTranslateAll);
-})(window);
+  global.VRI18n = {
+    initI18n: (forcedLang) => forcedLang ? initI18n(forcedLang) : boot(),
+    setLang: global.setLang,
+    getLang: getCurrentLangCode,
+    normalizeLang: normalize,
+    t: (key, fallback) => {
+      const v = i18nGet(key);
+      return v === key ? String(fallback || "") : v;
+    }
+  };
 
-// Optionnel: promesse d’init prête
-window.i18nReady = (async () => { await window.i18nTranslateAll(); })();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  } else {
+    boot();
+  }
+
+  global.i18nReady = boot();
+})(window);
