@@ -564,7 +564,17 @@
         update();
       }
 
-      document.addEventListener('DOMContentLoaded', initOnboarding);
+      document.addEventListener('DOMContentLoaded', async () => {
+        try {
+          await window.i18nReady;
+        } catch (_) {
+          try {
+            await window.VRI18n?.initI18n?.();
+          } catch (_) {}
+        }
+
+        initOnboarding();
+      });
     })();
   </script>
   <!-- ====== FIN AJOUT logique onboarding ====== -->
