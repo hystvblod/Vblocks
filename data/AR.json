@@ -232,12 +232,8 @@
     "index.update.body": "هناك إصدار جديد جاهز. يمكنك تنزيله الآن.",
     "index.update.updateNow": "تحديث الآن",
     "index.update.later": "لاحقًا",
-     "settings.credits.label": "Ucapan Terima Kasih",
        "ads.cap_try_in_min": "تم بلوغ الحد: حاول مرة أخرى بعد ~{min} دقيقة",
   "ads.cap_try_soon": "تم بلوغ الحد، حاول مرة أخرى قريبًا",
-  "settings.credits.text": "تشكر VBoldStudio كُلًّا من Arnaud و Angélique و Matthieu و Kimberley و Adrien و Tatiana و Matthieu و Thomas و Lucas على دعمهم وإبداعهم ونصائحهم.",
-
-
     "onboarding.skip": "تخطي",
     "onboarding.prev": "السابق",
     "onboarding.next": "التالي",

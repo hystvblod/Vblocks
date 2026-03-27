@@ -232,11 +232,8 @@
     "index.update.body": "A new version is ready. You can download it now.",
     "index.update.updateNow": "Update now",
     "index.update.later": "Later",
-  "settings.credits.label": "Acknowledgments",
   "ads.cap_try_in_min": "Limit reached: try again in ~{min} min",
   "ads.cap_try_soon": "Limit reached, try again soon",
-  "settings.credits.text": "VBoldStudio thanks Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas, and Lucas for their support, creativity, and advice.",
-
    "onboarding.skip": "Skip",
     "onboarding.prev": "Previous",
     "onboarding.next": "Next",

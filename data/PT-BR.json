@@ -232,11 +232,8 @@
     "index.update.body": "Uma nova versão está pronta. Você pode baixá-la agora.",
     "index.update.updateNow": "Atualizar agora",
     "index.update.later": "Mais tarde",
-     "settings.credits.label": "Agradecimentos",
        "ads.cap_try_in_min": "Limite atingido: tente novamente em ~{min} min",
   "ads.cap_try_soon": "Limite atingido, tente novamente em breve",
-  "settings.credits.text": "A VBoldStudio agradece a Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas e Lucas pelo apoio, pela criatividade e pelos conselhos.",
-
    "onboarding.skip": "Ignorar",
     "onboarding.prev": "Anterior",
     "onboarding.next": "Próximo",
