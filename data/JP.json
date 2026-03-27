@@ -232,11 +232,8 @@
     "index.update.body": "新しいバージョンの準備ができました。今すぐダウンロードできます。",
     "index.update.updateNow": "今すぐ更新",
     "index.update.later": "後で",
-    "settings.credits.label": "謝辞",
       "ads.cap_try_in_min": "上限に達しました：およそ{min}分後に再試行してください",
   "ads.cap_try_soon": "上限に達しました。しばらくしてからお試しください",
-  "settings.credits.text": "VBoldStudio は、Arnaud、Angélique、Matthieu、Kimberley、Adrien、Tatiana、Matthieu、Thomas、Lucas の支援・創造性・助言に感謝いたします。",
-
    "onboarding.skip": "スキップ",
     "onboarding.prev": "戻る",
     "onboarding.next": "次へ",

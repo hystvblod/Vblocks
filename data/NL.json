@@ -232,13 +232,8 @@
     "index.update.body": "Er is een nieuwe versie klaar. Je kunt deze nu downloaden.",
     "index.update.updateNow": "Nu updaten",
     "index.update.later": "Later",
-   "settings.credits.label": "Dankwoord",
      "ads.cap_try_in_min": "Limiet bereikt: probeer het over ~{min} min opnieuw",
   "ads.cap_try_soon": "Limiet bereikt, probeer het later opnieuw",
-  "settings.credits.text": "VBoldStudio bedankt Arnaud, Angélique, Matthieu, Kimberley, Adrien, Tatiana, Matthieu, Thomas en Lucas voor hun steun, creativiteit en advies.",
-
-  
-  
  "onboarding.skip": "Overslaan",
     "onboarding.prev": "Vorige",
     "onboarding.next": "Volgende",
