@@ -264,7 +264,13 @@
     if (row.rewardEligible) return "claim";
 
     const installed = await canOpenTargetApp(APPS[appId]);
-    if (installed) return "open";
+    if (installed) {
+      row.installedDetected = true;
+      row.rewardEligible = true;
+      row.pendingInstallCheck = false;
+      writeState(state);
+      return "claim";
+    }
 
     return "install";
   }
@@ -318,9 +324,6 @@
         btn.disabled = true;
       } else if (state === "claim") {
         btn.textContent = t("crosspromo.cta_claim", "Réclamer");
-      } else if (state === "open") {
-        btn.textContent = t("crosspromo.cta_installed", "Déjà installé");
-        btn.disabled = true;
       } else {
         btn.textContent = t("crosspromo.cta_install", "Télécharger");
       }
@@ -441,7 +444,6 @@
 
     let mainLabel = t("crosspromo.cta_install", "Télécharger");
     if (ctaState === "claim") mainLabel = t("crosspromo.cta_claim", "Réclamer");
-    if (ctaState === "open") mainLabel = t("crosspromo.cta_open", "Ouvrir");
     if (ctaState === "claimed") mainLabel = t("crosspromo.cta_claimed", "Déjà réclamé");
 
     const title =
@@ -468,14 +470,14 @@
 
         <p style="margin:0 0 12px;color:rgba(255,255,255,.93);line-height:1.42;">${body}</p>
 
-        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(15,25,48,0.28);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 12px;font-weight:900;color:#fff;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;width:fit-content;max-width:100%;background:rgba(15,25,48,0.28);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 12px;font-weight:900;color:#fff;margin:0 auto 12px;text-align:center;animation:cpPulseCta 1.15s infinite;">
           <span>${t("crosspromo.reward_prefix", "GAGNER :")}</span>
-          <img src="assets/images/crosspromo/vcoins.webp" alt="" style="width:22px;height:22px;object-fit:contain;" draggable="false" />
+          <img src="assets/images/crosspromo/vcoins.webp" alt="" style="width:22px;height:22px;object-fit:contain;display:block;" draggable="false" />
           <span>+ ${REWARD_AMOUNT}</span>
         </div>
 
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button id="vr-crosspromo-main" type="button" style="flex:1;min-height:48px;border:none;border-radius:999px;background:linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);color:#fff;font-weight:800;cursor:pointer;">
+          <button id="vr-crosspromo-main" type="button" style="flex:1;min-height:48px;border:none;border-radius:999px;background:linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);color:#fff;font-weight:800;cursor:pointer;box-shadow:0 4px 18px #1e64a772;">
             ${mainLabel}
           </button>
           <button id="vr-crosspromo-later" type="button" style="min-width:110px;min-height:48px;border:none;border-radius:999px;background:rgba(255,255,255,.15);color:#fff;font-weight:800;cursor:pointer;">
@@ -507,11 +509,6 @@
       mainBtn.onclick = async () => {
         if (ctaState === "claim") {
           await claimReward(appId);
-          close();
-          return;
-        }
-        if (ctaState === "open") {
-          await openInstalledApp(app);
           close();
           return;
         }
