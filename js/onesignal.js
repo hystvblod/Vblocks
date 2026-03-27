@@ -8,7 +8,7 @@
 
   function getOneSignal() {
     try {
-      return window.plugins?.OneSignal || window.OneSignal || null;
+      return window.plugins?.OneSignal || null;
     } catch (_) {
       return null;
     }
@@ -30,56 +30,65 @@
       const uid = await window.userData?.getAuthUserId?.();
       if (!uid) return;
 
-      // Lier le device OneSignal à ton user applicatif
       await OneSignal.login?.(String(uid));
     } catch (_) {}
   }
 
   async function initOneSignal() {
-    if (booted) return;
-    booted = true;
-
-    if (!isNative()) return;
+    if (booted) return true;
+    if (!isNative()) return false;
 
     const OneSignal = getOneSignal();
-    if (!OneSignal) return;
+    if (!OneSignal) {
+      console.warn("[OneSignal] plugin introuvable");
+      return false;
+    }
 
     try {
-      // Debug local si besoin, enlève en prod si tu veux
       OneSignal.Debug?.setLogLevel?.(6);
     } catch (_) {}
 
     try {
-      // Init officielle côté plugin JS
-      OneSignal.initialize?.(APP_ID);
-    } catch (_) {}
+      if (typeof OneSignal.initialize === "function") {
+        OneSignal.initialize(APP_ID);
+      } else if (typeof OneSignal.setAppId === "function") {
+        OneSignal.setAppId(APP_ID);
+      } else {
+        console.warn("[OneSignal] initialize/setAppId introuvable");
+        return false;
+      }
 
-    try {
+      booted = true;
       await syncUser();
-    } catch (_) {}
+      return true;
+    } catch (e) {
+      console.warn("[OneSignal] initOneSignal() failed", e);
+      return false;
+    }
   }
 
-  async function maybePromptOnIndexAfterGameReturn() {
+  async function requestNativePermission() {
+    const ok = await initOneSignal();
+    if (!ok) {
+      return { attempted: false, accepted: false };
+    }
+
+    try {
+      const alreadyDone = localStorage.getItem(LS_PROMPT_DONE) === "1";
+      if (alreadyDone) {
+        return { attempted: false, accepted: false };
+      }
+    } catch (_) {}
+
     try {
       const OneSignal = getOneSignal();
-      if (!OneSignal) return false;
-
-      const alreadyDone = localStorage.getItem(LS_PROMPT_DONE) === "1";
-      const pending = localStorage.getItem(LS_PROMPT_PENDING) === "1";
-
-      if (alreadyDone || !pending) return false;
-
-      localStorage.removeItem(LS_PROMPT_PENDING);
-
-      let accepted = false;
-      try {
-        accepted = await OneSignal.Notifications?.requestPermission?.(false);
-      } catch (_) {}
+      const accepted = await OneSignal?.Notifications?.requestPermission?.(false);
 
       localStorage.setItem(LS_PROMPT_DONE, "1");
-      return !!accepted;
-    } catch (_) {
-      return false;
+      return { attempted: true, accepted: !!accepted };
+    } catch (e) {
+      console.warn("[OneSignal] requestNativePermission() failed", e);
+      return { attempted: false, accepted: false };
     }
   }
 
@@ -89,9 +98,26 @@
     } catch (_) {}
   }
 
+  async function maybePromptOnIndexAfterGameReturn() {
+    try {
+      const alreadyDone = localStorage.getItem(LS_PROMPT_DONE) === "1";
+      const pending = localStorage.getItem(LS_PROMPT_PENDING) === "1";
+
+      if (alreadyDone || !pending) return false;
+
+      localStorage.removeItem(LS_PROMPT_PENDING);
+
+      const result = await requestNativePermission();
+      return !!result.accepted;
+    } catch (_) {
+      return false;
+    }
+  }
+
   window.VROneSignal = {
     init: initOneSignal,
     syncUser,
+    requestNativePermission,
     preparePromptOnNextIndex,
     maybePromptOnIndexAfterGameReturn
   };
