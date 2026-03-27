@@ -580,6 +580,16 @@ html, body {
 }
 
 /* Universe-specific adjustments */
+
+body.vr-body-game[data-universe="western_president"] .vr-hud-right .vr-hud-value{
+  transform: translate(8px, 19px) !important;
+}
+body.vr-body-game[data-universe="western_president"] .vr-hud-right .vr-hud-value{
+  transform: translate(8px, 12px) !important;
+}
+body.vr-body-game[data-universe="western_president"] .vr-hud-right .vr-hud-value{
+  transform: translate(18px, 18px) !important;
+}
 body.vr-body-game[data-universe="heaven_king"] .vr-hud-left .vr-hud-value{
   transform: translate(-6px, 0px) !important;
 }
