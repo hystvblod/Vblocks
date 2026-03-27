@@ -530,9 +530,18 @@
           btnNext.style.display = idx<max ? 'inline-block' : 'none';
           btnStart.style.display= idx===max ? 'inline-block' : 'none';
         }
-        function done(){
+        async function done(){
           localStorage.setItem(KEY,'1');
-          el.style.display='none'; el.setAttribute('aria-hidden','true');
+          el.style.display='none';
+          el.setAttribute('aria-hidden','true');
+
+          try {
+            await window.VRAds?.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
+          } catch (_) {}
+
+          try {
+            await window.VROneSignal?.requestNativePermission?.();
+          } catch (_) {}
         }
 
         // Touch swipe
@@ -631,25 +640,11 @@ window.addEventListener("load", async function () {
   } catch (_) {}
 
   try {
-    const introJustFinished = localStorage.getItem("vrealms_intro_just_finished") === "1";
+    await window.VRIndexMusicPrompt?.maybeShowAfterRealGame?.();
+  } catch (_) {}
 
-    if (introJustFinished) {
-      try {
-        await window.VRAds?.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
-      } catch (_) {}
-
-      try {
-        localStorage.removeItem("vrealms_intro_just_finished");
-      } catch (_) {}
-    }
-
-    try {
-      await window.VRIndexMusicPrompt?.maybeShowAfterRealGame?.();
-    } catch (_) {}
-
-    try {
-      await window.VROneSignal?.maybePromptOnIndexAfterGameReturn?.();
-    } catch (_) {}
+  try {
+    await window.VROneSignal?.maybePromptOnIndexAfterGameReturn?.();
   } catch (_) {}
 });
 </script>
