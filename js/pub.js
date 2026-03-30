@@ -20,8 +20,12 @@
 
   // --- Réglages interstitiels ---
   var INTERSTITIEL_APRES_X_ACTIONS = 2;        // pub au début de la 3e action réelle
-  var INTERSTITIEL_APRES_MS = 3 * 60 * 1000;   // ou toutes les 3 minutes
-  var INTER_COOLDOWN_MS = 0;                   // garde-fou optionnel
+  var INTERSTITIEL_APRES_MS = 0;               // désactivé : remplacé par le timer de temps d'écran ci-dessous
+  var INTER_COOLDOWN_MS = 3 * 60 * 1000;       // minimum 3 minutes entre deux pubs
+
+  // --- Timer auto hors jeu / index ---
+  var INTER_ECRAN_VISIBLE_MS = 4 * 60 * 1000;  // pub auto toutes les 4 minutes de temps d'écran visible
+  var INTER_ECRAN_TICK_MS = 15000;             // vérification légère toutes les 15s
 
   // --- Récompenses par défaut (affichage/UI) ---
   window.REWARD_JETONS = typeof window.REWARD_JETONS === 'number'  ? window.REWARD_JETONS : 1;
@@ -41,6 +45,9 @@
   var interActionsCount = parseInt(localStorage.getItem('inter_actions_count') || '0', 10);
   var lastInterTs = parseInt(localStorage.getItem('inter_last_ts') || '0', 10);
   var interCycleStartedTs = parseInt(localStorage.getItem('inter_cycle_started_ts') || '0', 10);
+  var interScreenVisibleMs = parseInt(localStorage.getItem('inter_screen_visible_ms') || '0', 10);
+  var interScreenLastResumeTs = parseInt(localStorage.getItem('inter_screen_last_resume_ts') || '0', 10);
+  var interScreenTimer = null;
 
   if (!Number.isFinite(interActionsCount)) interActionsCount = 0;
   if (!Number.isFinite(lastInterTs)) lastInterTs = 0;
@@ -48,6 +55,8 @@
     interCycleStartedTs = Date.now();
     localStorage.setItem('inter_cycle_started_ts', String(interCycleStartedTs));
   }
+  if (!Number.isFinite(interScreenVisibleMs) || interScreenVisibleMs < 0) interScreenVisibleMs = 0;
+  if (!Number.isFinite(interScreenLastResumeTs) || interScreenLastResumeTs < 0) interScreenLastResumeTs = 0;
 
   // ======================================================
   // ✅ CAP REWARDED : 4 / HEURE (ajout)
@@ -322,10 +331,37 @@ function informCapBlocked() {
   }
 
   document.addEventListener('visibilitychange', function(){
-    if (!document.hidden) {
-      if (!isRewardShowing) postAdCleanup();
+    if (document.hidden) {
+      stopInterstitialScreenClock();
+      return;
     }
+
+    startInterstitialScreenClock();
+    setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 800);
+
+    if (!isRewardShowing) postAdCleanup();
   });
+
+  window.addEventListener('pagehide', function(){
+    stopInterstitialScreenClock();
+  });
+
+  window.addEventListener('pageshow', function(){
+    startInterstitialScreenClock();
+    setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 800);
+  });
+
+  try {
+    if (App && App.addListener) {
+      App.addListener('pause', function(){
+        stopInterstitialScreenClock();
+      });
+      App.addListener('resume', function(){
+        startInterstitialScreenClock();
+        setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 800);
+      });
+    }
+  } catch(_) {}
 
   // =============================
   // Panneau diag (optionnel)
@@ -746,6 +782,91 @@ function informCapBlocked() {
     return (now - lastInterTs) >= INTER_COOLDOWN_MS;
   }
 
+  function persistInterstitialScreenClock() {
+    localStorage.setItem('inter_screen_visible_ms', String(interScreenVisibleMs));
+    if (interScreenLastResumeTs > 0) {
+      localStorage.setItem('inter_screen_last_resume_ts', String(interScreenLastResumeTs));
+    } else {
+      localStorage.removeItem('inter_screen_last_resume_ts');
+    }
+  }
+
+  function isElementActuallyVisible(el) {
+    try {
+      if (!el) return false;
+      var cs = window.getComputedStyle(el);
+      if (!cs) return false;
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
+      return !!(el.offsetWidth || el.offsetHeight || cs.position === 'fixed');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function hasBlockingUiForAutoInterstitial() {
+    return !!(
+      window.__ads_active ||
+      window.__ads_waiting_choice ||
+      isElementActuallyVisible(document.getElementById('onboarding')) ||
+      isElementActuallyVisible(document.getElementById('resume-popup')) ||
+      isElementActuallyVisible(document.getElementById('gameover-popup')) ||
+      isElementActuallyVisible(document.getElementById('duel-popup')) ||
+      isElementActuallyVisible(document.getElementById('vr-crosspromo-popup')) ||
+      isElementActuallyVisible(document.getElementById('popupPseudo'))
+    );
+  }
+
+  function getInterstitialScreenVisibleMs() {
+    var total = interScreenVisibleMs;
+    if (!document.hidden && interScreenLastResumeTs > 0) {
+      total += (Date.now() - interScreenLastResumeTs);
+    }
+    return total;
+  }
+
+  function startInterstitialScreenClock() {
+    if (!document.hidden && interScreenLastResumeTs <= 0) {
+      interScreenLastResumeTs = Date.now();
+      persistInterstitialScreenClock();
+    }
+    if (interScreenTimer) return;
+    interScreenTimer = setInterval(function () {
+      maybeShowInterstitialByScreenTime().catch(function(){});
+    }, INTER_ECRAN_TICK_MS);
+  }
+
+  function stopInterstitialScreenClock() {
+    if (interScreenLastResumeTs > 0) {
+      interScreenVisibleMs += Math.max(0, Date.now() - interScreenLastResumeTs);
+      interScreenLastResumeTs = 0;
+      persistInterstitialScreenClock();
+    }
+    if (interScreenTimer) {
+      clearInterval(interScreenTimer);
+      interScreenTimer = null;
+    }
+  }
+
+  function resetInterstitialScreenClock() {
+    interScreenVisibleMs = 0;
+    interScreenLastResumeTs = document.hidden ? 0 : Date.now();
+    persistInterstitialScreenClock();
+  }
+
+  async function maybeShowInterstitialByScreenTime() {
+    if (document.hidden) return false;
+    if (hasBlockingUiForAutoInterstitial()) return false;
+    if (getInterstitialScreenVisibleMs() < INTER_ECRAN_VISIBLE_MS) return false;
+    if (!canShowInterstitialNow()) return false;
+
+    var shown = await showInterstitial();
+    if (shown) {
+      resetInterstitialScreenClock();
+      return true;
+    }
+    return false;
+  }
+
   function ensureInterstitialCycleStarted() {
     if (!Number.isFinite(interCycleStartedTs) || interCycleStartedTs <= 0) {
       interCycleStartedTs = Date.now();
@@ -764,6 +885,7 @@ function informCapBlocked() {
     lastInterTs = Date.now();
     localStorage.setItem('inter_last_ts', String(lastInterTs));
     resetInterstitialCounters();
+    resetInterstitialScreenClock();
   }
 
   async function showInterstitial() {
@@ -831,7 +953,7 @@ function informCapBlocked() {
 
     var now = Date.now();
     var needAdByActions = interActionsCount >= INTERSTITIEL_APRES_X_ACTIONS;
-    var needAdByTime = (now - interCycleStartedTs) >= INTERSTITIEL_APRES_MS;
+    var needAdByTime = INTERSTITIEL_APRES_MS > 0 && (now - interCycleStartedTs) >= INTERSTITIEL_APRES_MS;
 
     if (needAdByActions || needAdByTime) {
       var shown = await showInterstitial();
@@ -920,6 +1042,9 @@ function informCapBlocked() {
   window.adsSetResumePopupOpen = function (isOpen) {
     window.__ads_waiting_choice = !!isOpen;
   };
+
+  startInterstitialScreenClock();
+  setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 1200);
 
 })();
 
