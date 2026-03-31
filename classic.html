@@ -213,7 +213,69 @@
       background: var(--btn-hover-bg, #181885);
       color: var(--btn-hover-color, #fff);
     }
-  </style>
+  
+    /* ===== Responsive intermédiaire : 701px -> 900px ===== */
+    @media (min-width: 701px) and (max-width: 900px) and (min-height: 701px) {
+      .main-content {
+        width: 540px !important;
+        max-width: 540px !important;
+      }
+
+      .top-bar {
+        max-width: 540px !important;
+      }
+
+      .top-canvas-row {
+        max-width: 500px !important;
+        margin-top: -22px !important;
+      }
+
+      #gameCanvas {
+        max-width: 390px !important;
+      }
+
+      .score-row {
+        max-width: 540px !important;
+      }
+
+      #holdCanvas,
+      #nextCanvas {
+        width: 58px !important;
+        height: 58px !important;
+      }
+    }
+
+    /* ===== Responsive intermédiaire paysage plus bas ===== */
+    @media (min-width: 701px) and (max-width: 900px) and (max-height: 700px) {
+      .main-content {
+        width: 500px !important;
+        max-width: 500px !important;
+      }
+
+      .top-bar {
+        max-width: 500px !important;
+      }
+
+      .top-canvas-row {
+        max-width: 460px !important;
+        margin-top: -18px !important;
+      }
+
+      #gameCanvas {
+        max-width: 360px !important;
+      }
+
+      .score-row {
+        max-width: 500px !important;
+      }
+
+      #holdCanvas,
+      #nextCanvas {
+        width: 54px !important;
+        height: 54px !important;
+      }
+    }
+</style>
 </head>
 <body>
   <canvas id="starfield" style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-1; display:none;"></canvas>
