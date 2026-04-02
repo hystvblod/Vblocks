@@ -92,6 +92,34 @@
   <!-- Lib Supabase (UMD locale) — le client est créé dans userData.js -->
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
   <script src="js/i18n.js"></script>
+
+  <script>
+    (function () {
+      async function bootIntroAfterLanguage() {
+        try {
+          if (window.VRI18n && typeof window.VRI18n.initI18n === "function") {
+            await window.VRI18n.initI18n();
+          }
+        } catch (_) {}
+
+        try {
+          const introDone = localStorage.getItem("vrealms_intro_done") === "1";
+          if (!introDone) {
+            localStorage.setItem("vrealms_universe", "intro");
+            window.location.replace("game.html?universe=intro");
+          }
+        } catch (_) {}
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", function () {
+          void bootIntroAfterLanguage();
+        }, { once: true });
+      } else {
+        void bootIntroAfterLanguage();
+      }
+    })();
+  </script>
   <script src="js/userData.js"></script>
   <script src="js/crossPromo.js"></script>
   <script src="js/referral.js"></script>
