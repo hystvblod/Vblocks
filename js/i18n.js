@@ -407,8 +407,8 @@
     pickerPromise = new Promise((resolve) => {
       ensureLanguagePickerStyles();
 
-      const active = getSavedLang() || detectPreferredLang() || DEFAULT_LANG;
-      let selected = active;
+      const active = "";
+      let selected = "";
 
       const overlay = document.createElement("div");
       overlay.className = "vrLangOverlay";
@@ -444,7 +444,7 @@
       LANGUAGE_CHOICES.forEach((item) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "vr-langBtn" + (active === item.code ? " isActive" : "");
+        btn.className = "vr-langBtn";
         btn.setAttribute("data-lang", item.code);
         btn.setAttribute("aria-label", item.aria || item.ui);
 
@@ -479,7 +479,7 @@
       confirmBtn = document.createElement("button");
       confirmBtn.type = "button";
       confirmBtn.className = "vrLangConfirm";
-      confirmBtn.disabled = !selected;
+      confirmBtn.disabled = true;
       confirmBtn.setAttribute("aria-label", "Confirm");
       confirmBtn.innerHTML = `
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -495,7 +495,8 @@
       `;
 
       confirmBtn.addEventListener("click", async () => {
-        const chosen = normalize(selected || active || DEFAULT_LANG) || DEFAULT_LANG;
+        const chosen = normalize(selected || "");
+        if (!chosen) return;
 
         try {
           await setLang(chosen, { markExplicit: true, syncRemote: true });
