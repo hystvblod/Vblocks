@@ -514,7 +514,8 @@
       modal.appendChild(actions);
 
       overlay.appendChild(modal);
-      document.body.appendChild(overlay);
+      const mountTarget = document.body || document.documentElement;
+      mountTarget.appendChild(overlay);
 
       refreshActiveState();
     });
@@ -636,10 +637,16 @@
   };
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot, { once: true });
+    global.i18nReady = new Promise((resolve) => {
+      document.addEventListener("DOMContentLoaded", function () {
+        Promise.resolve(boot()).then(resolve).catch(function () {
+          resolve(DEFAULT_LANG);
+        });
+      }, { once: true });
+    });
   } else {
-    boot();
+    global.i18nReady = Promise.resolve(boot()).catch(function () {
+      return DEFAULT_LANG;
+    });
   }
-
-  global.i18nReady = boot();
 })(window);
