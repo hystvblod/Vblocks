@@ -5,7 +5,7 @@
   const PENDING_INVITER_KEY = "vblocks_install_referrer_pending_inviter_v1";
   const PENDING_RAW_KEY = "vblocks_install_referrer_pending_raw_v1";
 
-  const PLAY_URL_BASE = "https://play.google.com/store/apps/details?id=com.vboldstudio.VBlocks";
+  const INVITE_BASE_URL = "https://hystvblod.github.io/vblocks-invite/invite.html";
 
   function t(key, fallback) {
     try {
@@ -76,8 +76,7 @@
   }
 
   function buildInviteUrl(uid) {
-    const raw = "inviter_uuid=" + encodeURIComponent(uid);
-    return PLAY_URL_BASE + "&referrer=" + encodeURIComponent(raw);
+    return INVITE_BASE_URL + "?inviter_uuid=" + encodeURIComponent(uid);
   }
 
   async function shareInvite() {
@@ -250,7 +249,6 @@
 
       btn.dataset.boundReferral = "1";
       btn.addEventListener("click", async () => {
-        await showAndroidOnlyInvitePopup();
         await shareInvite();
       });
     });
