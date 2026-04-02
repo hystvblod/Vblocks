@@ -295,10 +295,11 @@
       .vrLangOverlay .vr-langBtn{
         width:100%;
         display:flex;
+        flex-direction:column;
         align-items:center;
-        justify-content:center;
-        gap:0;
-        padding:10px 6px;
+        justify-content:flex-start;
+        gap:8px;
+        padding:10px 6px 12px;
         border-radius:14px;
         border:0 !important;
         background:transparent !important;
@@ -340,7 +341,61 @@
       }
 
       .vrLangOverlay .vr-langText{
-        display:none !important;
+        display:flex !important;
+        align-items:center;
+        justify-content:center;
+        min-height:30px;
+        font-size:clamp(11px,2.8vw,13px);
+        font-weight:800;
+        line-height:1.15;
+        color:rgba(255,255,255,.96);
+        text-align:center;
+        word-break:break-word;
+      }
+
+      .vrLangOverlay .vr-langText > div{
+        max-width:100%;
+      }
+
+      .vrLangActions{
+        display:flex;
+        justify-content:center;
+        margin-top:18px;
+      }
+
+      .vrLangConfirm{
+        width:68px;
+        height:68px;
+        min-width:68px;
+        min-height:68px;
+        padding:0;
+        border:0;
+        border-radius:18px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:#0b1020;
+        background:#ffffff;
+        box-shadow:0 12px 30px rgba(0,0,0,.28);
+        cursor:pointer;
+        transition:transform .12s ease, opacity .12s ease, box-shadow .12s ease;
+      }
+
+      .vrLangConfirm:active{
+        transform:scale(.98);
+      }
+
+      .vrLangConfirm[disabled]{
+        opacity:.45;
+        cursor:default;
+        transform:none;
+        box-shadow:none;
+      }
+
+      .vrLangConfirm svg{
+        width:34px;
+        height:34px;
+        display:block;
       }
     `;
     document.head.appendChild(style);
@@ -351,6 +406,9 @@
 
     pickerPromise = new Promise((resolve) => {
       ensureLanguagePickerStyles();
+
+      const active = getSavedLang() || detectPreferredLang() || DEFAULT_LANG;
+      let selected = active;
 
       const overlay = document.createElement("div");
       overlay.className = "vrLangOverlay";
@@ -369,7 +427,19 @@
       const grid = document.createElement("div");
       grid.className = "vr-langGrid";
 
-      const active = detectPreferredLang() || DEFAULT_LANG;
+      const buttons = [];
+      let confirmBtn = null;
+
+      function refreshActiveState() {
+        buttons.forEach((btn) => {
+          const isOn = btn.getAttribute("data-lang") === selected;
+          btn.classList.toggle("isActive", isOn);
+        });
+
+        if (confirmBtn) {
+          confirmBtn.disabled = !selected;
+        }
+      }
 
       LANGUAGE_CHOICES.forEach((item) => {
         const btn = document.createElement("button");
@@ -385,29 +455,67 @@
         const txt = document.createElement("div");
         txt.className = "vr-langText";
 
-        const code = document.createElement("div");
-        code.textContent = item.ui;
-        txt.appendChild(code);
+        const name = document.createElement("div");
+        name.textContent = item.aria || item.ui;
 
+        txt.appendChild(name);
         btn.appendChild(flag);
         btn.appendChild(txt);
 
-        btn.addEventListener("click", async () => {
-          try {
-            await setLang(item.code, { markExplicit: true, syncRemote: true });
-          } catch (_) {}
-
-          overlay.remove();
-          pickerPromise = null;
-          resolve(item.code);
+        btn.addEventListener("click", () => {
+          selected = item.code;
+          refreshActiveState();
         });
 
+        buttons.push(btn);
         grid.appendChild(btn);
       });
 
       modal.appendChild(grid);
+
+      const actions = document.createElement("div");
+      actions.className = "vrLangActions";
+
+      confirmBtn = document.createElement("button");
+      confirmBtn.type = "button";
+      confirmBtn.className = "vrLangConfirm";
+      confirmBtn.disabled = !selected;
+      confirmBtn.setAttribute("aria-label", "Confirm");
+      confirmBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M5 12.5L9.5 17L19 7.5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      `;
+
+      confirmBtn.addEventListener("click", async () => {
+        const chosen = normalize(selected || active || DEFAULT_LANG) || DEFAULT_LANG;
+
+        try {
+          await setLang(chosen, { markExplicit: true, syncRemote: true });
+        } catch (_) {
+          try { localStorage.setItem(STORAGE_KEY, chosen); } catch (_) {}
+          try { markExplicitLanguageChoice(); } catch (_) {}
+        }
+
+        overlay.remove();
+        pickerPromise = null;
+        resolve(chosen);
+      });
+
+      actions.appendChild(confirmBtn);
+      modal.appendChild(actions);
+
       overlay.appendChild(modal);
       document.body.appendChild(overlay);
+
+      refreshActiveState();
     });
 
     return pickerPromise;
@@ -418,7 +526,7 @@
     if (forced && SUP.includes(forced)) return forced;
 
     const saved = getSavedLang();
-    if (saved && hasExplicitLanguageChoice()) return saved;
+    if (saved) return saved;
 
     return await showLanguagePicker();
   }
