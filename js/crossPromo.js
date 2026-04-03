@@ -4,7 +4,8 @@
   const STORAGE_KEY = "vblocks_crosspromo_state";
   const REWARD_AMOUNT = 600;
   const POSTGAME_MIN_DELAY_MS = 12 * 60 * 60 * 1000;
-  const POSTGAME_MIN_SESSION_STARTS = 5;
+  const POSTGAME_FIRST_COMPLETED_RUNS = 4;
+  const POSTGAME_AFTER_DISMISS_COMPLETED_RUNS = 6;
 
   const APPS = {
     vuniverse: {
@@ -66,8 +67,10 @@
     return {
       lowVcoinsNextApp: "vuniverse",
       nextPostGameOfferIndex: 0,
+      stateCreatedAt: Date.now(),
       lastCrossPromoAt: 0,
-      sessionStartsSinceLastPromo: 0,
+      completedRunsSinceLastPromo: 0,
+      postGameRunsRequired: POSTGAME_FIRST_COMPLETED_RUNS,
       apps: {
         vuniverse: defaultAppState(),
         vchronicles: defaultAppState()
@@ -78,21 +81,37 @@
   function readState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return defaultState();
+      if (!raw) {
+        const fresh = defaultState();
+        writeState(fresh);
+        return fresh;
+      }
+
       const parsed = JSON.parse(raw);
       const base = defaultState();
-      return {
+
+      const state = {
         lowVcoinsNextApp: parsed?.lowVcoinsNextApp === "vchronicles" ? "vchronicles" : "vuniverse",
         nextPostGameOfferIndex: Number(parsed?.nextPostGameOfferIndex || 0) % 2,
+        stateCreatedAt: Number(parsed?.stateCreatedAt || 0) || Date.now(),
         lastCrossPromoAt: Number(parsed?.lastCrossPromoAt || 0),
-        sessionStartsSinceLastPromo: Number(parsed?.sessionStartsSinceLastPromo || 0),
+        completedRunsSinceLastPromo: Number(parsed?.completedRunsSinceLastPromo || parsed?.sessionStartsSinceLastPromo || 0),
+        postGameRunsRequired:
+          Number(parsed?.postGameRunsRequired || POSTGAME_FIRST_COMPLETED_RUNS) === POSTGAME_AFTER_DISMISS_COMPLETED_RUNS
+            ? POSTGAME_AFTER_DISMISS_COMPLETED_RUNS
+            : POSTGAME_FIRST_COMPLETED_RUNS,
         apps: {
           vuniverse: { ...base.apps.vuniverse, ...(parsed?.apps?.vuniverse || {}) },
           vchronicles: { ...base.apps.vchronicles, ...(parsed?.apps?.vchronicles || {}) }
         }
       };
+
+      writeState(state);
+      return state;
     } catch (_) {
-      return defaultState();
+      const fresh = defaultState();
+      writeState(fresh);
+      return fresh;
     }
   }
 
@@ -492,29 +511,56 @@
       root.innerHTML = "";
     };
 
+    const markDismissIfNeeded = () => {
+      if (mode !== "postgame") return;
+      const state = readState();
+      state.postGameRunsRequired = POSTGAME_AFTER_DISMISS_COMPLETED_RUNS;
+      writeState(state);
+    };
+
+    const markAcceptedIfNeeded = () => {
+      if (mode !== "postgame") return;
+      const state = readState();
+      state.postGameRunsRequired = POSTGAME_FIRST_COMPLETED_RUNS;
+      writeState(state);
+    };
+
     root.onclick = (e) => {
-      if (e.target === root) close();
+      if (e.target === root) {
+        markDismissIfNeeded();
+        close();
+      }
     };
 
     const closeBtn = document.getElementById("vr-crosspromo-close");
     const laterBtn = document.getElementById("vr-crosspromo-later");
     const mainBtn = document.getElementById("vr-crosspromo-main");
 
-    if (closeBtn) closeBtn.onclick = close;
-    if (laterBtn) laterBtn.onclick = close;
+    if (closeBtn) closeBtn.onclick = () => {
+      markDismissIfNeeded();
+      close();
+    };
+
+    if (laterBtn) laterBtn.onclick = () => {
+      markDismissIfNeeded();
+      close();
+    };
 
     if (mainBtn) {
       mainBtn.onclick = async () => {
         if (ctaState === "claim") {
+          markAcceptedIfNeeded();
           await claimReward(appId);
           close();
           return;
         }
         if (ctaState === "open") {
+          markAcceptedIfNeeded();
           await openInstalledApp(app);
           close();
           return;
         }
+        markAcceptedIfNeeded();
         await openStore(appId);
         close();
       };
@@ -522,15 +568,15 @@
 
     const state = readState();
     state.lastCrossPromoAt = Date.now();
-    state.sessionStartsSinceLastPromo = 0;
+    state.completedRunsSinceLastPromo = 0;
     writeState(state);
 
     return true;
   }
 
-  function notifySessionStart() {
+  function notifyCompletedRun() {
     const state = readState();
-    state.sessionStartsSinceLastPromo += 1;
+    state.completedRunsSinceLastPromo += 1;
     writeState(state);
   }
 
@@ -542,10 +588,12 @@
     if (opts?.skipBecauseRewardAd) return false;
 
     const state = readState();
-    const enoughSessions = state.sessionStartsSinceLastPromo >= POSTGAME_MIN_SESSION_STARTS;
-    const enoughDelay = (Date.now() - Number(state.lastCrossPromoAt || 0)) >= POSTGAME_MIN_DELAY_MS;
+    const requiredRuns = Number(state.postGameRunsRequired || POSTGAME_FIRST_COMPLETED_RUNS);
+    const enoughRuns = Number(state.completedRunsSinceLastPromo || 0) >= requiredRuns;
+    const anchorTs = Math.max(Number(state.lastCrossPromoAt || 0), Number(state.stateCreatedAt || 0));
+    const enoughDelay = (Date.now() - anchorTs) >= POSTGAME_MIN_DELAY_MS;
 
-    if (!enoughSessions || !enoughDelay) return false;
+    if (!enoughRuns || !enoughDelay) return false;
 
     return showPopupForApp(pickPostGameApp(), "postgame");
   }
@@ -582,7 +630,7 @@
   window.VRCrossPromo = {
     maybeShowPopupFromContext,
     showLowVcoinsPopupNow,
-    notifySessionStart,
+    notifyCompletedRun,
     maybeShowPostGamePromo,
     renderCrossPromoPage,
     openStore
