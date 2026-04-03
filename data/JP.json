@@ -84,6 +84,8 @@
 "button.profile":"プロフィール",
 "button.settings":"設定",
 "wallet.vcoins":"Vコイン",
+"end.reward.vcoins":"広告を見る",
+"pub.err":"現在、広告を利用できません。",
 "wallet.jetons":"トークン",
 "hold.label":"ホールド",
 "next.label":"次へ",

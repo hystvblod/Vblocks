@@ -84,6 +84,8 @@
   "button.profile": "Profil",
   "button.settings": "Paramètres",
   "wallet.vcoins": "VCoins",
+  "end.reward.vcoins": "Regarder une pub",
+  "pub.err": "Publicité indisponible pour le moment.",
   "wallet.jetons": "Jetons",
   "hold.label": "Réserve",
   "next.label": "Suivante",

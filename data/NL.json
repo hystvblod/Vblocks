@@ -84,6 +84,8 @@
 "button.profile":"Profiel",
 "button.settings":"Instellingen",
 "wallet.vcoins":"VCoins",
+"end.reward.vcoins":"Bekijk een advertentie",
+"pub.err":"De advertentie is momenteel niet beschikbaar.",
 "wallet.jetons":"Tokens",
 "hold.label":"Reserve",
 "next.label":"Volgende",
