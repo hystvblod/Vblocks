@@ -741,28 +741,82 @@ function fillRectThemeSafe(c, px, py, size) {
         position: fixed; left:0; top:0; width:100vw; height:100vh; z-index:99999;
         background: rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center;
       `;
+      const rewardAmount = Number(window.REWARD_VCOINS || 300);
+      let rewardClaimedOnEndPopup = false;
       popup.innerHTML = `
         <div style="background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:260px;max-width:92vw;text-align:center">
           <div style="font-size:1.2em;font-weight:bold;margin-bottom:10px;">
             <span>${tt('end.title','Partie terminée')}</span><br>
             <span>+${points} ${tt('end.points','points')}</span>
           </div>
+
           <div style="opacity:.9;margin-bottom:14px">
             ${tt('end.subtitle','Que voulez-vous faire ?')}
           </div>
-          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-            <button id="end-restart" class="btn-primary" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#39f;color:#fff;cursor:pointer;">
-              ${tt('end.restart','Recommencer')}
+
+          <div style="display:flex;flex-direction:column;gap:10px;width:100%">
+            <button
+              id="end-reward-vcoins"
+              class="btn-primary"
+              style="
+                width:100%;
+                padding:.85em 1em;
+                border-radius:1em;
+                border:none;
+                background:linear-gradient(180deg,#2f7bff 0%,#1e55d6 100%);
+                color:#fff;
+                cursor:pointer;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                gap:12px;
+                box-shadow:0 0 12px #39f7;
+              "
+            >
+              <span style="font-weight:700;">
+                ${tt('end.reward.vcoins','Regarder une pub')}
+              </span>
+              <span style="display:flex;align-items:center;gap:8px;font-weight:800;">
+                <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
+                <span>+${rewardAmount} ${tt('wallet.vcoins','VCoins')}</span>
+              </span>
             </button>
-            <button id="end-quit" class="btn" style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#444;color:#fff;cursor:pointer;">
-              ${tt('end.quit','Quitter')}
-            </button>
-            <button id="end-revive-token" class="btn" style="padding:.6em 1.1em;border-radius:.8em;background:#2a7;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}">
-              ${tt('end.revive.token','Revivre (1 jeton)')}
-            </button>
-            <button id="end-revive-ad" class="btn" style="padding:.6em 1.1em;border:none;border-radius:.8em;background:#a73;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}">
-              ${tt('end.revive.ad','Revivre (pub)')}
-            </button>
+
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+              <button
+                id="end-revive-token"
+                class="btn"
+                style="padding:.6em 1.1em;border-radius:.8em;background:#2a7;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}"
+              >
+                ${tt('end.revive.token','Revivre (1 jeton)')}
+              </button>
+
+              <button
+                id="end-revive-ad"
+                class="btn"
+                style="padding:.6em 1.1em;border:none;border-radius:.8em;background:#a73;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}"
+              >
+                ${tt('end.revive.ad','Revivre (pub)')}
+              </button>
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+              <button
+                id="end-restart"
+                class="btn-primary"
+                style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#39f;color:#fff;cursor:pointer;"
+              >
+                ${tt('end.restart','Recommencer')}
+              </button>
+
+              <button
+                id="end-quit"
+                class="btn"
+                style="padding:.6em 1.1em;border-radius:.8em;border:none;background:#444;color:#fff;cursor:pointer;"
+              >
+                ${tt('end.quit','Quitter')}
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -845,9 +899,55 @@ function fillRectThemeSafe(c, px, py, size) {
         window.location.href = INDEX_URL;
       };
       const btnTok = document.getElementById('end-revive-token');
-      const btnAd  = document.getElementById('end-revive-ad');
+      const btnAd = document.getElementById('end-revive-ad');
+      const btnReward = document.getElementById('end-reward-vcoins');
+
       if (btnTok) btnTok.onclick = function () { doRevive(false); };
-      if (btnAd)  btnAd.onclick  = function () { doRevive(true);  };
+      if (btnAd) btnAd.onclick = function () { doRevive(true); };
+
+      if (btnReward) {
+        btnReward.onclick = async function () {
+          if (rewardClaimedOnEndPopup) return;
+
+          btnReward.disabled = true;
+          btnReward.style.opacity = '.7';
+
+          try {
+            const ok = (typeof window.showRewardVcoins === 'function')
+              ? await window.showRewardVcoins()
+              : false;
+
+            if (!ok) {
+              btnReward.disabled = false;
+              btnReward.style.opacity = '1';
+              return;
+            }
+
+            rewardClaimedOnEndPopup = true;
+            btnReward.style.display = 'none';
+
+            try {
+              if (typeof window.updateVCoinsDisplay === 'function') {
+                await window.updateVCoinsDisplay();
+              }
+            } catch (_) {}
+
+            try {
+              const vcoins = await userData.getVCoins?.();
+              const el =
+                document.getElementById('header-vcoins') ||
+                document.getElementById('vcoinsCount') ||
+                document.getElementById('vcoin-amount');
+
+              if (el) el.textContent = String(vcoins ?? 0);
+            } catch (_) {}
+          } catch (_) {
+            btnReward.disabled = false;
+            btnReward.style.opacity = '1';
+            alert(tt('pub.err','Publicité indisponible pour le moment.'));
+          }
+        };
+      }
     }
 
     function reviveRewindAndResume() {

@@ -84,6 +84,8 @@
 "button.profile":"프로필",
 "button.settings":"설정",
 "wallet.vcoins":"V코인",
+"end.reward.vcoins":"광고 보기",
+"pub.err":"현재 광고를 사용할 수 없습니다.",
 "wallet.jetons":"토큰",
 "hold.label":"보관",
 "next.label":"다음",

@@ -84,6 +84,8 @@
 "button.profile":"الملف الشخصي",
 "button.settings":"الإعدادات",
 "wallet.vcoins":"VCoins",
+"end.reward.vcoins":"شاهد إعلاناً",
+"pub.err":"الإعلان غير متاح حالياً.",
 "wallet.jetons":"رموز",
 "hold.label":"احتياطي",
 "next.label":"التالي",

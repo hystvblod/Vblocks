@@ -84,6 +84,8 @@
   "button.profile": "Profile",
   "button.settings": "Settings",
   "wallet.vcoins": "VCoins",
+  "end.reward.vcoins": "Watch an ad",
+  "pub.err": "Ad unavailable right now.",
   "wallet.jetons": "Tokens",
   "hold.label": "Hold",
   "next.label": "Next",

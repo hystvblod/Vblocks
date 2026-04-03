@@ -84,6 +84,8 @@
 "button.profile":"Perfil",
 "button.settings":"Configuración",
 "wallet.vcoins":"VCoins",
+"end.reward.vcoins":"Ver un anuncio",
+"pub.err":"El anuncio no está disponible por ahora.",
 "wallet.jetons":"Fichas",
 "hold.label":"Reserva",
 "next.label":"Siguiente",
