@@ -35,43 +35,59 @@
     html, body { height:auto; min-height:100%; overflow:auto; }
     body { overscroll-behavior-y:auto; }
     .container-boutique { padding-bottom: 80px; }
-    .achats-list { display:flex; flex-direction:column; gap:0; }
+    .achats-list { display:flex; flex-direction:column; gap:14px; }
     .themes-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:.5rem; }
-    .shop-grid-2 {
+
+    .achats-grid-2 {
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
       gap:14px;
     }
-    .shop-gap {
-      height:16px;
+
+    .achats-row-full {
+      display:block;
+      width:100%;
     }
-    .shop-centered-row {
-      display:flex;
+
+    .achats-list .special-cartouche {
+      width:100%;
+      min-height:84px;
+      box-sizing:border-box;
       justify-content:center;
+      padding:0.7em 0.45em 0.68em 0.45em;
     }
-    .shop-centered-row .special-cartouche {
-      width:min(280px,100%);
+
+    .achats-list .theme-label {
+      line-height:1.18;
+      text-align:center;
     }
-    .pulse-soft {
-      animation: shopPulse 1.7s ease-in-out infinite;
+
+    .achats-list .prix-label {
+      color:#fff;
+      font-weight:700;
     }
-    @keyframes shopPulse {
+
+    .noads-pulse {
+      animation:noAdsPulse 1.7s ease-in-out infinite;
+    }
+
+    @keyframes noAdsPulse {
       0%,100% {
-        transform: scale(1);
-        box-shadow: 0 0 10px rgba(90,180,255,.18);
+        transform:scale(1);
+        box-shadow:0 2px 10px rgba(255,255,255,.14);
       }
       50% {
-        transform: scale(1.035);
-        box-shadow: 0 0 22px rgba(90,180,255,.34);
+        transform:scale(1.035);
+        box-shadow:0 0 22px rgba(255,216,90,.38);
       }
     }
+
     .theme-card.special-cartouche { cursor:pointer; transition:transform .06s ease, box-shadow .2s ease; user-select:none; align-items:center; justify-content:space-between; position:relative; }
     .theme-card.special-cartouche:hover { transform: translateY(-1px); }
     .theme-card .theme-ico{ display:none !important; }
     .theme-card .theme-label, .theme-card .prix-label { color:#fff !important; }
     .theme-card .theme-label{ font-weight:700; letter-spacing:.2px; }
     .theme-card.unlocked { opacity:1; } .theme-card.locked { opacity:.95; }
-    .achats-list .prix-label { color:#fff; font-weight:700; }
     .themes-list .theme-card .theme-label{ font-size:clamp(1.06rem,1.7vw,1.32rem); line-height:1.2; }
     .theme-card.unlocked{ filter:grayscale(35%) brightness(.92); }
     .theme-card.unlocked .prix-label{ display:none !important; }
@@ -209,21 +225,17 @@ async function renderAchats(){
   );
 
   $achatsList.innerHTML = `
-    <div class="shop-grid-2">
-      ${renderCartouche(reward300, 'pulse-soft')}
+    <div class="achats-grid-2">
+      ${renderCartouche(reward300)}
       ${renderCartouche(rewardJeton)}
     </div>
 
-    <div class="shop-gap"></div>
-
-    <div class="shop-grid-2">
+    <div class="achats-grid-2">
       ${purchases.map(c => renderCartouche(c)).join('')}
     </div>
 
-    <div class="shop-gap"></div>
-
-    <div class="shop-centered-row">
-      ${renderCartouche(noAds, 'pulse-soft')}
+    <div class="achats-row-full">
+      ${renderCartouche(noAds, 'noads-pulse')}
     </div>
   `;
 
