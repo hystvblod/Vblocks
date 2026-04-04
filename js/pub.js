@@ -59,11 +59,11 @@
   if (!Number.isFinite(interScreenLastResumeTs) || interScreenLastResumeTs < 0) interScreenLastResumeTs = 0;
 
   // ======================================================
-  // ✅ CAP REWARDED : 4 / HEURE (ajout)
+  // ✅ CAP REWARDED : 10 / HEURE
   //    - Stocke les timestamps d’ouvertures d’annonces rewarded
   //    - Bloque proprement si la limite est atteinte
   // ======================================================
-  var REWARD_CAP_PER_HOUR = 4;                     // ← Ajuste ici si besoin
+  var REWARD_CAP_PER_HOUR = 10;
   var REWARD_WINDOW_MS    = 60 * 60 * 1000;        // 1h rolling window
   var REWARD_HIST_KEY     = 'reward_hist_ms';      // localStorage key
 
@@ -664,7 +664,7 @@ function informCapBlocked() {
   // =============================
   // Rewarded (LOAD/SHOW) — SANS SSV
   //  ⚠️ Crédit déclenché sur onRewarded (fiable), pas sur dismissed
-  //  ⚠️ CAP 4/h appliqué AVANT l’appel, comptage à l’OUVERTURE
+  //  ⚠️ CAP 10/h appliqué AVANT l’appel, comptage à l’OUVERTURE
   // =============================
   async function showRewardedType(type, amount, onDone) {
     var unlocked = false;

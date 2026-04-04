@@ -436,6 +436,7 @@ function fillRectThemeSafe(c, px, py, size) {
     async function handleDuelEnd(myScore) {
       const field = (duelPlayerNum === 1) ? 'score1' : 'score2';
       await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
+
       let tries = 0, otherScore = null;
       while (tries++ < 40) {
         let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
@@ -443,21 +444,114 @@ function fillRectThemeSafe(c, px, py, size) {
         if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
         await new Promise(r => setTimeout(r, 1500));
       }
-      const msg = `
-        <div style="font-weight:bold;">${t('duel.finished')}</div>
-        <div>${t('duel.yourscore')} <b>${myScore}</b></div>
-        <div>${t('duel.opponentscore')} <b>${otherScore != null ? otherScore : t('duel.waiting')}</b></div>
-        <br>
-        <button style="padding:0.4em 1em;font-size:0.9em;border-radius:0.5em;border:none;background:#444;color:#fff;cursor:pointer;"
-                onclick="window.location.href='index.html'">
-          ${t('button.back')}
-        </button>
-      `;
+
+      const rewardAmount = Number(window.REWARD_VCOINS || 300);
+      let rewardClaimed = false;
+
       const div = document.createElement('div');
       div.id = 'duel-popup';
       div.style = 'position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;';
-      div.innerHTML = `<div style="background:#23294a;padding:2em 2em 1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;">${msg}</div>`;
+
+      div.innerHTML = `
+        <div style="background:#23294a;padding:2em 2em 1.1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;min-width:280px;max-width:92vw;">
+          <div style="font-weight:bold;font-size:1.12em;">${t('duel.finished')}</div>
+          <div style="margin-top:10px;">${t('duel.yourscore')} <b>${myScore}</b></div>
+          <div>${t('duel.opponentscore')} <b>${otherScore != null ? otherScore : t('duel.waiting')}</b></div>
+
+          <button
+            id="duel-reward-vcoins"
+            style="
+              width:100%;
+              margin-top:16px;
+              padding:.85em 1em;
+              border-radius:1em;
+              border:none;
+              background:linear-gradient(180deg,#2f7bff 0%,#1e55d6 100%);
+              color:#fff;
+              cursor:pointer;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              gap:12px;
+              box-shadow:0 0 12px #39f7;
+              font-weight:700;
+            "
+          >
+            <span>${t('end.reward.vcoins','Regarder une pub')}</span>
+            <span style="display:flex;align-items:center;gap:8px;font-weight:800;">
+              <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
+              <span>+${rewardAmount} ${t('wallet.vcoins','VCoins')}</span>
+            </span>
+          </button>
+
+          <button
+            id="duel-back-home"
+            style="margin-top:12px;padding:0.55em 1.2em;font-size:0.95em;border-radius:0.7em;border:none;background:#444;color:#fff;cursor:pointer;"
+          >
+            ${t('button.back')}
+          </button>
+        </div>
+      `;
+
       document.body.appendChild(div);
+
+      const btnReward = document.getElementById('duel-reward-vcoins');
+      const btnBack = document.getElementById('duel-back-home');
+
+      if (btnReward?.animate) {
+        btnReward.animate(
+          [
+            { transform: 'scale(1)', boxShadow: '0 0 12px #39f7' },
+            { transform: 'scale(1.04)', boxShadow: '0 0 24px #39f7' },
+            { transform: 'scale(1)', boxShadow: '0 0 12px #39f7' }
+          ],
+          {
+            duration: 1600,
+            iterations: Infinity,
+            easing: 'ease-in-out'
+          }
+        );
+      }
+
+      if (btnBack) {
+        btnBack.onclick = function () {
+          window.location.href = 'index.html';
+        };
+      }
+
+      if (btnReward) {
+        btnReward.onclick = async function () {
+          if (rewardClaimed) return;
+
+          btnReward.disabled = true;
+          btnReward.style.opacity = '.7';
+
+          try {
+            const ok = (typeof window.showRewardVcoins === 'function')
+              ? await window.showRewardVcoins()
+              : false;
+
+            if (!ok) {
+              btnReward.disabled = false;
+              btnReward.style.opacity = '1';
+              return;
+            }
+
+            rewardClaimed = true;
+            btnReward.style.display = 'none';
+
+            try {
+              const vcoins = await window.userData?.getVCoins?.();
+              const el = document.getElementById('vcoin-amount');
+              if (el) el.textContent = String(vcoins ?? 0);
+            } catch (_) {}
+          } catch (_) {
+            btnReward.disabled = false;
+            btnReward.style.opacity = '1';
+            alert(t('pub.err','Publicité indisponible pour le moment.'));
+          }
+        };
+      }
     }
 
     function showEndPopup(points) {

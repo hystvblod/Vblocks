@@ -1029,6 +1029,20 @@ overlay.querySelector('#resume-yes').onclick = () => {
       const btnTok = document.getElementById('end-revive-token');
       const btnAd = document.getElementById('end-revive-ad');
       const btnReward = document.getElementById('end-reward-vcoins');
+      if (btnReward?.animate) {
+        btnReward.animate(
+          [
+            { transform: 'scale(1)', boxShadow: '0 0 12px #39f7' },
+            { transform: 'scale(1.04)', boxShadow: '0 0 24px #39f7' },
+            { transform: 'scale(1)', boxShadow: '0 0 12px #39f7' }
+          ],
+          {
+            duration: 1600,
+            iterations: Infinity,
+            easing: 'ease-in-out'
+          }
+        );
+      }
 
       if (btnTok) btnTok.onclick = function () { doRevive(false); };
       if (btnAd) btnAd.onclick = function () { doRevive(true); };
