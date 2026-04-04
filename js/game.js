@@ -897,16 +897,12 @@ overlay.querySelector('#resume-yes').onclick = () => {
                 display:flex;
                 align-items:center;
                 justify-content:center;
-                gap:12px;
                 box-shadow:0 0 12px #39f7;
               "
             >
-              <span style="font-weight:700;">
-                ${tt('end.reward.vcoins','Regarder une pub')}
-              </span>
-              <span style="display:flex;align-items:center;gap:8px;font-weight:800;">
+              <span style="display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;width:100%;">
                 <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
-                <span>+${rewardAmount} ${tt('wallet.vcoins','VCoins')}</span>
+                <span>+${rewardAmount}</span>
               </span>
             </button>
 
