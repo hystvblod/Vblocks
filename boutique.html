@@ -99,15 +99,32 @@
     }
 
     .achats-list .cartouche-reward .theme-ico {
-      width:20px;
-      height:20px;
+      width:30px;
+      height:30px;
       margin-bottom:0;
     }
 
     .achats-list .cartouche-reward .theme-ico img {
-      width:20px;
-      height:20px;
+      width:30px;
+      height:30px;
       object-fit:contain;
+    }
+
+    .theme-price-with-icon{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      font-weight:800;
+      color:#fff;
+      line-height:1;
+    }
+
+    .theme-price-with-icon img{
+      width:25px;
+      height:25px;
+      object-fit:contain;
+      flex:0 0 25px;
     }
 
     .achats-list .cartouche-reward .reward-top {
@@ -243,11 +260,19 @@ function normalizeThemeKey(k){
 
 /* ---------- données UI (inchangées) ---------- */
 const THEMES = [
-  { key:"neon", name:"Neon" }, { key:"cyber", name:"Cyber" }, { key:"arabic", name:"Arabic" },
-  { key:"grece", name:"Grèce antique" }, { key:"japon", name:"Japon" }, { key:"bubble", name:"Bubble" },
-  { key:"nature", name:"Nature" }, { key:"nuit", name:"Nuit" }, { key:"retro", name:"Retro" },
-  { key:"vitraux", name:"Vitraux" }, { key:"angelique", name:"Angelique" }, { key:"luxury", name:"Luxury" },
-  { key:"space", name:"Space" }
+  { key:"neon", name:"Neon" },
+  { key:"cyber", name:"Cyber" },
+  { key:"nature", name:"Nature" },
+  { key:"bubble", name:"Bubble" },
+  { key:"nuit", name:"Nuit" },
+  { key:"retro", name:"Retro" },
+  { key:"vitraux", name:"Vitraux" },
+  { key:"angelique", name:"Angélique" },
+  { key:"luxury", name:"Luxury" },
+  { key:"space", name:"Space" },
+  { key:"arabic", name:"Arabic" },
+  { key:"grece", name:"Grèce" },
+  { key:"japon", name:"Japon" }
 ];
 const THEME_PRICE = 5000;
 const THEME_COLOR = {
@@ -365,7 +390,10 @@ async function renderThemes(){
     return `
       <div class="special-cartouche theme-card ${color} ${isUnlocked ? "unlocked" : "locked"}" role="button" tabindex="0" data-theme="${theme.key}">
         <span class="theme-label">${theme.name}</span>
-        <span class="prix-label" style="${isUnlocked ? 'display:none' : ''}">${isUnlocked ? '' : (THEME_PRICE + ' VCoins')}</span>
+        <span class="prix-label theme-price-with-icon" style="${isUnlocked ? 'display:none' : ''}">
+          <img src="assets/images/vcoin.webp" alt="VCoins">
+          <span>${isUnlocked ? '' : (THEME_PRICE + ' VCoins')}</span>
+        </span>
       </div>`;
   }).join('');
   $themesList.innerHTML = html;
