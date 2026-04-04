@@ -35,13 +35,19 @@
     html, body { height:auto; min-height:100%; overflow:auto; }
     body { overscroll-behavior-y:auto; }
     .container-boutique { padding-bottom: 80px; }
-    .achats-list { display:flex; flex-direction:column; gap:14px; }
+    .achats-list {
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      align-items:stretch;
+    }
     .themes-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:.5rem; }
 
     .achats-grid-2 {
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
       gap:14px;
+      width:100%;
     }
 
     .achats-row-full {
@@ -49,12 +55,12 @@
       width:100%;
     }
 
-    .achats-list .special-cartouche {
+    .achats-grid-purchases .special-cartouche {
       width:100%;
-      min-height:84px;
+      min-height:60px;
       box-sizing:border-box;
-      justify-content:center;
-      padding:0.7em 0.45em 0.68em 0.45em;
+      justify-content:flex-start;
+      padding:0.55em 0.2em 0.52em 0.2em;
     }
 
     .achats-list .theme-label {
@@ -230,7 +236,7 @@ async function renderAchats(){
       ${renderCartouche(rewardJeton)}
     </div>
 
-    <div class="achats-grid-2">
+    <div class="achats-grid-2 achats-grid-purchases">
       ${purchases.map(c => renderCartouche(c)).join('')}
     </div>
 
