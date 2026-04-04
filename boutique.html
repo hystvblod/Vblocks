@@ -35,8 +35,36 @@
     html, body { height:auto; min-height:100%; overflow:auto; }
     body { overscroll-behavior-y:auto; }
     .container-boutique { padding-bottom: 80px; }
-    .achats-list, .themes-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
-    .themes-list { margin-top:.5rem; }
+    .achats-list { display:flex; flex-direction:column; gap:0; }
+    .themes-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:.5rem; }
+    .shop-grid-2 {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    .shop-gap {
+      height:16px;
+    }
+    .shop-centered-row {
+      display:flex;
+      justify-content:center;
+    }
+    .shop-centered-row .special-cartouche {
+      width:min(280px,100%);
+    }
+    .pulse-soft {
+      animation: shopPulse 1.7s ease-in-out infinite;
+    }
+    @keyframes shopPulse {
+      0%,100% {
+        transform: scale(1);
+        box-shadow: 0 0 10px rgba(90,180,255,.18);
+      }
+      50% {
+        transform: scale(1.035);
+        box-shadow: 0 0 22px rgba(90,180,255,.34);
+      }
+    }
     .theme-card.special-cartouche { cursor:pointer; transition:transform .06s ease, box-shadow .2s ease; user-select:none; align-items:center; justify-content:space-between; position:relative; }
     .theme-card.special-cartouche:hover { transform: translateY(-1px); }
     .theme-card .theme-ico{ display:none !important; }
@@ -156,15 +184,49 @@ async function getUnlockedThemesNoSQL(){
 }
 
 /* ---------- rendu achats (visuel) ---------- */
-async function renderAchats(){
-  const $achatsList = document.getElementById('achats-list');
-  $achatsList.innerHTML = SPECIAL_CARTOUCHES.map(c=>`
-    <div class="special-cartouche ${c.color}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
+function renderCartouche(c, extraClass = ''){
+  if (!c) return '';
+  return `
+    <div class="special-cartouche ${c.color} ${extraClass}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
       <span class="prix-label">${c.productId ? (c.prix ?? "—") : ""}</span>
     </div>
-  `).join('');
+  `;
+}
+
+async function renderAchats(){
+  const $achatsList = document.getElementById('achats-list');
+
+  const reward300 = SPECIAL_CARTOUCHES.find(c => c.key === "boutique.cartouche.pub300points");
+  const rewardJeton = SPECIAL_CARTOUCHES.find(c => c.key === "boutique.cartouche.pub1jeton");
+  const noAds = SPECIAL_CARTOUCHES.find(c => c.key === "boutique.cartouche.nopub");
+
+  const purchases = SPECIAL_CARTOUCHES.filter(c =>
+    c.key !== "boutique.cartouche.pub300points" &&
+    c.key !== "boutique.cartouche.pub1jeton" &&
+    c.key !== "boutique.cartouche.nopub"
+  );
+
+  $achatsList.innerHTML = `
+    <div class="shop-grid-2">
+      ${renderCartouche(reward300, 'pulse-soft')}
+      ${renderCartouche(rewardJeton)}
+    </div>
+
+    <div class="shop-gap"></div>
+
+    <div class="shop-grid-2">
+      ${purchases.map(c => renderCartouche(c)).join('')}
+    </div>
+
+    <div class="shop-gap"></div>
+
+    <div class="shop-centered-row">
+      ${renderCartouche(noAds, 'pulse-soft')}
+    </div>
+  `;
+
   setupBoutiqueAchats();
   setupPubCartouches();
 }
