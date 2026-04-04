@@ -41,7 +41,13 @@
       gap:14px;
       align-items:stretch;
     }
-    .themes-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:.5rem; }
+
+    .themes-list {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+      margin-top:.5rem;
+    }
 
     .achats-grid-2 {
       display:grid;
@@ -55,22 +61,93 @@
       width:100%;
     }
 
-    .achats-grid-purchases .special-cartouche {
+    .achats-separator {
+      width:100%;
+      height:1px;
+      background:rgba(255,255,255,.28);
+      box-shadow:0 0 8px rgba(255,255,255,.10);
+      margin:2px 0 0 0;
+    }
+
+    .achats-list .special-cartouche {
       width:100%;
       min-height:60px;
       box-sizing:border-box;
       justify-content:flex-start;
-      padding:0.55em 0.2em 0.52em 0.2em;
+      padding:0.45em 0.25em 0.4em 0.25em;
     }
 
     .achats-list .theme-label {
-      line-height:1.18;
+      line-height:1.06;
       text-align:center;
+      font-size:.92em;
+      letter-spacing:.01em;
+      text-shadow:0 2px 5px rgba(0,0,0,.22);
     }
 
     .achats-list .prix-label {
       color:#fff;
-      font-weight:700;
+      font-weight:800;
+      font-size:.92em;
+      line-height:1;
+      text-shadow:0 2px 5px rgba(0,0,0,.18);
+    }
+
+    .achats-list .cartouche-reward {
+      justify-content:center;
+      gap:2px;
+    }
+
+    .achats-list .cartouche-reward .theme-ico {
+      width:20px;
+      height:20px;
+      margin-bottom:0;
+    }
+
+    .achats-list .cartouche-reward .theme-ico img {
+      width:20px;
+      height:20px;
+      object-fit:contain;
+    }
+
+    .achats-list .cartouche-reward .reward-top {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      margin-bottom:2px;
+    }
+
+    .achats-list .cartouche-reward .reward-amount {
+      color:#fff;
+      font-weight:900;
+      font-size:1em;
+      line-height:1;
+      text-shadow:0 2px 5px rgba(0,0,0,.22);
+    }
+
+    .achats-list .cartouche-reward .theme-label {
+      font-size:.84em;
+      line-height:1.02;
+      margin-bottom:0;
+    }
+
+    .achats-list .cartouche-noads {
+      min-height:74px;
+      padding-top:.55em;
+      padding-bottom:.5em;
+    }
+
+    .achats-list .cartouche-noads .theme-ico {
+      width:30px;
+      height:30px;
+      margin-bottom:.16em;
+    }
+
+    .achats-list .cartouche-noads .theme-ico img {
+      width:30px;
+      height:30px;
+      object-fit:contain;
     }
 
     .noads-pulse {
@@ -186,8 +263,8 @@ const SPECIAL_CARTOUCHES = [
   { key:"boutique.cartouche.jetons12",    productId:"jetons12",    icon:'<img src="assets/images/jeton.webp" alt="jeton">',  color:'color-blue',   prix:"—", amount:12 },
   { key:"boutique.cartouche.jetons50",    productId:"jetons50",    icon:'<img src="assets/images/jeton.webp" alt="jeton">',  color:'color-purple', prix:"—", amount:50 },
   { key:"boutique.cartouche.nopub",       productId:"nopub",       icon:'<img src="assets/images/ads.png"  alt="No Ads">',   color:'color-yellow', prix:"—" },
-  { key:"boutique.cartouche.pub1jeton",   productId:null,          icon:'<img src="assets/images/jeton.webp" alt="Pub">',    color:'color-green' },
-  { key:"boutique.cartouche.pub300points",productId:null,          icon:'<img src="assets/images/vcoin.webp" alt="Pub">',    color:'color-blue' }
+  { key:"boutique.cartouche.pub1jeton",   productId:null,          icon:'<img src="assets/images/jeton.webp" alt="Pub">',    color:'color-green', amount:1 },
+  { key:"boutique.cartouche.pub300points",productId:null,          icon:'<img src="assets/images/vcoin.webp" alt="Pub">',    color:'color-blue', amount:300 }
 ];
 
 /* ---------- Supabase (thèmes/VCoins) ---------- */
@@ -208,8 +285,33 @@ async function getUnlockedThemesNoSQL(){
 /* ---------- rendu achats (visuel) ---------- */
 function renderCartouche(c, extraClass = ''){
   if (!c) return '';
+
+  const isReward =
+    c.key === "boutique.cartouche.pub300points" ||
+    c.key === "boutique.cartouche.pub1jeton";
+
+  const isNoAds = c.key === "boutique.cartouche.nopub";
+
+  const classes = [
+    extraClass,
+    isReward ? 'cartouche-reward' : '',
+    isNoAds ? 'cartouche-noads' : ''
+  ].filter(Boolean).join(' ');
+
+  if (isReward) {
+    return `
+      <div class="special-cartouche ${c.color} ${classes}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
+        <div class="reward-top">
+          <span class="theme-ico">${c.icon}</span>
+          <span class="reward-amount">+ ${c.amount}</span>
+        </div>
+        <span class="theme-label" data-i18n="end.reward.vcoins">${t('end.reward.vcoins')}</span>
+      </div>
+    `;
+  }
+
   return `
-    <div class="special-cartouche ${c.color} ${extraClass}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
+    <div class="special-cartouche ${c.color} ${classes}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
       <span class="theme-ico">${c.icon}</span>
       <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
       <span class="prix-label">${c.productId ? (c.prix ?? "—") : ""}</span>
@@ -236,7 +338,9 @@ async function renderAchats(){
       ${renderCartouche(rewardJeton)}
     </div>
 
-    <div class="achats-grid-2 achats-grid-purchases">
+    <div class="achats-separator"></div>
+
+    <div class="achats-grid-2">
       ${purchases.map(c => renderCartouche(c)).join('')}
     </div>
 
