@@ -212,6 +212,7 @@
     "resume.cancel": "Annuler",
   "resume.subtitle": "Voulez-vous reprendre là où vous vous êtes arrêté ?",
   "resume.restart": "Recommencer",
+  "end.win_intro": "Bravo !! Tu as gagné",
   "end.title": "Partie terminée",
   "end.points": "points",
   "end.subtitle": "Que voulez-vous faire ?",
