@@ -145,6 +145,17 @@ function fillRectThemeSafe(c, px, py, size) {
     const mode = (opts && opts.mode) || 'classic';
     const duelId = opts?.duelId || null;
     const duelPlayerNum = opts?.duelPlayerNum || 1;
+    const RECORD_BEAT_COUNT_KEY = 'vblocks_record_beats_classic_v1';
+
+    let runStartHighscore = 0;
+    let recordBeatAlreadyCountedThisRun = false;
+    let shouldShowDuelNudgeThisRun = false;
+
+    function resetRunRecordNudgeState() {
+      runStartHighscore = Number(highscoreCloud) || 0;
+      recordBeatAlreadyCountedThisRun = false;
+      shouldShowDuelNudgeThisRun = false;
+    }
 
     // Séquence commune (persistance et rewind)
     let piecesSequence = null;
@@ -794,6 +805,7 @@ overlay.querySelector('#resume-yes').onclick = () => {
       reviveUsed = false; // ✅ on ré-autorise 1 revive pour la nouvelle partie
       endHandled = false;
       creditDone = false;
+      resetRunRecordNudgeState();
 
       // UI
       const scoreEl = document.getElementById('score');
@@ -870,18 +882,32 @@ overlay.querySelector('#resume-yes').onclick = () => {
         background: rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center;
       `;
       const rewardAmount = Number(window.REWARD_VCOINS || 300);
+      if (!recordBeatAlreadyCountedThisRun && points > (Number(runStartHighscore) || 0)) {
+        recordBeatAlreadyCountedThisRun = true;
+        const recordBeatCount = getNextRecordBeatCount();
+        shouldShowDuelNudgeThisRun = (recordBeatCount === 3 || recordBeatCount % 4 === 0);
+      }
       let rewardClaimedOnEndPopup = false;
       popup.innerHTML = `
-        <div style="background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:260px;max-width:92vw;text-align:center">
+        <div id="end-confetti-layer" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;"></div>
+
+        <div style="position:relative;z-index:2;background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:260px;max-width:92vw;text-align:center">
           <div style="font-size:1.2em;font-weight:bold;margin-bottom:10px;">
             <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
-              <span>${tt('end.win_intro','Bravo!! You won')}</span>
+              <span>${tt('end.win_intro','Bravo !! tu as gagné')}</span>
               <span style="display:flex;align-items:center;gap:8px;">
                 <img src="assets/images/vcoin.webp" alt="" style="width:28px;height:28px;object-fit:contain;">
                 <span>${points}</span>
               </span>
             </div>
           </div>
+
+          ${shouldShowDuelNudgeThisRun ? `
+            <div style="margin:0 0 14px 0;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);line-height:1.45;">
+              <div style="font-weight:800;margin-bottom:4px;">${tt('end.super_score_title','Super score !')}</div>
+              <div style="opacity:.96;">${tt('end.super_score_body','Tu devrais affronter tes amis en Duel pour leur montrer ce que tu vaux.')}</div>
+            </div>
+          ` : ''}
 
           <div style="opacity:.9;margin-bottom:14px">
             ${tt('end.subtitle','Que voulez-vous faire ?')}
@@ -951,6 +977,98 @@ overlay.querySelector('#resume-yes').onclick = () => {
       `;
       document.body.appendChild(popup);
 
+      function launchEndConfetti() {
+        if (!shouldShowDuelNudgeThisRun) return;
+        const layer = popup.querySelector('#end-confetti-layer');
+        if (!layer) return;
+
+        const piecesCount = 24;
+        for (let i = 0; i < piecesCount; i++) {
+          const piece = document.createElement('div');
+          const size = 8 + Math.random() * 10;
+          const left = Math.random() * 100;
+          const drift = (Math.random() * 220) - 110;
+          const rise = 130 + Math.random() * 90;
+          const duration = 2200 + Math.random() * 1400;
+          const delay = Math.random() * 260;
+
+          piece.style.position = 'absolute';
+          piece.style.left = `${left}%`;
+          piece.style.bottom = '-24px';
+          piece.style.width = `${size}px`;
+          piece.style.height = `${size * (0.7 + Math.random() * 0.8)}px`;
+          piece.style.borderRadius = `${2 + Math.random() * 4}px`;
+          piece.style.pointerEvents = 'none';
+          piece.style.opacity = '0';
+          piece.style.transform = `translate3d(0,0,0) rotate(${Math.random() * 360}deg)`;
+          piece.style.background = `hsl(${Math.floor(Math.random() * 360)} 95% 65%)`;
+
+          layer.appendChild(piece);
+          piece.animate(
+            [
+              { transform: 'translate3d(0,0,0) rotate(0deg)', opacity: 0 },
+              { transform: `translate3d(${drift * 0.35}px,-${rise}px,0) rotate(180deg)`, opacity: 1, offset: 0.28 },
+              { transform: `translate3d(${drift}px,-${rise * 0.45}px,0) rotate(360deg)`, opacity: 1, offset: 0.72 },
+              { transform: `translate3d(${drift * 1.15}px,24px,0) rotate(540deg)`, opacity: 0 }
+            ],
+            {
+              duration,
+              delay,
+              easing: 'cubic-bezier(.2,.8,.2,1)',
+              fill: 'forwards'
+            }
+          );
+
+          setTimeout(() => {
+            try { piece.remove(); } catch (_) {}
+          }, duration + delay + 120);
+        }
+      }
+
+      function showNoJetonPopup() {
+        const oldMini = document.getElementById('no-jeton-popup');
+        if (oldMini) oldMini.remove();
+
+        const mini = document.createElement('div');
+        mini.id = 'no-jeton-popup';
+        mini.style = `
+          position: fixed; inset: 0; z-index: 100000;
+          background: rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center;
+        `;
+        mini.innerHTML = `
+          <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
+            <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">${tt('end.no_tokens.title','Tu n\'as plus de jeton')}</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
+              <span style="display:flex;align-items:center;gap:6px;font-weight:800;">
+                <img src="assets/images/jeton.webp" alt="" style="width:26px;height:26px;object-fit:contain;">
+                <span>1</span>
+              </span>
+              <span style="font-weight:900;font-size:1.1em;">=</span>
+              <span style="font-weight:700;">${tt('end.revive.ad','Revivre (pub)')}</span>
+            </div>
+            <div style="opacity:.92;line-height:1.42;margin-bottom:14px;">${tt('end.no_tokens.body','Regarde une pub pour obtenir 1 reprise ou va à la boutique.')}</div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+              <button id="no-jeton-watch-ad" class="btn-primary" style="padding:.7em 1em;border:none;border-radius:.85em;background:#a73;color:#fff;cursor:pointer;">${tt('end.revive.ad','Revivre (pub)')}</button>
+              <button id="no-jeton-shop" class="btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">${tt('menu.boutique','Boutique')}</button>
+            </div>
+            <button id="no-jeton-close" style="margin-top:12px;background:transparent;border:none;color:#cfd8ff;cursor:pointer;opacity:.85;">${tt('common.later','Plus tard')}</button>
+          </div>
+        `;
+        document.body.appendChild(mini);
+
+        mini.querySelector('#no-jeton-close')?.addEventListener('click', () => mini.remove());
+        mini.addEventListener('click', (e) => { if (e.target === mini) mini.remove(); });
+        mini.querySelector('#no-jeton-watch-ad')?.addEventListener('click', async () => {
+          mini.remove();
+          await doRevive(true);
+        });
+        mini.querySelector('#no-jeton-shop')?.addEventListener('click', () => {
+          window.location.href = 'boutique.html';
+        });
+      }
+
+      launchEndConfetti();
+
       async function doRevive(withAd) {
         if (withAd) {
           // Marque pub active (pour le gel) puis réinitialise quoi qu’il arrive
@@ -990,7 +1108,10 @@ overlay.querySelector('#resume-yes').onclick = () => {
 
         // Revive via JETON
         const okTok = await useJeton();
-        if (!okTok) { alert('Pas assez de jetons.'); return; }
+        if (!okTok) {
+          showNoJetonPopup();
+          return;
+        }
         reviveUsed = true;
         try { popup.remove(); } catch(_) {}
         endHandled = false;      // ✅ clé : autoriser la prochaine popup
@@ -1248,6 +1369,17 @@ function setHighText(val) {
   if (el) el.textContent = String(val);
 }
 
+function getNextRecordBeatCount() {
+  try {
+    const raw = Number(localStorage.getItem(RECORD_BEAT_COUNT_KEY) || '0');
+    const next = raw + 1;
+    localStorage.setItem(RECORD_BEAT_COUNT_KEY, String(next));
+    return next;
+  } catch (_) {
+    return 1;
+  }
+}
+
 async function updateHighscoreDisplay() {
   // essaie d’abord la RPC; si KO, fallback userData
   let cloud = null;
@@ -1263,13 +1395,16 @@ async function updateHighscoreDisplay() {
 
   highscoreCloud = Number(cloud) || 0;
   setHighText(highscoreCloud);
+  return highscoreCloud;
 }
 
 // Appel immédiat si le DOM est déjà prêt, sinon on attend
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', updateHighscoreDisplay);
+  document.addEventListener('DOMContentLoaded', () => {
+    updateHighscoreDisplay().then(() => { resetRunRecordNudgeState(); }).catch(() => {});
+  });
 } else {
-  updateHighscoreDisplay();
+  updateHighscoreDisplay().then(() => { resetRunRecordNudgeState(); }).catch(() => {});
 }
 
 // Alias (deux orthographes utilisées ailleurs dans le code)
