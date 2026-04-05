@@ -746,8 +746,13 @@ function fillRectThemeSafe(c, px, py, size) {
       popup.innerHTML = `
         <div style="background:#23294a;border-radius:1em;padding:24px 16px;box-shadow:0 0 14px #3ff7;min-width:260px;max-width:92vw;text-align:center">
           <div style="font-size:1.2em;font-weight:bold;margin-bottom:10px;">
-            <span>${tt('end.title','Partie terminée')}</span><br>
-            <span>+${points} ${tt('end.points','points')}</span>
+            <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;">
+              <span>${tt('end.win_intro','Bravo!! You won')}</span>
+              <span style="display:flex;align-items:center;gap:8px;">
+                <img src="assets/images/vcoin.webp" alt="" style="width:28px;height:28px;object-fit:contain;">
+                <span>${points}</span>
+              </span>
+            </div>
           </div>
 
           <div style="opacity:.9;margin-bottom:14px">
