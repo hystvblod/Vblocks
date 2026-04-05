@@ -758,7 +758,7 @@ function fillRectThemeSafe(c, px, py, size) {
       if (!recordBeatAlreadyCountedThisRun && points > (Number(runStartHighscore) || 0)) {
         recordBeatAlreadyCountedThisRun = true;
         const recordBeatCount = getNextRecordBeatCount();
-        shouldShowDuelNudgeThisRun = (recordBeatCount === 3 || recordBeatCount % 4 === 0);
+        shouldShowDuelNudgeThisRun = (recordBeatCount >= 4 && recordBeatCount % 4 === 0);
       }
       let rewardClaimedOnEndPopup = false;
       popup.innerHTML = `
