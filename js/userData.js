@@ -331,14 +331,71 @@ try {
 
 // ---------- bootstrap global (le SEUL point d’entrée côté pages) ----------
 let bootstrapAuthAndProfilePromise = null;
+let cloudRetryTimer = null;
+let cloudRetryCount = 0;
+
 async function bootstrapAuthAndProfile() {
   if (bootstrapAuthAndProfilePromise) return bootstrapAuthAndProfilePromise;
+
   bootstrapAuthAndProfilePromise = (async () => {
-    await ensureAuth();
-    await linkLegacyIfNeeded();
-    await ensureUserRow();
+    try {
+      await ensureAuth();
+      await linkLegacyIfNeeded();
+      await ensureUserRow();
+      return true;
+    } catch (e) {
+      bootstrapAuthAndProfilePromise = null;
+      throw e;
+    }
   })();
+
   return bootstrapAuthAndProfilePromise;
+}
+
+async function ensureAuthSoft() {
+  try {
+    await ensureAuth();
+    return true;
+  } catch (e) {
+    console.warn('[ensureAuthSoft]', e?.message || e);
+    return false;
+  }
+}
+
+async function bootstrapAuthAndProfileSoft() {
+  const ok = await ensureAuthSoft();
+  if (!ok) return false;
+
+  try { await linkLegacyIfNeeded(); } catch (e) {
+    console.warn('[linkLegacyIfNeeded soft]', e?.message || e);
+  }
+
+  try { await ensureUserRow(); } catch (e) {
+    console.warn('[ensureUserRow soft]', e?.message || e);
+  }
+
+  return true;
+}
+
+function scheduleCloudRetry(fn) {
+  if (cloudRetryTimer) return;
+
+  const delays = [5000, 15000, 30000, 60000];
+  const delay = delays[Math.min(cloudRetryCount, delays.length - 1)];
+  cloudRetryCount++;
+
+  cloudRetryTimer = setTimeout(() => {
+    cloudRetryTimer = null;
+    try { fn?.(); } catch (_) {}
+  }, delay);
+}
+
+function resetCloudRetry() {
+  if (cloudRetryTimer) {
+    clearTimeout(cloudRetryTimer);
+    cloudRetryTimer = null;
+  }
+  cloudRetryCount = 0;
 }
 
 async function getAuthUserId() {
@@ -687,6 +744,11 @@ userData.setLastScore        = setLastScoreSecure;
 userData.updateScoreIfHigher = updateScoreIfHigher;
 
 userData.updateLangDirect    = updateLangDirect;
+userData.getProfileSecure          = getProfileSecure;
+userData.getLang                   = getLang;
+userData.bootstrapAuthAndProfileSoft = bootstrapAuthAndProfileSoft;
+userData.scheduleCloudRetry        = scheduleCloudRetry;
+userData.resetCloudRetry           = resetCloudRetry;
 
 // thème (100% local)
 userData.applyLocalTheme     = applyLocalTheme;
