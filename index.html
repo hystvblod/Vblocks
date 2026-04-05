@@ -391,35 +391,86 @@
       }
     }
 
+    let backgroundCloudBootPromise = null;
+
+    window.startBackgroundCloudBoot = async function startBackgroundCloudBoot() {
+      if (backgroundCloudBootPromise) return backgroundCloudBootPromise;
+
+      backgroundCloudBootPromise = (async () => {
+        try {
+          const ok = await window.userData?.bootstrapAuthAndProfileSoft?.();
+
+          if (!ok) {
+            window.userData?.scheduleCloudRetry?.(() => {
+              try { window.startBackgroundCloudBoot?.(); } catch (_) {}
+            });
+            return false;
+          }
+
+          window.userData?.resetCloudRetry?.();
+
+          try {
+            if (window.userData?.getProfileSecure && window.userData?.getLang && window.userData?.updateLangDirect) {
+              const prof = await window.userData.getProfileSecure();
+              const local = window.userData.getLang();
+
+              if (!prof?.lang || String(prof.lang).toUpperCase() !== local) {
+                await window.userData.updateLangDirect(local);
+              }
+            }
+          } catch (e) {
+            console.warn('[bg profile/lang sync]', e?.message || e);
+          }
+
+          try {
+            await ensureCountryFilled();
+          } catch (e) {
+            console.warn('[bg ensureCountryFilled]', e?.message || e);
+          }
+
+          try {
+            await checkConcoursStatusByCountry();
+          } catch (e) {
+            console.warn('[bg checkConcoursStatusByCountry]', e?.message || e);
+          }
+
+          try {
+            const onboardingEl = document.getElementById('onboarding');
+            const onboardingOpen =
+              onboardingEl &&
+              onboardingEl.style.display !== 'none' &&
+              onboardingEl.getAttribute('aria-hidden') !== 'true';
+
+            if (!onboardingOpen) {
+              await checkAndShowPopupOnce();
+            }
+          } catch (e) {
+            console.warn('[bg checkAndShowPopupOnce]', e?.message || e);
+          }
+
+          return true;
+        } finally {
+          backgroundCloudBootPromise = null;
+        }
+      })();
+
+      return backgroundCloudBootPromise;
+    };
+
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        // Langue : bootstrap + sync DB si différence (pas d'UI changée)
-        if (window.i18nBootstrap) { try { await window.i18nBootstrap(); } catch(e) {} }
-        if (window.bootstrapAuthAndProfile) {
-          try { await window.bootstrapAuthAndProfile(); } catch(e) {}
-        }
-        if (window.userData?.getProfileSecure && window.userData?.getLang && window.userData?.updateLangDirect) {
-          try {
-            const prof  = await window.userData.getProfileSecure();
-            const local = window.userData.getLang();
-            if (!prof?.lang || prof.lang !== local) {
-              await window.userData.updateLangDirect(local);
-            }
-          } catch(e) {}
+        if (window.i18nBootstrap) {
+          try { await window.i18nBootstrap(); } catch (e) {}
         }
 
-        // s'assurer que country/lang sont bien remplis si manquants
-        await ensureCountryFilled();
+        if (window.i18nTranslateAll) {
+          try { window.i18nTranslateAll(); } catch (e) {}
+        }
 
-        // Affichage Concours robuste
-        await checkConcoursStatusByCountry();
+        setTimeout(() => {
+          try { window.startBackgroundCloudBoot?.(); } catch (e) {}
+        }, 0);
 
-        // Popup message
-        await checkAndShowPopupOnce();
-
-        if (window.i18nTranslateAll) window.i18nTranslateAll();
-
-        // Autorisation push au chargement (natif uniquement)
       } catch (e) {
         console.warn('[INDEX bootstrap]', e?.message || e);
       }
