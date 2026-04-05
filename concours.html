@@ -367,6 +367,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      try { window.userData?.paintBalancesFromCache?.(); } catch (_) {}
       updateVCoinsDisplay();
       updateJetonsDisplay();
       updateHighScoreDisplay();

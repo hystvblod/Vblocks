@@ -407,6 +407,8 @@ async function renderThemes(){
     card.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
   });
 
+  try { window.userData?.paintBalancesFromCache?.(); } catch (_) {}
+
   const coins = await window.userData?.getVCoins?.();
   const $soldeCoins = document.querySelector('.vcoins-solde');
   if ($soldeCoins) $soldeCoins.textContent = (typeof coins === "number" ? coins : "--");

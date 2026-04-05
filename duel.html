@@ -408,6 +408,7 @@
     function updateScore(val) { document.getElementById("score").textContent = val; }
 
     document.addEventListener("DOMContentLoaded", () => {
+      try { window.userData?.paintBalancesFromCache?.(); } catch (_) {}
       updateVCoinsDisplay();
       updateJetonsDisplay();
       updateHighScoreDisplay();
