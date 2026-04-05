@@ -855,15 +855,18 @@ function fillRectThemeSafe(c, px, py, size) {
         const layer = popup.querySelector('#end-confetti-layer');
         if (!layer) return;
 
-        const piecesCount = 24;
+        const viewportH = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0, 700);
+        const piecesCount = 30;
+
         for (let i = 0; i < piecesCount; i++) {
           const piece = document.createElement('div');
           const size = 8 + Math.random() * 10;
           const left = Math.random() * 100;
-          const drift = (Math.random() * 220) - 110;
-          const rise = 130 + Math.random() * 90;
-          const duration = 2200 + Math.random() * 1400;
-          const delay = Math.random() * 260;
+          const drift = (Math.random() * 280) - 140;
+          const peak = viewportH * (0.82 + Math.random() * 0.16);
+          const endDrop = viewportH * (0.04 + Math.random() * 0.08);
+          const duration = 3000 + Math.random() * 1600;
+          const delay = Math.random() * 320;
 
           piece.style.position = 'absolute';
           piece.style.left = `${left}%`;
@@ -877,17 +880,19 @@ function fillRectThemeSafe(c, px, py, size) {
           piece.style.background = `hsl(${Math.floor(Math.random() * 360)} 95% 65%)`;
 
           layer.appendChild(piece);
+
           piece.animate(
             [
-              { transform: 'translate3d(0,0,0) rotate(0deg)', opacity: 0 },
-              { transform: `translate3d(${drift * 0.35}px,-${rise}px,0) rotate(180deg)`, opacity: 1, offset: 0.28 },
-              { transform: `translate3d(${drift}px,-${rise * 0.45}px,0) rotate(360deg)`, opacity: 1, offset: 0.72 },
-              { transform: `translate3d(${drift * 1.15}px,24px,0) rotate(540deg)`, opacity: 0 }
+              { transform: 'translate3d(0,0,0) rotate(0deg)', opacity: 0, offset: 0 },
+              { transform: `translate3d(${drift * 0.25}px,-${peak * 0.55}px,0) rotate(160deg)`, opacity: 1, offset: 0.22 },
+              { transform: `translate3d(${drift * 0.65}px,-${peak}px,0) rotate(320deg)`, opacity: 1, offset: 0.42 },
+              { transform: `translate3d(${drift}px,-${peak * 0.62}px,0) rotate(470deg)`, opacity: 1, offset: 0.78 },
+              { transform: `translate3d(${drift * 1.08}px,-${endDrop}px,0) rotate(620deg)`, opacity: 0, offset: 1 }
             ],
             {
               duration,
               delay,
-              easing: 'cubic-bezier(.2,.8,.2,1)',
+              easing: 'cubic-bezier(.18,.82,.2,1)',
               fill: 'forwards'
             }
           );
