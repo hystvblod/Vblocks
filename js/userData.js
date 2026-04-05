@@ -414,6 +414,78 @@ function resetCloudRetry() {
   cloudRetryCount = 0;
 }
 
+const BAL_CACHE_KEY = 'vb:balances:v1';
+
+function readCachedBalances() {
+  try {
+    const raw = localStorage.getItem(BAL_CACHE_KEY);
+    if (!raw) return {};
+    const obj = JSON.parse(raw) || {};
+    const out = {};
+
+    if (obj.vcoins !== null && obj.vcoins !== '' && !isNaN(Number(obj.vcoins))) {
+      out.vcoins = Math.trunc(Number(obj.vcoins));
+    }
+    if (obj.jetons !== null && obj.jetons !== '' && !isNaN(Number(obj.jetons))) {
+      out.jetons = Math.trunc(Number(obj.jetons));
+    }
+    return out;
+  } catch (_) {
+    return {};
+  }
+}
+
+function writeCachedBalances(row) {
+  try {
+    const prev = readCachedBalances();
+    const next = { ...prev };
+
+    if (row && typeof row.vcoins !== 'undefined' && row.vcoins !== null && row.vcoins !== '' && !isNaN(Number(row.vcoins))) {
+      next.vcoins = Math.trunc(Number(row.vcoins));
+    }
+    if (row && typeof row.jetons !== 'undefined' && row.jetons !== null && row.jetons !== '' && !isNaN(Number(row.jetons))) {
+      next.jetons = Math.trunc(Number(row.jetons));
+    }
+
+    localStorage.setItem(BAL_CACHE_KEY, JSON.stringify(next));
+    return next;
+  } catch (e) {
+    console.warn('[writeCachedBalances]', e?.message || e);
+    return {};
+  }
+}
+
+function paintBalancesFromCache() {
+  try {
+    const { vcoins, jetons } = readCachedBalances();
+
+    const v = (typeof vcoins === 'number') ? vcoins : null;
+    const j = (typeof jetons === 'number') ? jetons : null;
+
+    const vEl =
+      document.getElementById('header-vcoins') ||
+      document.getElementById('vcoinsCount') ||
+      document.getElementById('vcoin-amount');
+
+    const jEl =
+      document.getElementById('header-jetons') ||
+      document.getElementById('jetonsCount') ||
+      document.getElementById('jeton-amount');
+
+    if (vEl && v !== null) vEl.textContent = String(v);
+    if (jEl && j !== null) jEl.textContent = String(j);
+
+    const sols = document.querySelectorAll('.vcoins-solde');
+    if (sols[0] && v !== null) sols[0].textContent = String(v);
+    if (sols[1] && j !== null) sols[1].textContent = String(j);
+
+    return { vcoins: v, jetons: j };
+  } catch (e) {
+    console.warn('[paintBalancesFromCache]', e?.message || e);
+    return {};
+  }
+}
+
 async function getAuthUserId() {
   try {
     const { data: { user } } = await sb.auth.getUser();
@@ -453,6 +525,9 @@ async function getProfileSecure() {
         if (!e2 && direct) row.themes_possedes = direct.themes_possedes;
       }
     }
+
+    writeCachedBalances(row);
+    setTimeout(() => { try { paintBalancesFromCache(); } catch (_) {} }, 0);
     return row;
   } catch (e) {
     console.warn('[getProfileSecure] RPC get_balances KO, fallback direct:', e?.message || e);
@@ -471,7 +546,10 @@ async function getProfileSecure() {
       console.warn('[getProfileSecure] direct users error:', error);
       return {};
     }
-    return data || {};
+    const row = data || {};
+    writeCachedBalances(row);
+    setTimeout(() => { try { paintBalancesFromCache(); } catch (_) {} }, 0);
+    return row;
   } catch (e) {
     console.warn('[getProfileSecure] direct users exception:', e?.message || e);
     return {};
@@ -765,6 +843,8 @@ userData.getLang                   = getLang;
 userData.bootstrapAuthAndProfileSoft = bootstrapAuthAndProfileSoft;
 userData.scheduleCloudRetry        = scheduleCloudRetry;
 userData.resetCloudRetry           = resetCloudRetry;
+userData.getCachedBalances         = readCachedBalances;
+userData.paintBalancesFromCache    = paintBalancesFromCache;
 
 // thème (100% local)
 userData.applyLocalTheme     = applyLocalTheme;

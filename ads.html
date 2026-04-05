@@ -1991,6 +1991,7 @@ if (score > highscoreCloud) {
 
     // ===== REPRISE de partie =====
     document.addEventListener('DOMContentLoaded', async () => {
+      try { window.userData?.paintBalancesFromCache?.(); } catch (_) {}
       updateBalancesHeader();
       updateHighscoreDisplay();
       refreshMusicBtn();
