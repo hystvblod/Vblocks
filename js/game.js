@@ -979,57 +979,128 @@ overlay.querySelector('#resume-yes').onclick = () => {
 
       function launchEndConfetti() {
         if (!shouldShowDuelNudgeThisRun) return;
+
         const layer = popup.querySelector('#end-confetti-layer');
         if (!layer) return;
 
-        const viewportH = Math.max(window.innerHeight || 0, document.documentElement?.clientHeight || 0, 700);
-        const piecesCount = 30;
+        layer.innerHTML = '';
 
-        for (let i = 0; i < piecesCount; i++) {
-          const piece = document.createElement('div');
-          const size = 8 + Math.random() * 10;
-          const left = Math.random() * 100;
-          const drift = (Math.random() * 280) - 140;
-          const peak = viewportH * (0.82 + Math.random() * 0.16);
-          const endDrop = viewportH * (0.04 + Math.random() * 0.08);
-          const duration = 3000 + Math.random() * 1600;
-          const delay = Math.random() * 320;
-
-          piece.style.position = 'absolute';
-          piece.style.left = `${left}%`;
-          piece.style.bottom = '-24px';
-          piece.style.width = `${size}px`;
-          piece.style.height = `${size * (0.7 + Math.random() * 0.8)}px`;
-          piece.style.borderRadius = `${2 + Math.random() * 4}px`;
-          piece.style.pointerEvents = 'none';
-          piece.style.opacity = '0';
-          piece.style.transform = `translate3d(0,0,0) rotate(${Math.random() * 360}deg)`;
-          piece.style.background = `hsl(${Math.floor(Math.random() * 360)} 95% 65%)`;
-
-          layer.appendChild(piece);
-
-          piece.animate(
-            [
-              { transform: 'translate3d(0,0,0) rotate(0deg)', opacity: 0, offset: 0 },
-              { transform: `translate3d(${drift * 0.25}px,-${peak * 0.55}px,0) rotate(160deg)`, opacity: 1, offset: 0.22 },
-              { transform: `translate3d(${drift * 0.65}px,-${peak}px,0) rotate(320deg)`, opacity: 1, offset: 0.42 },
-              { transform: `translate3d(${drift}px,-${peak * 0.62}px,0) rotate(470deg)`, opacity: 1, offset: 0.78 },
-              { transform: `translate3d(${drift * 1.08}px,-${endDrop}px,0) rotate(620deg)`, opacity: 0, offset: 1 }
-            ],
-            {
-              duration,
-              delay,
-              easing: 'cubic-bezier(.18,.82,.2,1)',
-              fill: 'forwards'
-            }
-          );
-
-          setTimeout(() => {
-            try { piece.remove(); } catch (_) {}
-          }, duration + delay + 120);
+        if (popup.__endConfettiRaf) {
+          cancelAnimationFrame(popup.__endConfettiRaf);
+          popup.__endConfettiRaf = null;
         }
-      }
+        clearTimeout(popup.__endConfettiCleanupTimer);
 
+        const colors = [
+          '#ffffff',
+          '#f4d35e',
+          '#ff6b6b',
+          '#b8f2e6',
+          '#d0bfff',
+          '#7dd3fc',
+          '#f9a8d4'
+        ];
+
+        const rect = layer.getBoundingClientRect();
+        const W = Math.max(1, rect.width || window.innerWidth || 360);
+        const H = Math.max(1, rect.height || window.innerHeight || 640);
+
+        const count = 170;
+        const gravity = 1550;
+        const pieces = [];
+
+        for (let i = 0; i < count; i += 1) {
+          const el = document.createElement('span');
+
+          const w = 5 + Math.random() * 8;
+          const h = 10 + Math.random() * 16;
+          const x = Math.random() * W;
+          const y = H + 20 + Math.random() * 60;
+
+          const vx = -260 + Math.random() * 520;
+          const vy = -(980 + Math.random() * 720);
+          const spin = -720 + Math.random() * 1440;
+          const rot = Math.random() * 360;
+          const life = 3.8 + Math.random() * 1.4;
+          const fadeStart = life * 0.72;
+
+          el.style.position = 'absolute';
+          el.style.left = '0';
+          el.style.top = '0';
+          el.style.width = `${w}px`;
+          el.style.height = `${h}px`;
+          el.style.borderRadius = `${2 + Math.random() * 3}px`;
+          el.style.background = colors[Math.floor(Math.random() * colors.length)];
+          el.style.opacity = '1';
+          el.style.pointerEvents = 'none';
+          el.style.willChange = 'transform,opacity';
+          el.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rot}deg)`;
+
+          layer.appendChild(el);
+
+          pieces.push({
+            el,
+            x,
+            y,
+            vx,
+            vy,
+            rot,
+            spin,
+            age: 0,
+            life,
+            fadeStart
+          });
+        }
+
+        let last = performance.now();
+
+        const tick = (now) => {
+          const dt = Math.min((now - last) / 1000, 0.033);
+          last = now;
+
+          let alive = 0;
+
+          for (const p of pieces) {
+            p.age += dt;
+            if (p.age >= p.life) {
+              p.el.style.opacity = '0';
+              continue;
+            }
+
+            p.vy += gravity * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.rot += p.spin * dt;
+
+            const fade =
+              p.age < p.fadeStart
+                ? 1
+                : Math.max(0, 1 - ((p.age - p.fadeStart) / (p.life - p.fadeStart)));
+
+            p.el.style.opacity = String(fade);
+            p.el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotate(${p.rot}deg)`;
+
+            alive += 1;
+          }
+
+          if (alive > 0) {
+            popup.__endConfettiRaf = requestAnimationFrame(tick);
+          } else {
+            popup.__endConfettiRaf = null;
+            try { layer.innerHTML = ''; } catch (_) {}
+          }
+        };
+
+        popup.__endConfettiRaf = requestAnimationFrame(tick);
+
+        popup.__endConfettiCleanupTimer = setTimeout(() => {
+          if (popup.__endConfettiRaf) {
+            cancelAnimationFrame(popup.__endConfettiRaf);
+            popup.__endConfettiRaf = null;
+          }
+          try { layer.innerHTML = ''; } catch (_) {}
+        }, 6500);
+      }
       function showNoJetonPopup() {
         const oldMini = document.getElementById('no-jeton-popup');
         if (oldMini) oldMini.remove();
