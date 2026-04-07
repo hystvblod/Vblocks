@@ -1845,13 +1845,16 @@ if (score > highscoreCloud) {
       if (mustLiftFingerForNextSoftDrop) return;
       if (isSoftDropping || paused || gameOver) return;
       isSoftDropping = true;
+      rotationLocked = true;
+      lastTime = performance.now();
       softDropInterval = setInterval(() => {
-        if (!paused && !gameOver) {
+        if (!paused && !gameOver && !window.__ads_active) {
           dropPiece();
           safeRedraw();
         }
-      }, 50);
+      }, 45);
     }
+
     function stopSoftDrop() {
       isSoftDropping = false;
       clearInterval(softDropInterval);
@@ -1859,28 +1862,44 @@ if (score > highscoreCloud) {
     }
 
     // ===== Repeat horizontal tactile =====
+    let horizontalRepeatKickoff = null;
     let horizontalRepeatInterval = null;
+
+    const INITIAL_REPEAT_DELAY = 180;
+    const REPEAT_INTERVAL = 60;
+
     function startHorizontalRepeat(direction) {
+      if (paused || gameOver) return;
+      if (direction !== -1 && direction !== 1) return;
+
       stopHorizontalRepeat();
-      move(direction);
-      safeRedraw();
-      horizontalRepeatInterval = setInterval(() => {
-        if (!paused && !gameOver) {
-          move(direction);
-          safeRedraw();
-        }
-      }, 120);
+
+      horizontalRepeatKickoff = setTimeout(() => {
+        horizontalRepeatKickoff = null;
+        horizontalRepeatInterval = setInterval(() => {
+          if (!paused && !gameOver && !window.__ads_active) {
+            move(direction);
+            safeRedraw();
+          }
+        }, REPEAT_INTERVAL);
+      }, INITIAL_REPEAT_DELAY);
     }
+
     function stopHorizontalRepeat() {
-      clearInterval(horizontalRepeatInterval);
-      horizontalRepeatInterval = null;
+      if (horizontalRepeatKickoff) {
+        clearTimeout(horizontalRepeatKickoff);
+        horizontalRepeatKickoff = null;
+      }
+      if (horizontalRepeatInterval) {
+        clearInterval(horizontalRepeatInterval);
+        horizontalRepeatInterval = null;
+      }
     }
 
     // ===== INPUTS clavier =====
     document.addEventListener('keydown', e => {
       if (gameOver) return;
 
-      // Pause avec Escape/Space
       if (e.key === 'Escape' || e.key === ' ') {
         e.preventDefault();
         togglePause();
@@ -1908,8 +1927,215 @@ if (score > highscoreCloud) {
       if (e.key === 'ArrowDown') {
         stopSoftDrop();
         mustLiftFingerForNextSoftDrop = false;
+        rotationLocked = false;
       }
     });
+
+    // ====================
+    // TOUCH DIRECT SUR LE CANVAS
+    // ====================
+    canvas.style.touchAction = 'none';
+    canvas.style.userSelect = 'none';
+
+    let gestureMode = 'none';
+    const HORIZ_THRESHOLD = 20;
+    const DEAD_ZONE = 10;
+    const VERTICAL_LOCK_EARLY_MS = 140;
+    const HOLD_ACTIVATION_MS = 180;
+
+    let didHardDrop = false;
+    let startX = 0;
+    let startY = 0;
+    let movedX = 0;
+    let movedY = 0;
+    let dragging = false;
+    let touchStartTime = 0;
+    let holdToDropTimeout = null;
+    let quickDropLock = false;
+
+    function isQuickSwipeUp(elapsed, dy) {
+      return (elapsed < 220) && (dy < -42);
+    }
+
+    function isQuickSwipeDown(elapsed, dy) {
+      return (elapsed < 220) && (dy > 42);
+    }
+
+    canvas.addEventListener('touchstart', function (e) {
+      if (gameOver || window.__ads_active) return;
+      if (e.touches.length !== 1) return;
+
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+      movedX = 0;
+      movedY = 0;
+      dragging = true;
+      touchStartTime = Date.now();
+      gestureMode = 'none';
+      didHardDrop = false;
+      quickDropLock = false;
+      rotationLocked = false;
+
+      stopHorizontalRepeat();
+
+      clearTimeout(holdToDropTimeout);
+      holdToDropTimeout = setTimeout(() => {
+        if (dragging && !isSoftDropping) {
+          gestureMode = 'vertical';
+          startSoftDrop();
+          stopHorizontalRepeat();
+        }
+      }, HOLD_ACTIVATION_MS);
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', function (e) {
+      if (!dragging || window.__ads_active) return;
+
+      const t = e.touches[0];
+      const now = Date.now();
+      const elapsed = now - touchStartTime;
+
+      const newMovedX = t.clientX - startX;
+      const newMovedY = t.clientY - startY;
+      movedX = newMovedX;
+      movedY = newMovedY;
+
+      if (isQuickSwipeDown(elapsed, movedY)) {
+        quickDropLock = true;
+        rotationLocked = true;
+        gestureMode = 'vertical';
+
+        if (!isSoftDropping) startSoftDrop();
+
+        if (movedY > 24) {
+          dropPiece();
+          startY = t.clientY;
+        }
+
+        clearTimeout(holdToDropTimeout);
+        return;
+      }
+
+      if (gestureMode === 'vertical' || isSoftDropping || elapsed >= VERTICAL_LOCK_EARLY_MS) {
+        gestureMode = 'vertical';
+        rotationLocked = true;
+        stopHorizontalRepeat();
+
+        if (!quickDropLock && !isSoftDropping && !rotationLocked && isQuickSwipeUp(elapsed, movedY)) {
+          rotatePiece();
+          touchStartTime = now;
+          startY = t.clientY;
+        }
+
+        clearTimeout(holdToDropTimeout);
+        return;
+      }
+
+      if (gestureMode === 'none') {
+        if (Math.abs(movedX) > Math.max(Math.abs(movedY), DEAD_ZONE) && Math.abs(movedX) > HORIZ_THRESHOLD) {
+          gestureMode = 'horizontal';
+          rotationLocked = true;
+          clearTimeout(holdToDropTimeout);
+        }
+      }
+
+      if (gestureMode === 'horizontal') {
+        if (movedX > HORIZ_THRESHOLD) {
+          move(1);
+          startX = t.clientX;
+          startHorizontalRepeat(1);
+        } else if (movedX < -HORIZ_THRESHOLD) {
+          move(-1);
+          startX = t.clientX;
+          startHorizontalRepeat(-1);
+        }
+
+        if (Math.abs(movedX) <= HORIZ_THRESHOLD) {
+          stopHorizontalRepeat();
+        }
+
+        if (Math.abs(movedX) > 18) clearTimeout(holdToDropTimeout);
+        return;
+      }
+
+      if (!quickDropLock && !isSoftDropping && !rotationLocked && isQuickSwipeUp(elapsed, movedY)) {
+        rotatePiece();
+        touchStartTime = now;
+        startY = t.clientY;
+      }
+
+      if (movedY > 24 && !didHardDrop) {
+        if (!isSoftDropping) startSoftDrop();
+        dropPiece();
+        startY = t.clientY;
+      }
+
+      if (Math.abs(movedX) > 18 || movedY < -18) {
+        clearTimeout(holdToDropTimeout);
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', function () {
+      const wasHard = didHardDrop;
+      dragging = false;
+      clearTimeout(holdToDropTimeout);
+
+      stopHorizontalRepeat();
+
+      if (isSoftDropping) {
+        stopSoftDrop();
+        mustLiftFingerForNextSoftDrop = false;
+        gestureMode = 'none';
+        quickDropLock = false;
+        rotationLocked = false;
+        return;
+      }
+
+      if (wasHard) {
+        didHardDrop = false;
+        gestureMode = 'none';
+        quickDropLock = false;
+        rotationLocked = false;
+        return;
+      }
+
+      const pressDuration = Date.now() - touchStartTime;
+      const isShortPress = pressDuration < 200;
+      const hasDropped = Math.abs(movedY) > 18;
+      const movedHoriz = Math.abs(movedX) >= HORIZ_THRESHOLD;
+
+      if (
+        gestureMode !== 'horizontal' &&
+        isShortPress &&
+        !hasDropped &&
+        Math.abs(movedX) < 10 &&
+        !quickDropLock &&
+        !rotationLocked &&
+        !movedHoriz
+      ) {
+        rotatePiece();
+      }
+
+      mustLiftFingerForNextSoftDrop = false;
+      gestureMode = 'none';
+      quickDropLock = false;
+      rotationLocked = false;
+    }, { passive: true });
+
+    canvas.addEventListener('touchcancel', function () {
+      dragging = false;
+      clearTimeout(holdToDropTimeout);
+      stopHorizontalRepeat();
+
+      if (isSoftDropping) stopSoftDrop();
+
+      mustLiftFingerForNextSoftDrop = false;
+      gestureMode = 'none';
+      didHardDrop = false;
+      quickDropLock = false;
+      rotationLocked = false;
+    }, { passive: true });
 
     // ===== INPUTS tactiles (boutons) =====
     function bindHoldToRepeat(el, onStart, onEnd) {
@@ -1981,6 +2207,11 @@ if (score > highscoreCloud) {
       localStorage.setItem('ghostPiece', ghostPieceEnabled ? 'true' : 'false');
       safeRedraw();
     }, { passive:false });
+
+    window.addEventListener('blur', () => {
+      stopSoftDrop();
+      stopHorizontalRepeat();
+    });
 
     // ===== BOUTONS topbar =====
     const btnBack = document.getElementById('back-btn');
