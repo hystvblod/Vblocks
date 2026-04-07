@@ -221,22 +221,28 @@ function fillRectThemeSafe(c, px, py, size) {
       mainContent.style.marginTop = '0px';
 
       requestAnimationFrame(() => {
+        const vv = window.visualViewport;
+        const viewportW = Math.round(vv?.width || window.innerWidth || 430);
+        const viewportH = Math.round(vv?.height || window.innerHeight || 800);
+
         const baseW = mainContent.offsetWidth || 430;
         const baseH = Math.max(mainContent.scrollHeight, mainContent.offsetHeight, 1);
 
+        const rootStyles = getComputedStyle(document.documentElement);
+        const safeTop = parseFloat(rootStyles.getPropertyValue('--safe-top')) || 0;
+        const safeBottom = parseFloat(rootStyles.getPropertyValue('--safe-bottom')) || 0;
+
+        const availableW = Math.max(1, viewportW);
+        const availableH = Math.max(1, viewportH - safeTop - safeBottom);
+
         const scale = Math.min(
-          window.innerWidth / baseW,
-          window.innerHeight / baseH,
+          availableW / baseW,
+          availableH / baseH,
           1
         );
 
-        const top = Math.max(
-          0,
-          Math.floor((window.innerHeight - (baseH * scale)) / 2)
-        );
-
         mainContent.style.transform = `scale(${scale})`;
-        mainContent.style.marginTop = `${top}px`;
+        mainContent.style.marginTop = `${Math.ceil(safeTop)}px`;
       });
     }
 

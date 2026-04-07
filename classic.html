@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title data-i18n="game.title">V-Blocks - Classique</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <script>
     let currentTheme = localStorage.getItem('themeVBlocks') || 'cyber';
     document.documentElement.setAttribute('data-theme', currentTheme);
@@ -17,20 +17,28 @@
   </script>
   <link rel="stylesheet" href="themes/themes.css" id="theme-style" />
   <style>
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
     html, body {
-      margin: 0; padding: 0;
-      width: 100vw; height: 100dvh;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100dvh;
+      height: 100dvh;
       box-sizing: border-box;
       font-family: 'Quicksand', Arial, sans-serif;
       background: var(--body-bg, #111);
       color: var(--body-color, #ccc);
       overflow: hidden;
-      height: 100%;
     }
+
     body {
       min-height: 100dvh;
       height: 100dvh;
-      width: 100vw;
+      width: 100%;
     }
 
     .game-viewport {
@@ -63,7 +71,7 @@
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      padding: 10px 10px 0 10px;
+      padding: calc(var(--safe-top) + 10px) 10px 0 10px;
       position: relative;
       z-index: 10;
       background: transparent;
