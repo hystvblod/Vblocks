@@ -213,12 +213,11 @@
       padding: 0.4em 1em; color: #ffd800; margin-bottom: 10px; user-select: all;
     }
     .duel-code { font-size: 1.5em; letter-spacing: 2px; margin: 8px 0 6px 0; color: #ffd800; font-family: monospace; }
-  
-    /* ===== Tablettes/intermédiaires : 701px -> 900px ===== */
-    @media (min-width: 701px) and (max-width: 900px) and (min-height: 760px) {
+    /* ===== Tablettes portrait et grands écrans tactiles ===== */
+    @media (min-width: 701px) and (max-width: 1200px) and (min-height: 900px) {
       .main-content {
-        width: min(580px, calc(100vw - 24px)) !important;
-        max-width: min(580px, calc(100vw - 24px)) !important;
+        width: min(720px, calc(100vw - 32px)) !important;
+        max-width: min(720px, calc(100vw - 32px)) !important;
       }
 
       .top-bar {
@@ -229,14 +228,51 @@
       }
 
       .top-canvas-row {
-        width: min(100%, 540px) !important;
-        max-width: 540px !important;
-        margin-top: -20px !important;
+        width: min(100%, 700px) !important;
+        max-width: 700px !important;
+        margin-top: -12px !important;
       }
 
       #gameCanvas {
         width: 100% !important;
-        max-width: 415px !important;
+        max-width: 520px !important;
+      }
+
+      .score-row {
+        width: 100% !important;
+        max-width: none !important;
+      }
+
+      #holdCanvas,
+      #nextCanvas {
+        width: 72px !important;
+        height: 72px !important;
+      }
+    }
+
+    /* ===== Tablettes paysage / écrans moins hauts ===== */
+    @media (min-width: 701px) and (max-width: 1200px) and (max-height: 899px) {
+      .main-content {
+        width: min(600px, calc(100vw - 24px)) !important;
+        max-width: min(600px, calc(100vw - 24px)) !important;
+      }
+
+      .top-bar {
+        width: 100% !important;
+        max-width: none !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+
+      .top-canvas-row {
+        width: min(100%, 560px) !important;
+        max-width: 560px !important;
+        margin-top: -14px !important;
+      }
+
+      #gameCanvas {
+        width: 100% !important;
+        max-width: 400px !important;
       }
 
       .score-row {
@@ -248,43 +284,6 @@
       #nextCanvas {
         width: 60px !important;
         height: 60px !important;
-      }
-    }
-
-    /* ===== Tablettes/intermédiaires plus basses / paysage ===== */
-    @media (min-width: 701px) and (max-width: 900px) and (max-height: 759px) {
-      .main-content {
-        width: min(520px, calc(100vw - 20px)) !important;
-        max-width: min(520px, calc(100vw - 20px)) !important;
-      }
-
-      .top-bar {
-        width: 100% !important;
-        max-width: none !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-      }
-
-      .top-canvas-row {
-        width: min(100%, 480px) !important;
-        max-width: 480px !important;
-        margin-top: -16px !important;
-      }
-
-      #gameCanvas {
-        width: 100% !important;
-        max-width: 370px !important;
-      }
-
-      .score-row {
-        width: 100% !important;
-        max-width: none !important;
-      }
-
-      #holdCanvas,
-      #nextCanvas {
-        width: 56px !important;
-        height: 56px !important;
       }
     }
 </style>

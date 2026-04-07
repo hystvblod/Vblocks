@@ -137,6 +137,80 @@
       .score-to-beat-row { margin: 2px 0 4px; }
     }
 
+    /* ===== Tablettes portrait et grands écrans tactiles ===== */
+    @media (min-width: 701px) and (max-width: 1200px) and (min-height: 900px) {
+      .main-content {
+        width: min(720px, calc(100vw - 32px)) !important;
+        max-width: min(720px, calc(100vw - 32px)) !important;
+      }
+
+      .top-bar {
+        width: 100% !important;
+        max-width: none !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+
+      .top-canvas-row {
+        width: min(100%, 700px) !important;
+        max-width: 700px !important;
+        margin-top: -12px !important;
+      }
+
+      #gameCanvas {
+        width: 100% !important;
+        max-width: 520px !important;
+      }
+
+      .score-row {
+        width: 100% !important;
+        max-width: none !important;
+      }
+
+      #holdCanvas,
+      #nextCanvas {
+        width: 72px !important;
+        height: 72px !important;
+      }
+    }
+
+    /* ===== Tablettes paysage / écrans moins hauts ===== */
+    @media (min-width: 701px) and (max-width: 1200px) and (max-height: 899px) {
+      .main-content {
+        width: min(600px, calc(100vw - 24px)) !important;
+        max-width: min(600px, calc(100vw - 24px)) !important;
+      }
+
+      .top-bar {
+        width: 100% !important;
+        max-width: none !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+
+      .top-canvas-row {
+        width: min(100%, 560px) !important;
+        max-width: 560px !important;
+        margin-top: -14px !important;
+      }
+
+      #gameCanvas {
+        width: 100% !important;
+        max-width: 400px !important;
+      }
+
+      .score-row {
+        width: 100% !important;
+        max-width: none !important;
+      }
+
+      #holdCanvas,
+      #nextCanvas {
+        width: 60px !important;
+        height: 60px !important;
+      }
+    }
+
     .top-canvas-row {
       width: 100%; max-width: 410px;
       display: flex; justify-content: space-between; align-items: flex-end;
