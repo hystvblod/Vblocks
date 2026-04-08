@@ -227,16 +227,11 @@ function fillRectThemeSafe(c, px, py, size) {
 
         const baseW = mainContent.offsetWidth || 430;
         const baseH = Math.max(mainContent.scrollHeight, mainContent.offsetHeight, 1);
-
-        const rootStyles = getComputedStyle(document.documentElement);
-        const safeBottom = parseFloat(rootStyles.getPropertyValue('--safe-bottom')) || 0;
-
-        const availableW = Math.max(1, viewportW);
-        const availableH = Math.max(1, viewportH - safeBottom);
+        const FIT_BOTTOM_BUFFER = 16;
 
         const scale = Math.min(
-          availableW / baseW,
-          availableH / baseH,
+          viewportW / baseW,
+          (viewportH - FIT_BOTTOM_BUFFER) / baseH,
           1
         );
 
@@ -270,6 +265,29 @@ function fillRectThemeSafe(c, px, py, size) {
     sizeMiniCanvas(holdCanvas, holdCtx, 48);
     sizeMiniCanvas(nextCanvas, nextCtx, 48);
     fitWholeGameUI();
+
+    window.addEventListener('load', () => {
+      fitCanvasToCSS();
+      sizeMiniCanvas(holdCanvas, holdCtx, 48);
+      sizeMiniCanvas(nextCanvas, nextCtx, 48);
+      fitWholeGameUI();
+    });
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        fitCanvasToCSS();
+        sizeMiniCanvas(holdCanvas, holdCtx, 48);
+        sizeMiniCanvas(nextCanvas, nextCtx, 48);
+        fitWholeGameUI();
+      });
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        fitCanvasToCSS();
+        fitWholeGameUI();
+      });
+    }
 
     window.addEventListener('resize', () => {
       cancelAnimationFrame(resizeRAF);
