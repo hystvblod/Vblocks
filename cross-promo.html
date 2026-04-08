@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <title>VBlocks - Nos applis</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
   <link rel="stylesheet" href="style/main.css" />
 
   <style>
     html, body {
       overflow-y: auto;
-      min-height: 100vh;
+      min-height: 100dvh;
       height: auto;
     }
 
     body.cp-page {
-      padding-bottom: 32px;
+      padding-bottom: calc(var(--safe-bottom) + 32px);
     }
 
     .cp-shell {
@@ -23,7 +23,11 @@
       max-width: 430px;
       margin: 0 auto;
       box-sizing: border-box;
-      padding: 0 10px 24px;
+      padding: calc(var(--safe-top) + 78px) 10px 24px;
+    }
+
+    .top-bar {
+      padding-top: calc(var(--safe-top) + 10px) !important;
     }
 
     @media (min-width: 768px) {

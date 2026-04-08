@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title data-i18n="header.title.settings">Paramètres</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="stylesheet" href="style/main.css" />
   <style>
     html, body {
@@ -28,7 +28,7 @@
       margin: 0 auto;
       min-height: unset !important;
       height: auto !important;
-      padding: 0 10px 24px;
+      padding: 0 10px calc(var(--safe-bottom) + 24px);
     }
     .top-bar {
       width: 100%;
@@ -37,7 +37,7 @@
       display: flex;
       flex-direction: column;
       align-items: stretch;
-      padding: 10px 0 0 0;
+      padding: calc(var(--safe-top) + 10px) 0 0 0;
       position: relative;
       z-index: 10;
       background: transparent;
@@ -126,7 +126,10 @@
     .music-btn-img { width: 32px; height: 32px; vertical-align: middle; }
     @media (max-width:480px) {
       .main-content, .top-bar { max-width: 100vw; }
-      .top-bar { padding: 4px 3px 0 3px; max-width: 99vw; }
+      .top-bar {
+        padding: calc(var(--safe-top) + 4px) 3px 0 3px;
+        max-width: 99vw;
+      }
       .main-title { font-size: 1.4em; }
       .btn-back { width: 32px; height: 32px; }
       .btn-back img, .btn-icon img { width: 20px; height: 20px; }

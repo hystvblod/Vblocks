@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title data-i18n="boutique.titre"></title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <!-- Libs / app -->
   <script src="js/vendor/supabase-2.42.5.min.js"></script>
@@ -32,9 +32,15 @@
 
   <link rel="stylesheet" href="style/main.css">
   <style>
-    html, body { height:auto; min-height:100%; overflow:auto; }
+    html, body { height:auto; min-height:100dvh; overflow:auto; }
     body { overscroll-behavior-y:auto; }
-    .container-boutique { padding-bottom: 80px; }
+    .top-bar {
+      padding-top: calc(var(--safe-top) + 18px) !important;
+    }
+    .container-boutique {
+      padding-top: 8px;
+      padding-bottom: calc(var(--safe-bottom) + 80px);
+    }
     .achats-list {
       display:flex;
       flex-direction:column;
