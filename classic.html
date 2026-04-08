@@ -61,6 +61,7 @@
       align-items: center;
       justify-content: flex-start;
       margin: 0 auto;
+      padding-bottom: calc(var(--safe-bottom) + 14px);
       transform-origin: top center;
       will-change: transform;
     }
@@ -208,7 +209,12 @@
     .highscore-global { font-size: 1.12em; font-weight: bold; color: #ffd800; margin-left: 1.1em;}
     .highscore-value { color: var(--highscore-color, #ffd800); font-weight: 700; }
     #controls {
-      display: flex; justify-content: center; gap: 1.1em; margin-top: 11px; flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      gap: 1.1em;
+      margin-top: 11px;
+      margin-bottom: 2px;
+      flex-shrink: 0;
     }
     #controls button {
       background: var(--btn-bg, #161649);
