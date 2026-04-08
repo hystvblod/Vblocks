@@ -227,7 +227,7 @@ function fillRectThemeSafe(c, px, py, size) {
 
         const baseW = mainContent.offsetWidth || 430;
         const baseH = Math.max(mainContent.scrollHeight, mainContent.offsetHeight, 1);
-        const FIT_BOTTOM_BUFFER = 16;
+        const FIT_BOTTOM_BUFFER = 30;
 
         const scale = Math.min(
           viewportW / baseW,
