@@ -229,11 +229,10 @@ function fillRectThemeSafe(c, px, py, size) {
         const baseH = Math.max(mainContent.scrollHeight, mainContent.offsetHeight, 1);
 
         const rootStyles = getComputedStyle(document.documentElement);
-        const safeTop = parseFloat(rootStyles.getPropertyValue('--safe-top')) || 0;
         const safeBottom = parseFloat(rootStyles.getPropertyValue('--safe-bottom')) || 0;
 
         const availableW = Math.max(1, viewportW);
-        const availableH = Math.max(1, viewportH - safeTop - safeBottom);
+        const availableH = Math.max(1, viewportH - safeBottom);
 
         const scale = Math.min(
           availableW / baseW,
@@ -242,7 +241,7 @@ function fillRectThemeSafe(c, px, py, size) {
         );
 
         mainContent.style.transform = `scale(${scale})`;
-        mainContent.style.marginTop = `${Math.ceil(safeTop)}px`;
+        mainContent.style.marginTop = '0px';
       });
     }
 
