@@ -185,8 +185,15 @@ function informCapBlocked() {
     return !!(AdMob && AdMob.requestConsentInfo && AdMob.showConsentForm && AdMob.showPrivacyOptionsForm);
   }
 
-  function buildAdMobRequestOptions() {
-    if (isNative() && hasOfficialUmpSupport()) return {};
+  function buildAdMobRequestOptions(forceLimited) {
+    if (forceLimited) {
+      return { npa: '1' };
+    }
+
+    if (isNative() && hasOfficialUmpSupport()) {
+      return {};
+    }
+
     return { npa: getPersonalizedAdsGrantedLegacy() ? '0' : '1' };
   }
 
@@ -231,8 +238,25 @@ function informCapBlocked() {
 
   async function ensureCanRequestAds() {
     var info = await getGoogleConsentInfo(false);
-    if (!info) return true;
-    return !!info.canRequestAds;
+
+    if (!info) {
+      return {
+        allowed: true,
+        limited: true
+      };
+    }
+
+    if (info.canRequestAds) {
+      return {
+        allowed: true,
+        limited: false
+      };
+    }
+
+    return {
+      allowed: true,
+      limited: true
+    };
   }
 
   async function maybeShowGoogleConsentFormOnIndexAfterIntro() {
@@ -240,7 +264,10 @@ function informCapBlocked() {
 
     var info = await getGoogleConsentInfo(true);
     if (!info) return null;
-    if (info.canRequestAds) return info;
+
+    if (info.canRequestAds === true) {
+      return info;
+    }
 
     try {
       info = await AdMob.showConsentForm();
@@ -248,7 +275,7 @@ function informCapBlocked() {
       await syncLegacyConsentMirror(__googleConsentInfo);
       return __googleConsentInfo;
     } catch (_) {
-      return __googleConsentInfo;
+      return __googleConsentInfo || info;
     }
   }
 
@@ -692,7 +719,7 @@ function informCapBlocked() {
       }
 
       await ensureAuth();
-      if (!(await ensureCanRequestAds())) { onDone&&onDone(false); return; }
+      var adConsent = await ensureCanRequestAds();
 
       var adId = AD_UNIT_ID_REWARDED;
 
@@ -702,7 +729,7 @@ function informCapBlocked() {
 
       await AdMob.prepareRewardVideoAd({
         adId: adId,
-        requestOptions: buildAdMobRequestOptions()
+        requestOptions: buildAdMobRequestOptions(adConsent.limited)
       });
 
       preShowAdCleanup();
@@ -897,13 +924,14 @@ function informCapBlocked() {
         return false;
       }
       if (!canShowInterstitialNow()) { return false; }
-      if (!(await ensureCanRequestAds())) { return false; }
+
+      var adConsent = await ensureCanRequestAds();
 
       var adId = AD_UNIT_ID_INTERSTITIEL;
 
       await AdMob.prepareInterstitial({
         adId: adId,
-        requestOptions: buildAdMobRequestOptions()
+        requestOptions: buildAdMobRequestOptions(adConsent.limited)
       });
 
       preShowAdCleanup();
