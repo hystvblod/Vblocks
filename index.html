@@ -564,7 +564,28 @@
         const seen = localStorage.getItem(KEY)==='1';
         const el = document.getElementById('onboarding');
         if(!el) return;
-        if(seen){ el.style.display='none'; el.setAttribute('aria-hidden','true'); return; }
+        if(seen){
+          el.style.display='none';
+          el.setAttribute('aria-hidden','true');
+
+          setTimeout(async () => {
+            try {
+              const info = await window.VRAds?.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
+
+              if (info && info.canRequestAds === false) {
+                try {
+                  await window.VRAds?.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
+                } catch (_) {}
+              }
+            } catch (_) {}
+
+            try {
+              await window.VROneSignal?.requestNativePermission?.();
+            } catch (_) {}
+          }, 250);
+
+          return;
+        }
         el.style.display='block'; el.setAttribute('aria-hidden','false');
 
         const track=document.getElementById('onb-track');

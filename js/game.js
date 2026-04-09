@@ -2389,6 +2389,26 @@ if (score > highscoreCloud) {
       updateHighscoreDisplay();
       refreshMusicBtn();
 
+      if (holdCanvas) {
+        holdCanvas.style.cursor = 'pointer';
+
+        let lastHoldTs = 0;
+        const triggerHold = (e) => {
+          e.preventDefault?.();
+          if (paused || gameOver || !currentPiece) return;
+
+          const now = Date.now();
+          if (now - lastHoldTs < 180) return;
+          lastHoldTs = now;
+
+          holdPieceSwapStay();
+          safeRedraw();
+        };
+
+        holdCanvas.addEventListener('click', triggerHold, { passive: false });
+        holdCanvas.addEventListener('touchstart', triggerHold, { passive: false });
+      }
+
       const savedLocal = loadSavedLocal();
       if (savedLocal) {
         showResumePopup(savedLocal);
