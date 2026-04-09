@@ -143,12 +143,19 @@
       font-size: 1em; font-weight: 700; margin-bottom: 2px; color: var(--panel-text, #39ff14);
       text-align: center;
     }
-    #holdCanvas, #nextCanvas {
-      background: var(--canvas-panel-bg, #161649);
-      border: 2px dashed var(--canvas-panel-border, #00fff7);
-      border-radius: 0.4em; box-shadow: 0 2px 7px #39ff1411;
-      display: block; margin: 0 auto;
-    }
+#holdCanvas, #nextCanvas {
+  background: var(--canvas-panel-bg, #161649);
+  border: 2px dashed var(--canvas-panel-border, #00fff7);
+  border-radius: 0.4em;
+  box-shadow: 0 2px 7px #39ff1411;
+  display: block;
+  margin: 0 auto;
+}
+
+#holdCanvas {
+  cursor: pointer;
+  touch-action: manipulation;
+}
     .game-flex-wrap {
       width: 100%; flex: 1 1 0; min-height: 0; min-width: 0;
       display: flex; justify-content: center; align-items: center;
