@@ -777,7 +777,7 @@ function informCapBlocked() {
       try {
         AdMob.prepareRewardVideoAd({
           adId: AD_UNIT_ID_REWARDED,
-          requestOptions: buildAdMobRequestOptions()
+          requestOptions: buildAdMobRequestOptions(true)
         }).catch(function(){});
       } catch(_) {}
     } finally {
@@ -949,14 +949,14 @@ function informCapBlocked() {
       if (res !== false) {
         markInterstitialShownNow();
         setTimeout(function(){
-          AdMob.prepareInterstitial({ adId: adId, requestOptions: buildAdMobRequestOptions() }).catch(function(){});
+          AdMob.prepareInterstitial({ adId: adId, requestOptions: buildAdMobRequestOptions(true) }).catch(function(){});
         }, 1200);
         return true;
       }
       return false;
     } catch (_e) {
       try {
-        AdMob.prepareInterstitial({ adId: AD_UNIT_ID_INTERSTITIEL, requestOptions: buildAdMobRequestOptions() }).catch(function(){});
+        AdMob.prepareInterstitial({ adId: AD_UNIT_ID_INTERSTITIEL, requestOptions: buildAdMobRequestOptions(true) }).catch(function(){});
       } catch(_) {}
       return false;
     } finally {
