@@ -237,6 +237,7 @@
   <script src="js/userData.js"></script>
   <!-- Charger i18n AVANT le script inline pour pouvoir l'appeler -->
   <script src="js/i18n.js"></script>
+  <script src="js/pub.js"></script>
 
   <script>
     // Appliquer la traduction au plus tôt
@@ -351,9 +352,20 @@ window.addEventListener("vblocks:i18n:changed", renderLanguageOptions);
         return;
       }
 
-      btn.disabled = false;
-      btn.style.opacity = "1";
-      btn.style.cursor = "pointer";
+      try {
+        const info = await window.VRAds.getGoogleConsentInfo(true);
+        const canOpen =
+          !!info &&
+          info.privacyOptionsRequirementStatus === "REQUIRED";
+
+        btn.disabled = !canOpen;
+        btn.style.opacity = canOpen ? "1" : "0.55";
+        btn.style.cursor = canOpen ? "pointer" : "default";
+      } catch (_) {
+        btn.disabled = true;
+        btn.style.opacity = "0.55";
+        btn.style.cursor = "default";
+      }
     }
 
     document.addEventListener("DOMContentLoaded", async function(){
@@ -385,14 +397,24 @@ window.addEventListener("vblocks:i18n:changed", renderLanguageOptions);
       const ghostToggle = document.getElementById('ghost-toggle');
       const ghostLabel  = document.getElementById('ghost-label');
       try {
-        const g = localStorage.getItem('ghostEnabled');
-        ghostToggle.checked = (g === null) ? true : (g === 'true');
-        ghostLabel.textContent = ghostToggle.checked ? (window.i18nGet ? window.i18nGet('settings.ghost.on') || 'Activée' : 'Activée')
-                                                     : (window.i18nGet ? window.i18nGet('settings.ghost.off') || 'Désactivée' : 'Désactivée');
+        let g = localStorage.getItem('ghostPiece');
+        if (g === null) g = localStorage.getItem('ghostEnabled');
+
+        ghostToggle.checked = (g === null) ? true : (g !== 'false');
+
+        function syncGhostLabel() {
+          ghostLabel.textContent = ghostToggle.checked
+            ? (window.i18nGet ? window.i18nGet('settings.ghost.on') || 'Activée' : 'Activée')
+            : (window.i18nGet ? window.i18nGet('settings.ghost.off') || 'Désactivée' : 'Désactivée');
+        }
+
+        syncGhostLabel();
+
         ghostToggle.addEventListener('change', function(){
-          localStorage.setItem('ghostEnabled', ghostToggle.checked ? 'true' : 'false');
-          ghostLabel.textContent = ghostToggle.checked ? (window.i18nGet ? window.i18nGet('settings.ghost.on') || 'Activée' : 'Activée')
-                                                       : (window.i18nGet ? window.i18nGet('settings.ghost.off') || 'Désactivée' : 'Désactivée');
+          const value = ghostToggle.checked ? 'true' : 'false';
+          localStorage.setItem('ghostPiece', value);
+          localStorage.setItem('ghostEnabled', value);
+          syncGhostLabel();
         });
       } catch(_){}
 
