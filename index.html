@@ -570,13 +570,7 @@
 
           setTimeout(async () => {
             try {
-              const info = await window.VRAds?.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
-
-              if (info && info.canRequestAds === false) {
-                try {
-                  await window.VRAds?.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
-                } catch (_) {}
-              }
+              await window.VRAds?.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
             } catch (_) {}
 
             try {
