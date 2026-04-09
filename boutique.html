@@ -271,6 +271,7 @@ function normalizeThemeKey(k){
 
 /* ---------- données UI (inchangées) ---------- */
 const THEMES = [
+  { key:"cyber", name:"Cyber" },
   { key:"neon", name:"Neon" },
   { key:"grece", name:"Grèce" },
   { key:"nature", name:"Nature" },
@@ -392,6 +393,7 @@ async function renderThemes(){
   await renderAchats();
   if (typeof window.bootstrapAuthAndProfile === 'function') { try{ await window.bootstrapAuthAndProfile(); }catch(_){} }
   const unlocked = await getUnlockedThemesNoSQL();
+  if (!unlocked.includes('cyber')) unlocked.unshift('cyber');
   const $themesList = document.getElementById('themes-list');
   const html = THEMES.map(theme=>{
     const isUnlocked = unlocked.includes(normalizeThemeKey(theme.key));
