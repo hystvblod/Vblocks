@@ -2391,10 +2391,14 @@ if (score > highscoreCloud) {
 
       if (holdCanvas) {
         holdCanvas.style.cursor = 'pointer';
+        holdCanvas.style.touchAction = 'manipulation';
 
         let lastHoldTs = 0;
+
         const triggerHold = (e) => {
           e.preventDefault?.();
+          e.stopPropagation?.();
+
           if (paused || gameOver || !currentPiece) return;
 
           const now = Date.now();
@@ -2405,8 +2409,12 @@ if (score > highscoreCloud) {
           safeRedraw();
         };
 
-        holdCanvas.addEventListener('click', triggerHold, { passive: false });
-        holdCanvas.addEventListener('touchstart', triggerHold, { passive: false });
+        holdCanvas.addEventListener('pointerdown', triggerHold, { passive: false });
+
+        if (!window.PointerEvent) {
+          holdCanvas.addEventListener('touchstart', triggerHold, { passive: false });
+          holdCanvas.addEventListener('mousedown', triggerHold, { passive: false });
+        }
       }
 
       const savedLocal = loadSavedLocal();

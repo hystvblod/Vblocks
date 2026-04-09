@@ -332,58 +332,55 @@ window.addEventListener("vblocks:i18n:changed", renderLanguageOptions);
       return false;
     }
 
-    async function syncAdsPrivacyUI() {
-      const group = document.getElementById("ads-privacy-group");
-      const btn = document.getElementById("ads-privacy-btn");
-      if (!group || !btn) return;
+async function syncAdsPrivacyUI() {
+  const group = document.getElementById("ads-privacy-group");
+  const btn = document.getElementById("ads-privacy-btn");
+  if (!group || !btn) return;
 
-      group.style.display = "";
+  group.style.display = "";
 
-      const nativeOk = isNativePlatformSafe();
-      const hasOfficialApi =
-        !!window.VRAds &&
-        typeof window.VRAds.getGoogleConsentInfo === "function" &&
-        typeof window.VRAds.showGooglePrivacyOptionsForm === "function";
+  const nativeOk = isNativePlatformSafe();
+  const hasOfficialApi =
+    !!window.VRAds &&
+    typeof window.VRAds.maybeShowGoogleConsentFormOnIndexAfterIntro === "function" &&
+    typeof window.VRAds.showGooglePrivacyOptionsForm === "function";
 
-      if (!nativeOk || !hasOfficialApi) {
-        btn.disabled = true;
-        btn.style.opacity = "0.55";
-        btn.style.cursor = "default";
-        return;
-      }
+  if (!nativeOk || !hasOfficialApi) {
+    btn.disabled = true;
+    btn.style.opacity = "0.55";
+    btn.style.cursor = "default";
+    return;
+  }
+
+  btn.disabled = false;
+  btn.style.opacity = "1";
+  btn.style.cursor = "pointer";
+}
+
+document.addEventListener("DOMContentLoaded", async function(){
+  await syncAdsPrivacyUI();
+
+  const btn = document.getElementById("ads-privacy-btn");
+  if (btn) {
+    btn.addEventListener("click", async function(){
+      if (btn.disabled) return;
 
       try {
-        const info = await window.VRAds.getGoogleConsentInfo(true);
-        const canOpen =
-          !!info &&
-          info.privacyOptionsRequirementStatus === "REQUIRED";
+        const opened = await window.VRAds.showGooglePrivacyOptionsForm();
 
-        btn.disabled = !canOpen;
-        btn.style.opacity = canOpen ? "1" : "0.55";
-        btn.style.cursor = canOpen ? "pointer" : "default";
+        if (!opened) {
+          await window.VRAds.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
+        }
       } catch (_) {
-        btn.disabled = true;
-        btn.style.opacity = "0.55";
-        btn.style.cursor = "default";
+        try {
+          await window.VRAds.maybeShowGoogleConsentFormOnIndexAfterIntro?.();
+        } catch (_) {}
       }
-    }
 
-    document.addEventListener("DOMContentLoaded", async function(){
       await syncAdsPrivacyUI();
-
-      const btn = document.getElementById("ads-privacy-btn");
-      if (btn) {
-        btn.addEventListener("click", async function(){
-          if (btn.disabled) return;
-
-          try {
-            await window.VRAds.showGooglePrivacyOptionsForm();
-          } catch (_) {}
-
-          await syncAdsPrivacyUI();
-        });
-      }
     });
+  }
+});
 
     document.addEventListener("visibilitychange", function(){
       if (!document.hidden) syncAdsPrivacyUI();
