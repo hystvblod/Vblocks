@@ -24,7 +24,7 @@
   var INTER_COOLDOWN_MS = 3 * 60 * 1000;       // minimum 3 minutes entre deux pubs
 
   // --- Timer auto hors jeu / index ---
-  var INTER_ECRAN_VISIBLE_MS = 4 * 60 * 1000;  // pub auto toutes les 4 minutes de temps d'écran visible
+  var INTER_ECRAN_VISIBLE_MS = 3 * 60 * 1000;  // pub auto toutes les 3 minutes de temps d'écran visible
   var INTER_ECRAN_TICK_MS = 15000;             // vérification légère toutes les 15s
 
   // --- Récompenses par défaut (affichage/UI) ---
@@ -843,6 +843,22 @@ function informCapBlocked() {
     );
   }
 
+  function isRealGameScreen() {
+    try {
+      var path = (location.pathname || '').toLowerCase();
+      return (
+        path.endsWith('/classic.html') ||
+        path.endsWith('/infini.html') ||
+        path.endsWith('/duel.html') ||
+        path.endsWith('/concours.html') ||
+        path.endsWith('/ads.html') ||
+        path.endsWith('/game.html')
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
   function getInterstitialScreenVisibleMs() {
     var total = interScreenVisibleMs;
     if (!document.hidden && interScreenLastResumeTs > 0) {
@@ -882,6 +898,7 @@ function informCapBlocked() {
 
   async function maybeShowInterstitialByScreenTime() {
     if (document.hidden) return false;
+    if (!isRealGameScreen()) return false;
     if (hasBlockingUiForAutoInterstitial()) return false;
     if (getInterstitialScreenVisibleMs() < INTER_ECRAN_VISIBLE_MS) return false;
     if (!canShowInterstitialNow()) return false;
