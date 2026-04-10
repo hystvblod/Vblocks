@@ -334,13 +334,23 @@ function renderCartouche(c, extraClass = ''){
   ].filter(Boolean).join(' ');
 
   if (isReward) {
+    const rewardAction =
+      c.key === "boutique.cartouche.pub1jeton"
+        ? 'data-action="reward-jeton"'
+        : c.key === "boutique.cartouche.pub300points"
+          ? 'data-action="reward-vcoins"'
+          : '';
+
     return `
-      <div class="special-cartouche ${c.color} ${classes}" ${c.productId ? `data-product-id="${c.productId}"` : ""}>
+      <div class="special-cartouche ${c.color} ${classes}"
+           ${c.productId ? `data-product-id="${c.productId}"` : ""}
+           data-reward-key="${c.key}"
+           ${rewardAction}>
         <div class="reward-top">
           <span class="theme-ico">${c.icon}</span>
           <span class="reward-amount">+ ${c.amount}</span>
         </div>
-        <span class="theme-label" data-i18n="end.reward.vcoins">${t('end.reward.vcoins')}</span>
+        <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
       </div>
     `;
   }
@@ -429,25 +439,40 @@ async function renderThemes(){
 /* ---------- pubs récompensées ---------- */
 function setupPubCartouches(){
   document.querySelectorAll('#achats-list .special-cartouche').forEach(cartouche=>{
-    const label = cartouche.querySelector('.theme-label'); if(!label) return;
-    const key = label.dataset.i18n;
+    const rewardKey =
+      cartouche.dataset.rewardKey ||
+      cartouche.querySelector('.theme-label')?.dataset?.i18n ||
+      '';
 
-    if (key==='boutique.cartouche.pub1jeton'){
-      cartouche.style.cursor='pointer';
+    if (rewardKey === 'boutique.cartouche.pub1jeton'){
+      cartouche.style.cursor = 'pointer';
       cartouche.onclick = async ()=>{
-        cartouche.onclick=null;
-        try{ await window.showRewardBoutique?.(); await renderThemes(); }
-        catch(e){ alert("Erreur : " + (e?.message||e)); }
-        finally{ setupPubCartouches(); }
+        cartouche.onclick = null;
+        try {
+          const ok = await window.showRewardBoutique?.();
+          if (!ok) throw new Error('Récompense jeton non validée');
+          await renderThemes();
+        } catch(e){
+          alert("Erreur : " + (e?.message || e));
+        } finally {
+          setupPubCartouches();
+        }
       };
     }
-    if (key==='boutique.cartouche.pub300points'){
-      cartouche.style.cursor='pointer';
+
+    if (rewardKey === 'boutique.cartouche.pub300points'){
+      cartouche.style.cursor = 'pointer';
       cartouche.onclick = async ()=>{
-        cartouche.onclick=null;
-        try{ await window.showRewardVcoins?.(); await renderThemes(); }
-        catch(e){ alert("Erreur : " + (e?.message||e)); }
-        finally{ setupPubCartouches(); }
+        cartouche.onclick = null;
+        try {
+          const ok = await window.showRewardVcoins?.();
+          if (!ok) throw new Error('Récompense VCoins non validée');
+          await renderThemes();
+        } catch(e){
+          alert("Erreur : " + (e?.message || e));
+        } finally {
+          setupPubCartouches();
+        }
       };
     }
   });
