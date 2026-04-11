@@ -10,13 +10,25 @@
   var App = (Capacitor.App) ? Capacitor.App
           : ((Capacitor.Plugins && Capacitor.Plugins.App) ? Capacitor.Plugins.App : null);
 
-  // ------- STRICT PROD -------
-  var __DEV_ADS__ = false;      // true pour tests locaux
-  var SHOW_DIAG_PANEL = false;  // overlay debug (laisse false en prod)
+  // ------- TEST / PROD -------
+  var USE_TEST_AD_IDS = true;   // true = IDs test Android Studio / false = tes vraies IDs
+  var __DEV_ADS__ = USE_TEST_AD_IDS;
+  var SHOW_DIAG_PANEL = false;
 
-  // --- Tes Ad Units réelles ---
-  var AD_UNIT_ID_INTERSTITIEL = 'ca-app-pub-6837328794080297/9890831605';
-  var AD_UNIT_ID_REWARDED     = 'ca-app-pub-6837328794080297/3006407791';
+  // --- IDs AdMob Android ---
+  var TEST_AD_UNIT_ID_INTERSTITIEL = 'ca-app-pub-3940256099942544/1033173712';
+  var TEST_AD_UNIT_ID_REWARDED     = 'ca-app-pub-3940256099942544/5224354917';
+
+  var PROD_AD_UNIT_ID_INTERSTITIEL = 'ca-app-pub-6837328794080297/9890831605';
+  var PROD_AD_UNIT_ID_REWARDED     = 'ca-app-pub-6837328794080297/3006407791';
+
+  var AD_UNIT_ID_INTERSTITIEL = USE_TEST_AD_IDS
+    ? TEST_AD_UNIT_ID_INTERSTITIEL
+    : PROD_AD_UNIT_ID_INTERSTITIEL;
+
+  var AD_UNIT_ID_REWARDED = USE_TEST_AD_IDS
+    ? TEST_AD_UNIT_ID_REWARDED
+    : PROD_AD_UNIT_ID_REWARDED;
 
   // --- Réglages interstitiels ---
   var INTERSTITIEL_APRES_X_ACTIONS = 2;        // pub au début de la 3e action réelle
@@ -358,13 +370,11 @@ function informCapBlocked() {
   }
 
   document.addEventListener('visibilitychange', function(){
-    if (document.hidden) {
-      stopInterstitialScreenClock();
-      return;
-    }
+    syncInterstitialClockForCurrentScreen();
 
-    startInterstitialScreenClock();
-    setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 800);
+    if (!document.hidden) {
+      setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 800);
+    }
 
     if (!isRewardShowing) postAdCleanup();
   });
@@ -374,7 +384,7 @@ function informCapBlocked() {
   });
 
   window.addEventListener('pageshow', function(){
-    startInterstitialScreenClock();
+    syncInterstitialClockForCurrentScreen();
     setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 800);
   });
 
@@ -384,7 +394,7 @@ function informCapBlocked() {
         stopInterstitialScreenClock();
       });
       App.addListener('resume', function(){
-        startInterstitialScreenClock();
+        syncInterstitialClockForCurrentScreen();
         setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 800);
       });
     }
@@ -859,6 +869,18 @@ function informCapBlocked() {
     }
   }
 
+  function syncInterstitialClockForCurrentScreen() {
+    if (document.hidden) {
+      stopInterstitialScreenClock();
+      return;
+    }
+    if (isRealGameScreen()) {
+      startInterstitialScreenClock();
+    } else {
+      stopInterstitialScreenClock();
+    }
+  }
+
   function getInterstitialScreenVisibleMs() {
     var total = interScreenVisibleMs;
     if (!document.hidden && interScreenLastResumeTs > 0) {
@@ -868,6 +890,8 @@ function informCapBlocked() {
   }
 
   function startInterstitialScreenClock() {
+    if (!isRealGameScreen()) return;
+
     if (!document.hidden && interScreenLastResumeTs <= 0) {
       interScreenLastResumeTs = Date.now();
       persistInterstitialScreenClock();
@@ -1088,7 +1112,7 @@ function informCapBlocked() {
     window.__ads_waiting_choice = !!isOpen;
   };
 
-  startInterstitialScreenClock();
+  syncInterstitialClockForCurrentScreen();
   setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 1200);
 
 })();
