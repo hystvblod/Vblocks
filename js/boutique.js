@@ -134,30 +134,6 @@
       }, { passive: false });
     });
 
-    // Pubs récompensées (si présentes en HTML)
-    const oneJeton = document.querySelector('[data-action="reward-jeton"]');
-    if (oneJeton) oneJeton.addEventListener('click', async (e) => {
-      e.preventDefault();
-      try {
-        if (typeof window.showRewardBoutique === 'function') await window.showRewardBoutique();
-      } catch (err) {
-        alert(t('pub.err','Publicité indisponible pour le moment.'));
-      } finally {
-        updateBalancesHeader();
-      }
-    });
-
-    const threeHundred = document.querySelector('[data-action="reward-vcoins"]');
-    if (threeHundred) threeHundred.addEventListener('click', async (e) => {
-      e.preventDefault();
-      try {
-        if (typeof window.showRewardVcoins === 'function') await window.showRewardVcoins();
-      } catch (err) {
-        alert(t('pub.err','Publicité indisponible pour le moment.'));
-      } finally {
-        updateBalancesHeader();
-      }
-    });
   }
 
   // ---------- Bootstrap (aucun rendu) ----------
