@@ -49,6 +49,9 @@
 
   // --- Flags d'état ---
   var isRewardShowing = false;
+  var currentAdKind = null;
+  var __showLock = false;
+
   window.__ads_active = false; // flag global anti-back/anti-overlays côté app
   var __googleConsentInfo = null;
   var __googleConsentInfoPromise = null;
@@ -72,8 +75,6 @@
 
   // ======================================================
   // ✅ CAP REWARDED : 10 / HEURE
-  //    - Stocke les timestamps d’ouvertures d’annonces rewarded
-  //    - Bloque proprement si la limite est atteinte
   // ======================================================
   var REWARD_CAP_PER_HOUR = 10;
   var REWARD_WINDOW_MS    = 60 * 60 * 1000;        // 1h rolling window
@@ -114,42 +115,40 @@
     var oldest = arr[0];
     return Math.max(0, REWARD_WINDOW_MS - (now - oldest));
   }
-function informCapBlocked() {
-  var ms = msUntilNextRewardSlot();
-  var min = Math.ceil(ms / 60000);
+  function informCapBlocked() {
+    var ms = msUntilNextRewardSlot();
+    var min = Math.ceil(ms / 60000);
 
-  var tpl = (min > 0)
-    ? (window.i18nGet ? i18nGet('ads.cap_try_in_min') : 'Limit reached: try again in ~{min} min')
-    : (window.i18nGet ? i18nGet('ads.cap_try_soon')   : 'Limit reached, try again soon');
+    var tpl = (min > 0)
+      ? (window.i18nGet ? i18nGet('ads.cap_try_in_min') : 'Limit reached: try again in ~{min} min')
+      : (window.i18nGet ? i18nGet('ads.cap_try_soon')   : 'Limit reached, try again soon');
 
-  var txt = String(tpl).replace('{min}', String(min));
+    var txt = String(tpl).replace('{min}', String(min));
 
-  if (typeof window.showToast === 'function') {
-    try { window.showToast(txt); } catch(_) {}
-  } else {
-    // fallback mini-toast DOM
-    try {
-      var id='__reward_cap_toast', el=document.getElementById(id);
-      if (!el) {
-        el = document.createElement('div');
-        el.id = id;
-        el.style.cssText =
-          'position:fixed;left:50%;bottom:12%;transform:translateX(-50%);' +
-          'background:rgba(0,0,0,.85);color:#fff;padding:10px 14px;border-radius:10px;' +
-          'font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;' +
-          'z-index:2147483647;max-width:80vw;text-align:center';
-        document.body.appendChild(el);
-      }
-      el.textContent = txt;
-      el.style.opacity = '1';
-      clearTimeout(el.__t1); clearTimeout(el.__t2);
-      el.__t1 = setTimeout(function(){ el.style.transition='opacity .25s'; el.style.opacity='0'; }, 2300);
-      el.__t2 = setTimeout(function(){ try{ el.remove(); }catch(_){} }, 2600);
-    } catch(_) {}
+    if (typeof window.showToast === 'function') {
+      try { window.showToast(txt); } catch(_) {}
+    } else {
+      try {
+        var id='__reward_cap_toast', el=document.getElementById(id);
+        if (!el) {
+          el = document.createElement('div');
+          el.id = id;
+          el.style.cssText =
+            'position:fixed;left:50%;bottom:12%;transform:translateX(-50%);' +
+            'background:rgba(0,0,0,.85);color:#fff;padding:10px 14px;border-radius:10px;' +
+            'font:14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;' +
+            'z-index:2147483647;max-width:80vw;text-align:center';
+          document.body.appendChild(el);
+        }
+        el.textContent = txt;
+        el.style.opacity = '1';
+        clearTimeout(el.__t1); clearTimeout(el.__t2);
+        el.__t1 = setTimeout(function(){ el.style.transition='opacity .25s'; el.style.opacity='0'; }, 2300);
+        el.__t2 = setTimeout(function(){ try{ el.remove(); }catch(_){} }, 2600);
+      } catch(_) {}
+    }
   }
-}
 
-  // Expose (utile pour UI/diag)
   window.getRewardedViewsLastHour = getRewardedViewsLastHour;
   window.msUntilNextRewardSlot    = msUntilNextRewardSlot;
   window.REWARD_CAP_PER_HOUR      = REWARD_CAP_PER_HOUR;
@@ -157,15 +156,13 @@ function informCapBlocked() {
   // =============================
   // Utils / Auth / Consent
   // =============================
-
-  // ✅ Auth lecture-seule (PAS d'upsert / PAS d'écriture client)
   async function ensureAuth() {
     const sb = window.sb;
     if (!sb || !sb.auth) return null;
 
     try {
       if (typeof window.bootstrapAuthAndProfile === 'function') {
-        await window.bootstrapAuthAndProfile(); // peut faire signInAnonymously en interne
+        await window.bootstrapAuthAndProfile();
       }
     } catch (_) {}
 
@@ -179,7 +176,7 @@ function informCapBlocked() {
   }
 
   function getPersonalizedAdsGrantedLegacy() {
-    var rgpd = localStorage.getItem('rgpdConsent'); // "accept"|"refuse"|null
+    var rgpd = localStorage.getItem('rgpdConsent');
     var adsConsent = (localStorage.getItem('adsConsent') || '').toLowerCase();
     var adsEnabled = (localStorage.getItem('adsEnabled') || '').toLowerCase();
     if (rgpd === 'refuse') return false;
@@ -252,23 +249,14 @@ function informCapBlocked() {
     var info = await getGoogleConsentInfo(false);
 
     if (!info) {
-      return {
-        allowed: true,
-        limited: true
-      };
+      return { allowed: true, limited: true };
     }
 
     if (info.canRequestAds) {
-      return {
-        allowed: true,
-        limited: false
-      };
+      return { allowed: true, limited: false };
     }
 
-    return {
-      allowed: true,
-      limited: true
-    };
+    return { allowed: true, limited: true };
   }
 
   async function maybeShowGoogleConsentFormOnIndexAfterIntro() {
@@ -435,6 +423,7 @@ function informCapBlocked() {
       var map = [
         ["interstitialAdShowed", function () {
           window.__ads_active = true;
+          currentAdKind = "interstitial";
           diag("Interstitial showed");
         }],
         ["interstitialAdDismissed", function () {
@@ -456,6 +445,7 @@ function informCapBlocked() {
 
         ["onRewardedVideoAdShowed", function () {
           window.__ads_active = true;
+          currentAdKind = "rewarded";
           diag("Rewarded showed");
         }],
         ["onRewardedVideoAdDismissed", function () {
@@ -531,7 +521,6 @@ function informCapBlocked() {
     }
   }
 
-  // ====== Helpers UI post-reward (non bloquants) ======
   function notifyRewardUI(b, type) {
     try {
       var msg = '';
@@ -590,7 +579,8 @@ function informCapBlocked() {
       var off = null, timer = null, resolved = false;
       try {
         off = AdMob.addListener('onAdFullScreenContentOpened', function () {
-          if (resolved) return; resolved = true;
+          if (resolved) return;
+          resolved = true;
           try { off && off.remove && off.remove(); } catch(_) {}
           if (timer) { clearTimeout(timer); timer = null; }
           resolve(true);
@@ -600,7 +590,8 @@ function informCapBlocked() {
         return;
       }
       timer = setTimeout(function(){
-        if (resolved) return; resolved = true;
+        if (resolved) return;
+        resolved = true;
         try { off && off.remove && off.remove(); } catch(_) {}
         resolve(false);
       }, timeoutMs || 4000);
@@ -666,7 +657,7 @@ function informCapBlocked() {
   }
 
   // =============================
-  // Crédit côté client (NO-SSV) — signature 3 params
+  // Crédit côté client (NO-SSV)
   // =============================
   async function creditRewardClientSide(type, amount) {
     var sb = window.sb;
@@ -692,25 +683,26 @@ function informCapBlocked() {
         if (r2 && r2.error) throw r2.error;
         return true;
       }
-      return true; // revive: pas de crédit numérique
+      return true;
     } catch (_e) {
       return false;
     }
   }
 
   // =============================
-  // Rewarded (LOAD/SHOW) — SANS SSV
-  //  ⚠️ Crédit déclenché sur onRewarded (fiable), pas sur dismissed
-  //  ⚠️ CAP 10/h appliqué AVANT l’appel, comptage à l’OUVERTURE
+  // Rewarded (LOAD/SHOW)
   // =============================
   async function showRewardedType(type, amount, onDone) {
     var unlocked = false;
     var watchdog = null;
+
     function unlockUI() {
       if (unlocked) return;
       unlocked = true;
       if (watchdog) { clearTimeout(watchdog); watchdog = null; }
       isRewardShowing = false;
+      currentAdKind = null;
+      __showLock = false;
       try { window.onRewardClosed && window.onRewardClosed(); } catch(_) {}
       postAdCleanup();
     }
@@ -720,8 +712,8 @@ function informCapBlocked() {
       if (!AdMob || !AdMob.prepareRewardVideoAd || !AdMob.showRewardVideoAd) {
         onDone&&onDone(false); return;
       }
+      if (__showLock) { onDone&&onDone(false); return; }
 
-      // ⛔ CAP REWARDED : bloque si limite atteinte
       if (!canShowRewardedNow()) {
         informCapBlocked();
         onDone && onDone(false);
@@ -742,6 +734,8 @@ function informCapBlocked() {
         requestOptions: buildAdMobRequestOptions(adConsent.limited)
       });
 
+      __showLock = true;
+      currentAdKind = "rewarded";
       preShowAdCleanup();
       isRewardShowing = true;
 
@@ -749,7 +743,6 @@ function informCapBlocked() {
 
       var showPromise = AdMob.showRewardVideoAd();
 
-      // 👉 Dès que l’annonce s’ouvre réellement, on compte pour le cap
       openedP.then(function(opened){ if (opened) markRewardedOpenedNow(); }).catch(function(){});
 
       if (String(type) === 'revive') {
@@ -795,17 +788,18 @@ function informCapBlocked() {
     }
   }
 
-  // Wrappers publics
   async function showRewardBoutique() {
     return new Promise(function(resolve){
       showRewardedType('jeton', window.REWARD_JETONS, function(ok){ resolve(!!ok); });
     });
   }
+
   async function showRewardVcoins() {
     return new Promise(function(resolve){
       showRewardedType('vcoin', window.REWARD_VCOINS, function(ok){ resolve(!!ok); });
     });
   }
+
   function showRewardRevive(onDone) {
     showRewardedType('revive', 1, function(ok){ try { onDone && onDone(!!ok); } catch(_){}; });
   }
@@ -965,9 +959,9 @@ function informCapBlocked() {
         return false;
       }
       if (!canShowInterstitialNow()) { return false; }
+      if (__showLock) { return false; }
 
       var adConsent = await ensureCanRequestAds();
-
       var adId = AD_UNIT_ID_INTERSTITIEL;
 
       await AdMob.prepareInterstitial({
@@ -975,14 +969,17 @@ function informCapBlocked() {
         requestOptions: buildAdMobRequestOptions(adConsent.limited)
       });
 
+      __showLock = true;
+      currentAdKind = "interstitial";
       preShowAdCleanup();
 
       watchdog = setTimeout(function(){
         postAdCleanup();
+        __showLock = false;
+        currentAdKind = null;
       }, 120000);
 
       var dismissedP = waitDismissedOnce("interstitial");
-
       var res = await AdMob.showInterstitial();
 
       await Promise.race([ dismissedP.catch(function(){}), waitAppReturnOnce() ]);
@@ -1002,6 +999,8 @@ function informCapBlocked() {
       return false;
     } finally {
       if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+      __showLock = false;
+      currentAdKind = null;
       postAdCleanup();
     }
   }
@@ -1009,10 +1008,7 @@ function informCapBlocked() {
   // =============================
   // Compteurs / Déclencheur interstitiels
   // =============================
-
-  // ➜ Nouvelle API claire : marquer UNIQUEMENT quand une game démarre vraiment
   async function adsMarkGameLaunched(mode) {
-    // ⛔ Reprise suite à revive : ignorer UNE action
     if (window.__ads_skip_next_action) {
       window.__ads_skip_next_action = false;
       return;
@@ -1026,54 +1022,41 @@ function informCapBlocked() {
 
     if (needAdByActions || needAdByTime) {
       var shown = await showInterstitial();
-
-      // si la pub a vraiment été affichée, les compteurs sont déjà remis à zéro
-      // et on ne recompte pas cette action pour éviter le spam
       if (shown) {
         return;
       }
     }
 
-    // Compte l'action réelle seulement si aucune pub n'a été affichée
     interActionsCount++;
     localStorage.setItem('inter_actions_count', String(interActionsCount));
   }
 
-  // Compat restreinte : modes
   function isModeInfini(m){ m=(m||'').toLowerCase(); return ['infini','infinite','endless'].includes(m); }
   function isModeClassique(m){ m=(m||'').toLowerCase(); return ['classique','classic','normal','arcade'].includes(m); }
   function isModeDuel(m){ m=(m||'').toLowerCase(); return ['duel','versus','vs','1v1','duo'].includes(m); }
 
-  // Ancien hook : conserve mais protège pour ne PAS compter les clics qui ouvrent une popup
   async function maybeShowInterBeforeAction(mode) {
     if (isModeDuel(mode)) return;
-
-    // ⛔ Popup ouverte (reprise ?): ne PAS compter
     if (window.__ads_waiting_choice) return;
-
-    // Délègue à la nouvelle API (action réelle)
     await adsMarkGameLaunched(mode);
   }
 
-  // =============================
-  // Wrappers "événements jeu" (à appeler au moment RÉEL du départ)
-  // =============================
   async function partieCommencee(mode){
     mode = String(mode || 'classique').toLowerCase();
-    // NE PAS compter si une popup va s'ouvrir : on comptera sur Reprendre/Recommencer
     if (window.__ads_waiting_choice) return;
     if (isModeInfini(mode) || isModeClassique(mode)) {
       await adsMarkGameLaunched(mode);
     }
   }
+
   async function partieReprisee(mode){
     mode = String(mode || 'classique').toLowerCase();
-    // La popup vient d'être validée → on la ferme côté flag
     window.__ads_waiting_choice = false;
     if (isModeInfini(mode) || isModeClassique(mode)) {
       await adsMarkGameLaunched(mode);
     }
   }
+
   async function partieRecommencee(mode){
     mode = String(mode || 'classique').toLowerCase();
     window.__ads_waiting_choice = false;
@@ -1081,6 +1064,7 @@ function informCapBlocked() {
       await adsMarkGameLaunched(mode);
     }
   }
+
   function partieTerminee(){}
 
   // =============================
@@ -1091,10 +1075,8 @@ function informCapBlocked() {
   window.showRewardVcoins     = showRewardVcoins;
   window.showRewardRevive     = showRewardRevive;
 
-  // ➜ Nouvelle API claire si tu veux l’appeler toi-même
   window.adsMarkGameLaunched  = adsMarkGameLaunched;
 
-  // ➜ Compat avec ton code existant
   window.partieCommencee      = partieCommencee;
   window.partieReprisee       = partieReprisee;
   window.partieRecommencee    = partieRecommencee;
@@ -1107,10 +1089,12 @@ function informCapBlocked() {
     showGooglePrivacyOptionsForm: showGooglePrivacyOptionsForm
   });
 
-  // (Optionnel) expose un helper pour ton UI de reprise
   window.adsSetResumePopupOpen = function (isOpen) {
     window.__ads_waiting_choice = !!isOpen;
   };
+
+  // expose pour le preload du 2e bloc
+  window.USE_TEST_AD_IDS = USE_TEST_AD_IDS;
 
   syncInterstitialClockForCurrentScreen();
   setTimeout(function(){ maybeShowInterstitialByScreenTime().catch(function(){}); }, 1200);
@@ -1121,14 +1105,13 @@ function informCapBlocked() {
 (function () {
   'use strict';
 
-  // Récup plugin sans casser tes variables
   var Cap = (window.Capacitor || {});
   var AdMob = (Cap.Plugins && Cap.Plugins.AdMob) ? Cap.Plugins.AdMob : (window.AdMob || null);
 
-  // ⚠️ On reprend ton ad unit rewarded tel quel (même valeur que dans le fichier ci-dessus)
- var REWARDED_ID = AD_UNIT_ID_REWARDED;
+  var REWARDED_ID = window.USE_TEST_AD_IDS
+    ? 'ca-app-pub-3940256099942544/5224354917'
+    : 'ca-app-pub-6837328794080297/3006407791';
 
-  // Petits flags internes au preload (ne touchent pas tes variables)
   var __rewardReady = false;
   var __rewardLoading = false;
 
@@ -1137,14 +1120,12 @@ function informCapBlocked() {
       if (window.Capacitor && typeof window.Capacitor.getPlatform === 'function') {
         return window.Capacitor.getPlatform() !== 'web';
       }
-      if (Capacitor && Capacitor.isNativePlatform) return Capacitor.isNativePlatform();
+      if (Cap && Cap.isNativePlatform) return Cap.isNativePlatform();
     } catch (_) {}
     return !!(window.cordova && typeof window.cordova.platformId === 'string');
   }
 
   function buildReq() {
-    // si ta fonction existe dans le scope global, on l’utilise
-    try { if (typeof window.buildAdMobRequestOptions === 'function') return window.buildAdMobRequestOptions(); } catch(_){}
     return {};
   }
 
@@ -1152,9 +1133,9 @@ function informCapBlocked() {
     if (!isNative()) return;
     if (!AdMob || !REWARDED_ID) return;
     if (__rewardReady || __rewardLoading) return;
+
     __rewardLoading = true;
     try {
-      // Compat différentes APIs
       if (AdMob.loadRewardedAd) {
         await AdMob.loadRewardedAd({ adId: REWARDED_ID, requestOptions: buildReq() });
       } else if (AdMob.prepareRewardVideoAd) {
@@ -1171,10 +1152,8 @@ function informCapBlocked() {
     }
   }
 
-  // Expose un hook global SANS toucher à tes flux existants
   window.preloadRewardAds = preloadReward;
 
-  // Précharge automatiquement au bon moment, sans modifier ton init
   document.addEventListener('deviceready', function () {
     try { preloadReward(); } catch (_) {}
     var timer = setInterval(function () {
@@ -1183,7 +1162,6 @@ function informCapBlocked() {
     }, 20000);
   });
 
-  // Bonus: si la page arrive avant deviceready, on tente un petit preload
   document.addEventListener('DOMContentLoaded', function () {
     try { preloadReward(); } catch (_) {}
   });
