@@ -1126,7 +1126,7 @@ function informCapBlocked() {
   var AdMob = (Cap.Plugins && Cap.Plugins.AdMob) ? Cap.Plugins.AdMob : (window.AdMob || null);
 
   // ⚠️ On reprend ton ad unit rewarded tel quel (même valeur que dans le fichier ci-dessus)
-  var REWARDED_ID = 'ca-app-pub-6837328794080297/3006407791';
+ var REWARDED_ID = AD_UNIT_ID_REWARDED;
 
   // Petits flags internes au preload (ne touchent pas tes variables)
   var __rewardReady = false;
