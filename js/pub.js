@@ -11,7 +11,7 @@
           : ((Capacitor.Plugins && Capacitor.Plugins.App) ? Capacitor.Plugins.App : null);
 
   // ------- TEST / PROD -------
-  var USE_TEST_AD_IDS = true;   // true = IDs test Android Studio / false = tes vraies IDs
+  var USE_TEST_AD_IDS = false;   // true = IDs test Android Studio / false = tes vraies IDs
   var __DEV_ADS__ = USE_TEST_AD_IDS;
   var SHOW_DIAG_PANEL = false;
 
