@@ -2026,7 +2026,10 @@ if (score > highscoreCloud) {
 
     // ===== Repeat horizontal tactile =====
     let horizontalRepeatInterval = null;
+    let horizontalRepeatKickoff = null;
     let horizontalRepeatDirection = 0;
+    const INITIAL_REPEAT_DELAY = 100; // délai avant répétition (ms)
+    const REPEAT_INTERVAL = 55; // cadence pendant maintien (ms)
 
     function startHorizontalRepeat(direction) {
       if (paused || gameOver || window.__ads_active) return;
@@ -2040,16 +2043,24 @@ if (score > highscoreCloud) {
       move(direction);
       safeRedraw();
 
-      horizontalRepeatInterval = setInterval(() => {
-        if (!paused && !gameOver && !window.__ads_active) {
-          move(direction);
-          safeRedraw();
-        }
-      }, 120);
+      horizontalRepeatKickoff = setTimeout(() => {
+        horizontalRepeatKickoff = null;
+        horizontalRepeatInterval = setInterval(() => {
+          if (!paused && !gameOver && !window.__ads_active) {
+            move(direction);
+            safeRedraw();
+          }
+        }, REPEAT_INTERVAL);
+      }, INITIAL_REPEAT_DELAY);
     }
 
     function stopHorizontalRepeat() {
       horizontalRepeatDirection = 0;
+
+      if (horizontalRepeatKickoff) {
+        clearTimeout(horizontalRepeatKickoff);
+        horizontalRepeatKickoff = null;
+      }
 
       if (horizontalRepeatInterval) {
         clearInterval(horizontalRepeatInterval);
@@ -2101,7 +2112,6 @@ if (score > highscoreCloud) {
     let gestureMode = 'none';
     const HORIZ_THRESHOLD = 20;
     const DEAD_ZONE = 10;
-    const VERTICAL_LOCK_EARLY_MS = 140;
     const HOLD_ACTIVATION_MS = 180;
 
     let didHardDrop = false;
@@ -2178,7 +2188,7 @@ if (score > highscoreCloud) {
         return;
       }
 
-      if (gestureMode === 'vertical' || isSoftDropping || elapsed >= VERTICAL_LOCK_EARLY_MS) {
+      if (gestureMode === 'vertical' || isSoftDropping) {
         gestureMode = 'vertical';
         rotationLocked = true;
         stopHorizontalRepeat();
