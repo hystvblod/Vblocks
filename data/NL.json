@@ -291,5 +291,9 @@
   "referral.link_copied": "Link gekopieerd",
   "referral.crosspromo_desc": "Nodig een vriend uit om VBlocks te installeren en verdien een beloning.",
   "referral.android_only_popup.text": "Alleen de Android-versie is momenteel beschikbaar. De iOS-versie is in ontwikkeling en kan nog niet worden gedownload.",
-  "common.continue": "Doorgaan"
+  "common.continue": "Doorgaan",
+  "duel.rematch": "Rematch",
+  "duel.rematch.sent": "Rematch-verzoek verzonden",
+  "duel.rematch.ask": "Je tegenstander wil een rematch. Accepteren?",
+  "duel.rematch.error": "Kan nu geen rematch starten."
 }

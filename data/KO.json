@@ -291,5 +291,9 @@
   "referral.link_copied": "링크가 복사되었습니다",
   "referral.crosspromo_desc": "친구를 VBlocks 설치에 초대하고 보상을 받으세요.",
   "referral.android_only_popup.text": "현재는 Android 버전만 이용할 수 있습니다. iOS 버전은 개발 중이며 아직 다운로드할 수 없습니다.",
-  "common.continue": "계속"
+  "common.continue": "계속",
+  "duel.rematch": "재대결",
+  "duel.rematch.sent": "재대결 요청을 보냈습니다",
+  "duel.rematch.ask": "상대가 재대결을 원합니다. 수락할까요?",
+  "duel.rematch.error": "지금은 재대결을 시작할 수 없습니다."
 }

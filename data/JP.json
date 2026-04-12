@@ -291,5 +291,9 @@
   "referral.link_copied": "リンクをコピーしました",
   "referral.crosspromo_desc": "友だちを VBlocks のインストールに招待して、報酬を獲得しよう。",
   "referral.android_only_popup.text": "現在利用できるのは Android 版のみです。iOS 版は開発中で、まだダウンロードできません。",
-  "common.continue": "続行"
+  "common.continue": "続行",
+  "duel.rematch": "再戦",
+  "duel.rematch.sent": "再戦リクエストを送信しました",
+  "duel.rematch.ask": "相手が再戦を希望しています。受けますか？",
+  "duel.rematch.error": "今は再戦を開始できません。"
 }

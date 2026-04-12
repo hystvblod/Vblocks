@@ -160,18 +160,51 @@ function fillRectThemeSafe(c, px, py, size) {
       c2d.restore();
     }
 
+    const mainContent = document.querySelector('.main-content');
+    let resizeRAF = null;
+
     function fitCanvasToCSS() {
-      const rect = canvas.getBoundingClientRect();
-      const cssW = Math.round(rect.width);
+      const cssW = Math.round(canvas.clientWidth || canvas.getBoundingClientRect().width);
+      if (!cssW) return;
+
       BLOCK_SIZE = cssW / COLS;
+
       const usedW = BLOCK_SIZE * COLS;
       const usedH = BLOCK_SIZE * ROWS;
 
       canvas.style.height = usedH + 'px';
-      canvas.width  = Math.round(usedW * DPR);
+      canvas.width = Math.round(usedW * DPR);
       canvas.height = Math.round(usedH * DPR);
+
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
+
+    function fitWholeGameUI() {
+      if (!mainContent) return;
+
+      mainContent.style.transform = 'scale(1)';
+      mainContent.style.marginTop = '0px';
+
+      requestAnimationFrame(() => {
+        const vv = window.visualViewport;
+        const viewportW = Math.round(vv?.width || window.innerWidth || 430);
+        const viewportH = Math.round(vv?.height || window.innerHeight || 800);
+
+        const baseW = mainContent.offsetWidth || 430;
+        const baseH = Math.max(mainContent.scrollHeight, mainContent.offsetHeight, 1);
+        const FIT_BOTTOM_BUFFER = 30;
+
+        const scale = Math.min(
+          viewportW / baseW,
+          (viewportH - FIT_BOTTOM_BUFFER) / baseH,
+          1
+        );
+
+        mainContent.style.transform = `scale(${scale})`;
+        mainContent.style.marginTop = '0px';
+      });
+    }
+
     function boardOffsets() {
       const cssW = canvas.width / DPR;
       const cssH = canvas.height / DPR;
@@ -192,11 +225,49 @@ function fillRectThemeSafe(c, px, py, size) {
     fitCanvasToCSS();
     sizeMiniCanvas(holdCanvas, holdCtx, 48);
     sizeMiniCanvas(nextCanvas, nextCtx, 48);
-    window.addEventListener('resize', () => {
+    fitWholeGameUI();
+
+    window.addEventListener('load', () => {
       fitCanvasToCSS();
       sizeMiniCanvas(holdCanvas, holdCtx, 48);
       sizeMiniCanvas(nextCanvas, nextCtx, 48);
-      safeRedraw();
+      fitWholeGameUI();
+    });
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        fitCanvasToCSS();
+        sizeMiniCanvas(holdCanvas, holdCtx, 48);
+        sizeMiniCanvas(nextCanvas, nextCtx, 48);
+        fitWholeGameUI();
+      });
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        fitCanvasToCSS();
+        fitWholeGameUI();
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(resizeRAF);
+      resizeRAF = requestAnimationFrame(() => {
+        if (mainContent) {
+          mainContent.style.transform = 'scale(1)';
+          mainContent.style.marginTop = '0px';
+        }
+
+        fitCanvasToCSS();
+        sizeMiniCanvas(holdCanvas, holdCtx, 48);
+        sizeMiniCanvas(nextCanvas, nextCtx, 48);
+
+        safeRedraw();
+        drawMiniPiece(holdCtx, heldPiece);
+        drawMiniPiece(nextCtx, nextPiece);
+
+        fitWholeGameUI();
+      });
     });
 
     // ====== Thèmes & assets ======
@@ -433,6 +504,94 @@ function fillRectThemeSafe(c, px, py, size) {
       return piecesSequence[piecesUsed++];
     }
 
+    async function requestRematch() {
+      try {
+        const uid = (window.getUserId ? await window.getUserId() : null);
+        if (!uid || !duelId) return;
+
+        const newCode = (typeof window.genDuelCode === 'function')
+          ? window.genDuelCode()
+          : Math.random().toString(36).slice(2, 8).toUpperCase();
+
+        const { data: created, error: createErr } = await sb.from('duels').insert([{
+          code: newCode,
+          player1: uid,
+          status: 'waiting'
+        }]).select().single();
+
+        if (createErr || !created?.id) {
+          console.error('[DUEL] create rematch failed', createErr);
+          alert(t('duel.rematch.error'));
+          return;
+        }
+
+        const { error: updErr } = await sb.from('duels')
+          .update({
+            rematch_requested_by: uid,
+            rematch_status: 'pending',
+            rematch_code: newCode
+          })
+          .eq('id', duelId);
+
+        if (updErr) {
+          console.error('[DUEL] update rematch failed', updErr);
+          alert(t('duel.rematch.error'));
+          return;
+        }
+
+        alert(t('duel.rematch.sent'));
+        pollRematch();
+      } catch (e) {
+        console.error(e);
+        alert(t('duel.rematch.error'));
+      }
+    }
+
+    async function pollRematch() {
+      let tries = 0;
+      while (tries++ < 120) {
+        const { data } = await sb.from('duels').select('*').eq('id', duelId).single();
+        if (!data) {
+          await new Promise(r => setTimeout(r, 1500));
+          continue;
+        }
+
+        if (data.rematch_status === 'accepted' && data.rematch_code) {
+          const uid = (window.getUserId ? await window.getUserId() : null);
+
+          let player = 2;
+          if (data.rematch_requested_by === uid) player = 1;
+
+          window.location.href = `duel.html?duel=${data.rematch_code}&player=${player}`;
+          return;
+        }
+
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    }
+
+    async function watchIncomingRematchProposal() {
+      let tries = 0;
+      while (tries++ < 120) {
+        const uid = (window.getUserId ? await window.getUserId() : null);
+        const { data } = await sb.from('duels').select('*').eq('id', duelId).single();
+
+        if (data && data.rematch_status === 'pending' && data.rematch_requested_by && data.rematch_requested_by !== uid && data.rematch_code) {
+          const accept = confirm(t('duel.rematch.ask'));
+          if (!accept) return;
+
+          await sb.from('duels')
+            .update({ rematch_status: 'accepted' })
+            .eq('id', duelId);
+
+          window.location.href = `duel.html?duel=${data.rematch_code}&player=2`;
+          return;
+        }
+
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    }
+
     async function handleDuelEnd(myScore) {
       const field = (duelPlayerNum === 1) ? 'score1' : 'score2';
       await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
@@ -455,14 +614,33 @@ function fillRectThemeSafe(c, px, py, size) {
       div.innerHTML = `
         <div style="background:#23294a;padding:2em 2em 1.1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;min-width:280px;max-width:92vw;">
           <div style="font-weight:bold;font-size:1.12em;">${t('duel.finished')}</div>
+
           <div style="margin-top:10px;">${t('duel.yourscore')} <b>${myScore}</b></div>
           <div>${t('duel.opponentscore')} <b>${otherScore != null ? otherScore : t('duel.waiting')}</b></div>
+
+          <button
+            id="duel-rematch-btn"
+            style="
+              width:100%;
+              margin-top:16px;
+              padding:.9em 1em;
+              border-radius:1em;
+              border:none;
+              background:linear-gradient(180deg,#ff9f2f 0%,#ff7b1e 100%);
+              color:#fff;
+              cursor:pointer;
+              font-weight:800;
+              box-shadow:0 0 14px rgba(255,160,60,.45);
+            "
+          >
+            ${t('duel.rematch')}
+          </button>
 
           <button
             id="duel-reward-vcoins"
             style="
               width:100%;
-              margin-top:16px;
+              margin-top:12px;
               padding:.85em 1em;
               border-radius:1em;
               border:none;
@@ -477,10 +655,10 @@ function fillRectThemeSafe(c, px, py, size) {
               font-weight:700;
             "
           >
-            <span>${t('end.reward.vcoins','Regarder une pub')}</span>
+            <span>${t('end.reward.vcoins')}</span>
             <span style="display:flex;align-items:center;gap:8px;font-weight:800;">
               <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
-              <span>+${rewardAmount} ${t('wallet.vcoins','VCoins')}</span>
+              <span>+${rewardAmount} ${t('wallet.vcoins')}</span>
             </span>
           </button>
 
@@ -497,16 +675,17 @@ function fillRectThemeSafe(c, px, py, size) {
 
       const btnReward = document.getElementById('duel-reward-vcoins');
       const btnBack = document.getElementById('duel-back-home');
+      const btnRematch = document.getElementById('duel-rematch-btn');
 
-      if (btnReward?.animate) {
-        btnReward.animate(
+      if (btnRematch?.animate) {
+        btnRematch.animate(
           [
-            { transform: 'scale(1)', boxShadow: '0 0 12px #39f7' },
-            { transform: 'scale(1.04)', boxShadow: '0 0 24px #39f7' },
-            { transform: 'scale(1)', boxShadow: '0 0 12px #39f7' }
+            { transform: 'scale(1)', boxShadow: '0 0 14px rgba(255,160,60,.35)' },
+            { transform: 'scale(1.05)', boxShadow: '0 0 24px rgba(255,160,60,.65)' },
+            { transform: 'scale(1)', boxShadow: '0 0 14px rgba(255,160,60,.35)' }
           ],
           {
-            duration: 1600,
+            duration: 1400,
             iterations: Infinity,
             easing: 'ease-in-out'
           }
@@ -514,8 +693,22 @@ function fillRectThemeSafe(c, px, py, size) {
       }
 
       if (btnBack) {
-        btnBack.onclick = function () {
-          window.location.href = 'index.html';
+        const goHome = function (e) {
+          e?.preventDefault?.();
+          e?.stopPropagation?.();
+          window.location.replace('index.html');
+        };
+
+        btnBack.addEventListener('click', goHome, { passive: false });
+        btnBack.addEventListener('touchend', goHome, { passive: false });
+        btnBack.style.touchAction = 'manipulation';
+      }
+
+      if (btnRematch) {
+        btnRematch.onclick = async function () {
+          btnRematch.disabled = true;
+          btnRematch.style.opacity = '.7';
+          await requestRematch();
         };
       }
 
@@ -548,10 +741,12 @@ function fillRectThemeSafe(c, px, py, size) {
           } catch (_) {
             btnReward.disabled = false;
             btnReward.style.opacity = '1';
-            alert(t('pub.err','Publicité indisponible pour le moment.'));
+            alert(t('pub.err'));
           }
         };
       }
+
+      watchIncomingRematchProposal();
     }
 
     function showEndPopup(points) {
