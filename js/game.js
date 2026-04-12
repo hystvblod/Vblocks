@@ -2208,6 +2208,7 @@ if (score > highscoreCloud) {
     let gestureMode = 'none';
     const HORIZ_THRESHOLD = 20;
     const DEAD_ZONE = 10;
+    const VERTICAL_LOCK_EARLY_MS = 140;
     const HOLD_ACTIVATION_MS = 180;
 
     let didHardDrop = false;
@@ -2284,7 +2285,7 @@ if (score > highscoreCloud) {
         return;
       }
 
-      if (gestureMode === 'vertical' || isSoftDropping) {
+      if (gestureMode === 'vertical' || isSoftDropping || elapsed >= VERTICAL_LOCK_EARLY_MS) {
         gestureMode = 'vertical';
         rotationLocked = true;
         stopHorizontalRepeat();
