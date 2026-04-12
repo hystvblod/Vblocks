@@ -1177,106 +1177,7 @@ overlay.querySelector('#resume-yes').onclick = () => {
         });
       }
 
-async function doRewindWithAd() {
-  window.__ads_active = true;
-  window.__ads_freeze = true;
 
-  const resetAds = () => {
-    window.__ads_active = false;
-    window.__ads_freeze = false;
-  };
-
-  if (typeof window.showRewardRevive === 'function') {
-    const ok = await new Promise(resolve => {
-      try { window.showRewardRevive(closedOk => resolve(!!closedOk)); }
-      catch (_) { resolve(false); }
-    });
-
-    resetAds();
-    if (!ok) return;
-
-    rewindHistoryAndResume(5, 3);
-    return;
-  }
-
-  await showInterstitial();
-  resetAds();
-  rewindHistoryAndResume(5, 3);
-}
-
-function showRewindConfirmPopup() {
-  const oldPopup = document.getElementById('rewind-confirm-popup');
-  if (oldPopup) oldPopup.remove();
-
-  paused = true;
-  stopSoftDrop();
-  stopHorizontalRepeat();
-  safeRedraw();
-
-  const popup = document.createElement('div');
-  popup.id = 'rewind-confirm-popup';
-  popup.style = `
-    position: fixed;
-    inset: 0;
-    z-index: 100000;
-    background: rgba(0,0,0,.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  `;
-
-  popup.innerHTML = `
-    <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
-      <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">${tt('rewind.title','Retour arrière')}</div>
-
-      <div style="opacity:.96;line-height:1.42;margin-bottom:14px;">
-        ${tt('rewind.body','Utiliser 1 jeton pour revenir 5 pièces en arrière ?')}
-      </div>
-
-      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;">
-        <img src="assets/images/jeton.webp" alt="" style="width:26px;height:26px;object-fit:contain;">
-        <span style="font-weight:800;">1</span>
-      </div>
-
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button id="rewind-confirm-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">
-          ${tt('rewind.confirm','Utiliser 1 jeton')}
-        </button>
-
-        <button id="rewind-cancel-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#444;color:#fff;cursor:pointer;">
-          ${tt('common.cancel','Annuler')}
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(popup);
-
-  const closeOnly = () => popup.remove();
-
-  popup.querySelector('#rewind-cancel-btn')?.addEventListener('click', closeOnly);
-  popup.addEventListener('click', (e) => {
-    if (e.target === popup) closeOnly();
-  });
-
-  popup.querySelector('#rewind-confirm-btn')?.addEventListener('click', async () => {
-    const okTok = await useJeton();
-
-    popup.remove();
-
-    if (!okTok) {
-      showNoJetonPopup({
-        title: tt('rewind.no_token.title', 'Tu n\'as plus de jeton'),
-        body: tt('rewind.no_token.body', 'Regarde une pub pour revenir 5 pièces en arrière ou va à la boutique.'),
-        actionLabel: tt('common.watch_ad', 'Regarder une pub'),
-        onWatchAd: async () => { await doRewindWithAd(); }
-      });
-      return;
-    }
-
-    rewindHistoryAndResume(5, 3);
-  });
-}
 
       launchEndConfetti();
 
@@ -1511,6 +1412,107 @@ function showRewindConfirmPopup() {
       if (!paused && !gameOver) requestAnimationFrame(update);
     }
     global.togglePause = togglePause;
+
+async function doRewindWithAd() {
+  window.__ads_active = true;
+  window.__ads_freeze = true;
+
+  const resetAds = () => {
+    window.__ads_active = false;
+    window.__ads_freeze = false;
+  };
+
+  if (typeof window.showRewardRevive === 'function') {
+    const ok = await new Promise(resolve => {
+      try { window.showRewardRevive(closedOk => resolve(!!closedOk)); }
+      catch (_) { resolve(false); }
+    });
+
+    resetAds();
+    if (!ok) return;
+
+    rewindHistoryAndResume(5, 3);
+    return;
+  }
+
+  await showInterstitial();
+  resetAds();
+  rewindHistoryAndResume(5, 3);
+}
+
+function showRewindConfirmPopup() {
+  const oldPopup = document.getElementById('rewind-confirm-popup');
+  if (oldPopup) oldPopup.remove();
+
+  paused = true;
+  stopSoftDrop();
+  stopHorizontalRepeat();
+  safeRedraw();
+
+  const popup = document.createElement('div');
+  popup.id = 'rewind-confirm-popup';
+  popup.style = `
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  popup.innerHTML = `
+    <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
+      <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">${tt('rewind.title','Retour arrière')}</div>
+
+      <div style="opacity:.96;line-height:1.42;margin-bottom:14px;">
+        ${tt('rewind.body','Utiliser 1 jeton pour revenir 5 pièces en arrière ?')}
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;">
+        <img src="assets/images/jeton.webp" alt="" style="width:26px;height:26px;object-fit:contain;">
+        <span style="font-weight:800;">1</span>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button id="rewind-confirm-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">
+          ${tt('rewind.confirm','Utiliser 1 jeton')}
+        </button>
+
+        <button id="rewind-cancel-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#444;color:#fff;cursor:pointer;">
+          ${tt('common.cancel','Annuler')}
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  const closeOnly = () => popup.remove();
+
+  popup.querySelector('#rewind-cancel-btn')?.addEventListener('click', closeOnly);
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup) closeOnly();
+  });
+
+  popup.querySelector('#rewind-confirm-btn')?.addEventListener('click', async () => {
+    const okTok = await useJeton();
+
+    popup.remove();
+
+    if (!okTok) {
+      showNoJetonPopup({
+        title: tt('rewind.no_token.title', 'Tu n\'as plus de jeton'),
+        body: tt('rewind.no_token.body', 'Regarde une pub pour revenir 5 pièces en arrière ou va à la boutique.'),
+        actionLabel: tt('common.watch_ad', 'Regarder une pub'),
+        onWatchAd: async () => { await doRewindWithAd(); }
+      });
+      return;
+    }
+
+    rewindHistoryAndResume(5, 3);
+  });
+}
 
     setTimeout(() => {
       const btnPause = document.getElementById('pause-btn');
