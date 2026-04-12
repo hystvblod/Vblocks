@@ -1866,8 +1866,8 @@ function fillRectThemeSafe(c, px, py, size) {
     const VERTICAL_LOCK_EARLY_MS = 140;
 
     // === AUTO-REPEAT HORIZONTAL (glissement continu) ===
-    const INITIAL_REPEAT_DELAY = 180; // délai avant répétition (ms)
-    const REPEAT_INTERVAL = 60;       // cadence pendant maintien (ms)
+    const INITIAL_REPEAT_DELAY = 100; // délai avant répétition (ms)
+    const REPEAT_INTERVAL = 55;       // cadence pendant maintien (ms)
     let horizDir = 0;                 // -1 gauche, 1 droite, 0 neutre
     let repeatKickoff = null;
     let repeatTicker = null;
@@ -1974,7 +1974,7 @@ function fillRectThemeSafe(c, px, py, size) {
       }
 
       // Passage en vertical
-      if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
+      if (gestureMode === 'vertical' || softDropActive) {
         gestureMode = 'vertical';
         rotationLocked = true; // 🔒 pendant vertical/softdrop
         stopHorizontalRepeat();
