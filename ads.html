@@ -1864,29 +1864,38 @@ if (score > highscoreCloud) {
     // ===== Repeat horizontal tactile =====
     let horizontalRepeatInterval = null;
     let horizontalRepeatDirection = 0;
+    let horizontalRepeatKickoff = null;
 
     function startHorizontalRepeat(direction) {
       if (paused || gameOver || window.__ads_active) return;
       if (direction !== -1 && direction !== 1) return;
 
-      if (horizontalRepeatDirection === direction && horizontalRepeatInterval) return;
+      if (
+        horizontalRepeatDirection === direction &&
+        (horizontalRepeatInterval || horizontalRepeatKickoff)
+      ) return;
 
       stopHorizontalRepeat();
       horizontalRepeatDirection = direction;
 
-      move(direction);
-      safeRedraw();
+      horizontalRepeatKickoff = setTimeout(() => {
+        horizontalRepeatKickoff = null;
 
-      horizontalRepeatInterval = setInterval(() => {
-        if (!paused && !gameOver && !window.__ads_active) {
-          move(direction);
-          safeRedraw();
-        }
-      }, 120);
+        horizontalRepeatInterval = setInterval(() => {
+          if (!paused && !gameOver && !window.__ads_active) {
+            move(direction);
+          }
+        }, 60);
+      }, 180);
     }
 
     function stopHorizontalRepeat() {
       horizontalRepeatDirection = 0;
+
+      if (horizontalRepeatKickoff) {
+        clearTimeout(horizontalRepeatKickoff);
+        horizontalRepeatKickoff = null;
+      }
 
       if (horizontalRepeatInterval) {
         clearInterval(horizontalRepeatInterval);
@@ -2039,13 +2048,17 @@ if (score > highscoreCloud) {
       }
 
       if (gestureMode === 'horizontal') {
-        if (movedX > HORIZ_THRESHOLD) {
+        if (movedX > HORIZ_THRESHOLD)  {
+          move(1);
+          startX = t.clientX;
           startHorizontalRepeat(1);
-          startX = t.clientX;
         } else if (movedX < -HORIZ_THRESHOLD) {
-          startHorizontalRepeat(-1);
+          move(-1);
           startX = t.clientX;
-        } else {
+          startHorizontalRepeat(-1);
+        }
+
+        if (Math.abs(movedX) <= HORIZ_THRESHOLD) {
           stopHorizontalRepeat();
         }
 
