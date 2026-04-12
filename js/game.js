@@ -1124,9 +1124,16 @@ overlay.querySelector('#resume-yes').onclick = () => {
           try { layer.innerHTML = ''; } catch (_) {}
         }, 6500);
       }
-      function showNoJetonPopup() {
+      function showNoJetonPopup(opts = {}) {
         const oldMini = document.getElementById('no-jeton-popup');
         if (oldMini) oldMini.remove();
+
+        const title = opts.title || tt('end.no_tokens.title', 'Tu n\'as plus de jeton');
+        const body = opts.body || tt('end.no_tokens.body', 'Regarde une pub pour obtenir une aide ou va à la boutique.');
+        const actionLabel = opts.actionLabel || tt('common.watch_ad', 'Regarder une pub');
+        const onWatchAd = typeof opts.onWatchAd === 'function'
+          ? opts.onWatchAd
+          : async () => { await doRevive(true); };
 
         const mini = document.createElement('div');
         mini.id = 'no-jeton-popup';
@@ -1136,35 +1143,140 @@ overlay.querySelector('#resume-yes').onclick = () => {
         `;
         mini.innerHTML = `
           <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
-            <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">${tt('end.no_tokens.title','Tu n\'as plus de jeton')}</div>
+            <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">${title}</div>
+
             <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
               <span style="display:flex;align-items:center;gap:6px;font-weight:800;">
                 <img src="assets/images/jeton.webp" alt="" style="width:26px;height:26px;object-fit:contain;">
                 <span>1</span>
               </span>
-              <span style="font-weight:900;font-size:1.1em;">=</span>
-              <span style="font-weight:700;">${tt('end.revive.ad','Revivre (pub)')}</span>
             </div>
-            <div style="opacity:.92;line-height:1.42;margin-bottom:14px;">${tt('end.no_tokens.body','Regarde une pub pour obtenir 1 reprise ou va à la boutique.')}</div>
+
+            <div style="opacity:.92;line-height:1.42;margin-bottom:14px;">${body}</div>
+
             <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-              <button id="no-jeton-watch-ad" class="btn-primary" style="padding:.7em 1em;border:none;border-radius:.85em;background:#a73;color:#fff;cursor:pointer;">${tt('end.revive.ad','Revivre (pub)')}</button>
+              <button id="no-jeton-watch-ad" class="btn-primary" style="padding:.7em 1em;border:none;border-radius:.85em;background:#a73;color:#fff;cursor:pointer;">${actionLabel}</button>
               <button id="no-jeton-shop" class="btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">${tt('menu.boutique','Boutique')}</button>
             </div>
-            <button id="no-jeton-close" style="margin-top:12px;background:transparent;border:none;color:#cfd8ff;cursor:pointer;opacity:.85;">${tt('common.later','Plus tard')}</button>
+
+            <button id="no-jeton-close" style="margin-top:12px;background:transparent;border:none;color:#cfd8ff;cursor:pointer;opacity:.85;">${tt('common.cancel','Annuler')}</button>
           </div>
         `;
         document.body.appendChild(mini);
 
         mini.querySelector('#no-jeton-close')?.addEventListener('click', () => mini.remove());
         mini.addEventListener('click', (e) => { if (e.target === mini) mini.remove(); });
+
         mini.querySelector('#no-jeton-watch-ad')?.addEventListener('click', async () => {
           mini.remove();
-          await doRevive(true);
+          await onWatchAd();
         });
+
         mini.querySelector('#no-jeton-shop')?.addEventListener('click', () => {
           window.location.href = 'boutique.html';
         });
       }
+
+async function doRewindWithAd() {
+  window.__ads_active = true;
+  window.__ads_freeze = true;
+
+  const resetAds = () => {
+    window.__ads_active = false;
+    window.__ads_freeze = false;
+  };
+
+  if (typeof window.showRewardRevive === 'function') {
+    const ok = await new Promise(resolve => {
+      try { window.showRewardRevive(closedOk => resolve(!!closedOk)); }
+      catch (_) { resolve(false); }
+    });
+
+    resetAds();
+    if (!ok) return;
+
+    rewindHistoryAndResume(5, 3);
+    return;
+  }
+
+  await showInterstitial();
+  resetAds();
+  rewindHistoryAndResume(5, 3);
+}
+
+function showRewindConfirmPopup() {
+  const oldPopup = document.getElementById('rewind-confirm-popup');
+  if (oldPopup) oldPopup.remove();
+
+  paused = true;
+  stopSoftDrop();
+  stopHorizontalRepeat();
+  safeRedraw();
+
+  const popup = document.createElement('div');
+  popup.id = 'rewind-confirm-popup';
+  popup.style = `
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  popup.innerHTML = `
+    <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
+      <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">${tt('rewind.title','Retour arrière')}</div>
+
+      <div style="opacity:.96;line-height:1.42;margin-bottom:14px;">
+        ${tt('rewind.body','Utiliser 1 jeton pour revenir 5 pièces en arrière ?')}
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;">
+        <img src="assets/images/jeton.webp" alt="" style="width:26px;height:26px;object-fit:contain;">
+        <span style="font-weight:800;">1</span>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button id="rewind-confirm-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">
+          ${tt('rewind.confirm','Utiliser 1 jeton')}
+        </button>
+
+        <button id="rewind-cancel-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#444;color:#fff;cursor:pointer;">
+          ${tt('common.cancel','Annuler')}
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  const closeOnly = () => popup.remove();
+
+  popup.querySelector('#rewind-cancel-btn')?.addEventListener('click', closeOnly);
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup) closeOnly();
+  });
+
+  popup.querySelector('#rewind-confirm-btn')?.addEventListener('click', async () => {
+    const okTok = await useJeton();
+
+    popup.remove();
+
+    if (!okTok) {
+      showNoJetonPopup({
+        title: tt('rewind.no_token.title', 'Tu n\'as plus de jeton'),
+        body: tt('rewind.no_token.body', 'Regarde une pub pour revenir 5 pièces en arrière ou va à la boutique.'),
+        actionLabel: tt('common.watch_ad', 'Regarder une pub'),
+        onWatchAd: async () => { await doRewindWithAd(); }
+      });
+      return;
+    }
+
+    rewindHistoryAndResume(5, 3);
+  });
+}
 
       launchEndConfetti();
 
@@ -1313,9 +1425,10 @@ overlay.querySelector('#resume-yes').onclick = () => {
       }
     }
 
-    function reviveRewindAndResume() {
+    function rewindHistoryAndResume(stepsBack = 8, countdownStart = 3) {
       if (history.length === 0) return;
-      const index = history.length > 8 ? history.length - 8 : 0;
+
+      const index = history.length > stepsBack ? history.length - stepsBack : 0;
       const state = history[index];
       history = history.slice(0, index);
 
@@ -1337,7 +1450,6 @@ overlay.querySelector('#resume-yes').onclick = () => {
 
       ensureRenderablePieces();
 
-      // ❄️ Assure qu'aucun flag pub ne bloque
       window.__ads_active = false;
       window.__ads_freeze = false;
 
@@ -1345,8 +1457,7 @@ overlay.querySelector('#resume-yes').onclick = () => {
       gameOver = false;
       safeRedraw();
 
-      // 2) Compte à rebours court (i18n)
-      let countdown = 3;
+      let countdown = countdownStart;
       const overlay = document.createElement('div');
       overlay.id = 'countdown-overlay';
       overlay.style = `
@@ -1355,84 +1466,39 @@ overlay.querySelector('#resume-yes').onclick = () => {
       `;
       overlay.textContent = tt('revive.count','{n}', { n: countdown });
       document.body.appendChild(overlay);
+
       const tmr = setInterval(() => {
         countdown--;
         overlay.textContent = tt('revive.count','{n}', { n: countdown });
+
         if (countdown <= 0) {
           clearInterval(tmr);
           overlay.remove();
 
-// 3) Restaure et démarre rampe de vitesse
-paused = false;
-gameOver = false;
+          paused = false;
+          gameOver = false;
 
-reviveTargetInterval = dropInterval || 500;
-dropInterval = 1200; // très lent au départ
-reviveRampActive = true;
-reviveRampStart = performance.now();
+          reviveTargetInterval = dropInterval || 500;
+          dropInterval = 1200;
+          reviveRampActive = true;
+          reviveRampStart = performance.now();
 
-lastTime = performance.now();
+          lastTime = performance.now();
+          window.__ads_skip_next_action = true;
 
-// ⬅️ Ne pas compter la reprise post-revive comme une action
-window.__ads_skip_next_action = true;
+          try { window.partieReprisee?.(mode); } catch (_) {}
 
-try { window.partieReprisee?.(mode); } catch(_) {}
-
-requestAnimationFrame(update);
-
+          requestAnimationFrame(update);
         }
       }, 1000);
     }
 
+    function reviveRewindAndResume() {
+      rewindHistoryAndResume(8, 3);
+    }
+
     function rewind() {
-      if (history.length === 0) return;
-      const index = history.length > 8 ? history.length - 8 : 0;
-      const state = history[index];
-      history = history.slice(0, index);
-
-      board = state.board.map(r => r.slice());
-      currentPiece = JSON.parse(JSON.stringify(state.currentPiece));
-      nextPiece = JSON.parse(JSON.stringify(state.nextPiece));
-      heldPiece = state.heldPiece ? JSON.parse(JSON.stringify(state.heldPiece)) : null;
-      score = state.score;
-      combo = state.combo;
-      linesCleared = state.linesCleared;
-      dropInterval = state.dropInterval || 500;
-
-      if (state.piecesSequence && Array.isArray(state.piecesSequence)) {
-        piecesSequence = state.piecesSequence.slice();
-      }
-      if (Number.isInteger(state.piecesUsed)) {
-        piecesUsed = state.piecesUsed;
-      }
-
-      ensureRenderablePieces();
-
-      paused = true;
-      gameOver = false;
-      safeRedraw();
-
-      let countdown = 5;
-      const overlay = document.createElement('div');
-      overlay.id = 'countdown-overlay';
-      overlay.style = `
-        position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);
-        color:#fff;display:flex;align-items:center;justify-content:center;font-size:4em;z-index:99998;
-      `;
-      overlay.textContent = countdown;
-      document.body.appendChild(overlay);
-      let tmr = setInterval(() => {
-        countdown--;
-        overlay.textContent = countdown;
-        if (countdown <= 0) {
-          clearInterval(tmr);
-          overlay.remove();
-          paused = false;
-          gameOver = false;
-          lastTime = performance.now();
-          requestAnimationFrame(update);
-        }
-      }, 1000);
+      rewindHistoryAndResume(5, 3);
     }
 
     function togglePause() {
@@ -1447,10 +1513,39 @@ requestAnimationFrame(update);
     global.togglePause = togglePause;
 
     setTimeout(() => {
-      let btn = document.getElementById('pause-btn');
-      if (btn) btn.onclick = (e) => { e.preventDefault(); togglePause(); };
+      const btnPause = document.getElementById('pause-btn');
+      if (btnPause) {
+        const pauseLabel = tt('game.pause', 'Pause');
+        btnPause.title = pauseLabel;
+        btnPause.setAttribute('aria-label', pauseLabel);
+        const pauseImg = btnPause.querySelector('img');
+        if (pauseImg) pauseImg.alt = pauseLabel;
+
+        btnPause.onclick = (e) => {
+          e.preventDefault();
+          togglePause();
+        };
+      }
+
+      const btnRewind = document.getElementById('rewind-btn');
+      if (btnRewind) {
+        const rewindLabel = tt('game.rewind', 'Retour arrière');
+        btnRewind.title = rewindLabel;
+        btnRewind.setAttribute('aria-label', rewindLabel);
+        const rewindImg = btnRewind.querySelector('img');
+        if (rewindImg) rewindImg.alt = rewindLabel;
+
+        btnRewind.onclick = (e) => {
+          e.preventDefault();
+          showRewindConfirmPopup();
+        };
+      }
+
       const btnRestart = document.getElementById('restart-btn');
-      if (btnRestart) btnRestart.onclick = (e) => { e.preventDefault(); restartGameHard(); };
+      if (btnRestart) btnRestart.onclick = (e) => {
+        e.preventDefault();
+        restartGameHard();
+      };
     }, 200);
 
     const SPEED_TABLE = [

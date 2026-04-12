@@ -154,11 +154,41 @@
       .jetons { font-size: .88em; }
     }
     .top-canvas-row {
-      width: 100%; max-width: 410px;
-      display: flex; justify-content: space-between; align-items: flex-end;
+      width: 100%;
+      max-width: 410px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
       margin-bottom: 2px;
       margin-top: -30px;
       flex-shrink: 0;
+    }
+
+    .center-top-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-width: 96px;
+      padding-bottom: 6px;
+    }
+
+    .top-mini-action {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 99px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+
+    .top-mini-action img {
+      width: 36px;
+      height: 36px;
+      display: block;
     }
     .side-canvas-block {
       display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -346,11 +376,17 @@
         <label data-i18n="game.hold">Réserve</label>
         <canvas id="holdCanvas" width="48" height="48"></canvas>
       </div>
-      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:54px;">
-        <button id="pause-btn"  style="background:none;border:none;cursor:pointer;padding:2px;border-radius:99px;" >
-          <img src="assets/icons/pause.svg" alt="Pause" style="width:36px;height:36px;display:block;">
+
+      <div class="center-top-controls">
+        <button id="pause-btn" class="top-mini-action">
+          <img src="assets/icons/pause.svg" alt="Pause">
+        </button>
+
+        <button id="rewind-btn" class="top-mini-action">
+          <img src="assets/icons/rewind_5.svg" alt="Retour arrière">
         </button>
       </div>
+
       <div class="side-canvas-block">
         <label data-i18n="game.next">Suivante</label>
         <canvas id="nextCanvas" width="48" height="48"></canvas>
