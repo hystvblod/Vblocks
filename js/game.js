@@ -2121,29 +2121,28 @@ if (score > highscoreCloud) {
 
     // ===== Repeat horizontal tactile =====
     let horizontalRepeatInterval = null;
-    let horizontalRepeatKickoff = null;
     let horizontalRepeatDirection = 0;
-    const INITIAL_REPEAT_DELAY = 100; // délai avant répétition (ms)
-    const REPEAT_INTERVAL = 55; // cadence pendant maintien (ms)
+    let horizontalRepeatKickoff = null;
+    const INITIAL_REPEAT_DELAY = 180;
+    const REPEAT_INTERVAL = 60;
 
     function startHorizontalRepeat(direction) {
       if (paused || gameOver || window.__ads_active) return;
       if (direction !== -1 && direction !== 1) return;
 
-      if (horizontalRepeatDirection === direction && horizontalRepeatInterval) return;
+      if (
+        horizontalRepeatDirection === direction &&
+        (horizontalRepeatInterval || horizontalRepeatKickoff)
+      ) return;
 
       stopHorizontalRepeat();
       horizontalRepeatDirection = direction;
-
-      move(direction);
-      safeRedraw();
 
       horizontalRepeatKickoff = setTimeout(() => {
         horizontalRepeatKickoff = null;
         horizontalRepeatInterval = setInterval(() => {
           if (!paused && !gameOver && !window.__ads_active) {
             move(direction);
-            safeRedraw();
           }
         }, REPEAT_INTERVAL);
       }, INITIAL_REPEAT_DELAY);
@@ -2308,12 +2307,16 @@ if (score > highscoreCloud) {
 
       if (gestureMode === 'horizontal') {
         if (movedX > HORIZ_THRESHOLD) {
+          move(1);
+          startX = t.clientX;
           startHorizontalRepeat(1);
-          startX = t.clientX;
         } else if (movedX < -HORIZ_THRESHOLD) {
-          startHorizontalRepeat(-1);
+          move(-1);
           startX = t.clientX;
-        } else {
+          startHorizontalRepeat(-1);
+        }
+
+        if (Math.abs(movedX) <= HORIZ_THRESHOLD) {
           stopHorizontalRepeat();
         }
 
