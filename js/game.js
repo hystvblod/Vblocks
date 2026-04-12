@@ -2025,6 +2025,9 @@ if (score > highscoreCloud) {
     }
 
     // ===== Repeat horizontal tactile =====
+    const INITIAL_REPEAT_DELAY = 100; // délai avant répétition (ms)
+    const REPEAT_INTERVAL = 55;       // cadence pendant maintien (ms)
+    let horizontalRepeatTimeout = null;
     let horizontalRepeatInterval = null;
     let horizontalRepeatDirection = 0;
 
@@ -2040,16 +2043,23 @@ if (score > highscoreCloud) {
       move(direction);
       safeRedraw();
 
-      horizontalRepeatInterval = setInterval(() => {
-        if (!paused && !gameOver && !window.__ads_active) {
-          move(direction);
-          safeRedraw();
-        }
-      }, 120);
+      horizontalRepeatTimeout = setTimeout(() => {
+        horizontalRepeatInterval = setInterval(() => {
+          if (!paused && !gameOver && !window.__ads_active) {
+            move(direction);
+            safeRedraw();
+          }
+        }, REPEAT_INTERVAL);
+      }, INITIAL_REPEAT_DELAY);
     }
 
     function stopHorizontalRepeat() {
       horizontalRepeatDirection = 0;
+
+      if (horizontalRepeatTimeout) {
+        clearTimeout(horizontalRepeatTimeout);
+        horizontalRepeatTimeout = null;
+      }
 
       if (horizontalRepeatInterval) {
         clearInterval(horizontalRepeatInterval);
@@ -2178,7 +2188,7 @@ if (score > highscoreCloud) {
         return;
       }
 
-      if (gestureMode === 'vertical' || isSoftDropping || elapsed >= VERTICAL_LOCK_EARLY_MS) {
+      if (gestureMode === 'vertical' || isSoftDropping) {
         gestureMode = 'vertical';
         rotationLocked = true;
         stopHorizontalRepeat();
