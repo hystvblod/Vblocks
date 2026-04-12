@@ -291,5 +291,9 @@
   "referral.link_copied": "Tautan disalin",
   "referral.crosspromo_desc": "Undang teman untuk menginstal VBlocks dan dapatkan hadiah.",
   "referral.android_only_popup.text": "Saat ini hanya versi Android yang tersedia. Versi iOS sedang dikerjakan dan belum bisa diunduh.",
-  "common.continue": "Lanjutkan"
+  "common.continue": "Lanjutkan",
+  "duel.rematch": "Tanding ulang",
+  "duel.rematch.sent": "Permintaan tanding ulang dikirim",
+  "duel.rematch.ask": "Lawanmu meminta tanding ulang. Terima?",
+  "duel.rematch.error": "Tidak bisa memulai tanding ulang sekarang."
 }

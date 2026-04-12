@@ -291,5 +291,9 @@
   "referral.link_copied": "Lien copié",
   "referral.crosspromo_desc": "Invite un ami à installer VBlocks et gagne une récompense.",
   "referral.android_only_popup.text": "Seule la version Android est disponible pour le moment. La version iOS est en cours et ne peut donc pas être téléchargée pour le moment.",
-  "common.continue": "Continuer"
+  "common.continue": "Continuer",
+  "duel.rematch": "Revanche",
+  "duel.rematch.sent": "Demande de revanche envoyée",
+  "duel.rematch.ask": "Ton adversaire propose une revanche. Accepter ?",
+  "duel.rematch.error": "Impossible de lancer la revanche pour le moment."
 }

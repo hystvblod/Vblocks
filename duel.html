@@ -16,33 +16,53 @@
   <link rel="stylesheet" href="themes/themes.css" id="theme-style" />
   <style>
     /* === mêmes bases que classic === */
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
     html, body {
-      margin: 0; padding: 0;
-      width: 100vw; height: 100dvh;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100dvh;
+      height: 100dvh;
       box-sizing: border-box;
       font-family: 'Quicksand', Arial, sans-serif;
       background: var(--body-bg, #111);
       color: var(--body-color, #ccc);
       overflow: hidden;
-      height: 100%;
     }
+
     body {
-      display: flex; flex-direction: column;
-      min-height: 100dvh; height: 100dvh;
-      width: 100vw;
-      align-items: center; justify-content: flex-start;
+      min-height: 100dvh;
+      height: 100dvh;
+      width: 100%;
     }
+
+    .game-viewport {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
     .main-content {
       display: flex;
       flex-direction: column;
-      width: 100vw;
-      max-width: 430px;
-      height: 100dvh;
-      min-height: 100dvh;
+      width: 430px;
+      max-width: none;
+      height: auto;
+      min-height: 0;
       box-sizing: border-box;
       align-items: center;
       justify-content: flex-start;
       margin: 0 auto;
+      padding-bottom: calc(var(--safe-bottom) + 14px);
+      transform-origin: top center;
+      will-change: transform;
     }
 
     /* === TOP BAR (comme classic) === */
@@ -289,10 +309,10 @@
 </style>
 </head>
 <body>
-  <!-- fond optionnel comme classic -->
   <canvas id="starfield" style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-1; display:none;"></canvas>
 
-  <div class="main-content">
+  <div class="game-viewport">
+    <div class="main-content">
     <!-- === BARRE TOP EXACTEMENT COMME CLASSIC === -->
     <div class="top-bar">
       <div class="top-bar-row">
@@ -362,6 +382,7 @@
     <div id="controls">
       <button id="music-btn" data-i18n="game.music">Musique</button>
       <button onclick="location.reload()" data-i18n="game.replay">Rejouer</button>
+    </div>
     </div>
   </div>
 

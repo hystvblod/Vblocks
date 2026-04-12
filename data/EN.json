@@ -291,5 +291,9 @@
   "referral.link_copied": "Link copied",
   "referral.crosspromo_desc": "Invite a friend to install VBlocks and earn a reward.",
   "referral.android_only_popup.text": "Only the Android version is available for now. The iOS version is in progress and cannot be downloaded yet.",
-  "common.continue": "Continue"
+  "common.continue": "Continue",
+  "duel.rematch": "Rematch",
+  "duel.rematch.sent": "Rematch request sent",
+  "duel.rematch.ask": "Your opponent is asking for a rematch. Accept?",
+  "duel.rematch.error": "Unable to start a rematch right now."
 }

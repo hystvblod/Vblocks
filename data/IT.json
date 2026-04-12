@@ -291,5 +291,9 @@
   "referral.link_copied": "Link copiato",
   "referral.crosspromo_desc": "Invita un amico a installare VBlocks e guadagna una ricompensa.",
   "referral.android_only_popup.text": "Per il momento è disponibile solo la versione Android. La versione iOS è in lavorazione e non può ancora essere scaricata.",
-  "common.continue": "Continua"
+  "common.continue": "Continua",
+  "duel.rematch": "Rivincita",
+  "duel.rematch.sent": "Richiesta di rivincita inviata",
+  "duel.rematch.ask": "Il tuo avversario propone una rivincita. Accettare?",
+  "duel.rematch.error": "Impossibile avviare una rivincita al momento."
 }
