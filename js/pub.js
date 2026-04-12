@@ -853,7 +853,6 @@
       return (
         path.endsWith('/classic.html') ||
         path.endsWith('/infini.html') ||
-        path.endsWith('/duel.html') ||
         path.endsWith('/concours.html') ||
         path.endsWith('/ads.html') ||
         path.endsWith('/game.html')
@@ -951,6 +950,11 @@
   }
 
   async function showInterstitial() {
+    try {
+      var path = (location.pathname || '').toLowerCase();
+      if (path.endsWith('/duel.html')) return false;
+    } catch (_) {}
+
     var watchdog = null;
     try {
       if (await hasNoAds()) { return false; }

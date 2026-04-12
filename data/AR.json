@@ -291,5 +291,9 @@
   "referral.link_copied": "تم نسخ الرابط",
   "referral.crosspromo_desc": "ادعُ صديقًا لتثبيت VBlocks واحصل على مكافأة.",
   "referral.android_only_popup.text": "إصدار أندرويد فقط هو المتاح حاليًا. إصدار iOS قيد التطوير ولا يمكن تنزيله الآن.",
-  "common.continue": "متابعة"
+  "common.continue": "متابعة",
+  "duel.rematch": "مباراة إعادة",
+  "duel.rematch.sent": "تم إرسال طلب الإعادة",
+  "duel.rematch.ask": "خصمك يطلب مباراة إعادة. هل تقبل؟",
+  "duel.rematch.error": "تعذر بدء مباراة الإعادة الآن."
 }
