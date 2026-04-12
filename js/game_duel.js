@@ -1227,7 +1227,7 @@ function fillRectThemeSafe(c, px, py, size) {
       movedX = t.clientX - startX;
       movedY = t.clientY - startY;
 
-      if (gestureMode === 'vertical' || softDropActive || elapsed >= VERTICAL_LOCK_EARLY_MS) {
+      if (gestureMode === 'vertical' || softDropActive) {
         gestureMode = 'vertical';
         if (!softDropActive && isQuickSwipeUp(elapsed, movedY)) {
           rotatePiece();
