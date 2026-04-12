@@ -1465,18 +1465,19 @@ function showRewindConfirmPopup() {
     <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
       <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">${tt('rewind.title','Retour arrière')}</div>
 
-      <div style="opacity:.96;line-height:1.42;margin-bottom:14px;">
-        ${tt('rewind.body','Utiliser 1 jeton pour revenir 5 pièces en arrière ?')}
-      </div>
-
-      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;">
-        <img src="assets/images/jeton.webp" alt="" style="width:26px;height:26px;object-fit:contain;">
-        <span style="font-weight:800;">1</span>
+      <div style="opacity:.96;line-height:1.5;margin-bottom:14px;">
+        ${tt(
+          'rewind.body',
+          'Utiliser 1 <img src="assets/images/jeton.webp" alt="" style="width:1.35em;height:1.35em;vertical-align:-0.22em;object-fit:contain;"> pour revenir 5 pièces en arrière ?'
+        )}
       </div>
 
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button id="rewind-confirm-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">
-          ${tt('rewind.confirm','Utiliser 1 jeton')}
+          ${tt(
+            'rewind.confirm',
+            'Utiliser 1 <img src="assets/images/jeton.webp" alt="" style="width:1.35em;height:1.35em;vertical-align:-0.22em;object-fit:contain;">'
+          )}
         </button>
 
         <button id="rewind-cancel-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#444;color:#fff;cursor:pointer;">
