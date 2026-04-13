@@ -7,13 +7,14 @@
   const STORAGE_KEY = "langue";
   const EXPLICIT_KEY = "vblocks_lang_selected";
 
-  const SUP = ["FR","EN","ES","DE","IT","PT","PT-BR","NL","AR","IDN","JP","KO"];
+  const SUP = ["FR","EN","ES","ES-LATAM","DE","IT","PT","PT-BR","NL","AR","IDN","JP","KO"];
   const RTL = new Set(["AR"]);
 
   const HTML_LANG = {
     "FR": "fr",
     "EN": "en",
     "ES": "es",
+    "ES-LATAM": "es-419",
     "DE": "de",
     "IT": "it",
     "PT": "pt",
@@ -49,6 +50,16 @@
       ui: "ES",
       aria: "Español",
       flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="5" y="0" fill="#c8102e"/><rect width="30" height="10" y="5" fill="#f4c300"/><rect width="30" height="5" y="15" fill="#c8102e"/></svg>`
+    },
+    {
+      code: "ES-LATAM",
+      ui: "ES-LATAM",
+      aria: "Español (LatAm)",
+      flag: `<svg viewBox="0 0 30 20" aria-hidden="true">
+    <rect width="30" height="20" rx="4" fill="#ffffff"/>
+    <circle cx="15" cy="10" r="6.2" fill="#2bb3a3"/>
+    <path d="M15 3.8c-1.9 1.1-3.3 2.7-4.1 4.7c1.2-.4 2.3-.4 3.3-.1c-.8 1-1.2 2.2-1.3 3.5c1.5-.8 3.2-1.1 5-.9c-.7.9-1.1 1.9-1.2 3.1c2.1-1.1 3.6-3 4.1-5.3c-.9.3-1.8.5-2.8.4c.5-.9.7-1.8.7-2.8c-1 .6-2.1 1-3.2 1.1c.1-1.2-.1-2.4-.5-3.7Z" fill="#ffffff" opacity="0.98"/>
+  </svg>`
     },
     {
       code: "PT",
@@ -117,6 +128,7 @@
     if (lower.startsWith("en")) return "EN";
     if (lower.startsWith("fr")) return "FR";
     if (lower.startsWith("de")) return "DE";
+    if (lower === "es-419" || lower.startsWith("es-419") || lower === "es-latam" || lower.startsWith("es-latam")) return "ES-LATAM";
     if (lower.startsWith("es")) return "ES";
     if (lower.startsWith("it")) return "IT";
     if (lower.startsWith("nl")) return "NL";
