@@ -146,8 +146,42 @@
       color: #0e4b26; transform: scale(1.05);
     }
     .theme-choice-vb.locked { filter: grayscale(1); opacity: .6; cursor: not-allowed; }
-    .popup-actions { margin-top: 1.7em; }
-    .vb-btn-validate, .vb-btn-cancel { padding:.67em 1.7em; border-radius:1em; font-weight:800; border:none; font-size:1.03em; cursor:pointer; margin:0 .7em; }
+    .vb-btn-shopwide {
+      width: 100%;
+      margin: 1rem 0 0 0;
+      padding: 0.9em 1.1em;
+      border: none;
+      border-radius: 1.1em;
+      font-size: 1.03em;
+      font-weight: 900;
+      cursor: pointer;
+      background: linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);
+      color: #fff;
+      box-shadow: 0 4px 18px #1e64a772;
+    }
+
+    .vb-btn-shopwide:active {
+      transform: scale(0.98);
+    }
+
+    .popup-actions {
+      margin-top: 1.2em;
+      display: flex;
+      justify-content: center;
+      gap: 0.8em;
+      flex-wrap: wrap;
+    }
+
+    .vb-btn-validate,
+    .vb-btn-cancel {
+      padding: .67em 1.7em;
+      border-radius: 1em;
+      font-weight: 800;
+      border: none;
+      font-size: 1.03em;
+      cursor: pointer;
+      margin: 0;
+    }
     .vb-btn-validate { background:#59e7aa; color:#093c1c; } .vb-btn-validate:active{ background:#2ad680; }
     .vb-btn-cancel { background:#eee; color:#6d787a; } .vb-btn-cancel:active{ background:#c7c7c7; }
 
@@ -258,16 +292,16 @@
       </a>
     </div>
     <div class="top-right">
-      <a href="profil.html" class="btn-icon" title="Profil">
-        <img src="assets/icons/user.svg" alt="Profil" />
+      <a href="boutique.html" class="btn-icon" title="Boutique">
+        <img src="assets/icons/shop.svg" alt="Boutique" />
       </a>
       <a href="parametres.html" class="btn-icon" title="Paramètres">
         <img src="assets/icons/settings.svg" alt="Paramètres" />
       </a>
       <a href="cross-promo.html" class="btn-icon" title="Nos applis">
-    <img src="assets/images/crosspromo/btn_crosspromo.webp" alt="Nos applis" />
-  </a>
-</div>
+        <img src="assets/images/crosspromo/btn_crosspromo.webp" alt="Nos applis" />
+      </a>
+    </div>
   </div>
 
   <div class="profil-content">
@@ -317,11 +351,17 @@
   <!-- POPUP THEMES -->
   <div id="theme-selector-popup" class="popup-theme-bg">
     <div class="popup-theme-vb">
-      <h2 data-i18n="theme.popup.title">Choisis ton thème VBlocks</h2>
+      <h2 data-i18n="profil.popup.themeTitle">Choisis ton thème VBlocks</h2>
+
       <div class="theme-list-vb" id="themeListVB"></div>
+
+      <button class="vb-btn-shopwide" id="btnThemeShopProfile" type="button" data-i18n="menu.boutique">
+        Boutique
+      </button>
+
       <div class="popup-actions">
-        <button class="vb-btn-validate" id="btnValiderTheme" data-i18n="theme.popup.use">Valider</button>
-        <button class="vb-btn-cancel" id="btnCancelTheme" data-i18n="theme.popup.cancel">Annuler</button>
+        <button class="vb-btn-validate" id="btnValiderTheme" data-i18n="profil.popup.themeValidate">Valider</button>
+        <button class="vb-btn-cancel" id="btnCancelTheme" data-i18n="profil.popup.themeCancel">Annuler</button>
       </div>
     </div>
   </div>
@@ -509,12 +549,18 @@
 
       // 3) rendu (comparaison robuste)
       const ownedSet = new Set(unlocked);
+      const lockSuffix = i18nSafe('theme.item.lockedSuffix', ' 🔒');
+
       themeList.innerHTML = ALL_THEMES.map(theme => {
         const locked = !ownedSet.has(theme);
-        const label = theme.charAt(0).toUpperCase() + theme.slice(1);
+        const label = i18nSafe(
+          `theme.${theme}`,
+          theme.charAt(0).toUpperCase() + theme.slice(1)
+        );
+
         return `<button class="theme-choice-vb${locked ? ' locked' : ''}"
                         data-theme="${theme}" ${locked ? 'disabled' : ''}>
-                  ${label}${locked ? ' 🔒' : ''}
+                  ${label}${locked ? lockSuffix : ''}
                 </button>`;
       }).join('');
 
@@ -537,6 +583,10 @@
       });
 
       // Valider / Annuler
+      document.getElementById('btnThemeShopProfile').onclick = () => {
+        window.location.href = 'boutique.html';
+      };
+
       document.getElementById('btnValiderTheme').onclick = async () => {
         if (!selectedTheme) return;
         try {
