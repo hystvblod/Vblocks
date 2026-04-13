@@ -54,7 +54,7 @@
     {
       code: "ES-LATAM",
       ui: "ES-LATAM",
-      aria: "Español (Amérique latine)",
+      aria: "Español (Latinoamérica)",
       flag: `<svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <rect x="0" y="0" width="30" height="20" fill="#ffffff"/>
     <g transform="translate(6.9 1.4) scale(0.062)">
@@ -116,45 +116,12 @@
       ui: "KO",
       aria: "한국어",
       flag: `<svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <rect width="30" height="20" fill="#ffffff"/>
-
-  <g transform="translate(15 10)">
-    <path d="M0-4.4A4.4 4.4 0 0 1 0 4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0-4.4Z" fill="#cd2e3a"/>
-    <path d="M0 4.4A4.4 4.4 0 0 1 0-4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0 4.4Z" fill="#0047a0"/>
-  </g>
-
-  <g fill="#111111">
-    <g transform="translate(6.2 4.6) rotate(-28)">
-      <rect x="-2.9" y="-2.8" width="5.8" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="-1.1" width="5.8" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="0.6" width="5.8" height="0.7" rx="0.2"/>
+    <rect width="30" height="20" fill="#ffffff"/>
+    <g transform="translate(15 10)">
+      <path d="M0-4.4A4.4 4.4 0 0 1 0 4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0-4.4Z" fill="#cd2e3a"/>
+      <path d="M0 4.4A4.4 4.4 0 0 1 0-4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0 4.4Z" fill="#0047a0"/>
     </g>
-
-    <g transform="translate(23.8 4.6) rotate(28)">
-      <rect x="-2.9" y="-2.8" width="5.8" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="0.6" width="5.8" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
-    </g>
-
-    <g transform="translate(6.2 15.4) rotate(28)">
-      <rect x="-2.9" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="-1.1" width="5.8" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="0.6" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="0.6" width="2.2" height="0.7" rx="0.2"/>
-    </g>
-
-    <g transform="translate(23.8 15.4) rotate(-28)">
-      <rect x="-2.9" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="0.6" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="0.6" width="2.2" height="0.7" rx="0.2"/>
-    </g>
-  </g>
-</svg>`
+  </svg>`
     }
   ];
 
