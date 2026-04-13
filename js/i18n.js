@@ -56,15 +56,21 @@
       ui: "ES-LATAM",
       aria: "Español (LatAm)",
       flag: `<svg viewBox="0 0 30 20" aria-hidden="true">
+    <defs>
+      <radialGradient id="latamGlobeReal1" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#8ff3ff"/>
+        <stop offset="45%" stop-color="#34d7ff"/>
+        <stop offset="78%" stop-color="#1dc6c8"/>
+        <stop offset="100%" stop-color="#0ea56f"/>
+      </radialGradient>
+    </defs>
     <g transform="translate(5,0)">
-      <circle cx="10" cy="10" r="8.2" fill="#2fd3dd"/>
-      <circle cx="10" cy="10" r="8.2" fill="#000" opacity=".08"/>
-      <path d="M10 1.8a8.2 8.2 0 0 1 0 16.4a6.1 8.2 0 0 0 0-16.4Z" fill="#17b6a8" opacity=".95"/>
-      <ellipse cx="10" cy="10" rx="5.9" ry="8.2" fill="none" stroke="#fff" stroke-width=".9" opacity=".94"/>
-      <ellipse cx="10" cy="10" rx="2.6" ry="8.2" fill="none" stroke="#fff" stroke-width=".7" opacity=".8"/>
-      <path d="M2.4 10h15.2M3.6 6.4h12.8M3.6 13.6h12.8" stroke="#fff" stroke-width=".7" stroke-linecap="round" opacity=".82"/>
-      <path d="M7.4 5.1c1.5-1 3.2-1.1 4.7-.4c.8.4 1.8.8 2.8 1c-.3 1.2-1 2.1-2 2.8c-.6.4-.9 1-.9 1.7c-1.1.2-2.1 0-3-.6c-.6-.4-1.2-.9-1.8-1.4c-.5-.3-1.1-.6-1.9-.8c.2-.9.9-1.6 2.1-2.3Z" fill="#fff" opacity=".98"/>
-      <path d="M6.4 11.8c.8 0 1.6.3 2.3.8c.8.7 1.9 1.1 3.1 1.1c.9 0 1.7.3 2.5.8c-.8 1.3-1.9 2.2-3.4 2.8c-1.9-.1-3.5-.8-4.8-2.1c-.7-.8-.8-2 .3-3.4Z" fill="#fff" opacity=".9"/>
+      <circle cx="10" cy="10" r="8.1" fill="url(#latamGlobeReal1)"/>
+      <ellipse cx="10" cy="10" rx="5.7" ry="8.1" fill="none" stroke="#fff" stroke-width=".8" opacity=".92"/>
+      <ellipse cx="10" cy="10" rx="2.6" ry="8.1" fill="none" stroke="#fff" stroke-width=".65" opacity=".78"/>
+      <path d="M2.5 10h15M3.8 6.3h12.4M3.8 13.7h12.4" stroke="#fff" stroke-width=".65" stroke-linecap="round" opacity=".82"/>
+      <path d="M7.1 4.9c1.4-.9 3-1 4.4-.4c.8.4 1.7.8 2.6.9c-.3 1.1-1 2-1.9 2.7c-.5.4-.8 1-.9 1.7c-1 .2-1.9 0-2.8-.6c-.6-.4-1.1-.9-1.7-1.3c-.5-.3-1-.6-1.7-.8c.2-.8.9-1.5 2-2.2Z" fill="#fff" opacity=".98"/>
+      <path d="M6.2 11.7c.8 0 1.5.3 2.2.8c.8.7 1.8 1 2.9 1c.9 0 1.6.2 2.3.7c-.7 1.2-1.8 2-3.2 2.6c-1.8-.1-3.3-.8-4.5-2c-.7-.8-.8-1.9.3-3.1Z" fill="#fff" opacity=".9"/>
     </g>
   </svg>`
     },
@@ -300,26 +306,19 @@
       .vrLangOverlay .vr-langGrid{
         display:grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap:14px 10px;
+        gap:10px;
         margin-top:22px;
         margin-bottom:6px;
       }
 
-      @media (min-width: 520px){
-        .vrLangOverlay .vr-langGrid{
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-        }
-      }
-
       .vrLangOverlay .vr-langBtn{
         width:100%;
-        min-width:0;
         display:flex;
         flex-direction:column;
         align-items:center;
         justify-content:flex-start;
         gap:7px;
-        padding:10px 4px 12px;
+        padding:10px 4px 8px;
         border-radius:14px;
         border:0 !important;
         background:transparent !important;
@@ -328,15 +327,13 @@
         cursor:pointer;
         -webkit-tap-highlight-color: transparent;
         text-align:center;
-        appearance:none;
-        overflow:hidden;
       }
 
       .vrLangOverlay .vr-langBtn:active{
         transform:scale(.98);
       }
 
-      .vrLangOverlay .vr-langBtn.isActive{
+      .vrLangOverlay .vr-langBtn.isSelected{
         outline:0;
         box-shadow:0 0 0 2px rgba(255,255,255,.22), 0 14px 34px rgba(0,0,0,.26) !important;
         background:transparent !important;
@@ -344,18 +341,15 @@
       }
 
       .vrLangOverlay .vr-flagBox{
-        width:48px;
+        width:46px;
         height:32px;
         border-radius:8px;
-        overflow:visible;
+        overflow:hidden;
         border:0 !important;
         outline:0 !important;
         box-shadow:none !important;
         background:transparent !important;
         flex:0 0 auto;
-        display:flex;
-        align-items:center;
-        justify-content:center;
       }
 
       .vrLangOverlay .vr-flagBox svg{
@@ -365,21 +359,16 @@
       }
 
       .vrLangOverlay .vr-langText{
-        display:flex !important;
-        align-items:flex-start;
-        justify-content:center;
-        min-height:30px;
-        font-size:clamp(10px,2.5vw,12px);
+        display:block !important;
+        width:100%;
+        min-height:24px;
+        font-size:10px;
         font-weight:800;
-        line-height:1.08;
+        line-height:1.15;
         color:rgba(255,255,255,.96);
         text-align:center;
-        overflow:hidden;
-      }
-
-      .vrLangOverlay .vr-langText > div{
-        max-width:82px;
-        overflow-wrap:anywhere;
+        white-space:normal;
+        word-break:break-word;
       }
 
       .vrLangActions{
@@ -458,7 +447,7 @@
       function refreshActiveState() {
         buttons.forEach((btn) => {
           const isOn = btn.getAttribute("data-lang") === selected;
-          btn.classList.toggle("isActive", isOn);
+          btn.classList.toggle("isSelected", isOn);
         });
 
         if (confirmBtn) {
