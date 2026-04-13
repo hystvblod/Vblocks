@@ -328,7 +328,7 @@
       { code: "ES",   label: "Español",         flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#aa151b"/><rect y="4" width="22" height="8" fill="#f1bf00"/></svg>` },
       {
   code: "ES-LATAM",
-  label: "Español (Amérique latine)",
+  label: "Español (Latinoamérica)",
   flag: `<svg class="flag" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <rect x="0" y="0" width="30" height="20" fill="#ffffff"/>
     <g transform="translate(6.9 1.4) scale(0.062)">
@@ -349,46 +349,17 @@
       { code: "AR",   label: "العربية",         flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><rect width="22" height="8" y="0" fill="#198754"/><polygon points="5,8 13,4 13,12" fill="#fff"/><circle cx="16" cy="8" r="3" fill="#198754"/></svg>` },
       { code: "IDN",  label: "Bahasa Indonesia",flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="8" y="0" fill="#ff0000"/><rect width="22" height="8" y="8" fill="#fff"/></svg>` },
       { code: "JP",   label: "日本語",          flag: `<svg class="flag" viewBox="0 0 22 16"><rect width="22" height="16" fill="#fff"/><circle cx="11" cy="8" r="4" fill="#bc002d"/></svg>` },
-      { code: "KO",   label: "한국어",           flag: `<svg class="flag" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <rect width="30" height="20" fill="#ffffff"/>
-
-  <g transform="translate(15 10)">
-    <path d="M0-4.4A4.4 4.4 0 0 1 0 4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0-4.4Z" fill="#cd2e3a"/>
-    <path d="M0 4.4A4.4 4.4 0 0 1 0-4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0 4.4Z" fill="#0047a0"/>
-  </g>
-
-  <g fill="#111111">
-    <g transform="translate(6.2 4.6) rotate(-28)">
-      <rect x="-2.9" y="-2.8" width="5.8" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="-1.1" width="5.8" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="0.6" width="5.8" height="0.7" rx="0.2"/>
+      {
+  code: "KO",
+  label: "한국어",
+  flag: `<svg class="flag" viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="30" height="20" fill="#ffffff"/>
+    <g transform="translate(15 10)">
+      <path d="M0-4.4A4.4 4.4 0 0 1 0 4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0-4.4Z" fill="#cd2e3a"/>
+      <path d="M0 4.4A4.4 4.4 0 0 1 0-4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0 4.4Z" fill="#0047a0"/>
     </g>
-
-    <g transform="translate(23.8 4.6) rotate(28)">
-      <rect x="-2.9" y="-2.8" width="5.8" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="0.6" width="5.8" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
-    </g>
-
-    <g transform="translate(6.2 15.4) rotate(28)">
-      <rect x="-2.9" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="0.6" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="0.6" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="-1.1" width="5.8" height="0.7" rx="0.2"/>
-    </g>
-
-    <g transform="translate(23.8 15.4) rotate(-28)">
-      <rect x="-2.9" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="-2.9" y="0.6" width="2.2" height="0.7" rx="0.2"/>
-      <rect x="0.7" y="0.6" width="2.2" height="0.7" rx="0.2"/>
-    </g>
-  </g>
-</svg>` },
+  </svg>`
+},
     ];
 
     const langueSelect = document.getElementById("langue-select");
