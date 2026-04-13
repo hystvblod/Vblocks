@@ -1124,61 +1124,6 @@ overlay.querySelector('#resume-yes').onclick = () => {
           try { layer.innerHTML = ''; } catch (_) {}
         }, 6500);
       }
-      function showNoJetonPopup(opts = {}) {
-        const oldMini = document.getElementById('no-jeton-popup');
-        if (oldMini) oldMini.remove();
-
-        const title = opts.title || tt('end.no_tokens.title', 'Tu n\'as plus de jeton');
-        const body = opts.body || tt('end.no_tokens.body', 'Regarde une pub pour obtenir une aide ou va à la boutique.');
-        const actionLabel = opts.actionLabel || tt('common.watch_ad', 'Regarder une pub');
-        const onWatchAd = typeof opts.onWatchAd === 'function'
-          ? opts.onWatchAd
-          : async () => { await doRevive(true); };
-
-        const mini = document.createElement('div');
-        mini.id = 'no-jeton-popup';
-        mini.style = `
-          position: fixed; inset: 0; z-index: 100000;
-          background: rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center;
-        `;
-        mini.innerHTML = `
-          <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
-            <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">${title}</div>
-
-            <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
-              <span style="display:flex;align-items:center;gap:6px;font-weight:800;">
-                <img src="assets/images/jeton.webp" alt="" style="width:26px;height:26px;object-fit:contain;">
-                <span>1</span>
-              </span>
-            </div>
-
-            <div style="opacity:.92;line-height:1.42;margin-bottom:14px;">${body}</div>
-
-            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-              <button id="no-jeton-watch-ad" class="btn-primary" style="padding:.7em 1em;border:none;border-radius:.85em;background:#a73;color:#fff;cursor:pointer;">${actionLabel}</button>
-              <button id="no-jeton-shop" class="btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">${tt('menu.boutique','Boutique')}</button>
-            </div>
-
-            <button id="no-jeton-close" style="margin-top:12px;background:transparent;border:none;color:#cfd8ff;cursor:pointer;opacity:.85;">${tt('common.cancel','Annuler')}</button>
-          </div>
-        `;
-        document.body.appendChild(mini);
-
-        mini.querySelector('#no-jeton-close')?.addEventListener('click', () => mini.remove());
-        mini.addEventListener('click', (e) => { if (e.target === mini) mini.remove(); });
-
-        mini.querySelector('#no-jeton-watch-ad')?.addEventListener('click', async () => {
-          mini.remove();
-          await onWatchAd();
-        });
-
-        mini.querySelector('#no-jeton-shop')?.addEventListener('click', () => {
-          window.location.href = 'boutique.html';
-        });
-      }
-
-
-
       launchEndConfetti();
 
       async function doRevive(withAd) {
@@ -1505,13 +1450,118 @@ function showRewindConfirmPopup() {
       showNoJetonPopup({
         title: tt('rewind.no_token.title', 'Tu n\'as plus de jeton'),
         body: tt('rewind.no_token.body', 'Regarde une pub pour revenir 5 pièces en arrière ou va à la boutique.'),
-        actionLabel: tt('common.watch_ad', 'Regarder une pub'),
         onWatchAd: async () => { await doRewindWithAd(); }
       });
       return;
     }
 
     rewindHistoryAndResume(5, 3);
+  });
+}
+
+function showNoJetonPopup(opts = {}) {
+  const oldMini = document.getElementById('no-jeton-popup');
+  if (oldMini) oldMini.remove();
+
+  const title = opts.title || tt('rewind.no_token.title', 'Tu n\'as plus de jeton');
+
+  const body = opts.body || tt(
+    'rewind.no_token.body',
+    'Regarde une pub pour revenir 5 pièces en arrière ou ouvre la boutique.'
+  );
+
+  const onWatchAd = typeof opts.onWatchAd === 'function'
+    ? opts.onWatchAd
+    : async () => { await doRewindWithAd(); };
+
+  let jetons12Price = '...';
+  try {
+    const p =
+      window.CdvPurchase?.store?.get?.('jetons12', window.CdvPurchase?.Platform?.GOOGLE_PLAY) ||
+      window.CdvPurchase?.store?.products?.byId?.jetons12 ||
+      null;
+
+    const livePrice = p?.pricing?.price || p?.price || p?.pricing?.priceString;
+    if (livePrice) jetons12Price = livePrice;
+  } catch (_) {}
+
+  const mini = document.createElement('div');
+  mini.id = 'no-jeton-popup';
+  mini.style = `
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: rgba(0,0,0,.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  `;
+
+  mini.innerHTML = `
+    <div style="width:min(92vw,370px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
+      <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">${title}</div>
+
+      <div style="opacity:.95;line-height:1.5;margin-bottom:14px;">
+        ${body}
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;">
+        <img src="assets/images/jeton.webp" alt="" style="width:30px;height:30px;object-fit:contain;">
+        <span style="font-weight:800;">1</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px;justify-content:center;align-items:center;">
+        <button
+          id="no-jeton-watch-ad"
+          style="width:100%;padding:.8em 1em;border:none;border-radius:.9em;background:#a73;color:#fff;cursor:pointer;font-weight:700;"
+        >
+          ${tt('common.watch_ad', 'Regarder une pub')}
+        </button>
+
+        <button
+          id="no-jeton-buy-12"
+          style="width:100%;padding:.8em 1em;border:none;border-radius:.9em;background:#39f;color:#fff;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;"
+        >
+          <img src="assets/images/jeton.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
+          <span>12</span>
+          <span>•</span>
+          <span>${jetons12Price}</span>
+        </button>
+
+        <button
+          id="no-jeton-close"
+          style="margin-top:2px;background:transparent;border:none;color:#cfd8ff;cursor:pointer;opacity:.9;"
+        >
+          ${tt('common.cancel','Annuler')}
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(mini);
+
+  const closeMini = () => mini.remove();
+
+  mini.querySelector('#no-jeton-close')?.addEventListener('click', closeMini);
+  mini.addEventListener('click', (e) => {
+    if (e.target === mini) closeMini();
+  });
+
+  mini.querySelector('#no-jeton-watch-ad')?.addEventListener('click', async () => {
+    closeMini();
+    await onWatchAd();
+  });
+
+  mini.querySelector('#no-jeton-buy-12')?.addEventListener('click', async () => {
+    try {
+      if (typeof window.buyProduct === 'function') {
+        await window.buyProduct('jetons12');
+      } else {
+        alert(tt('achat.err', 'Impossible de finaliser l\'achat.'));
+      }
+    } catch (_) {
+      alert(tt('achat.err', 'Impossible de finaliser l\'achat.'));
+    }
   });
 }
 
