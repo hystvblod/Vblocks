@@ -26,6 +26,27 @@
     .menu-btn.orange { background: #f0d642  !important; color: #fff !important; box-shadow: 0 3px 15px #2fd7b144; }
     .prix-blanc { color: white; font-size: 0.9em; display: block; margin-top: 5px; }
 
+    .orange-theme-btn {
+      background: linear-gradient(90deg, #ffb86b 0%, #ff9f5a 55%, #ff8a4c 100%);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(255, 145, 77, 0.28);
+    }
+
+    .orange-theme-btn .btn-label {
+      color: #fff;
+    }
+
+    .orange-theme-btn:hover,
+    .orange-theme-btn:focus-visible {
+      filter: brightness(1.03);
+      transform: translateY(-1px);
+    }
+
+    .orange-theme-btn:active {
+      transform: scale(0.985);
+      filter: brightness(0.98);
+    }
+
     /* Bannière MAJ non bloquante */
     #update-banner {
       position: fixed; left: 16px; right: 16px; bottom: 16px;
@@ -326,7 +347,7 @@
         <span class="info-btn" tabindex="0" data-i18n-tip="tip.boutique" data-tip="Personnalise ton jeu">?</span>
       </button>
 
-      <button class="menu-btn blue" id="btnChangeThemeHome">
+      <button class="menu-btn orange-theme-btn" id="btnChangeThemeHome">
         <span class="btn-label" data-i18n="profil.btn.theme">Changer de thème</span>
       </button>
     </div>
