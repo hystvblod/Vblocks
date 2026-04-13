@@ -45,6 +45,120 @@
       background:#333; color:#fff;
     }
 
+    .popup-theme-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(24,44,26,0.68);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .popup-theme-bg.active {
+      display: flex;
+    }
+
+    .popup-theme-vb {
+      background: #fff;
+      border-radius: 2em;
+      padding: 2em 1.1em;
+      box-shadow: 0 8px 38px #82e7bc22;
+      text-align: center;
+      max-width: 370px;
+      width: 93vw;
+      animation: popupfade 0.18s;
+      box-sizing: border-box;
+    }
+
+    .theme-list-vb {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2em;
+      justify-content: center;
+      margin-bottom: 0.5em;
+    }
+
+    .theme-choice-vb {
+      border: none;
+      border-radius: 1em;
+      padding: 0.67em 1.3em;
+      font-size: 1.05em;
+      font-weight: 800;
+      background: #e6f6ea;
+      color: #156c31;
+      cursor: pointer;
+      box-shadow: 0 2px 10px #a2dcd220;
+      transition: background 0.13s, color 0.13s, transform 0.13s;
+      margin: 0;
+      outline: none;
+    }
+
+    .theme-choice-vb.active,
+    .theme-choice-vb:active {
+      background: linear-gradient(90deg,#70dcff 0%,#b2ff9d 100%);
+      color: #0e4b26;
+      transform: scale(1.05);
+    }
+
+    .theme-choice-vb.locked {
+      filter: grayscale(1);
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .vb-btn-shopwide {
+      width: 100%;
+      margin: 1rem 0 0 0;
+      padding: 0.9em 1.1em;
+      border: none;
+      border-radius: 1.1em;
+      font-size: 1.03em;
+      font-weight: 900;
+      cursor: pointer;
+      background: linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);
+      color: #fff;
+      box-shadow: 0 4px 18px #1e64a772;
+    }
+
+    .vb-btn-shopwide:active {
+      transform: scale(0.98);
+    }
+
+    .popup-actions {
+      margin-top: 1.2em;
+      display: flex;
+      justify-content: center;
+      gap: 0.8em;
+      flex-wrap: wrap;
+    }
+
+    .vb-btn-validate,
+    .vb-btn-cancel {
+      padding: .67em 1.7em;
+      border-radius: 1em;
+      font-weight: 800;
+      border: none;
+      font-size: 1.03em;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .vb-btn-validate {
+      background: #59e7aa;
+      color: #093c1c;
+    }
+
+    .vb-btn-cancel {
+      background: #eee;
+      color: #6d787a;
+    }
+
+    @keyframes popupfade {
+      from { opacity: 0; transform: translateY(38px) scale(.96); }
+      to   { opacity: 1; transform: none; }
+    }
+
   </style>
 
   <!-- ====== AJOUT: styles onboarding ====== -->
@@ -211,6 +325,27 @@
         <span class="btn-label" data-i18n="menu.boutique">Boutique</span>
         <span class="info-btn" tabindex="0" data-i18n-tip="tip.boutique" data-tip="Personnalise ton jeu">?</span>
       </button>
+
+      <button class="menu-btn blue" id="btnChangeThemeHome">
+        <span class="btn-label" data-i18n="profil.btn.theme">Changer de thème</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="theme-selector-popup-home" class="popup-theme-bg">
+    <div class="popup-theme-vb">
+      <h2 data-i18n="profil.popup.themeTitle">Choisis ton thème VBlocks</h2>
+
+      <div class="theme-list-vb" id="themeListVBHome"></div>
+
+      <button class="vb-btn-shopwide" id="btnThemeShopHome" type="button" data-i18n="menu.boutique">
+        Boutique
+      </button>
+
+      <div class="popup-actions">
+        <button class="vb-btn-validate" id="btnValiderThemeHome" data-i18n="profil.popup.themeValidate">Valider</button>
+        <button class="vb-btn-cancel" id="btnCancelThemeHome" data-i18n="profil.popup.themeCancel">Annuler</button>
+      </div>
     </div>
   </div>
 
@@ -723,6 +858,152 @@ window.addEventListener("load", async function () {
     await window.VROneSignal?.maybePromptOnIndexAfterGameReturn?.();
   } catch (_) {}
 });
+</script>
+<script>
+  function i18nSafeHome(key, fb) {
+    try {
+      const v = window.i18nGet?.(key);
+      return (!v || v === key) ? fb : v;
+    } catch {
+      return fb;
+    }
+  }
+
+  function normalizeThemeKeyHome(k) {
+    return String(k || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '');
+  }
+
+  async function fetchThemesDirectFromDBHome() {
+    const sb = window.sb;
+    if (!sb) return [];
+
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) await sb.auth.signInAnonymously();
+    } catch {}
+
+    let uid = null;
+    try {
+      const { data: { user } } = await sb.auth.getUser();
+      uid = user?.id || null;
+    } catch {}
+
+    if (!uid) return [];
+
+    try {
+      const { data, error } = await sb
+        .from('users')
+        .select('themes_possedes')
+        .or(`id.eq.${uid},auth_id.eq.${uid}`)
+        .maybeSingle();
+
+      if (error || !data) return [];
+
+      const raw = data.themes_possedes;
+      let arr = [];
+
+      if (Array.isArray(raw)) {
+        arr = raw;
+      } else if (typeof raw === 'string' && raw.trim()) {
+        try {
+          arr = JSON.parse(raw);
+        } catch {
+          const cleaned = raw.replace(/[{}]/g, '');
+          arr = cleaned
+            .split(/[,\s]+/)
+            .map(s => s.replace(/^"(.*)"$/, '$1'))
+            .filter(Boolean);
+        }
+      }
+
+      return [...new Set(arr.map(normalizeThemeKeyHome).filter(Boolean))];
+    } catch {
+      return [];
+    }
+  }
+
+  async function openThemePopupHome() {
+    const popup = document.getElementById('theme-selector-popup-home');
+    const themeList = document.getElementById('themeListVBHome');
+
+    const RAW_ALL = (typeof window.getAllThemes === 'function')
+      ? window.getAllThemes()
+      : ["cyber","neon","bubble","nature","nuit","retro","vitraux","angelique","luxury","space","grece","japon","arabic"];
+
+    const ALL_THEMES = RAW_ALL.map(normalizeThemeKeyHome).filter(Boolean);
+
+    let unlocked = await fetchThemesDirectFromDBHome();
+    if (!unlocked.includes('cyber')) unlocked.unshift('cyber');
+
+    const ownedSet = new Set(unlocked);
+    const lockSuffix = i18nSafeHome('theme.item.lockedSuffix', ' 🔒');
+
+    themeList.innerHTML = ALL_THEMES.map(theme => {
+      const locked = !ownedSet.has(theme);
+      const label = i18nSafeHome(
+        `theme.${theme}`,
+        theme.charAt(0).toUpperCase() + theme.slice(1)
+      );
+
+      return `<button class="theme-choice-vb${locked ? ' locked' : ''}"
+                      data-theme="${theme}" ${locked ? 'disabled' : ''}>
+                ${label}${locked ? lockSuffix : ''}
+              </button>`;
+    }).join('');
+
+    popup.classList.add('active');
+
+    let selectedTheme = normalizeThemeKeyHome(localStorage.getItem('themeVBlocks') || 'cyber');
+
+    document.querySelectorAll('#themeListVBHome .theme-choice-vb').forEach(btn => {
+      if (normalizeThemeKeyHome(btn.dataset.theme) === selectedTheme) {
+        btn.classList.add('active');
+      }
+    });
+
+    document.querySelectorAll('#themeListVBHome .theme-choice-vb:not(.locked)').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('#themeListVBHome .theme-choice-vb').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedTheme = normalizeThemeKeyHome(btn.dataset.theme);
+      };
+    });
+
+    document.getElementById('btnThemeShopHome').onclick = () => {
+      window.location.href = 'boutique.html';
+    };
+
+    document.getElementById('btnValiderThemeHome').onclick = () => {
+      if (!selectedTheme) return;
+
+      if (window.userData?.applyLocalTheme) {
+        window.userData.applyLocalTheme(selectedTheme);
+      } else {
+        localStorage.setItem('themeVBlocks', selectedTheme);
+        document.documentElement.setAttribute('data-theme', selectedTheme);
+        document.body?.setAttribute('data-theme', selectedTheme);
+      }
+
+      popup.classList.remove('active');
+    };
+
+    document.getElementById('btnCancelThemeHome').onclick = () => {
+      popup.classList.remove('active');
+    };
+
+    popup.onclick = (e) => {
+      if (e.target === popup) popup.classList.remove('active');
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btnChangeThemeHome');
+    if (btn) btn.addEventListener('click', openThemePopupHome);
+  });
 </script>
 </body>
 </html>
