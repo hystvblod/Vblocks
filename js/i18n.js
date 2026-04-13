@@ -54,17 +54,19 @@
     {
       code: "ES-LATAM",
       ui: "ES-LATAM",
-      aria: "Español (LatAm)",
-      flag: `<svg viewBox="0 0 260 280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect x="18" y="18" width="224" height="244" rx="26" fill="#ffffff"/>
-    <path
-      d="M 143.9 157.2 L 130.3 148.1 L 115.0 123.2 L 119.3 113.0 L 115.9 108.3 L 127.1 94.0 L 124.0 80.9 L 120.0 79.1 L 116.1 84.1 L 102.1 76.2 L 96.7 66.3 L 49.9 51.7 L 21.6 14.0 L 16.4 13.3 L 31.3 38.4 L 16.1 24.1 L 18.7 21.6 L 10.0 10.0 L 41.1 12.3 L 48.6 19.6 L 57.3 19.2 L 63.0 28.0 L 68.5 29.5 L 66.9 41.1 L 76.4 52.1 L 87.1 48.8 L 88.6 43.8 L 98.0 42.2 L 92.5 58.7 L 108.7 60.5 L 107.5 72.7 L 112.2 78.9 L 119.9 77.1 L 127.9 79.9 L 133.6 72.8 L 142.8 68.8 L 143.0 78.7 L 148.1 69.6 L 153.2 74.3 L 171.7 74.1 L 178.3 79.4 L 180.4 72.7 L 180.9 80.7 L 185.4 83.7 L 186.3 82.2 L 184.3 77.9 L 187.0 76.2 L 185.4 74.0 L 192.3 76.7 L 191.8 79.7 L 197.6 79.0 L 203.1 82.7 L 205.8 88.8 L 214.3 92.4 L 225.7 95.2 L 231.7 100.0 L 235.2 107.8 L 243.8 116.3 L 250.0 124.7 L 249.9 141.1 L 241.5 149.4 L 237.5 164.9 L 234.6 179.4 L 223.3 184.8 L 209.0 189.3 L 204.1 198.5 L 191.8 213.9 L 185.6 222.2 L 171.9 227.2 L 169.1 231.5 L 160.4 235.5 L 160.0 240.5 L 155.7 245.3 L 158.9 249.3 L 150.8 255.7 L 153.0 257.0 L 152.3 261.5 L 142.8 268.3 L 125.3 261.8 L 123.2 250.7 L 129.0 240.4 L 126.6 239.1 L 131.2 228.6 L 132.8 224.2 L 137.6 202.8 L 142.5 185.5 L 142.2 168.0 L 135.6 161.0 Z"
-      fill="none"
-      stroke="#174e6a"
-      stroke-width="9"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
+      aria: "Español (Amérique latine)",
+      flag: `<svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect x="0" y="0" width="30" height="20" fill="#ffffff"/>
+    <g transform="translate(6.9 1.4) scale(0.062)">
+      <path
+        d="M 143.9 157.2 L 130.3 148.1 L 115.0 123.2 L 119.3 113.0 L 115.9 108.3 L 127.1 94.0 L 124.0 80.9 L 120.0 79.1 L 116.1 84.1 L 102.1 76.2 L 96.7 66.3 L 49.9 51.7 L 21.6 14.0 L 16.4 13.3 L 31.3 38.4 L 16.1 24.1 L 18.7 21.6 L 10.0 10.0 L 41.1 12.3 L 48.6 19.6 L 57.3 19.2 L 63.0 28.0 L 68.5 29.5 L 66.9 41.1 L 76.4 52.1 L 87.1 48.8 L 88.6 43.8 L 98.0 42.2 L 92.5 58.7 L 108.7 60.5 L 107.5 72.7 L 112.2 78.9 L 119.9 77.1 L 127.9 79.9 L 133.6 72.8 L 142.8 68.8 L 143.0 78.7 L 148.1 69.6 L 153.2 74.3 L 171.7 74.1 L 178.3 79.4 L 180.4 72.7 L 180.9 80.7 L 185.4 83.7 L 186.3 82.2 L 184.3 77.9 L 187.0 76.2 L 185.4 74.0 L 192.3 76.7 L 191.8 79.7 L 197.6 79.0 L 203.1 82.7 L 205.8 88.8 L 214.3 92.4 L 225.7 95.2 L 231.7 100.0 L 235.2 107.8 L 243.8 116.3 L 250.0 124.7 L 249.9 141.1 L 241.5 149.4 L 237.5 164.9 L 234.6 179.4 L 223.3 184.8 L 209.0 189.3 L 204.1 198.5 L 191.8 213.9 L 185.6 222.2 L 171.9 227.2 L 169.1 231.5 L 160.4 235.5 L 160.0 240.5 L 155.7 245.3 L 158.9 249.3 L 150.8 255.7 L 153.0 257.0 L 152.3 261.5 L 142.8 268.3 L 125.3 261.8 L 123.2 250.7 L 129.0 240.4 L 126.6 239.1 L 131.2 228.6 L 132.8 224.2 L 137.6 202.8 L 142.5 185.5 L 142.2 168.0 L 135.6 161.0 Z"
+        fill="none"
+        stroke="#174e6a"
+        stroke-width="12"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </g>
   </svg>`
     },
     {
@@ -113,7 +115,46 @@
       code: "KO",
       ui: "KO",
       aria: "한국어",
-      flag: `<svg viewBox="0 0 30 20" aria-hidden="true"><rect width="30" height="20" fill="#ffffff"/><circle cx="15" cy="10" r="5" fill="#c8102e"/><path d="M15 5a5 5 0 0 0 0 10a2.5 2.5 0 0 1 0-5a2.5 2.5 0 0 0 0-5Z" fill="#0a3a87" opacity="0.95"/></svg>`
+      flag: `<svg viewBox="0 0 30 20" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect width="30" height="20" fill="#ffffff"/>
+
+  <g transform="translate(15 10)">
+    <path d="M0-4.4A4.4 4.4 0 0 1 0 4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0-4.4Z" fill="#cd2e3a"/>
+    <path d="M0 4.4A4.4 4.4 0 0 1 0-4.4A2.2 2.2 0 0 0 0 0A2.2 2.2 0 0 1 0 4.4Z" fill="#0047a0"/>
+  </g>
+
+  <g fill="#111111">
+    <g transform="translate(6.2 4.6) rotate(-28)">
+      <rect x="-2.9" y="-2.8" width="5.8" height="0.7" rx="0.2"/>
+      <rect x="-2.9" y="-1.1" width="5.8" height="0.7" rx="0.2"/>
+      <rect x="-2.9" y="0.6" width="5.8" height="0.7" rx="0.2"/>
+    </g>
+
+    <g transform="translate(23.8 4.6) rotate(28)">
+      <rect x="-2.9" y="-2.8" width="5.8" height="0.7" rx="0.2"/>
+      <rect x="-2.9" y="0.6" width="5.8" height="0.7" rx="0.2"/>
+      <rect x="-2.9" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
+      <rect x="0.7" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
+    </g>
+
+    <g transform="translate(6.2 15.4) rotate(28)">
+      <rect x="-2.9" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
+      <rect x="0.7" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
+      <rect x="-2.9" y="-1.1" width="5.8" height="0.7" rx="0.2"/>
+      <rect x="-2.9" y="0.6" width="2.2" height="0.7" rx="0.2"/>
+      <rect x="0.7" y="0.6" width="2.2" height="0.7" rx="0.2"/>
+    </g>
+
+    <g transform="translate(23.8 15.4) rotate(-28)">
+      <rect x="-2.9" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
+      <rect x="0.7" y="-2.8" width="2.2" height="0.7" rx="0.2"/>
+      <rect x="-2.9" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
+      <rect x="0.7" y="-1.1" width="2.2" height="0.7" rx="0.2"/>
+      <rect x="-2.9" y="0.6" width="2.2" height="0.7" rx="0.2"/>
+      <rect x="0.7" y="0.6" width="2.2" height="0.7" rx="0.2"/>
+    </g>
+  </g>
+</svg>`
     }
   ];
 
@@ -334,22 +375,22 @@
       }
 
       .vrLangOverlay .vr-flagBox{
-        width:46px;
-        height:32px;
-        border-radius:0;
-        overflow:visible;
-        border:0 !important;
-        outline:0 !important;
-        box-shadow:none !important;
-        background:transparent !important;
-        flex:0 0 auto;
-      }
+  width:46px;
+  height:32px;
+  border-radius:8px;
+  overflow:hidden;
+  border:0 !important;
+  outline:0 !important;
+  box-shadow:none !important;
+  background:transparent !important;
+  flex:0 0 auto;
+}
 
-      .vrLangOverlay .vr-flagBox svg{
-        width:100%;
-        height:100%;
-        display:block;
-      }
+.vrLangOverlay .vr-flagBox svg{
+  width:100%;
+  height:100%;
+  display:block;
+}
 
       .vrLangOverlay .vr-langText{
         display:block !important;
