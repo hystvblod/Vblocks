@@ -55,23 +55,15 @@
       code: "ES-LATAM",
       ui: "ES-LATAM",
       aria: "Español (LatAm)",
-      flag: `<svg viewBox="0 0 30 20" aria-hidden="true">
-    <defs>
-      <radialGradient id="latamGlobeReal1" cx="35%" cy="30%" r="75%">
-        <stop offset="0%" stop-color="#8ff3ff"/>
-        <stop offset="45%" stop-color="#34d7ff"/>
-        <stop offset="78%" stop-color="#1dc6c8"/>
-        <stop offset="100%" stop-color="#0ea56f"/>
-      </radialGradient>
-    </defs>
-    <g transform="translate(5,0)">
-      <circle cx="10" cy="10" r="8.1" fill="url(#latamGlobeReal1)"/>
-      <ellipse cx="10" cy="10" rx="5.7" ry="8.1" fill="none" stroke="#fff" stroke-width=".8" opacity=".92"/>
-      <ellipse cx="10" cy="10" rx="2.6" ry="8.1" fill="none" stroke="#fff" stroke-width=".65" opacity=".78"/>
-      <path d="M2.5 10h15M3.8 6.3h12.4M3.8 13.7h12.4" stroke="#fff" stroke-width=".65" stroke-linecap="round" opacity=".82"/>
-      <path d="M7.1 4.9c1.4-.9 3-1 4.4-.4c.8.4 1.7.8 2.6.9c-.3 1.1-1 2-1.9 2.7c-.5.4-.8 1-.9 1.7c-1 .2-1.9 0-2.8-.6c-.6-.4-1.1-.9-1.7-1.3c-.5-.3-1-.6-1.7-.8c.2-.8.9-1.5 2-2.2Z" fill="#fff" opacity=".98"/>
-      <path d="M6.2 11.7c.8 0 1.5.3 2.2.8c.8.7 1.8 1 2.9 1c.9 0 1.6.2 2.3.7c-.7 1.2-1.8 2-3.2 2.6c-1.8-.1-3.3-.8-4.5-2c-.7-.8-.8-1.9.3-3.1Z" fill="#fff" opacity=".9"/>
-    </g>
+      flag: `<svg viewBox="0 0 260 280" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path
+      d="M 143.9 157.2 L 130.3 148.1 L 115.0 123.2 L 119.3 113.0 L 115.9 108.3 L 127.1 94.0 L 124.0 80.9 L 120.0 79.1 L 116.1 84.1 L 102.1 76.2 L 96.7 66.3 L 49.9 51.7 L 21.6 14.0 L 16.4 13.3 L 31.3 38.4 L 16.1 24.1 L 18.7 21.6 L 10.0 10.0 L 41.1 12.3 L 48.6 19.6 L 57.3 19.2 L 63.0 28.0 L 68.5 29.5 L 66.9 41.1 L 76.4 52.1 L 87.1 48.8 L 88.6 43.8 L 98.0 42.2 L 92.5 58.7 L 108.7 60.5 L 107.5 72.7 L 112.2 78.9 L 119.9 77.1 L 127.9 79.9 L 133.6 72.8 L 142.8 68.8 L 143.0 78.7 L 148.1 69.6 L 153.2 74.3 L 171.7 74.1 L 178.3 79.4 L 180.4 72.7 L 180.9 80.7 L 185.4 83.7 L 186.3 82.2 L 184.3 77.9 L 187.0 76.2 L 185.4 74.0 L 192.3 76.7 L 191.8 79.7 L 197.6 79.0 L 203.1 82.7 L 205.8 88.8 L 214.3 92.4 L 225.7 95.2 L 231.7 100.0 L 235.2 107.8 L 243.8 116.3 L 250.0 124.7 L 249.9 141.1 L 241.5 149.4 L 237.5 164.9 L 234.6 179.4 L 223.3 184.8 L 209.0 189.3 L 204.1 198.5 L 191.8 213.9 L 185.6 222.2 L 171.9 227.2 L 169.1 231.5 L 160.4 235.5 L 160.0 240.5 L 155.7 245.3 L 158.9 249.3 L 150.8 255.7 L 153.0 257.0 L 152.3 261.5 L 142.8 268.3 L 125.3 261.8 L 123.2 250.7 L 129.0 240.4 L 126.6 239.1 L 131.2 228.6 L 132.8 224.2 L 137.6 202.8 L 142.5 185.5 L 142.2 168.0 L 135.6 161.0 Z"
+      fill="none"
+      stroke="#174e6a"
+      stroke-width="4.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
   </svg>`
     },
     {
@@ -343,8 +335,8 @@
       .vrLangOverlay .vr-flagBox{
         width:46px;
         height:32px;
-        border-radius:8px;
-        overflow:hidden;
+        border-radius:0;
+        overflow:visible;
         border:0 !important;
         outline:0 !important;
         box-shadow:none !important;
