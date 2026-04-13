@@ -235,6 +235,14 @@
           <a href="profil.html" class="btn-icon" id="btn-profile" title="Profil">
             <img src="assets/icons/user.svg" alt="Profil">
           </a>
+
+          <a href="boutique.html" class="btn-icon" id="btn-shop" title="Boutique">
+            <img src="assets/icons/shop.svg" alt="Boutique">
+          </a>
+
+          <a href="cross-promo.html" class="btn-icon" id="btn-crosspromo" title="Nos applis">
+            <img src="assets/images/crosspromo/btn_crosspromo.webp" alt="Nos applis">
+          </a>
         </div>
       </div>
     </div>
@@ -314,6 +322,20 @@
       const btnProfile = document.getElementById('btn-profile');
       if (btnProfile) {
         btnProfile.addEventListener('click', function() {
+          if (window.vibrateIfEnabled) window.vibrateIfEnabled(30);
+        });
+      }
+
+      const btnShop = document.getElementById('btn-shop');
+      if (btnShop) {
+        btnShop.addEventListener('click', function() {
+          if (window.vibrateIfEnabled) window.vibrateIfEnabled(30);
+        });
+      }
+
+      const btnCrosspromo = document.getElementById('btn-crosspromo');
+      if (btnCrosspromo) {
+        btnCrosspromo.addEventListener('click', function() {
           if (window.vibrateIfEnabled) window.vibrateIfEnabled(30);
         });
       }
