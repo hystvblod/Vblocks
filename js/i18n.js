@@ -56,26 +56,15 @@
       ui: "ES-LATAM",
       aria: "Español (LatAm)",
       flag: `<svg viewBox="0 0 30 20" aria-hidden="true">
-    <defs>
-      <radialGradient id="latamGlobePopup" cx="35%" cy="30%" r="75%">
-        <stop offset="0%" stop-color="#63e1ff"/>
-        <stop offset="55%" stop-color="#29c7d8"/>
-        <stop offset="100%" stop-color="#16b575"/>
-      </radialGradient>
-      <filter id="latamGlow" x="-60%" y="-60%" width="220%" height="220%">
-        <feGaussianBlur stdDeviation="1.2" result="blur"/>
-        <feMerge>
-          <feMergeNode in="blur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-    <g filter="url(#latamGlow)">
-      <circle cx="15" cy="10" r="7.2" fill="url(#latamGlobePopup)"/>
-      <ellipse cx="15" cy="10" rx="5.5" ry="7.2" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1"/>
-      <ellipse cx="15" cy="10" rx="2.8" ry="7.2" fill="none" stroke="rgba(255,255,255,.88)" stroke-width="0.9"/>
-      <path d="M8.1 10h13.8M9.4 6.5h11.2M9.4 13.5h11.2" stroke="rgba(255,255,255,.88)" stroke-width="0.9" stroke-linecap="round"/>
-      <path d="M12.5 6.4c.7-.7 1.5-1.2 2.4-1.5c.9.2 1.7.8 2.4 1.6c.6.5 1.3.9 2.1 1.2c-.2 1.1-.8 2-1.7 2.7c-.4.4-.6 1-.6 1.6c-1.1.2-2.1 0-3-.5c-.7-.3-1.3-.8-1.8-1.4c-.4-.5-1-1-1.7-1.2c.2-1 .8-1.9 1.9-2.5Z" fill="rgba(255,255,255,.98)"/>
+    <g transform="translate(5,0)">
+      <circle cx="10" cy="10" r="8.2" fill="#2fd3dd"/>
+      <circle cx="10" cy="10" r="8.2" fill="#000" opacity=".08"/>
+      <path d="M10 1.8a8.2 8.2 0 0 1 0 16.4a6.1 8.2 0 0 0 0-16.4Z" fill="#17b6a8" opacity=".95"/>
+      <ellipse cx="10" cy="10" rx="5.9" ry="8.2" fill="none" stroke="#fff" stroke-width=".9" opacity=".94"/>
+      <ellipse cx="10" cy="10" rx="2.6" ry="8.2" fill="none" stroke="#fff" stroke-width=".7" opacity=".8"/>
+      <path d="M2.4 10h15.2M3.6 6.4h12.8M3.6 13.6h12.8" stroke="#fff" stroke-width=".7" stroke-linecap="round" opacity=".82"/>
+      <path d="M7.4 5.1c1.5-1 3.2-1.1 4.7-.4c.8.4 1.8.8 2.8 1c-.3 1.2-1 2.1-2 2.8c-.6.4-.9 1-.9 1.7c-1.1.2-2.1 0-3-.6c-.6-.4-1.2-.9-1.8-1.4c-.5-.3-1.1-.6-1.9-.8c.2-.9.9-1.6 2.1-2.3Z" fill="#fff" opacity=".98"/>
+      <path d="M6.4 11.8c.8 0 1.6.3 2.3.8c.8.7 1.9 1.1 3.1 1.1c.9 0 1.7.3 2.5.8c-.8 1.3-1.9 2.2-3.4 2.8c-1.9-.1-3.5-.8-4.8-2.1c-.7-.8-.8-2 .3-3.4Z" fill="#fff" opacity=".9"/>
     </g>
   </svg>`
     },
@@ -311,7 +300,7 @@
       .vrLangOverlay .vr-langGrid{
         display:grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap:10px;
+        gap:14px 10px;
         margin-top:22px;
         margin-bottom:6px;
       }
@@ -324,12 +313,13 @@
 
       .vrLangOverlay .vr-langBtn{
         width:100%;
+        min-width:0;
         display:flex;
         flex-direction:column;
         align-items:center;
         justify-content:flex-start;
-        gap:8px;
-        padding:10px 6px 12px;
+        gap:7px;
+        padding:10px 4px 12px;
         border-radius:14px;
         border:0 !important;
         background:transparent !important;
@@ -339,6 +329,7 @@
         -webkit-tap-highlight-color: transparent;
         text-align:center;
         appearance:none;
+        overflow:hidden;
       }
 
       .vrLangOverlay .vr-langBtn:active{
@@ -353,8 +344,8 @@
       }
 
       .vrLangOverlay .vr-flagBox{
-        width:50px;
-        height:34px;
+        width:48px;
+        height:32px;
         border-radius:8px;
         overflow:visible;
         border:0 !important;
@@ -362,6 +353,9 @@
         box-shadow:none !important;
         background:transparent !important;
         flex:0 0 auto;
+        display:flex;
+        align-items:center;
+        justify-content:center;
       }
 
       .vrLangOverlay .vr-flagBox svg{
@@ -372,19 +366,20 @@
 
       .vrLangOverlay .vr-langText{
         display:flex !important;
-        align-items:center;
+        align-items:flex-start;
         justify-content:center;
         min-height:30px;
-        font-size:clamp(11px,2.8vw,13px);
+        font-size:clamp(10px,2.5vw,12px);
         font-weight:800;
-        line-height:1.15;
+        line-height:1.08;
         color:rgba(255,255,255,.96);
         text-align:center;
-        word-break:break-word;
+        overflow:hidden;
       }
 
       .vrLangOverlay .vr-langText > div{
-        max-width:100%;
+        max-width:82px;
+        overflow-wrap:anywhere;
       }
 
       .vrLangActions{
