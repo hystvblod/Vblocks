@@ -56,9 +56,27 @@
       ui: "ES-LATAM",
       aria: "Español (LatAm)",
       flag: `<svg viewBox="0 0 30 20" aria-hidden="true">
-    <rect width="30" height="20" rx="4" fill="#ffffff"/>
-    <circle cx="15" cy="10" r="6.2" fill="#2bb3a3"/>
-    <path d="M15 3.8c-1.9 1.1-3.3 2.7-4.1 4.7c1.2-.4 2.3-.4 3.3-.1c-.8 1-1.2 2.2-1.3 3.5c1.5-.8 3.2-1.1 5-.9c-.7.9-1.1 1.9-1.2 3.1c2.1-1.1 3.6-3 4.1-5.3c-.9.3-1.8.5-2.8.4c.5-.9.7-1.8.7-2.8c-1 .6-2.1 1-3.2 1.1c.1-1.2-.1-2.4-.5-3.7Z" fill="#ffffff" opacity="0.98"/>
+    <defs>
+      <radialGradient id="latamGlobePopup" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stop-color="#63e1ff"/>
+        <stop offset="55%" stop-color="#29c7d8"/>
+        <stop offset="100%" stop-color="#16b575"/>
+      </radialGradient>
+      <filter id="latamGlow" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur stdDeviation="1.2" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+    <g filter="url(#latamGlow)">
+      <circle cx="15" cy="10" r="7.2" fill="url(#latamGlobePopup)"/>
+      <ellipse cx="15" cy="10" rx="5.5" ry="7.2" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="1"/>
+      <ellipse cx="15" cy="10" rx="2.8" ry="7.2" fill="none" stroke="rgba(255,255,255,.88)" stroke-width="0.9"/>
+      <path d="M8.1 10h13.8M9.4 6.5h11.2M9.4 13.5h11.2" stroke="rgba(255,255,255,.88)" stroke-width="0.9" stroke-linecap="round"/>
+      <path d="M12.5 6.4c.7-.7 1.5-1.2 2.4-1.5c.9.2 1.7.8 2.4 1.6c.6.5 1.3.9 2.1 1.2c-.2 1.1-.8 2-1.7 2.7c-.4.4-.6 1-.6 1.6c-1.1.2-2.1 0-3-.5c-.7-.3-1.3-.8-1.8-1.4c-.4-.5-1-1-1.7-1.2c.2-1 .8-1.9 1.9-2.5Z" fill="rgba(255,255,255,.98)"/>
+    </g>
   </svg>`
     },
     {
@@ -335,10 +353,10 @@
       }
 
       .vrLangOverlay .vr-flagBox{
-        width:46px;
-        height:32px;
+        width:50px;
+        height:34px;
         border-radius:8px;
-        overflow:hidden;
+        overflow:visible;
         border:0 !important;
         outline:0 !important;
         box-shadow:none !important;
