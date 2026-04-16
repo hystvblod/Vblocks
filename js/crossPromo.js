@@ -632,6 +632,14 @@
     showLowVcoinsPopupNow,
     notifyCompletedRun,
     maybeShowPostGamePromo,
+    queuePostGamePromoForIndex(skipBecauseRewardAd) {
+      try {
+        sessionStorage.setItem("vr_crosspromo_context", "postgame");
+        return true;
+      } catch (_) {
+        return false;
+      }
+    },
     renderCrossPromoPage,
     openStore
   };
