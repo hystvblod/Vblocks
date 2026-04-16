@@ -158,152 +158,7 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
 
-    const REFERRAL_SHARE_POPUP_STATE_KEY = 'vblocks_referral_share_popup_v1';
-    const REFERRAL_SHARE_POPUP_MIN_COMPLETED_RUNS = 12;
-    const REFERRAL_SHARE_POPUP_MIN_MS = 3 * 24 * 60 * 60 * 1000;
-
-    function readReferralSharePopupState() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(REFERRAL_SHARE_POPUP_STATE_KEY) || '{}');
-        return {
-          completedRuns: Math.max(0, Number(parsed.completedRuns || 0) || 0),
-          lastShownRun: Math.max(0, Number(parsed.lastShownRun || 0) || 0),
-          lastShownAt: Math.max(0, Number(parsed.lastShownAt || 0) || 0)
-        };
-      } catch (_) {
-        return { completedRuns: 0, lastShownRun: 0, lastShownAt: 0 };
-      }
-    }
-
-    function writeReferralSharePopupState(state) {
-      try {
-        localStorage.setItem(REFERRAL_SHARE_POPUP_STATE_KEY, JSON.stringify({
-          completedRuns: Math.max(0, Number(state?.completedRuns || 0) || 0),
-          lastShownRun: Math.max(0, Number(state?.lastShownRun || 0) || 0),
-          lastShownAt: Math.max(0, Number(state?.lastShownAt || 0) || 0)
-        }));
-      } catch (_) {}
-    }
-
-    function registerReferralCompletedRun() {
-      const state = readReferralSharePopupState();
-      state.completedRuns += 1;
-      writeReferralSharePopupState(state);
-      return state;
-    }
-
-    function canShowReferralSharePopup(state) {
-      const st = state || readReferralSharePopupState();
-      if (!st.lastShownRun && !st.lastShownAt) return true;
-
-      const enoughRuns =
-        (Math.max(0, Number(st.completedRuns || 0) || 0) - Math.max(0, Number(st.lastShownRun || 0) || 0)) >= REFERRAL_SHARE_POPUP_MIN_COMPLETED_RUNS;
-      const enoughTime =
-        (Date.now() - Math.max(0, Number(st.lastShownAt || 0) || 0)) >= REFERRAL_SHARE_POPUP_MIN_MS;
-
-      return enoughRuns && enoughTime;
-    }
-
-    function markReferralSharePopupShown(state) {
-      const st = state || readReferralSharePopupState();
-      st.lastShownRun = Math.max(0, Number(st.completedRuns || 0) || 0);
-      st.lastShownAt = Date.now();
-      writeReferralSharePopupState(st);
-      return st;
-    }
-
-    function showReferralSharePopup() {
-      return new Promise((resolve) => {
-        let root = document.getElementById('vr-referral-share-popup');
-        const inviteRewardAmount = Number(window.REFERRAL_INVITE_VCOINS || 200);
-
-        if (!root) {
-          root = document.createElement('div');
-          root.id = 'vr-referral-share-popup';
-          root.style.cssText = [
-            'position:fixed',
-            'inset:0',
-            'z-index:100220',
-            'display:none',
-            'align-items:center',
-            'justify-content:center',
-            'padding:18px',
-            'background:rgba(0,0,0,.62)',
-            'backdrop-filter:blur(8px)'
-          ].join(';');
-
-          root.innerHTML = `
-            <div role="dialog" aria-modal="true" style="position:relative;width:min(430px,92vw);border-radius:22px;padding:20px 18px;background:linear-gradient(180deg, rgba(36,55,117,.98), rgba(28,35,76,.98));border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 42px rgba(0,0,0,.32);color:#fff;">
-              <button id="vr-referral-share-popup-close" type="button" style="position:absolute;top:12px;right:12px;width:38px;height:38px;border:none;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font-size:18px;font-weight:900;cursor:pointer;">×</button>
-              <div id="vr-referral-share-popup-title" style="font-size:22px;line-height:1.15;font-weight:900;margin-bottom:10px;"></div>
-              <div id="vr-referral-share-popup-body" style="font-size:14px;line-height:1.5;color:rgba(255,255,255,.94);margin-bottom:14px;"></div>
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);width:max-content;max-width:100%;flex-wrap:wrap;">
-                <span style="font-size:13px;font-weight:900;">${tt('referral.invite_and_earn_title','Inviter et gagner :')}</span>
-                <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;" />
-                <span style="font-size:13px;font-weight:900;">+${inviteRewardAmount}</span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr;gap:10px;">
-                <button id="vr-referral-share-popup-main" type="button" style="min-height:50px;border:none;border-radius:16px;background:linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);color:#fff;font-weight:800;cursor:pointer;">
-                  ${tt('referral.invite_and_earn_btn','Inviter et gagner')}
-                </button>
-                <button id="vr-referral-share-popup-later" type="button" style="min-height:48px;border:none;border-radius:16px;background:rgba(255,255,255,.15);color:#fff;font-weight:800;cursor:pointer;">
-                  ${tt('common.later','Plus tard')}
-                </button>
-              </div>
-            </div>
-          `;
-
-          document.body.appendChild(root);
-        }
-
-        const titleEl = document.getElementById('vr-referral-share-popup-title');
-        const bodyEl = document.getElementById('vr-referral-share-popup-body');
-        const closeBtn = document.getElementById('vr-referral-share-popup-close');
-        const mainBtn = document.getElementById('vr-referral-share-popup-main');
-        const laterBtn = document.getElementById('vr-referral-share-popup-later');
-
-        if (titleEl) titleEl.textContent = tt('referral.share_popup_title', 'Tu aimes VBlocks ?');
-        if (bodyEl) bodyEl.textContent = tt('referral.share_popup_body', 'Partage-le avec tes proches, fais découvrir le jeu et gagne des VCoins quand une invitation est validée.');
-
-        const close = () => {
-          root.style.display = 'none';
-          root.onclick = null;
-          if (closeBtn) closeBtn.onclick = null;
-          if (mainBtn) mainBtn.onclick = null;
-          if (laterBtn) laterBtn.onclick = null;
-          document.removeEventListener('keydown', onKeyDown);
-          resolve(true);
-        };
-
-        const onKeyDown = (e) => {
-          if (e.key === 'Escape') close();
-        };
-
-        root.onclick = (e) => {
-          if (e.target === root) close();
-        };
-        if (closeBtn) closeBtn.onclick = close;
-        if (laterBtn) laterBtn.onclick = close;
-        if (mainBtn) {
-          mainBtn.onclick = async () => {
-            try { await window.VReferral?.shareInvite?.(); } catch (_) {}
-            close();
-          };
-        }
-
-        root.style.display = 'flex';
-        document.addEventListener('keydown', onKeyDown);
-        setTimeout(() => mainBtn?.focus?.(), 0);
-      });
-    }
-
-    async function maybeShowReferralSharePopupAfterCompletedRun() {
-      const state = readReferralSharePopupState();
-      if (!canShowReferralSharePopup(state)) return false;
-      markReferralSharePopupShown(state);
-      await showReferralSharePopup();
-      return true;
-    }
+    
 
     // Séquence commune (persistance et rewind)
     let piecesSequence = null;
@@ -936,26 +791,27 @@ function fillRectThemeSafe(c, px, py, size) {
                 type="button"
                 style="
                   width:100%;
-                  padding:12px 14px;
+                  padding:11px 13px;
                   border:none;
-                  border-radius:14px;
-                  background:linear-gradient(180deg, rgba(126,195,255,.22), rgba(84,133,255,.18));
-                  border:1px solid rgba(126,195,255,.38);
+                  border-radius:12px;
+                  background:rgba(255,255,255,.09);
+                  border:1px solid rgba(255,255,255,.14);
                   color:#fff;
                   cursor:pointer;
                   text-align:left;
                   box-shadow:0 0 0 rgba(112,183,255,0);
                 "
               >
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-                  <div style="display:flex;align-items:center;gap:10px;font-weight:900;">
-                    <span>${tt('referral.invite_and_earn_title','Inviter et gagner :')}</span>
-                    <img src="assets/images/vcoin.webp" alt="" style="width:22px;height:22px;object-fit:contain;">
-                    <span>+${referralRewardAmount}</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                    <img src="assets/images/vcoin.webp" alt="" style="width:20px;height:20px;object-fit:contain;flex:0 0 auto;">
+                    <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+                      <div style="font-weight:900;line-height:1.15;">${tt('referral.invite_and_earn_title','Inviter et gagner :')} +${referralRewardAmount}</div>
+                      <div style="opacity:.94;line-height:1.35;">${tt('referral.crosspromo_desc','Invite un ami à installer VBlocks et gagne une récompense.')}</div>
+                    </div>
                   </div>
-                  <span style="padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.14);font-weight:800;white-space:nowrap;">${tt('referral.invite_and_earn_btn','Inviter et gagner')}</span>
+                  <span style="padding:8px 11px;border-radius:999px;background:linear-gradient(180deg,#7fbeff 0%,#63dcfb 100%);font-weight:800;white-space:nowrap;color:#fff;">${tt('referral.invite_and_earn_btn','Inviter et gagner')}</span>
                 </div>
-                <div style="margin-top:8px;opacity:.96;line-height:1.45;">${tt('referral.crosspromo_desc','Invite un ami à installer VBlocks et gagne une récompense.')}</div>
               </button>
             </div>
           ` : ''}
@@ -1251,20 +1107,13 @@ function fillRectThemeSafe(c, px, py, size) {
         await commitEndRewards(points);
         endHandled = true;
 
-        const referralState = registerReferralCompletedRun();
-        let referralPopupShown = false;
-        if (shouldShowDuelNudgeThisRun) {
-          referralPopupShown = await maybeShowReferralSharePopupAfterCompletedRun(referralState).catch(() => false);
-        }
-
+        try { window.VReferral?.registerCompletedRun?.(); } catch (_) {}
         try { window.VRCrossPromo?.notifyCompletedRun?.(); } catch (_) {}
-        if (!referralPopupShown) {
-          try {
-            await window.VRCrossPromo?.maybeShowPostGamePromo?.({
-              skipBecauseRewardAd: false
-            });
-          } catch (_) {}
-        }
+        try {
+          await window.VRCrossPromo?.maybeShowPostGamePromo?.({
+            skipBecauseRewardAd: false
+          });
+        } catch (_) {}
 
         popup.remove();
         restartGameHard();
@@ -1274,14 +1123,14 @@ function fillRectThemeSafe(c, px, py, size) {
         await commitEndRewards(points);
         endHandled = true;
 
-        const referralState = registerReferralCompletedRun();
-        let referralPopupShown = false;
-        if (shouldShowDuelNudgeThisRun) {
-          referralPopupShown = await maybeShowReferralSharePopupAfterCompletedRun(referralState).catch(() => false);
-        }
+        try { window.VReferral?.registerCompletedRun?.(); } catch (_) {}
+        let queuedReferralShare = false;
+        try {
+          queuedReferralShare = !!window.VReferral?.maybeQueueIndexSharePrompt?.(shouldShowDuelNudgeThisRun);
+        } catch (_) {}
 
         try { window.VRCrossPromo?.notifyCompletedRun?.(); } catch (_) {}
-        if (!referralPopupShown) {
+        if (!queuedReferralShare) {
           try {
             await window.VRCrossPromo?.maybeShowPostGamePromo?.({
               skipBecauseRewardAd: false
