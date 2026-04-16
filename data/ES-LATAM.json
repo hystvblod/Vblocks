@@ -305,7 +305,8 @@
   "duel.rematch.ask": "Tu rival propone una revancha. ¿La aceptas?",
   "duel.rematch.error": "No se puede iniciar la revancha por ahora.",
   "rewind.tip.title": "Retroceder",
-  "rewind.tip.body": "Si lo necesitas, puedes tocar este botón para retroceder 5 piezas por 1 ficha.",
+  "rewind.tip.body": "Si lo necesitas, puedes tocar este botón para retroceder 5 piezas.",
+  "rewind.tip.cost": "Costo",
   "rewind.tip.reward": "Toma, te damos una para probarlo",
   "rewind.tip.cta": "Entendido"
 }

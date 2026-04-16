@@ -305,7 +305,8 @@
   "duel.rematch.ask": "Your opponent is asking for a rematch. Accept?",
   "duel.rematch.error": "Unable to start a rematch right now.",
   "rewind.tip.title": "Rewind",
-  "rewind.tip.body": "If needed, you can tap this button to go back 5 pieces for 1 token.",
+  "rewind.tip.body": "If needed, you can tap this button to go back 5 pieces.",
+  "rewind.tip.cost": "Cost",
   "rewind.tip.reward": "Here, we’re giving you one to try it",
   "rewind.tip.cta": "Got it"
 }

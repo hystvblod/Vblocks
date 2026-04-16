@@ -305,7 +305,8 @@
   "duel.rematch.ask": "Ton adversaire propose une revanche. Accepter ?",
   "duel.rematch.error": "Impossible de lancer la revanche pour le moment.",
   "rewind.tip.title": "Retour en arrière",
-  "rewind.tip.body": "En cas de besoin, tu peux cliquer sur cette touche pour revenir 5 pièces en arrière contre 1 jeton.",
+  "rewind.tip.body": "En cas de besoin, tu peux cliquer sur cette touche pour revenir 5 pièces en arrière.",
+  "rewind.tip.cost": "Coût",
   "rewind.tip.reward": "Tiens, on t’en donne un pour essayer",
   "rewind.tip.cta": "Compris"
 }

@@ -305,7 +305,8 @@
   "duel.rematch.ask": "Je tegenstander wil een rematch. Accepteren?",
   "duel.rematch.error": "Kan nu geen rematch starten.",
   "rewind.tip.title": "Terug",
-  "rewind.tip.body": "Als je wilt, kun je op deze knop tikken om 5 stukken terug te gaan voor 1 fiche.",
+  "rewind.tip.body": "Als het nodig is, kun je op deze knop tikken om 5 stukken terug te gaan.",
+  "rewind.tip.cost": "Kosten",
   "rewind.tip.reward": "Hier, we geven je er één om het te proberen",
   "rewind.tip.cta": "Begrepen"
 }
