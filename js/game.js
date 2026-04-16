@@ -1603,12 +1603,8 @@ async function maybeShowRewindTutorialPopup() {
           </span>
         </div>
 
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;font-weight:800;flex-wrap:nowrap;">
-          <span>${tt('rewind.tip.reward', 'Tiens, on t’en donne un pour essayer')}</span>
-          <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:0 0 auto;">
-            <img src="assets/images/jeton.webp" alt="" style="display:block;width:20px;height:20px;object-fit:contain;flex:0 0 20px;">
-            <span>+1</span>
-          </span>
+        <div style="margin-bottom:14px;font-weight:800;text-align:center;">
+          ${tt('rewind.tip.reward', '')}
         </div>
 
         <button id="rewind-tutorial-ok" style="padding:.78em 1.15em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;font-weight:800;">
