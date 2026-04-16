@@ -1760,16 +1760,37 @@ async function maybeShowRewindTutorialPopup() {
 
     document.body.appendChild(popup);
 
+    let canCloseRewindTutorial = false;
+    const rewindOkBtn = popup.querySelector('#rewind-tutorial-ok');
+
+    if (rewindOkBtn) {
+      rewindOkBtn.disabled = true;
+      rewindOkBtn.style.opacity = '0.55';
+      rewindOkBtn.style.cursor = 'default';
+      rewindOkBtn.style.pointerEvents = 'none';
+    }
+
+    setTimeout(() => {
+      canCloseRewindTutorial = true;
+      if (rewindOkBtn) {
+        rewindOkBtn.disabled = false;
+        rewindOkBtn.style.opacity = '1';
+        rewindOkBtn.style.cursor = 'pointer';
+        rewindOkBtn.style.pointerEvents = 'auto';
+      }
+    }, 2000);
+
     const closePopup = () => {
+      if (!canCloseRewindTutorial) return;
       popup.remove();
       paused = wasPaused;
       safeRedraw();
       if (!paused && !gameOver) requestAnimationFrame(update);
     };
 
-    popup.querySelector('#rewind-tutorial-ok')?.addEventListener('click', closePopup);
+    rewindOkBtn?.addEventListener('click', closePopup);
     popup.addEventListener('click', (e) => {
-      if (e.target === popup) closePopup();
+      if (e.target === popup && canCloseRewindTutorial) closePopup();
     });
   } catch (e) {
     rewindTutorialShownThisRun = false;

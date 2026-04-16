@@ -309,7 +309,7 @@
   "duel.rematch.ask": "Tu rival propone una revancha. ¿Aceptar?",
   "duel.rematch.error": "No se puede iniciar la revancha por ahora.",
   "rewind.tip.title": "Nuevo: volver atrás",
-  "rewind.tip.body": "Puedes usar este botón durante la partida para volver atrás si quieres corregir un movimiento.",
+  "rewind.tip.body": "Puedes usar este botón durante la partida para volver 3 movimientos atrás si quieres corregir una jugada.",
   "rewind.tip.reward": "Te regalamos",
   "rewind.tip.cta": "Entendido"
 }
