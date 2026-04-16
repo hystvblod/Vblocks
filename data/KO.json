@@ -309,7 +309,7 @@
   "duel.rematch.ask": "상대가 재대결을 원합니다. 수락할까요?",
   "duel.rematch.error": "지금은 재대결을 시작할 수 없습니다.",
   "rewind.tip.title": "새 기능: 되돌리기",
-  "rewind.tip.body": "이 버튼을 사용하면 플레이 중 3수 전으로 돌아가 실수를 고칠 수 있어요.",
+  "rewind.tip.body": "이 버튼을 사용하면 플레이 중 5수 전으로 돌아가 실수를 고칠 수 있어요.",
   "rewind.tip.reward": "드려요",
   "rewind.tip.cta": "알겠어요"
 }
