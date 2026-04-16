@@ -650,6 +650,9 @@
       const btnNow   = document.getElementById('btn-update-now');
       const btnLater = document.getElementById('btn-update-later');
 
+      let lastInfo = null;
+      let listenersBound = false;
+
       function i18nApply() {
         try {
           if (!window.i18nGet) return;
@@ -661,39 +664,152 @@
         } catch(_) {}
       }
 
+      function showBanner(info) {
+        lastInfo = info || lastInfo;
+        i18nApply();
+        banner.style.display = 'block';
+      }
+
+      function hideBanner() {
+        banner.style.display = 'none';
+      }
+
       async function openStore(){
+        const AppUpdate = window.Capacitor?.Plugins?.AppUpdate;
+        if (AppUpdate?.openAppStore) {
+          try {
+            await AppUpdate.openAppStore({ androidPackageName: 'com.vboldstudio.VBlocks' });
+            return;
+          } catch (_) {}
+        }
+
         const AppLauncher = window.Capacitor?.Plugins?.AppLauncher;
-        if (AppLauncher) { try { await AppLauncher.openUrl({ url: PLAY_URL }); return; } catch(_){} }
-        location.href = PLAY_URL; // fallback web
+        if (AppLauncher) {
+          try {
+            await AppLauncher.openUrl({ url: PLAY_URL });
+            return;
+          } catch (_) {}
+        }
+
+        location.href = PLAY_URL;
       }
 
       async function checkPlayUpdateAndMaybeShow() {
-        const AppUpdate = window.Capacitor?.Plugins?.AppUpdate; // @capawesome/capacitor-app-update
-        if (!AppUpdate) { return; }
+        const AppUpdate = window.Capacitor?.Plugins?.AppUpdate;
+        if (!AppUpdate?.getAppUpdateInfo) return;
+
         try {
           const info = await AppUpdate.getAppUpdateInfo();
-          if (info && info.updateAvailability === 2) {
-            banner.style.display = 'block';
-            i18nApply();
+          lastInfo = info || null;
+          console.log('[APP UPDATE][info]', info);
 
-            btnNow.onclick = async () => {
-              try {
-                if (info.flexibleUpdateAllowed) {
-                  await AppUpdate.startFlexibleUpdate(); // téléchargement en arrière-plan
-                  banner.style.display = 'none';
-                } else {
-                  await openStore(); // pas flexible → fiche Play
-                }
-              } catch (e) {
-                await openStore();
-              }
-            };
-            btnLater.onclick = ()=>{ banner.style.display='none'; };
+          const availability = Number(info?.updateAvailability ?? 0);
+
+          // 2 = UPDATE_AVAILABLE
+          // 3 = UPDATE_IN_PROGRESS
+          if (availability === 2 || availability === 3) {
+            showBanner(info);
+          } else {
+            hideBanner();
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[APP UPDATE][check]', e?.message || e);
+        }
       }
 
-      document.addEventListener('DOMContentLoaded', checkPlayUpdateAndMaybeShow);
+      async function bindListenersOnce() {
+        if (listenersBound) return;
+        listenersBound = true;
+
+        const AppUpdate = window.Capacitor?.Plugins?.AppUpdate;
+        const App = window.Capacitor?.Plugins?.App;
+
+        if (AppUpdate?.addListener) {
+          try {
+            await AppUpdate.addListener('onFlexibleUpdateStateChange', async (state) => {
+              console.log('[APP UPDATE][state]', state);
+
+              const status = Number(state?.installStatus ?? 0);
+
+              // DOWNLOADED
+              if (status === 11) {
+                try {
+                  await AppUpdate.completeFlexibleUpdate();
+                } catch (e) {
+                  console.warn('[APP UPDATE][completeFlexibleUpdate]', e?.message || e);
+                }
+              }
+            });
+          } catch (e) {
+            console.warn('[APP UPDATE][listener]', e?.message || e);
+          }
+        }
+
+        if (App?.addListener) {
+          try {
+            await App.addListener('resume', checkPlayUpdateAndMaybeShow);
+          } catch (e) {
+            console.warn('[APP UPDATE][resume]', e?.message || e);
+          }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            checkPlayUpdateAndMaybeShow();
+          }
+        });
+      }
+
+      btnNow.onclick = async () => {
+        const AppUpdate = window.Capacitor?.Plugins?.AppUpdate;
+        const info = lastInfo;
+
+        if (!AppUpdate || !info) {
+          await openStore();
+          return;
+        }
+
+        try {
+          const availability = Number(info?.updateAvailability ?? 0);
+
+          if (availability === 3) {
+            showBanner(info);
+            return;
+          }
+
+          if (info.immediateUpdateAllowed) {
+            await AppUpdate.performImmediateUpdate();
+            return;
+          }
+
+          if (info.flexibleUpdateAllowed) {
+            await AppUpdate.startFlexibleUpdate();
+            showBanner(info);
+            return;
+          }
+
+          await openStore();
+        } catch (e) {
+          console.warn('[APP UPDATE][start]', e?.message || e);
+          await openStore();
+        }
+      };
+
+      btnLater.onclick = () => {
+        hideBanner();
+      };
+
+      document.addEventListener('deviceready', async () => {
+        await bindListenersOnce();
+        await checkPlayUpdateAndMaybeShow();
+      }, { once: true });
+
+      window.addEventListener('load', () => {
+        setTimeout(async () => {
+          await bindListenersOnce();
+          await checkPlayUpdateAndMaybeShow();
+        }, 800);
+      }, { once: true });
     })();
   </script>
 
