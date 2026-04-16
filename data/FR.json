@@ -309,7 +309,7 @@
   "duel.rematch.ask": "Ton adversaire propose une revanche. Accepter ?",
   "duel.rematch.error": "Impossible de lancer la revanche pour le moment.",
   "rewind.tip.title": "Nouveau : retour arrière",
-  "rewind.tip.body": "Tu peux utiliser ce bouton pendant la partie pour revenir en arrière si tu veux corriger un coup.",
+  "rewind.tip.body": "Tu peux utiliser ce bouton pendant la partie pour revenir 3 coups en arrière si tu veux corriger un coup.",
   "rewind.tip.reward": "On t’offre",
   "rewind.tip.cta": "Compris"
 }

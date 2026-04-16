@@ -309,7 +309,7 @@
   "duel.rematch.ask": "Dein Gegner möchte eine Revanche. Annehmen?",
   "duel.rematch.error": "Eine Revanche kann im Moment nicht gestartet werden.",
   "rewind.tip.title": "Neu: Zurück",
-  "rewind.tip.body": "Mit diesem Button kannst du während der Partie zurückgehen, wenn du einen Zug korrigieren möchtest.",
+  "rewind.tip.body": "Mit diesem Button kannst du während der Partie 3 Züge zurückgehen, wenn du einen Zug korrigieren möchtest.",
   "rewind.tip.reward": "Wir schenken dir",
   "rewind.tip.cta": "Verstanden"
 }

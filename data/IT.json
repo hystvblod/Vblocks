@@ -309,7 +309,7 @@
   "duel.rematch.ask": "Il tuo avversario propone una rivincita. Accettare?",
   "duel.rematch.error": "Impossibile avviare una rivincita al momento.",
   "rewind.tip.title": "Novità: indietro",
-  "rewind.tip.body": "Puoi usare questo pulsante durante la partita per tornare indietro se vuoi correggere una mossa.",
+  "rewind.tip.body": "Puoi usare questo pulsante durante la partita per tornare indietro di 3 mosse se vuoi correggere una mossa.",
   "rewind.tip.reward": "Ti regaliamo",
   "rewind.tip.cta": "Capito"
 }
