@@ -305,7 +305,8 @@
   "duel.rematch.ask": "Il tuo avversario propone una rivincita. Accettare?",
   "duel.rematch.error": "Impossibile avviare una rivincita al momento.",
   "rewind.tip.title": "Torna indietro",
-  "rewind.tip.body": "Se necessario, puoi toccare questo pulsante per tornare indietro di 5 pezzi al costo di 1 gettone.",
+  "rewind.tip.body": "Se necessario, puoi toccare questo pulsante per tornare indietro di 5 pezzi.",
+  "rewind.tip.cost": "Costo",
   "rewind.tip.reward": "Tieni, te ne diamo uno per provarlo",
   "rewind.tip.cta": "Capito"
 }

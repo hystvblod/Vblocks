@@ -305,7 +305,8 @@
   "duel.rematch.ask": "相手が再戦を希望しています。受けますか？",
   "duel.rematch.error": "今は再戦を開始できません。",
   "rewind.tip.title": "巻き戻し",
-  "rewind.tip.body": "必要なときは、このボタンを押すと1トークンで5個前まで戻れます。",
+  "rewind.tip.body": "必要なときは、このボタンを押すと5個前まで戻れます。",
+  "rewind.tip.cost": "必要数",
   "rewind.tip.reward": "試せるように1つあげるね",
   "rewind.tip.cta": "わかった"
 }

@@ -305,7 +305,8 @@
   "duel.rematch.ask": "O teu adversário quer revanche. Aceitas?",
   "duel.rematch.error": "Não foi possível iniciar a revanche agora.",
   "rewind.tip.title": "Voltar atrás",
-  "rewind.tip.body": "Se precisares, podes tocar neste botão para recuar 5 peças por 1 ficha.",
+  "rewind.tip.body": "Se precisares, podes tocar neste botão para recuar 5 peças.",
+  "rewind.tip.cost": "Custo",
   "rewind.tip.reward": "Toma, damos-te uma para experimentares",
   "rewind.tip.cta": "Percebi"
 }

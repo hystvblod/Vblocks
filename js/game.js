@@ -1590,13 +1590,23 @@ async function maybeShowRewindTutorialPopup() {
         </div>
 
         <div style="opacity:.96;line-height:1.5;margin-bottom:10px;">
-          ${tt('rewind.tip.body', 'En cas de besoin, tu peux cliquer sur cette touche pour revenir 5 pièces en arrière contre 1 jeton.')}
+          ${tt('rewind.tip.body', 'En cas de besoin, tu peux cliquer sur cette touche pour revenir 5 pièces en arrière.')}
         </div>
 
-        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;font-weight:800;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;font-weight:800;flex-wrap:nowrap;">
+          <span>${tt('rewind.tip.cost', 'Coût')}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:0 0 auto;">
+            <img src="assets/images/jeton.webp" alt="" style="display:block;width:20px;height:20px;object-fit:contain;flex:0 0 20px;">
+            <span>x1</span>
+          </span>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;font-weight:800;flex-wrap:nowrap;">
           <span>${tt('rewind.tip.reward', 'Tiens, on t’en donne un pour essayer')}</span>
-          <img src="assets/images/jeton.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
-          <span>+1</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:0 0 auto;">
+            <img src="assets/images/jeton.webp" alt="" style="display:block;width:20px;height:20px;object-fit:contain;flex:0 0 20px;">
+            <span>+1</span>
+          </span>
         </div>
 
         <button id="rewind-tutorial-ok" style="padding:.78em 1.15em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;font-weight:800;">

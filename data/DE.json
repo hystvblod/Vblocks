@@ -305,7 +305,8 @@
   "duel.rematch.ask": "Dein Gegner möchte eine Revanche. Annehmen?",
   "duel.rematch.error": "Eine Revanche kann im Moment nicht gestartet werden.",
   "rewind.tip.title": "Zurück",
-  "rewind.tip.body": "Falls nötig, kannst du auf diese Taste tippen, um für 1 Jeton 5 Steine zurückzugehen.",
+  "rewind.tip.body": "Falls nötig, kannst du auf diese Taste tippen, um 5 Steine zurückzugehen.",
+  "rewind.tip.cost": "Kosten",
   "rewind.tip.reward": "Hier, wir geben dir einen zum Ausprobieren",
   "rewind.tip.cta": "Verstanden"
 }

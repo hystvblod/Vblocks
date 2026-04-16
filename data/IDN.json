@@ -305,7 +305,8 @@
   "duel.rematch.ask": "Lawanmu meminta tanding ulang. Terima?",
   "duel.rematch.error": "Tidak bisa memulai tanding ulang sekarang.",
   "rewind.tip.title": "Mundur",
-  "rewind.tip.body": "Kalau perlu, kamu bisa menekan tombol ini untuk mundur 5 bidak dengan 1 token.",
+  "rewind.tip.body": "Kalau perlu, kamu bisa menekan tombol ini untuk mundur 5 bidak.",
+  "rewind.tip.cost": "Biaya",
   "rewind.tip.reward": "Nih, kami kasih satu untuk mencobanya",
   "rewind.tip.cta": "Mengerti"
 }
