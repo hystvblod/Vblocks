@@ -307,5 +307,9 @@
   "duel.rematch": "Rematch",
   "duel.rematch.sent": "Rematch-verzoek verzonden",
   "duel.rematch.ask": "Je tegenstander wil een rematch. Accepteren?",
-  "duel.rematch.error": "Kan nu geen rematch starten."
+  "duel.rematch.error": "Kan nu geen rematch starten.",
+  "rewind.tip.title": "Nieuw: terug",
+  "rewind.tip.body": "Met deze knop kun je tijdens het spel teruggaan als je een zet wilt corrigeren.",
+  "rewind.tip.reward": "Je krijgt van ons",
+  "rewind.tip.cta": "Begrepen"
 }

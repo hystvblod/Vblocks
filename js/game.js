@@ -161,6 +161,8 @@ function fillRectThemeSafe(c, px, py, size) {
     const REFERRAL_SHARE_POPUP_STATE_KEY = 'vblocks_referral_share_popup_v1';
     const REFERRAL_SHARE_POPUP_MIN_COMPLETED_RUNS = 12;
     const REFERRAL_SHARE_POPUP_MIN_MS = 3 * 24 * 60 * 60 * 1000;
+    const REWIND_TUTORIAL_STATE_KEY = 'vblocks_rewind_tutorial_v1';
+    const REWIND_TUTORIAL_MIN_PLACED_PIECES = 3;
 
     function readReferralSharePopupState() {
       try {
@@ -303,6 +305,15 @@ function fillRectThemeSafe(c, px, py, size) {
       markReferralSharePopupShown(state);
       await showReferralSharePopup();
       return true;
+    }
+
+    function hasSeenRewindTutorial() {
+      try { return localStorage.getItem(REWIND_TUTORIAL_STATE_KEY) === '1'; }
+      catch (_) { return false; }
+    }
+
+    function markRewindTutorialSeen() {
+      try { localStorage.setItem(REWIND_TUTORIAL_STATE_KEY, '1'); } catch (_) {}
     }
 
     // Séquence commune (persistance et rewind)
@@ -674,6 +685,9 @@ function fillRectThemeSafe(c, px, py, size) {
     let combo = 0;
     let linesCleared = 0;
     let history = [];
+    let piecesLockedThisRun = 0;
+    let rewindTutorialShownThisRun = false;
+    let rewindTutorialBusy = false;
 
     // revive ramp
     let reviveRampActive = false;
@@ -698,7 +712,8 @@ function fillRectThemeSafe(c, px, py, size) {
         heldPiece: heldPiece ? JSON.parse(JSON.stringify(heldPiece)) : null,
         score, combo, linesCleared, dropInterval,
         piecesSequence: piecesSequence ? piecesSequence.slice() : null,
-        piecesUsed
+        piecesUsed,
+        piecesLockedThisRun
       });
       if (history.length > 30) history.shift();
     }
@@ -789,7 +804,8 @@ function fillRectThemeSafe(c, px, py, size) {
         ts: Date.now(),
         inProgress: !gameOver && !!currentPiece, // flag clé → pas de popup si false
         piecesSequence,
-        piecesUsed
+        piecesUsed,
+        piecesLockedThisRun
       };
     }
     function clearSavedGame() {
@@ -860,6 +876,9 @@ function fillRectThemeSafe(c, px, py, size) {
         }
         if (Number.isInteger(s.piecesUsed)) {
           piecesUsed = s.piecesUsed;
+        }
+        if (Number.isInteger(s.piecesLockedThisRun)) {
+          piecesLockedThisRun = Math.max(0, s.piecesLockedThisRun);
         }
 
     // Préfère TOUJOURS le thème actuel choisi par l’utilisateur
@@ -977,6 +996,9 @@ overlay.querySelector('#resume-yes').onclick = () => {
       endHandled = false;
       creditDone = false;
       resetRunRecordNudgeState();
+      piecesLockedThisRun = 0;
+      rewindTutorialShownThisRun = false;
+      rewindTutorialBusy = false;
 
       // UI
       const scoreEl = document.getElementById('score');
@@ -1672,6 +1694,91 @@ function showRewindConfirmPopup() {
   });
 }
 
+async function maybeShowRewindTutorialPopup() {
+  if (mode === 'duel') return;
+  if (piecesLockedThisRun < REWIND_TUTORIAL_MIN_PLACED_PIECES) return;
+  if (rewindTutorialShownThisRun || rewindTutorialBusy) return;
+  if (hasSeenRewindTutorial()) return;
+
+  rewindTutorialBusy = true;
+  rewindTutorialShownThisRun = true;
+
+  try {
+    await userData.addJetons?.(1);
+    markRewindTutorialSeen();
+
+    try {
+      const jetons = await userData.getJetons?.();
+      const j = document.getElementById('header-jetons') || document.getElementById('jetonsCount');
+      if (j && jetons != null) j.textContent = String(jetons);
+    } catch (_) {}
+
+    const oldPopup = document.getElementById('rewind-tutorial-popup');
+    if (oldPopup) oldPopup.remove();
+
+    const wasPaused = paused;
+    paused = true;
+    stopSoftDrop();
+    stopHorizontalRepeat();
+    safeRedraw();
+
+    const popup = document.createElement('div');
+    popup.id = 'rewind-tutorial-popup';
+    popup.style = `
+      position: fixed;
+      inset: 0;
+      z-index: 100001;
+      background: rgba(0,0,0,.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    `;
+
+    popup.innerHTML = `
+      <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
+          <img src="assets/icons/rewind_5.svg" alt="" style="width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.25));">
+          <div style="font-size:1.05em;font-weight:800;line-height:1.2;">${tt('rewind.tip.title','Nouveau : retour arrière')}</div>
+        </div>
+
+        <div style="opacity:.96;line-height:1.5;margin-bottom:10px;">
+          ${tt('rewind.tip.body','Tu peux utiliser ce bouton pendant la partie pour revenir en arrière si tu veux corriger un coup.')}
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;font-weight:800;">
+          <span>${tt('rewind.tip.reward','On t\'offre')}</span>
+          <img src="assets/images/jeton.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
+          <span>+1</span>
+        </div>
+
+        <button id="rewind-tutorial-ok" style="padding:.78em 1.15em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;font-weight:800;">
+          ${tt('rewind.tip.cta','Compris')}
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    const closePopup = () => {
+      popup.remove();
+      paused = wasPaused;
+      safeRedraw();
+      if (!paused && !gameOver) requestAnimationFrame(update);
+    };
+
+    popup.querySelector('#rewind-tutorial-ok')?.addEventListener('click', closePopup);
+    popup.addEventListener('click', (e) => {
+      if (e.target === popup) closePopup();
+    });
+  } catch (e) {
+    rewindTutorialShownThisRun = false;
+    console.warn('[VBlocks] rewind tutorial popup failed', e);
+  } finally {
+    rewindTutorialBusy = false;
+  }
+}
+
 function showNoJetonPopup(opts = {}) {
   const oldMini = document.getElementById('no-jeton-popup');
   if (oldMini) oldMini.remove();
@@ -2003,6 +2110,8 @@ if (score > highscoreCloud) {
 
         merge();
         saveHistory();
+        piecesLockedThisRun += 1;
+        setTimeout(() => { maybeShowRewindTutorialPopup(); }, 120);
         reset();
         if (collision()) {
           showEndPopup(score);
@@ -2116,6 +2225,8 @@ if (score > highscoreCloud) {
       stopSoftDrop();
       merge();
       saveHistory();
+      piecesLockedThisRun += 1;
+      setTimeout(() => { maybeShowRewindTutorialPopup(); }, 120);
       reset();
       lastTime = performance.now();
       if (collision()) {
