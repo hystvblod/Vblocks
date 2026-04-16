@@ -271,8 +271,6 @@
   function showIndexSharePromptPopup() {
     return new Promise((resolve) => {
       let root = document.getElementById("vr-referral-index-share-popup");
-      const inviteRewardAmount = Number(window.REFERRAL_INVITE_VCOINS || 200);
-
       if (!root) {
         root = document.createElement("div");
         root.id = "vr-referral-index-share-popup";
@@ -294,16 +292,17 @@
 
             <div id="vr-referral-index-share-popup-title" style="font-size:22px;line-height:1.15;font-weight:900;margin-bottom:10px;text-align:center;padding:0 26px;"></div>
 
-            <div id="vr-referral-index-share-popup-body" style="font-size:14px;line-height:1.5;color:rgba(255,255,255,.94);margin-bottom:12px;text-align:center;"></div>
+            <div id="vr-referral-index-share-popup-body" style="font-size:14px;line-height:1.5;color:rgba(255,255,255,.94);margin-bottom:14px;text-align:center;"></div>
 
-            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;text-align:center;">
-              <img src="assets/images/vcoin.webp" alt="" style="width:20px;height:20px;object-fit:contain;" />
-              <span style="font-size:15px;font-weight:900;">+${inviteRewardAmount}</span>
+            <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;text-align:center;flex-wrap:wrap;">
+              <span style="font-size:17px;font-weight:900;">${t("referral.invite_and_earn_btn", "Inviter et gagner")}</span>
+              <img src="assets/images/vcoin.webp" alt="" style="width:22px;height:22px;object-fit:contain;" />
+              <span style="font-size:18px;font-weight:900;">+300</span>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr;gap:10px;">
-              <button id="vr-referral-index-share-popup-main" type="button" style="min-height:52px;border:none;border-radius:16px;background:linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);color:#fff;font-weight:900;font-size:17px;letter-spacing:.2px;cursor:pointer;box-shadow:0 10px 24px rgba(99,220,251,.28);">
-                ${t("referral.invite_and_earn_btn", "Inviter et gagner")}
+              <button id="vr-referral-index-share-popup-main" type="button" style="min-height:54px;border:none;border-radius:16px;background:linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);color:#fff;font-weight:900;font-size:18px;letter-spacing:.2px;cursor:pointer;box-shadow:0 10px 24px rgba(99,220,251,.28);">
+                ${t("referral.invite_btn", "Inviter")}
               </button>
               <button id="vr-referral-index-share-popup-later" type="button" style="min-height:48px;border:none;border-radius:16px;background:rgba(255,255,255,.15);color:#fff;font-weight:800;cursor:pointer;">
                 ${t("common.later", "Plus tard")}
@@ -352,6 +351,22 @@
 
       root.style.display = "flex";
       document.addEventListener("keydown", onKeyDown);
+
+      if (mainBtn?.animate) {
+        mainBtn.animate(
+          [
+            { transform: "scale(1)", boxShadow: "0 10px 24px rgba(99,220,251,.28)" },
+            { transform: "scale(1.03)", boxShadow: "0 14px 30px rgba(99,220,251,.42)" },
+            { transform: "scale(1)", boxShadow: "0 10px 24px rgba(99,220,251,.28)" }
+          ],
+          {
+            duration: 1400,
+            iterations: Infinity,
+            easing: "ease-in-out"
+          }
+        );
+      }
+
       setTimeout(() => mainBtn?.focus?.(), 0);
     });
   }
