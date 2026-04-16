@@ -296,7 +296,9 @@
   
   "referral.invite_and_earn_title": "招待して獲得:",
   "referral.invite_and_earn_btn": "招待して獲得",
-  "referral.share_title": "友だちを招待",
+
+  "referral.share_popup_title": "VBlocks は気に入っていますか？",
+  "referral.share_popup_body": "身近な人にシェアしてゲームを知ってもらい、招待が確認されると VCoins を獲得できます。",  "referral.share_title": "友だちを招待",
   "referral.share_text": "ここから VBlocks をダウンロード: {url}",
   "referral.link_copied": "リンクをコピーしました",
   "referral.crosspromo_desc": "友だちを VBlocks のインストールに招待して、報酬を獲得しよう。",

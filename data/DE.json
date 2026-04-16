@@ -296,7 +296,9 @@
   
   "referral.invite_and_earn_title": "Einladen und verdienen:",
   "referral.invite_and_earn_btn": "Einladen und verdienen",
-  "referral.share_title": "Einen Freund einladen",
+
+  "referral.share_popup_title": "Gefällt dir VBlocks?",
+  "referral.share_popup_body": "Teile es mit deinen Freunden, lass sie das Spiel entdecken und verdiene VCoins, wenn eine Einladung bestätigt wird.",  "referral.share_title": "Einen Freund einladen",
   "referral.share_text": "Lade VBlocks hier herunter: {url}",
   "referral.link_copied": "Link kopiert",
   "referral.crosspromo_desc": "Lade einen Freund ein, VBlocks zu installieren, und erhalte eine Belohnung.",
