@@ -1198,9 +1198,7 @@ overlay.querySelector('#resume-yes').onclick = () => {
 
         try { window.VRCrossPromo?.notifyCompletedRun?.(); } catch (_) {}
         try {
-          await window.VRCrossPromo?.maybeShowPostGamePromo?.({
-            skipBecauseRewardAd: false
-          });
+          window.VRCrossPromo?.queuePostGamePromoForIndex?.(false);
         } catch (_) {}
 
         window.location.href = INDEX_URL;
