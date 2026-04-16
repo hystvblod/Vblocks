@@ -291,15 +291,18 @@
         root.innerHTML = `
           <div role="dialog" aria-modal="true" style="position:relative;width:min(430px,92vw);border-radius:22px;padding:20px 18px;background:linear-gradient(180deg, rgba(36,55,117,.98), rgba(28,35,76,.98));border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 42px rgba(0,0,0,.32);color:#fff;">
             <button id="vr-referral-index-share-popup-close" type="button" style="position:absolute;top:12px;right:12px;width:38px;height:38px;border:none;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font-size:18px;font-weight:900;cursor:pointer;">×</button>
-            <div id="vr-referral-index-share-popup-title" style="font-size:22px;line-height:1.15;font-weight:900;margin-bottom:10px;"></div>
-            <div id="vr-referral-index-share-popup-body" style="font-size:14px;line-height:1.5;color:rgba(255,255,255,.94);margin-bottom:14px;"></div>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);width:max-content;max-width:100%;flex-wrap:wrap;">
-              <span style="font-size:13px;font-weight:900;">${t("referral.invite_and_earn_title", "Inviter et gagner :")}</span>
-              <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;" />
-              <span style="font-size:13px;font-weight:900;">+${inviteRewardAmount}</span>
+
+            <div id="vr-referral-index-share-popup-title" style="font-size:22px;line-height:1.15;font-weight:900;margin-bottom:10px;text-align:center;padding:0 26px;"></div>
+
+            <div id="vr-referral-index-share-popup-body" style="font-size:14px;line-height:1.5;color:rgba(255,255,255,.94);margin-bottom:12px;text-align:center;"></div>
+
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;text-align:center;">
+              <img src="assets/images/vcoin.webp" alt="" style="width:20px;height:20px;object-fit:contain;" />
+              <span style="font-size:15px;font-weight:900;">+${inviteRewardAmount}</span>
             </div>
+
             <div style="display:grid;grid-template-columns:1fr;gap:10px;">
-              <button id="vr-referral-index-share-popup-main" type="button" style="min-height:50px;border:none;border-radius:16px;background:linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);color:#fff;font-weight:800;cursor:pointer;">
+              <button id="vr-referral-index-share-popup-main" type="button" style="min-height:52px;border:none;border-radius:16px;background:linear-gradient(90deg,#7fbeff 0%,#63dcfb 100%);color:#fff;font-weight:900;font-size:17px;letter-spacing:.2px;cursor:pointer;box-shadow:0 10px 24px rgba(99,220,251,.28);">
                 ${t("referral.invite_and_earn_btn", "Inviter et gagner")}
               </button>
               <button id="vr-referral-index-share-popup-later" type="button" style="min-height:48px;border:none;border-radius:16px;background:rgba(255,255,255,.15);color:#fff;font-weight:800;cursor:pointer;">
