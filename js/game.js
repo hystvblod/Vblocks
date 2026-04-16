@@ -1739,21 +1739,21 @@ async function maybeShowRewindTutorialPopup() {
       <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
         <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
           <img src="assets/icons/rewind_5.svg" alt="" style="width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.25));">
-          <div style="font-size:1.05em;font-weight:800;line-height:1.2;">${tt('rewind.tip.title','Nouveau : retour arrière')}</div>
+          <div style="font-size:1.05em;font-weight:800;line-height:1.2;">${tt('rewind.tip.title', 'Retour en arrière')}</div>
         </div>
 
         <div style="opacity:.96;line-height:1.5;margin-bottom:10px;">
-          ${tt('rewind.tip.body','Tu peux utiliser ce bouton pendant la partie pour revenir en arrière si tu veux corriger un coup.')}
+          ${tt('rewind.tip.body', 'En cas de besoin, tu peux cliquer sur cette touche pour revenir 5 pièces en arrière contre 1 jeton.')}
         </div>
 
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;font-weight:800;">
-          <span>${tt('rewind.tip.reward','On t\'offre')}</span>
+          <span>${tt('rewind.tip.reward', 'Tiens, on t’en donne un pour essayer')}</span>
           <img src="assets/images/jeton.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
           <span>+1</span>
         </div>
 
         <button id="rewind-tutorial-ok" style="padding:.78em 1.15em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;font-weight:800;">
-          ${tt('rewind.tip.cta','Compris')}
+          ${tt('rewind.tip.cta', 'Compris')}
         </button>
       </div>
     `;

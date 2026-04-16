@@ -292,9 +292,9 @@
   "crosspromo.apps.vchronicles.popup3.body": "Prueba VChronicles y recibe tu recompensa en VBlocks.",
   "referral.invite_and_earn_title": "Invita y gana:",
   "referral.invite_and_earn_btn": "Invita y gana",
-
   "referral.share_popup_title": "¿Te está gustando VBlocks?",
-  "referral.share_popup_body": "Compártelo con tus amigos, haz que descubran el juego y gana VCoins cuando una invitación se valide.",  "referral.share_title": "Invitar a un amigo",
+  "referral.share_popup_body": "Compártelo con tus amigos, haz que descubran el juego y gana VCoins cuando una invitación se valide.",
+  "referral.share_title": "Invitar a un amigo",
   "referral.share_text": "Descarga VBlocks aquí: {url}",
   "referral.link_copied": "Enlace copiado",
   "referral.crosspromo_desc": "Invita a un amigo a instalar VBlocks y gana una recompensa.",
@@ -304,8 +304,8 @@
   "duel.rematch.sent": "Solicitud de revancha enviada",
   "duel.rematch.ask": "Tu rival propone una revancha. ¿La aceptas?",
   "duel.rematch.error": "No se puede iniciar la revancha por ahora.",
-  "rewind.tip.title": "Nuevo: retroceder",
-  "rewind.tip.body": "Puedes usar este botón durante la partida para retroceder 5 jugadas si quieres corregir un movimiento.",
-  "rewind.tip.reward": "Te regalamos",
+  "rewind.tip.title": "Retroceder",
+  "rewind.tip.body": "Si lo necesitas, puedes tocar este botón para retroceder 5 piezas por 1 ficha.",
+  "rewind.tip.reward": "Toma, te damos una para probarlo",
   "rewind.tip.cta": "Entendido"
 }
