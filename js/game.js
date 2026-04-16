@@ -162,7 +162,7 @@ function fillRectThemeSafe(c, px, py, size) {
     const REFERRAL_SHARE_POPUP_MIN_COMPLETED_RUNS = 12;
     const REFERRAL_SHARE_POPUP_MIN_MS = 3 * 24 * 60 * 60 * 1000;
     const REWIND_TUTORIAL_STATE_KEY = 'vblocks_rewind_tutorial_v1';
-    const REWIND_TUTORIAL_MIN_PLACED_PIECES = 3;
+    const REWIND_TUTORIAL_MIN_PLACED_PIECES = 8;
 
     function readReferralSharePopupState() {
       try {
