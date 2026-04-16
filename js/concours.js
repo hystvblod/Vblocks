@@ -758,7 +758,7 @@ function fillRectThemeSafe(c, px, py, size) {
       `;
 
       const rewardAmount = Number(window.REWARD_VCOINS || 300);
-      const referralRewardAmount = Number(window.REFERRAL_INVITE_VCOINS || 200);
+      const referralRewardAmount = Number(window.REFERRAL_INVITE_VCOINS || 300);
       if (!recordBeatAlreadyCountedThisRun && points > (Number(runStartHighscore) || 0)) {
         recordBeatAlreadyCountedThisRun = true;
         const recordBeatCount = getNextRecordBeatCount();
@@ -780,41 +780,36 @@ function fillRectThemeSafe(c, px, py, size) {
           </div>
 
           ${shouldShowDuelNudgeThisRun ? `
-            <div style="margin:0 0 14px 0;display:flex;flex-direction:column;gap:10px;">
-              <div style="padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);line-height:1.45;">
-                <div style="font-weight:800;margin-bottom:4px;">${tt('end.super_score_title','Super score !')}</div>
-                <div style="opacity:.96;">${tt('end.super_score_body','Tu devrais affronter tes amis en Duel pour leur montrer ce que tu vaux.')}</div>
-              </div>
+  <div style="margin:0 0 14px 0;padding:14px 14px;border-radius:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10);line-height:1.45;text-align:center;">
+    <div style="font-weight:800;margin-bottom:6px;">${tt('end.super_score_title','Super score !')}</div>
+    <div style="opacity:.96;margin-bottom:12px;">${tt('end.super_score_body','Tu devrais affronter tes amis en Duel pour leur montrer ce que tu vaux.')}</div>
 
-              <button
-                id="end-invite-friend"
-                type="button"
-                style="
-                  width:100%;
-                  padding:11px 13px;
-                  border:none;
-                  border-radius:12px;
-                  background:rgba(255,255,255,.09);
-                  border:1px solid rgba(255,255,255,.14);
-                  color:#fff;
-                  cursor:pointer;
-                  text-align:left;
-                  box-shadow:0 0 0 rgba(112,183,255,0);
-                "
-              >
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-                  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                    <img src="assets/images/vcoin.webp" alt="" style="width:20px;height:20px;object-fit:contain;flex:0 0 auto;">
-                    <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
-                      <div style="font-weight:900;line-height:1.15;">${tt('referral.invite_and_earn_title','Inviter et gagner :')} +${referralRewardAmount}</div>
-                      <div style="opacity:.94;line-height:1.35;">${tt('referral.crosspromo_desc','Invite un ami à installer VBlocks et gagne une récompense.')}</div>
-                    </div>
-                  </div>
-                  <span style="padding:8px 11px;border-radius:999px;background:linear-gradient(180deg,#7fbeff 0%,#63dcfb 100%);font-weight:800;white-space:nowrap;color:#fff;">${tt('referral.invite_and_earn_btn','Inviter et gagner')}</span>
-                </div>
-              </button>
-            </div>
-          ` : ''}
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+      <span style="font-weight:900;font-size:17px;">${tt('referral.invite_and_earn_btn','Inviter et gagner')}</span>
+      <img src="assets/images/vcoin.webp" alt="" style="width:22px;height:22px;object-fit:contain;">
+      <span style="font-weight:900;font-size:18px;">+${referralRewardAmount}</span>
+    </div>
+
+    <button
+      id="end-invite-friend"
+      type="button"
+      style="
+        min-width:150px;
+        padding:11px 18px;
+        border:none;
+        border-radius:999px;
+        background:linear-gradient(180deg,#7fbeff 0%,#63dcfb 100%);
+        color:#fff;
+        cursor:pointer;
+        font-weight:900;
+        font-size:16px;
+        box-shadow:0 10px 24px rgba(99,220,251,.28);
+      "
+    >
+      ${tt('referral.invite_btn','Inviter')}
+    </button>
+  </div>
+` : ''}
 
           <div style="opacity:.9;margin-bottom:14px">
             ${tt('end.subtitle','Que voulez-vous faire ?')}
@@ -1162,15 +1157,11 @@ function fillRectThemeSafe(c, px, py, size) {
       if (btnInvite?.animate) {
         btnInvite.animate(
           [
-            { transform: 'scale(1)', boxShadow: '0 0 0 rgba(112,183,255,0)' },
-            { transform: 'scale(1.025)', boxShadow: '0 0 22px rgba(112,183,255,.42)' },
-            { transform: 'scale(1)', boxShadow: '0 0 0 rgba(112,183,255,0)' }
+            { transform: 'scale(1)', boxShadow: '0 10px 24px rgba(99,220,251,.28)' },
+            { transform: 'scale(1.04)', boxShadow: '0 16px 32px rgba(99,220,251,.46)' },
+            { transform: 'scale(1)', boxShadow: '0 10px 24px rgba(99,220,251,.28)' }
           ],
-          {
-            duration: 1500,
-            iterations: Infinity,
-            easing: 'ease-in-out'
-          }
+          { duration: 1400, iterations: Infinity, easing: 'ease-in-out' }
         );
       }
 
