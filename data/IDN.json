@@ -309,7 +309,7 @@
   "duel.rematch.ask": "Lawanmu meminta tanding ulang. Terima?",
   "duel.rematch.error": "Tidak bisa memulai tanding ulang sekarang.",
   "rewind.tip.title": "Baru: mundur",
-  "rewind.tip.body": "Kamu bisa memakai tombol ini saat permainan untuk mundur 3 langkah jika ingin memperbaiki langkah.",
+  "rewind.tip.body": "Kamu bisa memakai tombol ini saat permainan untuk mundur 5 langkah jika ingin memperbaiki langkah.",
   "rewind.tip.reward": "Kami memberimu",
   "rewind.tip.cta": "Mengerti"
 }
