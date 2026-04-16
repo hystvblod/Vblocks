@@ -307,5 +307,9 @@
   "duel.rematch": "Rematch",
   "duel.rematch.sent": "Rematch request sent",
   "duel.rematch.ask": "Your opponent is asking for a rematch. Accept?",
-  "duel.rematch.error": "Unable to start a rematch right now."
+  "duel.rematch.error": "Unable to start a rematch right now.",
+  "rewind.tip.title": "New: rewind",
+  "rewind.tip.body": "You can use this button during the game to go back if you want to fix a move.",
+  "rewind.tip.reward": "We’re giving you",
+  "rewind.tip.cta": "Got it"
 }

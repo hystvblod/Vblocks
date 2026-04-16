@@ -303,5 +303,9 @@
   "duel.rematch": "Revancha",
   "duel.rematch.sent": "Solicitud de revancha enviada",
   "duel.rematch.ask": "Tu rival propone una revancha. ¿La aceptas?",
-  "duel.rematch.error": "No se puede iniciar la revancha por ahora."
+  "duel.rematch.error": "No se puede iniciar la revancha por ahora.",
+  "rewind.tip.title": "Nuevo: retroceder",
+  "rewind.tip.body": "Puedes usar este botón durante la partida para retroceder si quieres corregir una jugada.",
+  "rewind.tip.reward": "Te regalamos",
+  "rewind.tip.cta": "Entendido"
 }

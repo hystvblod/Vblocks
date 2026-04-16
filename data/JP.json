@@ -307,5 +307,9 @@
   "duel.rematch": "再戦",
   "duel.rematch.sent": "再戦リクエストを送信しました",
   "duel.rematch.ask": "相手が再戦を希望しています。受けますか？",
-  "duel.rematch.error": "今は再戦を開始できません。"
+  "duel.rematch.error": "今は再戦を開始できません。",
+  "rewind.tip.title": "新機能: 巻き戻し",
+  "rewind.tip.body": "このボタンを使うと、プレイ中に手を修正したいときに少し戻れます。",
+  "rewind.tip.reward": "プレゼント",
+  "rewind.tip.cta": "わかった"
 }

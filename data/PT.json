@@ -307,5 +307,9 @@
   "duel.rematch": "Revanche",
   "duel.rematch.sent": "Pedido de revanche enviado",
   "duel.rematch.ask": "O teu adversário quer revanche. Aceitas?",
-  "duel.rematch.error": "Não foi possível iniciar a revanche agora."
+  "duel.rematch.error": "Não foi possível iniciar a revanche agora.",
+  "rewind.tip.title": "Novo: voltar atrás",
+  "rewind.tip.body": "Podes usar este botão durante a partida para voltar atrás se quiseres corrigir uma jogada.",
+  "rewind.tip.reward": "Oferecemos-te",
+  "rewind.tip.cta": "Percebi"
 }
