@@ -146,6 +146,8 @@ function fillRectThemeSafe(c, px, py, size) {
     const duelId = opts?.duelId || null;
     const duelPlayerNum = opts?.duelPlayerNum || 1;
     const RECORD_BEAT_COUNT_KEY = 'vblocks_record_beats_classic_v1';
+    const REWIND_TUTORIAL_STATE_KEY = 'vblocks_rewind_tutorial_v1';
+    const REWIND_TUTORIAL_MIN_PLACED_PIECES = 8;
 
     let runStartHighscore = 0;
     let recordBeatAlreadyCountedThisRun = false;
