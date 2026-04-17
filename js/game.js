@@ -930,7 +930,7 @@ overlay.querySelector('#resume-yes').onclick = () => {
         background: rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center;
       `;
       const rewardAmount = Number(window.REWARD_VCOINS || 300);
-      const referralRewardAmount = Number(window.REFERRAL_INVITE_VCOINS || 300);
+      const referralRewardAmount = Number(window.REFERRAL_INVITE_VCOINS || 500);
       if (!recordBeatAlreadyCountedThisRun && points > (Number(runStartHighscore) || 0)) {
         recordBeatAlreadyCountedThisRun = true;
         const recordBeatCount = getNextRecordBeatCount();

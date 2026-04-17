@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "vblocks_crosspromo_state";
-  const REWARD_AMOUNT = 600;
+  const REWARD_AMOUNT = 1000;
   const POSTGAME_MIN_DELAY_MS = 12 * 60 * 60 * 1000;
   const POSTGAME_FIRST_COMPLETED_RUNS = 4;
   const POSTGAME_AFTER_DISMISS_COMPLETED_RUNS = 6;

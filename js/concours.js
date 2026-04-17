@@ -758,7 +758,7 @@ function fillRectThemeSafe(c, px, py, size) {
       `;
 
       const rewardAmount = Number(window.REWARD_VCOINS || 300);
-      const referralRewardAmount = Number(window.REFERRAL_INVITE_VCOINS || 300);
+      const referralRewardAmount = Number(window.REFERRAL_INVITE_VCOINS || 500);
       if (!recordBeatAlreadyCountedThisRun && points > (Number(runStartHighscore) || 0)) {
         recordBeatAlreadyCountedThisRun = true;
         const recordBeatCount = getNextRecordBeatCount();
