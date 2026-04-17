@@ -182,7 +182,7 @@ function fillRectThemeSafe(c, px, py, size) {
     const nextCanvas = document.getElementById('nextCanvas');
     const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
 
-    const COLS = 10, ROWS = 20;
+    const COLS = 11, ROWS = 22;
     let BLOCK_SIZE = 30; // en px CSS (pas device)
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
 
@@ -262,7 +262,7 @@ function fillRectThemeSafe(c, px, py, size) {
     function generateSequenceClassic(bags = 200) {
       const res = [];
       for (let b = 0; b < bags; b++) {
-        const bag = [0,1,2,3,4,5,6]; // I,J,L,O,S,T,Z
+        const bag = [0,1,2,3,4,5,6,7]; // I,J,L,O,S,T,Z
         shuffle(bag);
         res.push(...bag);
       }
@@ -291,19 +291,25 @@ function fillRectThemeSafe(c, px, py, size) {
           img.src = `themes/${themeName}/${i}.png`;
           blockImages[themeName].push(img);
         }
-        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = null; });
+        ['I','J','L','O','S','T','Z','U'].forEach(l => { blockImages[l] = null; });
       }
-      else if (themeName === 'grece' || themeName === 'arabic') {
+      else if (
+  themeName === 'grece' ||
+  themeName === 'arabic' ||
+  themeName === 'angelique' ||
+  themeName === 'bubble' ||
+  themeName === 'nature'
+) {
         // === UNE SEULE IMAGE POUR TOUTES LES PIÈCES ===
         const img = new Image();
         img.onload  = () => { safeRedraw(); };
         img.onerror = () => {};
         img.src = `themes/${themeName}/block.png`;
-        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = img; });
+        ['I','J','L','O','S','T','Z','U'].forEach(l => { blockImages[l] = img; });
       }
       else {
         // === CAS NORMAL (1 fichier par lettre) ===
-        ['I','J','L','O','S','T','Z'].forEach(l => {
+        ['I','J','L','O','S','T','Z','U'].forEach(l => {
           if (themesWithPNG.includes(themeName)) {
             const img = new Image();
             img.onload  = () => { safeRedraw(); };
@@ -354,15 +360,16 @@ function fillRectThemeSafe(c, px, py, size) {
 
 
     const PIECES = [
-      [[1,1,1,1]],
-      [[1,0,0],[1,1,1]],
-      [[0,0,1],[1,1,1]],
-      [[1,1],[1,1]],
-      [[0,1,1],[1,1,0]],
-      [[0,1,0],[1,1,1]],
-      [[1,1,0],[0,1,1]]
+      [[1,1,1,1,1]],                 // I = 5 cases
+      [[1,0,0],[1,1,1]],             // J
+      [[0,0,1],[1,1,1]],             // L
+      [[1,1,1],[1,1,1]],             // O = rectangle 2x3
+      [[0,1,1],[1,1,0]],             // S
+      [[1,1,1],[0,1,0],[0,1,0]],     // T = vrai T en 5 cases
+      [[1,1,0],[0,1,1]],             // Z
+      [[1,1,1],[1,0,1]]              // U = 5 cases
     ];
-    const LETTERS = ['I','J','L','O','S','T','Z'];
+    const LETTERS = ['I','J','L','O','S','T','Z','U'];
 
     let board = Array.from({ length: ROWS }, () => Array(COLS).fill(''));
 
@@ -1453,7 +1460,7 @@ function fillRectThemeSafe(c, px, py, size) {
       if (mode === 'duel') typeId = getDuelNextPieceId();
       else typeId = getNextPieceIdGeneric();
 
-      if (typeId < 0 || typeId > 6 || Number.isNaN(typeId)) {
+      if (typeId < 0 || typeId > 7 || Number.isNaN(typeId)) {
         typeId = Math.floor(Math.random() * PIECES.length);
       }
 

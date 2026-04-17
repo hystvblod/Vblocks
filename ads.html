@@ -31,7 +31,7 @@
     .top-canvas-row { width:100%; max-width:410px; display:flex; justify-content:space-between; align-items:flex-end; margin-top:-24px; }
     .side-canvas-block label { color:var(--panel-text); font-weight:700; }
     #holdCanvas,#nextCanvas { background:var(--canvas-panel-bg); border:2px dashed var(--canvas-panel-border); border-radius:8px; }
-    #gameCanvas { width:100%; max-width:330px; aspect-ratio:10/20; background:var(--canvas-bg); border-radius:8px; display:block; margin:0 auto; touch-action:none; }
+    #gameCanvas { width:100%; max-width:330px; aspect-ratio:11/22; background:var(--canvas-bg); border-radius:8px; display:block; margin:0 auto; touch-action:none; }
     .score-row { margin-top:8px; display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; color:var(--score-color); font-weight:700; }
     #controls { display:flex; justify-content:center; gap:10px; margin-top:10px; }
     #controls button, #pause-btn { background:var(--btn-bg); color:var(--btn-color); border:1px solid var(--btn-border); border-radius:12px; padding:10px 14px; font-weight:700; }
@@ -244,7 +244,7 @@ function fillRectThemeSafe(c, px, py, size) {
     const nextCanvas = document.getElementById('nextCanvas');
     const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
 
-    const COLS = 10, ROWS = 20;
+    const COLS = 11, ROWS = 22;
     let BLOCK_SIZE = 30; // en px CSS (pas device)
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
 
@@ -367,7 +367,7 @@ function fillRectThemeSafe(c, px, py, size) {
     function generateSequenceClassic(bags = 200) {
       const res = [];
       for (let b = 0; b < bags; b++) {
-        const bag = [0,1,2,3,4,5,6]; // I,J,L,O,S,T,Z
+        const bag = [0,1,2,3,4,5,6,7]; // I,J,L,O,S,T,Z
         shuffle(bag);
         res.push(...bag);
       }
@@ -396,19 +396,25 @@ function fillRectThemeSafe(c, px, py, size) {
           img.src = (themeName === 'cyber') ? `assetes/${i}.png` : `themes/${themeName}/${i}.png`;
           blockImages[themeName].push(img);
         }
-        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = null; });
+        ['I','J','L','O','S','T','Z','U'].forEach(l => { blockImages[l] = null; });
       }
-      else if (themeName === 'grece' || themeName === 'arabic') {
+      else if (
+  themeName === 'grece' ||
+  themeName === 'arabic' ||
+  themeName === 'angelique' ||
+  themeName === 'bubble' ||
+  themeName === 'nature'
+) {
         // === UNE SEULE IMAGE POUR TOUTES LES PIÈCES ===
         const img = new Image();
         img.onload  = () => { safeRedraw(); };
         img.onerror = () => {};
         img.src = (themeName === 'cyber') ? `assetes/block.png` : `themes/${themeName}/block.png`;
-        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = img; });
+        ['I','J','L','O','S','T','Z','U'].forEach(l => { blockImages[l] = img; });
       }
       else {
         // === CAS NORMAL (1 fichier par lettre) ===
-        ['I','J','L','O','S','T','Z'].forEach(l => {
+        ['I','J','L','O','S','T','Z','U'].forEach(l => {
           if (themesWithPNG.includes(themeName)) {
             const img = new Image();
             img.onload  = () => { safeRedraw(); };
@@ -459,15 +465,16 @@ function fillRectThemeSafe(c, px, py, size) {
 
 
     const PIECES = [
-      [[1,1,1,1]],
-      [[1,0,0],[1,1,1]],
-      [[0,0,1],[1,1,1]],
-      [[1,1],[1,1]],
-      [[0,1,1],[1,1,0]],
-      [[0,1,0],[1,1,1]],
-      [[1,1,0],[0,1,1]]
+      [[1,1,1,1,1]],                 // I = 5 cases
+      [[1,0,0],[1,1,1]],             // J
+      [[0,0,1],[1,1,1]],             // L
+      [[1,1,1],[1,1,1]],             // O = rectangle 2x3
+      [[0,1,1],[1,1,0]],             // S
+      [[1,1,1],[0,1,0],[0,1,0]],     // T = vrai T en 5 cases
+      [[1,1,0],[0,1,1]],             // Z
+      [[1,1,1],[1,0,1]]              // U = 5 cases
     ];
-    const LETTERS = ['I','J','L','O','S','T','Z'];
+    const LETTERS = ['I','J','L','O','S','T','Z','U'];
 
     function cloneMatrix(shape) {
       if (!Array.isArray(shape)) return null;
@@ -1381,7 +1388,7 @@ window.updateHighScoreDisplay = updateHighscoreDisplay;
       if (mode === 'duel') typeId = getDuelNextPieceId();
       else typeId = getNextPieceIdGeneric();
 
-      if (typeId < 0 || typeId > 6 || Number.isNaN(typeId)) {
+      if (typeId < 0 || typeId > 7 || Number.isNaN(typeId)) {
         typeId = Math.floor(Math.random() * PIECES.length);
       }
 
