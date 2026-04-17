@@ -289,17 +289,23 @@ function fillRectThemeSafe(c, px, py, size) {
           img.src = `themes/${themeName}/${i}.png`;
           blockImages[themeName].push(img);
         }
-        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = null; });
-      } else if (themeName === 'grece' || themeName === 'arabic') {
+        ['I','J','L','O','S','T','Z','U'].forEach(l => { blockImages[l] = null; });
+      } else if (
+  themeName === 'grece' ||
+  themeName === 'arabic' ||
+  themeName === 'angelique' ||
+  themeName === 'bubble' ||
+  themeName === 'nature'
+) {
         // Une seule image pour toutes les pièces
         const img = new Image();
         img.onload = () => { safeRedraw(); };
         img.onerror = () => {};
         img.src = `themes/${themeName}/block.png`;
-        ['I','J','L','O','S','T','Z'].forEach(l => { blockImages[l] = img; });
+        ['I','J','L','O','S','T','Z','U'].forEach(l => { blockImages[l] = img; });
       } else {
         // PNG par lettre (ou fallback dessin)
-        ['I','J','L','O','S','T','Z'].forEach(l => {
+        ['I','J','L','O','S','T','Z','U'].forEach(l => {
           if (themesWithPNG.includes(themeName)) {
             const img = new Image();
             img.onload = () => { safeRedraw(); };
@@ -351,9 +357,10 @@ function fillRectThemeSafe(c, px, py, size) {
       [[1,1,1],[1,1,1]],             // O = rectangle 2x3
       [[0,1,1],[1,1,0]],             // S
       [[1,1,1],[0,1,0],[0,1,0]],     // T = vrai T en 5 cases
-      [[1,1,0],[0,1,1]]              // Z
+      [[1,1,0],[0,1,1]],             // Z
+      [[1,1,1],[1,0,1]]              // U = 5 cases
     ];
-    const LETTERS = ['I','J','L','O','S','T','Z'];
+    const LETTERS = ['I','J','L','O','S','T','Z','U'];
 
 
     function cloneMatrix(shape) {
@@ -484,7 +491,7 @@ function fillRectThemeSafe(c, px, py, size) {
     async function setupDuelSequence() {
       if (!duelId || !sb) {
         // fallback solo/random si pas d’ID (démo locale)
-        piecesSequence = Array.from({ length: 1000 }, () => Math.floor(Math.random() * 7));
+        piecesSequence = Array.from({ length: 1000 }, () => Math.floor(Math.random() * 8));
         piecesUsed = 0;
         return;
       }
@@ -782,7 +789,7 @@ function fillRectThemeSafe(c, px, py, size) {
 
     function newPiece() {
       let typeId = getDuelNextPieceId();
-      if (Number.isNaN(typeId) || typeId < 0 || typeId > 6) typeId = 3;
+      if (Number.isNaN(typeId) || typeId < 0 || typeId > 7) typeId = 3;
       const letter = LETTERS[typeId];
       return createSafePiece(letter);
     }
