@@ -31,7 +31,7 @@
     .top-canvas-row { width:100%; max-width:410px; display:flex; justify-content:space-between; align-items:flex-end; margin-top:-24px; }
     .side-canvas-block label { color:var(--panel-text); font-weight:700; }
     #holdCanvas,#nextCanvas { background:var(--canvas-panel-bg); border:2px dashed var(--canvas-panel-border); border-radius:8px; }
-    #gameCanvas { width:100%; max-width:330px; aspect-ratio:10/20; background:var(--canvas-bg); border-radius:8px; display:block; margin:0 auto; touch-action:none; }
+    #gameCanvas { width:100%; max-width:330px; aspect-ratio:11/22; background:var(--canvas-bg); border-radius:8px; display:block; margin:0 auto; touch-action:none; }
     .score-row { margin-top:8px; display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; color:var(--score-color); font-weight:700; }
     #controls { display:flex; justify-content:center; gap:10px; margin-top:10px; }
     #controls button, #pause-btn { background:var(--btn-bg); color:var(--btn-color); border:1px solid var(--btn-border); border-radius:12px; padding:10px 14px; font-weight:700; }
@@ -244,7 +244,7 @@ function fillRectThemeSafe(c, px, py, size) {
     const nextCanvas = document.getElementById('nextCanvas');
     const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
 
-    const COLS = 10, ROWS = 20;
+    const COLS = 11, ROWS = 22;
     let BLOCK_SIZE = 30; // en px CSS (pas device)
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
 
@@ -459,13 +459,13 @@ function fillRectThemeSafe(c, px, py, size) {
 
 
     const PIECES = [
-      [[1,1,1,1]],
-      [[1,0,0],[1,1,1]],
-      [[0,0,1],[1,1,1]],
-      [[1,1],[1,1]],
-      [[0,1,1],[1,1,0]],
-      [[0,1,0],[1,1,1]],
-      [[1,1,0],[0,1,1]]
+      [[1,1,1,1,1]],                 // I = 5 cases
+      [[1,0,0],[1,1,1]],             // J
+      [[0,0,1],[1,1,1]],             // L
+      [[1,1,1],[1,1,1]],             // O = rectangle 2x3
+      [[0,1,1],[1,1,0]],             // S
+      [[1,1,1],[0,1,0],[0,1,0]],     // T = vrai T en 5 cases
+      [[1,1,0],[0,1,1]]              // Z
     ];
     const LETTERS = ['I','J','L','O','S','T','Z'];
 

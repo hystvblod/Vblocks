@@ -146,7 +146,7 @@ function fillRectThemeSafe(c, px, py, size) {
     const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
     const scoreEl = document.getElementById('score');
 
-    const COLS = 10, ROWS = 20;
+    const COLS = 11, ROWS = 22;
     let BLOCK_SIZE = 30; // en px CSS
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
     ctx.imageSmoothingEnabled = false;
@@ -345,13 +345,13 @@ function fillRectThemeSafe(c, px, py, size) {
 
     // ====== Pièces ======
     const PIECES = [
-      [[1,1,1,1]],
-      [[1,0,0],[1,1,1]],
-      [[0,0,1],[1,1,1]],
-      [[1,1],[1,1]],
-      [[0,1,1],[1,1,0]],
-      [[0,1,0],[1,1,1]],
-      [[1,1,0],[0,1,1]]
+      [[1,1,1,1,1]],                 // I = 5 cases
+      [[1,0,0],[1,1,1]],             // J
+      [[0,0,1],[1,1,1]],             // L
+      [[1,1,1],[1,1,1]],             // O = rectangle 2x3
+      [[0,1,1],[1,1,0]],             // S
+      [[1,1,1],[0,1,0],[0,1,0]],     // T = vrai T en 5 cases
+      [[1,1,0],[0,1,1]]              // Z
     ];
     const LETTERS = ['I','J','L','O','S','T','Z'];
 
