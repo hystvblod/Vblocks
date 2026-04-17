@@ -297,7 +297,7 @@
             <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px;text-align:center;flex-wrap:wrap;">
               <span style="font-size:17px;font-weight:900;">${t("referral.invite_and_earn_btn", "Inviter et gagner")}</span>
               <img src="assets/images/vcoin.webp" alt="" style="width:22px;height:22px;object-fit:contain;" />
-              <span style="font-size:18px;font-weight:900;">+300</span>
+              <span style="font-size:18px;font-weight:900;">+500</span>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr;gap:10px;">
