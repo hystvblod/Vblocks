@@ -5,7 +5,7 @@
   const PENDING_INVITER_KEY = "vblocks_install_referrer_pending_inviter_v1";
   const PENDING_RAW_KEY = "vblocks_install_referrer_pending_raw_v1";
 
-  const INVITE_BASE_URL = "https://hystvblod.github.io/vblocks-invite/invite.html";
+  const INVITE_BASE_URL = "https://vboldcompany.github.io/Vblocks-invite/invite.html";
   const INDEX_SHARE_PROMPT_STATE_KEY = "vblocks_referral_index_share_state_v2";
   const INDEX_SHARE_PROMPT_QUEUE_KEY = "vblocks_referral_index_share_queue_v2";
   const INDEX_SHARE_PROMPT_MIN_RUNS = 12;
