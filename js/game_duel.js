@@ -146,7 +146,7 @@ function fillRectThemeSafe(c, px, py, size) {
     const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
     const scoreEl = document.getElementById('score');
 
-    const COLS = 11, ROWS = 22;
+    const COLS = 12, ROWS = 22;
     let BLOCK_SIZE = 30; // en px CSS
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
     ctx.imageSmoothingEnabled = false;
