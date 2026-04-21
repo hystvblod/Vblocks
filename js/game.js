@@ -401,15 +401,15 @@ function fillRectThemeSafe(c, px, py, size) {
 
       currentTheme = themeName;
       if (themeName === 'retro') {
-        global.currentColors = { I:'#00f0ff', J:'#0044ff', L:'#ff6600', O:'#ffff33', S:'#00ff44', T:'#ff00cc', Z:'#ff0033', U:'#7a5cff' };
+        global.currentColors = { I:'#00f0ff', J:'#0044ff', L:'#ff6600', O:'#ffff33', S:'#00ff44', T:'#ff00cc', Z:'#ff0033', U:'#A66A3F' };
       } else if (themeName === 'neon') {
-        global.currentColors = { I:'#00ffff', J:'#007bff', L:'#ff8800', O:'#ffff00', S:'#00ff00', T:'#ff00ff', Z:'#ff0033', U:'#7a5cff' };
+        global.currentColors = { I:'#00ffff', J:'#007bff', L:'#ff8800', O:'#ffff00', S:'#00ff00', T:'#ff00ff', Z:'#ff0033', U:'#C67A2B' };
       } else if (themeName === 'nuit') {
-        global.currentColors = { I:'#ccc', J:'#ccc', L:'#ccc', O:'#ccc', S:'#ccc', T:'#ccc', Z:'#ccc', U:'#7a5cff' };
+        global.currentColors = { I:'#ccc', J:'#ccc', L:'#ccc', O:'#ccc', S:'#ccc', T:'#ccc', Z:'#ccc', U:'#ccc' };
       } else if (themeName === 'cyber') {
-        global.currentColors = { I:'#5df2ff', J:'#4a7dff', L:'#ff9b4d', O:'#ffe45c', S:'#3dffb5', T:'#d86bff', Z:'#ff5f7a', U:'#7a5cff' };
+        global.currentColors = { I:'#5df2ff', J:'#4a7dff', L:'#ff9b4d', O:'#ffe45c', S:'#3dffb5', T:'#d86bff', Z:'#ff5f7a', U:'#B88357' };
       } else {
-        global.currentColors = { I:'#9aa4b2', J:'#7f8ea3', L:'#b79a7b', O:'#d0c36c', S:'#7fc28e', T:'#a27fc2', Z:'#c27f7f', U:'#7a5cff' };
+        global.currentColors = { I:'#9aa4b2', J:'#7f8ea3', L:'#b79a7b', O:'#d0c36c', S:'#7fc28e', T:'#a27fc2', Z:'#c27f7f', U:'#B88357' };
       }
     }
 
