@@ -908,7 +908,14 @@ overlay.querySelector('#resume-yes').onclick = () => {
     function showEndPopup(points) {
       if (endHandled) return;
       // ⚠️ on NE met PAS endHandled=true ici — on attend la confirmation fin
-      try { window.partieTerminee?.(); } catch(_){}
+      try {
+        window.partieTerminee?.({
+          mode: mode,
+          score: points,
+          linesCleared: linesCleared,
+          reviveUsed: reviveUsed
+        });
+      } catch(_){}
 
       paused = true;
       stopSoftDrop();

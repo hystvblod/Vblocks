@@ -720,6 +720,12 @@
         return;
       }
 
+      try {
+        window.VRAnalytics?.logEvent?.('rewarded_request', {
+          reward_type: String(type || 'unknown')
+        });
+      } catch (_) {}
+
       await ensureAuth();
       var adConsent = await ensureCanRequestAds();
 
@@ -756,23 +762,47 @@
           new Promise(function (res) { setTimeout(function(){ res('timeout'); }, 60000); })
         ]);
 
-        if (outcome === 'timeout') { onDone && onDone(false); return; }
+        if (outcome === 'timeout') {
+          try {
+            window.VRAnalytics?.logEvent?.('rewarded_result', {
+              reward_type: 'revive',
+              success: 0
+            });
+          } catch (_) {}
+          onDone && onDone(false);
+          return;
+        }
 
         if (outcome !== 'dismissed') {
           await Promise.race([ dismissedP.catch(function(){}), waitAppReturnOnce() ]);
         }
 
         try { await refreshBalanceUntil(3000, 800); } catch(_) {}
+        try {
+          window.VRAnalytics?.logEvent?.('rewarded_result', {
+            reward_type: 'revive',
+            success: 1
+          });
+        } catch (_) {}
         onDone && onDone(true);
         return;
       }
 
       var gotReward = await rewardedP;
       var credited  = await creditRewardClientSide(type, amount);
+      var rewardOk  = !!(gotReward || credited);
       await refreshBalanceUntil(5000, 800, type);
 
       showPromise.finally(function(){}).catch(function(){});
-      onDone && onDone(!!(gotReward || credited));
+      try {
+        window.VRAnalytics?.logEvent?.('rewarded_result', {
+          reward_type: String(type || 'unknown'),
+          success: rewardOk ? 1 : 0,
+          got_reward: gotReward ? 1 : 0,
+          credited: credited ? 1 : 0
+        });
+      } catch (_) {}
+      onDone && onDone(rewardOk);
       dismissedP.then(function(){}).catch(function(){});
 
     } catch (_e) {
@@ -990,6 +1020,11 @@
 
       if (res !== false) {
         markInterstitialShownNow();
+        try {
+          window.VRAnalytics?.logEvent?.('interstitial_show', {
+            page: window.VRAnalytics?.getPageName?.() || 'unknown'
+          });
+        } catch (_) {}
         setTimeout(function(){
           AdMob.prepareInterstitial({ adId: adId, requestOptions: buildAdMobRequestOptions(true) }).catch(function(){});
         }, 1200);
@@ -1047,6 +1082,13 @@
 
   async function partieCommencee(mode){
     mode = String(mode || 'classique').toLowerCase();
+
+    try {
+      window.VRAnalytics?.logEvent?.('game_start', {
+        mode: mode
+      });
+    } catch (_) {}
+
     if (window.__ads_waiting_choice) return;
     if (isModeInfini(mode) || isModeClassique(mode)) {
       await adsMarkGameLaunched(mode);
@@ -1055,6 +1097,13 @@
 
   async function partieReprisee(mode){
     mode = String(mode || 'classique').toLowerCase();
+
+    try {
+      window.VRAnalytics?.logEvent?.('game_resume', {
+        mode: mode
+      });
+    } catch (_) {}
+
     window.__ads_waiting_choice = false;
     if (isModeInfini(mode) || isModeClassique(mode)) {
       await adsMarkGameLaunched(mode);
@@ -1063,13 +1112,35 @@
 
   async function partieRecommencee(mode){
     mode = String(mode || 'classique').toLowerCase();
+
+    try {
+      window.VRAnalytics?.logEvent?.('game_restart', {
+        mode: mode
+      });
+    } catch (_) {}
+
     window.__ads_waiting_choice = false;
     if (isModeInfini(mode) || isModeClassique(mode)) {
       await adsMarkGameLaunched(mode);
     }
   }
 
-  function partieTerminee(){}
+  function partieTerminee(payload){
+    try {
+      var data = payload || {};
+      var mode = String(data.mode || 'classique').toLowerCase();
+      var score = Number(data.score || 0);
+      var lines = Number(data.linesCleared || 0);
+      var reviveUsed = !!data.reviveUsed;
+
+      window.VRAnalytics?.logEvent?.('game_end', {
+        mode: mode,
+        score: score,
+        lines_cleared: lines,
+        revive_used: reviveUsed ? 1 : 0
+      });
+    } catch (_) {}
+  }
 
   // =============================
   // Expose global

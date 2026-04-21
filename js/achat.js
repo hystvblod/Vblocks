@@ -325,6 +325,12 @@ if (S.when?.().approved) {
       markCredited(txId);
       removePending(txId);
 
+      try {
+        window.VRAnalytics?.logEvent?.('iap_success', {
+          product_id: String(productId)
+        });
+      } catch (_) {}
+
       try { await tx.finish(); } catch(_) {}
       FINISHED_TX.add(txId);
     } catch (e) {
@@ -429,10 +435,26 @@ document.addEventListener('resume', async () => {
 
       const offer = p?.getOffer && p.getOffer();
       let err = null;
+
+      try {
+        window.VRAnalytics?.logEvent?.('iap_attempt', {
+          product_id: String(productId)
+        });
+      } catch (_) {}
+
       if (offer?.order) err = await offer.order();
       else if (p?.order) err = await p.order();
 
-      if (err?.isError && DEBUG) warn('order err', err.code, err.message);
+      if (err?.isError) {
+        try {
+          window.VRAnalytics?.logEvent?.('iap_error', {
+            product_id: String(productId),
+            code: String(err.code || 'unknown')
+          });
+        } catch (_) {}
+
+        if (DEBUG) warn('order err', err.code, err.message);
+      }
     } catch(e) {
       warn('buy exception', e?.message||e);
     }
