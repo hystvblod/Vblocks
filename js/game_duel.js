@@ -358,7 +358,7 @@ function fillRectThemeSafe(c, px, py, size) {
       [[0,1,1],[1,1,0]],             // S
       [[1,1,1],[0,1,0],[0,1,0]],     // T = vrai T en 5 cases
       [[1,1,0],[0,1,1]],             // Z
-      [[1,1,1],[1,0,1]]              // U = 5 cases
+      [[1,1,1],[1,0,1],[1,0,1]]      // U
     ];
     const LETTERS = ['I','J','L','O','S','T','Z','U'];
 
