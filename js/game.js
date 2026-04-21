@@ -193,7 +193,7 @@ function fillRectThemeSafe(c, px, py, size) {
     const nextCanvas = document.getElementById('nextCanvas');
     const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
 
-    const COLS = 11, ROWS = 22;
+    const COLS = 12, ROWS = 22;
     let BLOCK_SIZE = 30; // en px CSS (pas device)
     const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
 
