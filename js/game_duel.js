@@ -807,7 +807,7 @@ function fillRectThemeSafe(c, px, py, size) {
 
     function newPiece() {
       let typeId = getDuelNextPieceId();
-      if (Number.isNaN(typeId) || typeId < 0 || typeId > 7) typeId = 3;
+      if (Number.isNaN(typeId) || typeId < 0 || typeId >= PIECES.length) typeId = 3;
       const letter = LETTERS[typeId];
       return createSafePiece(letter);
     }
@@ -1135,7 +1135,16 @@ function fillRectThemeSafe(c, px, py, size) {
       const h = maxY - minY + 1;
 
       const PAD = 6;
-      const cellSize = Math.min((cssW - 2 * PAD) / w, (cssH - 2 * PAD) / h);
+
+      // On garde une taille cohérente dans la preview.
+      // Sinon une pièce 1x1 comme Pixel devient énorme.
+      const previewCols = 5;
+      const previewRows = 3;
+
+      const cellSize = Math.min(
+        (cssW - 2 * PAD) / previewCols,
+        (cssH - 2 * PAD) / previewRows
+      );
       const offsetX = (cssW - (w * cellSize)) / 2 - minX * cellSize;
       const offsetY = (cssH - (h * cellSize)) / 2 - minY * cellSize;
 
