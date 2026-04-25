@@ -289,7 +289,7 @@ function fillRectThemeSafe(c, px, py, size) {
           img.src = `themes/${themeName}/${i}.png`;
           blockImages[themeName].push(img);
         }
-        ['I','J','L','O','S','T','Z','U'].forEach(l => { blockImages[l] = null; });
+        ['I','J','L','O','S','T','Z','U','P','C'].forEach(l => { blockImages[l] = null; });
       } else if (
   themeName === 'grece' ||
   themeName === 'arabic' ||
@@ -302,10 +302,10 @@ function fillRectThemeSafe(c, px, py, size) {
         img.onload = () => { safeRedraw(); };
         img.onerror = () => {};
         img.src = `themes/${themeName}/block.png`;
-        ['I','J','L','O','S','T','Z','U'].forEach(l => { blockImages[l] = img; });
+        ['I','J','L','O','S','T','Z','U','P','C'].forEach(l => { blockImages[l] = img; });
       } else {
         // PNG par lettre (ou fallback dessin)
-        ['I','J','L','O','S','T','Z','U'].forEach(l => {
+        ['I','J','L','O','S','T','Z','U','P','C'].forEach(l => {
           if (themesWithPNG.includes(themeName)) {
             const img = new Image();
             img.onload = () => { safeRedraw(); };
@@ -319,16 +319,31 @@ function fillRectThemeSafe(c, px, py, size) {
       }
 
       currentTheme = themeName;
+
       if (themeName === 'retro') {
-        global.currentColors = { I:'#00f0ff', J:'#0044ff', L:'#ff6600', O:'#ffff33', S:'#00ff44', T:'#ff00cc', Z:'#ff0033', U:'#A66A3F' };
+        global.currentColors = {
+          I:'#00f0ff', J:'#0044ff', L:'#ff6600', O:'#ffff33', S:'#00ff44',
+          T:'#ff00cc', Z:'#ff0033', U:'#A66A3F',
+          P:'#F4EED8', C:'#6B4E2E'
+        };
       } else if (themeName === 'neon') {
-        global.currentColors = { I:'#00ffff', J:'#007bff', L:'#ff8800', O:'#ffff00', S:'#00ff00', T:'#ff00ff', Z:'#ff0033', U:'#C67A2B' };
+        global.currentColors = {
+          I:'#00ffff', J:'#007bff', L:'#ff8800', O:'#ffff00', S:'#00ff00',
+          T:'#ff00ff', Z:'#ff0033', U:'#C67A2B',
+          P:'#FFF3D6', C:'#B8FF2C'
+        };
       } else if (themeName === 'nuit') {
-        global.currentColors = { I:'#ccc', J:'#ccc', L:'#ccc', O:'#ccc', S:'#ccc', T:'#ccc', Z:'#ccc', U:'#ccc' };
-      } else if (themeName === 'cyber') {
-        global.currentColors = { I:'#5df2ff', J:'#4a7dff', L:'#ff9b4d', O:'#ffe45c', S:'#3dffb5', T:'#d86bff', Z:'#ff5f7a', U:'#B88357' };
+        global.currentColors = {
+          I:'#ccc', J:'#ccc', L:'#ccc', O:'#ccc', S:'#ccc',
+          T:'#ccc', Z:'#ccc', U:'#ccc',
+          P:'#D8D8D8', C:'#5F6C7B'
+        };
       } else {
-        global.currentColors = { I:'#9aa4b2', J:'#7f8ea3', L:'#b79a7b', O:'#d0c36c', S:'#7fc28e', T:'#a27fc2', Z:'#c27f7f', U:'#B88357' };
+        global.currentColors = {
+          I:'#9aa4b2', J:'#7f8ea3', L:'#b79a7b', O:'#d0c36c', S:'#7fc28e',
+          T:'#a27fc2', Z:'#c27f7f', U:'#B88357',
+          P:'#F4EED8', C:'#2F5D7C'
+        };
       }
     }
     function getThemeCssHref(themeName) {
@@ -351,16 +366,19 @@ function fillRectThemeSafe(c, px, py, size) {
 
     // ====== Pièces ======
     const PIECES = [
-      [[1,1,1,1,1]],                 // I = 5 cases
-      [[1,0,0],[1,1,1]],             // J
-      [[0,0,1],[1,1,1]],             // L
-      [[1,1,1],[1,1,1]],             // O = rectangle 2x3
-      [[0,1,1],[1,1,0]],             // S
-      [[1,1,1],[0,1,0],[0,1,0]],     // T = vrai T en 5 cases
-      [[1,1,0],[0,1,1]],             // Z
-      [[1,1,1],[1,0,1],[1,0,1]]      // U
+      [[1,1,1,1,1]],             // I
+      [[1,0,0],[1,1,1]],         // J
+      [[0,0,1],[1,1,1]],         // L
+      [[1,1,1],[1,1,1]],         // O
+      [[0,1,1],[1,1,0]],         // S
+      [[1,1,1],[0,1,0]],         // T compact
+      [[1,1,0],[0,1,1]],         // Z
+      [[1,1,1],[1,0,1]],         // U compact
+      [[1]],                     // P = Pixel
+      [[1,1],[1,0]]              // C = Corner
     ];
-    const LETTERS = ['I','J','L','O','S','T','Z','U'];
+
+    const LETTERS = ['I','J','L','O','S','T','Z','U','P','C'];
 
 
     function cloneMatrix(shape) {
