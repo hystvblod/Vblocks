@@ -367,7 +367,7 @@ function fillRectThemeSafe(c, px, py, size) {
     function generateSequenceClassic(bags = 200) {
       const res = [];
       for (let b = 0; b < bags; b++) {
-        const bag = [0,1,2,3,4,5,6,7,8,9]; // I,J,L,O,S,T,Z
+        const bag = [0,1,2,3,4,5,6,7,8,9]; // I,J,L,O,S,T,Z,U,P,C
         shuffle(bag);
         res.push(...bag);
       }
@@ -1406,7 +1406,7 @@ window.updateHighScoreDisplay = updateHighscoreDisplay;
       if (mode === 'duel') typeId = getDuelNextPieceId();
       else typeId = getNextPieceIdGeneric();
 
-      if (typeId < 0 || typeId > 7 || Number.isNaN(typeId)) {
+      if (typeId < 0 || typeId >= PIECES.length || Number.isNaN(typeId)) {
         typeId = Math.floor(Math.random() * PIECES.length);
       }
 
@@ -1779,9 +1779,15 @@ if (score > highscoreCloud) {
       const h = maxY - minY + 1;
 
       const PAD = 6;
+
+      // On garde une taille cohérente dans la preview.
+      // Sinon une pièce 1x1 comme Pixel devient énorme.
+      const previewCols = 5;
+      const previewRows = 3;
+
       const cellSize = Math.min(
-        (cssW - 2 * PAD) / w,
-        (cssH - 2 * PAD) / h
+        (cssW - 2 * PAD) / previewCols,
+        (cssH - 2 * PAD) / previewRows
       );
 
       const offsetX = (cssW - (w * cellSize)) / 2 - minX * cellSize;
