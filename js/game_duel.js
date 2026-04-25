@@ -1136,15 +1136,22 @@ function fillRectThemeSafe(c, px, py, size) {
 
       const PAD = 6;
 
-      // On garde une taille cohérente dans la preview.
-      // Sinon une pièce 1x1 comme Pixel devient énorme.
-      const previewCols = 5;
-      const previewRows = 3;
-
-      const cellSize = Math.min(
-        (cssW - 2 * PAD) / previewCols,
-        (cssH - 2 * PAD) / previewRows
+      // Taille normale : ancien comportement, donc toutes les pièces redeviennent comme avant.
+      const normalCellSize = Math.min(
+        (cssW - 2 * PAD) / w,
+        (cssH - 2 * PAD) / h
       );
+
+      // Exception uniquement pour Pixel : il doit rester un petit carré,
+      // pas remplir toute la preview.
+      const pixelCellSize = Math.min(
+        (cssW - 2 * PAD) / 5,
+        (cssH - 2 * PAD) / 3
+      );
+
+      const cellSize = (safePiece?.letter === 'P' || piece?.letter === 'P')
+        ? pixelCellSize
+        : normalCellSize;
       const offsetX = (cssW - (w * cellSize)) / 2 - minX * cellSize;
       const offsetY = (cssH - (h * cellSize)) / 2 - minY * cellSize;
 
