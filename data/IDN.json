@@ -311,9 +311,10 @@
   "duel.rematch.sent": "Permintaan tanding ulang dikirim",
   "duel.rematch.ask": "Lawanmu meminta tanding ulang. Terima?",
   "duel.rematch.error": "Tidak bisa memulai tanding ulang sekarang.",
-  "rewind.tip.title": "Mundur",
-  "rewind.tip.body": "Kalau perlu, kamu bisa menekan tombol ini untuk mundur 5 bidak.",
+  "rewind.tip.title": "Butuh bantuan?",
   "rewind.tip.cost": "Biaya",
-  "rewind.tip.reward": "Nih, kami kasih satu untuk mencobanya",
-  "rewind.tip.cta": "Mengerti"
+  "rewind.tip.reward": "Nih, kami kasih satu supaya kamu bisa mencobanya",
+  "rewind.tip.cta": "Mengerti",
+  "rewind.tip.line1": "Kamu bisa menekan tombol ini untuk mundur 5 keping.",
+  "rewind.tip.line2": "Kamu bisa menekan tombol ini untuk menghapus 5 baris terbawah."
 }

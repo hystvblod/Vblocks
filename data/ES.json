@@ -311,9 +311,10 @@
   "duel.rematch.sent": "Solicitud de revancha enviada",
   "duel.rematch.ask": "Tu rival propone una revancha. ¿Aceptar?",
   "duel.rematch.error": "No se puede iniciar la revancha por ahora.",
-  "rewind.tip.title": "Volver atrás",
-  "rewind.tip.body": "Si lo necesitas, puedes pulsar este botón para retroceder 5 piezas.",
+  "rewind.tip.title": "¿Necesitas ayuda?",
   "rewind.tip.cost": "Costo",
   "rewind.tip.reward": "Toma, te damos una para probarlo",
-  "rewind.tip.cta": "Entendido"
+  "rewind.tip.cta": "Entendido",
+  "rewind.tip.line1": "Puedes pulsar este botón para retroceder 5 piezas.",
+  "rewind.tip.line2": "Puedes pulsar este botón para eliminar las 5 líneas inferiores."
 }

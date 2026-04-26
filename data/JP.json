@@ -311,9 +311,10 @@
   "duel.rematch.sent": "再戦リクエストを送信しました",
   "duel.rematch.ask": "相手が再戦を希望しています。受けますか？",
   "duel.rematch.error": "今は再戦を開始できません。",
-  "rewind.tip.title": "巻き戻し",
-  "rewind.tip.body": "必要なときは、このボタンを押すと5個前まで戻れます。",
-  "rewind.tip.cost": "必要数",
-  "rewind.tip.reward": "試せるように1つあげるね",
-  "rewind.tip.cta": "わかった"
+  "rewind.tip.title": "ヘルプが必要ですか？",
+  "rewind.tip.cost": "コスト",
+  "rewind.tip.reward": "お試し用に1つプレゼントします",
+  "rewind.tip.cta": "わかった",
+  "rewind.tip.line1": "このボタンを押すと5ピース戻れます。",
+  "rewind.tip.line2": "このボタンを押すと下の5ラインを消せます。"
 }

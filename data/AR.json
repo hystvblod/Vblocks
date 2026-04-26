@@ -311,9 +311,10 @@
   "duel.rematch.sent": "تم إرسال طلب الإعادة",
   "duel.rematch.ask": "خصمك يطلب مباراة إعادة. هل تقبل؟",
   "duel.rematch.error": "تعذر بدء مباراة الإعادة الآن.",
-  "rewind.tip.title": "رجوع للخلف",
-  "rewind.tip.body": "عند الحاجة، يمكنك الضغط على هذا الزر للرجوع 5 قطع إلى الخلف.",
+  "rewind.tip.title": "هل تحتاج إلى مساعدة؟",
   "rewind.tip.cost": "التكلفة",
-  "rewind.tip.reward": "خذ، سنعطيك واحدًا لتجربته",
-  "rewind.tip.cta": "فهمت"
+  "rewind.tip.reward": "تفضل، سنمنحك واحدة لتجربتها",
+  "rewind.tip.cta": "فهمت",
+  "rewind.tip.line1": "يمكنك الضغط على هذا الزر للرجوع 5 قطع إلى الخلف.",
+  "rewind.tip.line2": "يمكنك الضغط على هذا الزر لإزالة آخر 5 أسطر."
 }

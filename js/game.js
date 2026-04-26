@@ -1798,13 +1798,22 @@ async function maybeShowRewindTutorialPopup() {
 
     popup.innerHTML = `
       <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
-        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;">
-          <img src="assets/icons/rewind_5.svg" alt="" style="width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.25));">
-          <div style="font-size:1.05em;font-weight:800;line-height:1.2;">${tt('rewind.tip.title', 'Retour en arrière')}</div>
+        <div style="font-size:1.12em;font-weight:800;line-height:1.2;margin-bottom:14px;">
+          ${tt('rewind.tip.title', 'Besoin d’aide ?')}
         </div>
 
-        <div style="opacity:.96;line-height:1.5;margin-bottom:10px;">
-          ${tt('rewind.tip.body', 'En cas de besoin, tu peux cliquer sur cette touche pour revenir 5 pièces en arrière.')}
+        <div style="display:flex;align-items:flex-start;justify-content:flex-start;gap:10px;margin-bottom:12px;text-align:left;">
+          <img src="assets/icons/rewind_5.svg" alt="" style="width:28px;height:28px;object-fit:contain;flex:0 0 28px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.25));">
+          <div style="opacity:.96;line-height:1.45;">
+            ${tt('rewind.tip.line1', 'Tu peux cliquer sur ce bouton pour revenir 5 pièces en arrière.')}
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:flex-start;justify-content:flex-start;gap:10px;margin-bottom:14px;text-align:left;">
+          <img src="assets/icons/clear_bottom_5.svg" alt="" style="width:28px;height:28px;object-fit:contain;flex:0 0 28px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.25));">
+          <div style="opacity:.96;line-height:1.45;">
+            ${tt('rewind.tip.line2', 'Tu peux appuyer sur ce bouton pour supprimer les 5 lignes du bas.')}
+          </div>
         </div>
 
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;font-weight:800;flex-wrap:nowrap;">
@@ -1816,7 +1825,7 @@ async function maybeShowRewindTutorialPopup() {
         </div>
 
         <div style="margin-bottom:14px;font-weight:800;text-align:center;">
-          ${tt('rewind.tip.reward', '')}
+          ${tt('rewind.tip.reward', 'Tiens, on t’en donne un pour essayer')}
         </div>
 
         <button id="rewind-tutorial-ok" style="padding:.78em 1.15em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;font-weight:800;">

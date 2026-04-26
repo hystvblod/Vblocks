@@ -311,9 +311,10 @@
   "duel.rematch.sent": "Revanche-Anfrage gesendet",
   "duel.rematch.ask": "Dein Gegner möchte eine Revanche. Annehmen?",
   "duel.rematch.error": "Eine Revanche kann im Moment nicht gestartet werden.",
-  "rewind.tip.title": "Zurück",
-  "rewind.tip.body": "Falls nötig, kannst du auf diese Taste tippen, um 5 Steine zurückzugehen.",
+  "rewind.tip.title": "Brauchst du Hilfe?",
   "rewind.tip.cost": "Kosten",
-  "rewind.tip.reward": "Hier, wir geben dir einen zum Ausprobieren",
-  "rewind.tip.cta": "Verstanden"
+  "rewind.tip.reward": "Hier, wir geben dir eins zum Ausprobieren",
+  "rewind.tip.cta": "Verstanden",
+  "rewind.tip.line1": "Du kannst auf diese Taste tippen, um 5 Teile zurückzugehen.",
+  "rewind.tip.line2": "Du kannst auf diese Taste tippen, um die unteren 5 Reihen zu entfernen."
 }

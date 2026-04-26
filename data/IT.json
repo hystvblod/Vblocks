@@ -311,9 +311,10 @@
   "duel.rematch.sent": "Richiesta di rivincita inviata",
   "duel.rematch.ask": "Il tuo avversario propone una rivincita. Accettare?",
   "duel.rematch.error": "Impossibile avviare una rivincita al momento.",
-  "rewind.tip.title": "Torna indietro",
-  "rewind.tip.body": "Se necessario, puoi toccare questo pulsante per tornare indietro di 5 pezzi.",
+  "rewind.tip.title": "Hai bisogno di aiuto?",
   "rewind.tip.cost": "Costo",
-  "rewind.tip.reward": "Tieni, te ne diamo uno per provarlo",
-  "rewind.tip.cta": "Capito"
+  "rewind.tip.reward": "Ecco, te ne diamo uno per provarlo",
+  "rewind.tip.cta": "Capito",
+  "rewind.tip.line1": "Puoi premere questo pulsante per tornare indietro di 5 pezzi.",
+  "rewind.tip.line2": "Puoi premere questo pulsante per eliminare le 5 righe inferiori."
 }
