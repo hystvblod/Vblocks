@@ -311,9 +311,10 @@
   "duel.rematch.sent": "Pedido de revanche enviado",
   "duel.rematch.ask": "O teu adversário quer revanche. Aceitas?",
   "duel.rematch.error": "Não foi possível iniciar a revanche agora.",
-  "rewind.tip.title": "Voltar atrás",
-  "rewind.tip.body": "Se precisares, podes tocar neste botão para recuar 5 peças.",
+  "rewind.tip.title": "Precisas de ajuda?",
   "rewind.tip.cost": "Custo",
   "rewind.tip.reward": "Toma, damos-te uma para experimentares",
-  "rewind.tip.cta": "Percebi"
+  "rewind.tip.cta": "Percebi",
+  "rewind.tip.line1": "Podes tocar neste botão para voltar 5 peças atrás.",
+  "rewind.tip.line2": "Podes tocar neste botão para remover as 5 linhas inferiores."
 }

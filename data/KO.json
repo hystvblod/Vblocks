@@ -311,9 +311,10 @@
   "duel.rematch.sent": "재대결 요청을 보냈습니다",
   "duel.rematch.ask": "상대가 재대결을 원합니다. 수락할까요?",
   "duel.rematch.error": "지금은 재대결을 시작할 수 없습니다.",
-  "rewind.tip.title": "되돌리기",
-  "rewind.tip.body": "필요할 때 이 버튼을 누르면 5개 전으로 돌아갈 수 있어요.",
+  "rewind.tip.title": "도움이 필요하신가요?",
   "rewind.tip.cost": "비용",
-  "rewind.tip.reward": "시험해 볼 수 있게 1개 줄게요",
-  "rewind.tip.cta": "알겠어요"
+  "rewind.tip.reward": "시험해 볼 수 있도록 하나 드릴게요",
+  "rewind.tip.cta": "알겠어요",
+  "rewind.tip.line1": "이 버튼을 누르면 5개 조각 전으로 돌아갈 수 있습니다.",
+  "rewind.tip.line2": "이 버튼을 누르면 아래 5줄을 제거할 수 있습니다."
 }

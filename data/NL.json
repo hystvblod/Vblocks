@@ -311,9 +311,10 @@
   "duel.rematch.sent": "Rematch-verzoek verzonden",
   "duel.rematch.ask": "Je tegenstander wil een rematch. Accepteren?",
   "duel.rematch.error": "Kan nu geen rematch starten.",
-  "rewind.tip.title": "Terug",
-  "rewind.tip.body": "Als het nodig is, kun je op deze knop tikken om 5 stukken terug te gaan.",
+  "rewind.tip.title": "Hulp nodig?",
   "rewind.tip.cost": "Kosten",
-  "rewind.tip.reward": "Hier, we geven je er één om het te proberen",
-  "rewind.tip.cta": "Begrepen"
+  "rewind.tip.reward": "Hier, we geven je er één om het uit te proberen",
+  "rewind.tip.cta": "Begrepen",
+  "rewind.tip.line1": "Je kunt op deze knop drukken om 5 stukken terug te gaan.",
+  "rewind.tip.line2": "Je kunt op deze knop drukken om de onderste 5 lijnen te verwijderen."
 }
