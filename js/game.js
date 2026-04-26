@@ -1566,6 +1566,195 @@ function showRewindConfirmPopup() {
   });
 }
 
+
+function clearBottomFiveLinesAsCompleted() {
+  if (!Array.isArray(board) || board.length === 0) return false;
+
+  saveHistory();
+
+  const lines = 5;
+
+  // Effet voulu :
+  // on agit comme si les 5 lignes du bas étaient complètes.
+  // Elles disparaissent, les lignes du dessus descendent,
+  // et 5 lignes vides arrivent en haut.
+  board = board.slice(0, Math.max(0, ROWS - lines));
+
+  while (board.length < ROWS) {
+    board.unshift(Array(COLS).fill(''));
+  }
+
+  if (window.vibrateIfEnabled) {
+    window.vibrateIfEnabled(200);
+  }
+
+  combo++;
+  linesCleared += lines;
+
+  const pts = computeScore(lines, combo);
+  score += pts;
+
+  if (scoreEl) {
+    scoreEl.textContent = score;
+  }
+
+  if (score > highscoreCloud) {
+    const newHS = score;
+    highscoreCloud = newHS;
+    setHighText(newHS);
+
+    Promise.resolve()
+      .then(() => userData?.setHighScore ? userData.setHighScore(newHS) : null)
+      .then(() => (typeof setHighScoreSupabase === 'function') ? setHighScoreSupabase(newHS) : null)
+      .finally(() => {
+        if (typeof window.updateHighscoreDisplay === 'function') window.updateHighscoreDisplay();
+        if (typeof window.updateHighScoreDisplay === 'function') window.updateHighScoreDisplay();
+      })
+      .catch(e => console.warn('[HS] save failed:', e));
+  }
+
+  if (mode === 'classic' || mode === 'duel') {
+    let level = Math.floor(linesCleared / 7);
+    if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
+    dropInterval = SPEED_TABLE[level];
+  }
+
+  safeRedraw();
+  scheduleSave();
+
+  return true;
+}
+
+async function doClearBottomWithAd() {
+  window.__ads_active = true;
+  window.__ads_freeze = true;
+
+  const resetAds = () => {
+    window.__ads_active = false;
+    window.__ads_freeze = false;
+  };
+
+  if (typeof window.showRewardRevive === 'function') {
+    const ok = await new Promise(resolve => {
+      try { window.showRewardRevive(closedOk => resolve(!!closedOk)); }
+      catch (_) { resolve(false); }
+    });
+
+    resetAds();
+    if (!ok) {
+      paused = false;
+      if (!gameOver) requestAnimationFrame(update);
+      return;
+    }
+
+    clearBottomFiveLinesAsCompleted();
+    paused = false;
+    if (!gameOver) requestAnimationFrame(update);
+    return;
+  }
+
+  await showInterstitial();
+  resetAds();
+
+  clearBottomFiveLinesAsCompleted();
+  paused = false;
+  if (!gameOver) requestAnimationFrame(update);
+}
+
+function showClearBottomConfirmPopup() {
+  const oldPopup = document.getElementById('clear-bottom-confirm-popup');
+  if (oldPopup) oldPopup.remove();
+
+  paused = true;
+  stopSoftDrop();
+  stopHorizontalRepeat();
+  safeRedraw();
+
+  const popup = document.createElement('div');
+  popup.id = 'clear-bottom-confirm-popup';
+  popup.style = `
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  popup.innerHTML = `
+    <div style="width:min(92vw,360px);background:#23294a;border-radius:18px;padding:18px 16px;box-shadow:0 0 18px rgba(0,0,0,.35);text-align:center;">
+      <div style="font-size:1.08em;font-weight:800;margin-bottom:10px;">
+        ${tt('clear_bottom.title', 'Pouvoir de secours')}
+      </div>
+
+      <div style="opacity:.96;line-height:1.5;margin-bottom:14px;">
+        ${tt('clear_bottom.body', 'Utiliser 1 jeton pour valider les 5 lignes du bas ?')}
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px;">
+        <img src="assets/images/jeton.webp" alt="" style="width:28px;height:28px;object-fit:contain;">
+        <strong>× 1</strong>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button id="clear-bottom-confirm-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">
+          ${tt('clear_bottom.confirm', 'Utiliser')}
+        </button>
+
+        <button id="clear-bottom-cancel-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#444;color:#fff;cursor:pointer;">
+          ${tt('common.cancel', 'Annuler')}
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  const closeOnly = () => {
+    popup.remove();
+    paused = false;
+    if (!gameOver) requestAnimationFrame(update);
+  };
+
+  popup.querySelector('#clear-bottom-cancel-btn')?.addEventListener('click', closeOnly);
+  popup.addEventListener('click', (e) => {
+    if (e.target === popup) closeOnly();
+  });
+
+  popup.querySelector('#clear-bottom-confirm-btn')?.addEventListener('click', async () => {
+    const okTok = await useJeton();
+
+    popup.remove();
+
+    if (!okTok) {
+      showNoJetonPopup({
+        title: tt('clear_bottom.no_token.title', 'Tu n’as plus de jeton'),
+        body: tt('clear_bottom.no_token.body', 'Regarde une pub pour valider les 5 lignes du bas ou ouvre la boutique.'),
+        onWatchAd: async () => {
+          await doClearBottomWithAd();
+        }
+      });
+      return;
+    }
+
+    clearBottomFiveLinesAsCompleted();
+
+    try {
+      if (typeof window.updateJetonsDisplay === 'function') {
+        window.updateJetonsDisplay();
+      }
+
+      const jetons = await userData.getJetons?.();
+      const j = document.getElementById('header-jetons') || document.getElementById('jetonsCount') || document.getElementById('jeton-amount');
+      if (j && jetons != null) j.textContent = String(jetons);
+    } catch (_) {}
+
+    paused = false;
+    if (!gameOver) requestAnimationFrame(update);
+  });
+}
+
 async function maybeShowRewindTutorialPopup() {
   if (mode === 'duel') return;
   if (piecesLockedThisRun < REWIND_TUTORIAL_MIN_PLACED_PIECES) return;
@@ -1785,6 +1974,20 @@ function showNoJetonPopup(opts = {}) {
 }
 
     setTimeout(() => {
+      const btnClearBottom = document.getElementById('clear-bottom-btn');
+      if (btnClearBottom) {
+        const clearBottomLabel = tt('game.clear_bottom', 'Valider les 5 lignes du bas');
+        btnClearBottom.title = clearBottomLabel;
+        btnClearBottom.setAttribute('aria-label', clearBottomLabel);
+        const clearBottomImg = btnClearBottom.querySelector('img');
+        if (clearBottomImg) clearBottomImg.alt = clearBottomLabel;
+
+        btnClearBottom.onclick = (e) => {
+          e.preventDefault();
+          showClearBottomConfirmPopup();
+        };
+      }
+
       const btnPause = document.getElementById('pause-btn');
       if (btnPause) {
         const pauseLabel = tt('game.pause', 'Pause');
