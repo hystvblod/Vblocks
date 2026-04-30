@@ -1541,7 +1541,13 @@ function showRewindConfirmPopup() {
 
   document.body.appendChild(popup);
 
-  const closeOnly = () => popup.remove();
+  const closeOnly = () => {
+    if (popup.isConnected) popup.remove();
+    paused = false;
+    window.__ads_active = false;
+    window.__ads_freeze = false;
+    if (!gameOver) requestAnimationFrame(update);
+  };
 
   popup.querySelector('#rewind-cancel-btn')?.addEventListener('click', closeOnly);
   popup.addEventListener('click', (e) => {
@@ -1957,15 +1963,24 @@ function showNoJetonPopup(opts = {}) {
 
   document.body.appendChild(mini);
 
-  const closeMini = () => mini.remove();
+  const closeMini = (resumeGame = true) => {
+    if (mini.isConnected) mini.remove();
 
-  mini.querySelector('#no-jeton-close')?.addEventListener('click', closeMini);
+    if (resumeGame) {
+      paused = false;
+      window.__ads_active = false;
+      window.__ads_freeze = false;
+      if (!gameOver) requestAnimationFrame(update);
+    }
+  };
+
+  mini.querySelector('#no-jeton-close')?.addEventListener('click', () => closeMini(true));
   mini.addEventListener('click', (e) => {
-    if (e.target === mini) closeMini();
+    if (e.target === mini) closeMini(true);
   });
 
   mini.querySelector('#no-jeton-watch-ad')?.addEventListener('click', async () => {
-    closeMini();
+    closeMini(false);
     await onWatchAd();
   });
 
