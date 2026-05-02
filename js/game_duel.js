@@ -509,7 +509,7 @@ function fillRectThemeSafe(c, px, py, size) {
     async function setupDuelSequence() {
       if (!duelId || !sb) {
         // fallback solo/random si pas d’ID (démo locale)
-        piecesSequence = Array.from({ length: 1000 }, () => Math.floor(Math.random() * 8));
+        piecesSequence = Array.from({ length: 1000 }, () => Math.floor(Math.random() * PIECES.length));
         piecesUsed = 0;
         return;
       }
