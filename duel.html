@@ -592,7 +592,7 @@
       if (e2) { console.error(e2); alert('Lecture duel failed'); return; }
 
       if (data && !data.pieces_seq) {
-        const seq = Array.from({ length: 1000 }, () => Math.floor(Math.random() * 7)).join(',');
+        const seq = Array.from({ length: 1000 }, () => Math.floor(Math.random() * 10)).join(',');
         const { error: e3 } = await window.sb.from('duels')
           .update({ pieces_seq: seq, status: "started" })
           .eq('id', duelId);
