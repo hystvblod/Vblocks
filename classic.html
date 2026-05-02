@@ -148,60 +148,48 @@
       .main-title { font-size: .99em; }
       .btn-back { width: 32px; height: 32px; }
       .btn-back img, .btn-icon img { width: 20px; height: 20px; }
-      .wallet-block { gap: 14px; margin-bottom: 8px; }
-      .vcoin-icon, .jeton-icon { width: 18px; height: 18px; margin-right: 4px; }
-      .vcoins, .jetons { font-size: .97em; }
-      .top-canvas-row {
-        grid-template-columns: 72px minmax(116px, 1fr) 72px;
-        column-gap: 6px;
-        margin-top: 0;
-      }
-      .side-canvas-block label {
-        font-size: .9em;
-      }
+      .wallet-block { gap: 8px; margin-bottom: 4px; }
+      .vcoin-icon, .jeton-icon { width: 16px; height: 16px; margin-right: 3px; }
+      .vcoins { font-size: .97em; }
+      .jetons { font-size: .88em; }
     }
     .top-canvas-row {
-      width: 100%;
-      max-width: 410px;
-      display: grid;
-      grid-template-columns: 82px minmax(118px, 1fr) 82px;
-      align-items: end;
-      column-gap: 8px;
-      margin-top: 0;
-      margin-bottom: 6px;
-      flex-shrink: 0;
-    }
+  width: 100%;
+  max-width: 410px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2px;
+  margin-top: -30px;
+  flex-shrink: 0;
+}
 
     .center-top-controls {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: clamp(6px, 2vw, 10px);
-      min-width: 0;
-      padding-bottom: 8px;
-    }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 96px;
+  padding-bottom: 6px;
+}
 
     .top-mini-action {
-      width: clamp(42px, 12vw, 54px);
-      height: clamp(42px, 12vw, 54px);
-      background: rgba(255, 255, 255, 0.22);
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      border-radius: 999px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      touch-action: manipulation;
-      box-shadow: 0 4px 12px rgba(0,0,0,.08);
-    }
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
 
     .top-mini-action img {
-      width: 62%;
-      height: 62%;
-      display: block;
-      object-fit: contain;
-    }
+  width: 36px;
+  height: 36px;
+  display: block;
+}
     .side-canvas-block {
       display: flex; flex-direction: column; align-items: center; gap: 2px;
     }
@@ -293,7 +281,7 @@
       .top-canvas-row {
         width: min(100%, 700px) !important;
         max-width: 700px !important;
-        margin-top: 0 !important;
+        margin-top: -12px !important;
       }
 
       #gameCanvas {
@@ -330,7 +318,7 @@
       .top-canvas-row {
         width: min(100%, 560px) !important;
         max-width: 560px !important;
-        margin-top: 0 !important;
+        margin-top: -14px !important;
       }
 
       #gameCanvas {
@@ -349,6 +337,17 @@
         height: 60px !important;
       }
     }
+@media (max-width: 380px) {
+  .top-mini-action img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  .center-top-controls {
+    gap: 6px;
+  }
+}
 </style>
 </head>
 <body>
