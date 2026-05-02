@@ -154,14 +154,12 @@
     .top-canvas-row {
   width: 100%;
   max-width: 410px;
-  display: grid;
-  grid-template-columns: 78px 132px 78px;
+  display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 2px;
   margin-top: -30px;
   flex-shrink: 0;
-  box-sizing: border-box;
 }
     .side-canvas-block { display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .side-canvas-block label {
@@ -314,68 +312,32 @@
 
 
 .center-top-controls {
-  width: 132px;
-  max-width: 132px;
-  min-width: 132px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  min-width: 0;
   padding-bottom: 6px;
-  box-sizing: border-box;
-  overflow: visible;
-  flex: 0 0 132px;
+  flex-shrink: 1;
 }
 
 .top-mini-action {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
-  max-width: 40px;
-  max-height: 40px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 2px;
-  margin: 0;
+  padding: clamp(1px, 0.6vw, 2px);
   border-radius: 99px;
   display: flex;
   align-items: center;
   justify-content: center;
   touch-action: manipulation;
-  flex: 0 0 40px;
-  box-sizing: border-box;
+  flex: 0 1 auto;
 }
 
-.top-mini-action img,
-.top-mini-action svg {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  max-width: 36px;
-  max-height: 36px;
+.top-mini-action img {
+  width: clamp(30px, 10vw, 36px);
+  height: clamp(30px, 10vw, 36px);
   display: block;
   object-fit: contain;
-  pointer-events: none;
-}
-
-@media (max-width: 360px) {
-  .top-canvas-row {
-    grid-template-columns: 72px 132px 72px;
-    padding: 0 2px;
-  }
-
-  #holdCanvas,
-  #nextCanvas {
-    width: 72px;
-    height: 72px;
-  }
-
-  .side-canvas-block label {
-    font-size: 0.86em;
-  }
 }
 </style>
 </head>
