@@ -309,6 +309,36 @@
         height: 60px !important;
       }
     }
+
+
+.center-top-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding-bottom: 6px;
+  flex-shrink: 1;
+}
+
+.top-mini-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: clamp(1px, 0.6vw, 2px);
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  flex: 0 1 auto;
+}
+
+.top-mini-action img {
+  width: clamp(30px, 10vw, 36px);
+  height: clamp(30px, 10vw, 36px);
+  display: block;
+  object-fit: contain;
+}
 </style>
 </head>
 <body>
@@ -353,9 +383,9 @@
         <label data-i18n="game.hold">Réserve</label>
         <canvas id="holdCanvas" width="48" height="48"></canvas>
       </div>
-      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:54px;">
-        <button id="pause-btn" style="background:none;border:none;cursor:pointer;padding:2px;border-radius:99px;">
-          <img src="assets/icons/pause.svg" alt="Pause" style="width:36px;height:36px;display:block;">
+      <div class="center-top-controls">
+        <button id="pause-btn" class="top-mini-action">
+          <img src="assets/icons/pause.svg" alt="Pause">
         </button>
       </div>
       <div class="side-canvas-block">
