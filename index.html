@@ -418,9 +418,9 @@
       const authId = user?.id || null;
       if (!authId) return null;
 
-      let { data, error } = await window.sb.from('users').select('id').eq('auth_id', authId).maybeSingle();
+      let { data, error } = await window.sb.from('vblocks_users').select('id').eq('auth_id', authId).maybeSingle();
       if (!error && data?.id) return data.id;
-      ({ data, error } = await window.sb.from('users').select('id').eq('id', authId).maybeSingle());
+      ({ data, error } = await window.sb.from('vblocks_users').select('id').eq('id', authId).maybeSingle());
       if (!error && data?.id) return data.id;
       return null;
     }
@@ -429,7 +429,7 @@
       const usersTableId = await getUsersTableIdForCurrentAuth();
       if (!usersTableId) return;
       const { data, error } = await window.sb
-        .from('messages_popup')
+        .from('vblocks_messages_popup')
         .select('id,message,vue,created_at,userid')
         .eq('userid', usersTableId)
         .order('created_at', { ascending: false })
@@ -438,7 +438,7 @@
         const msg = data[0];
         if (!msg.vue) {
           alert(msg.message);
-          await window.sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
+          await window.sb.from('vblocks_messages_popup').update({ vue: true }).eq('id', msg.id);
         }
       }
     }
@@ -470,7 +470,7 @@
         const uid = user?.id || null;
         if (!uid) return;
 
-        const q = await window.sb.from('users')
+        const q = await window.sb.from('vblocks_users')
           .select('country,lang')
           .or(`auth_id.eq.${uid},id.eq.${uid}`)
           .maybeSingle();
@@ -490,7 +490,7 @@
         }
 
         if (Object.keys(update).length) {
-          await window.sb.from('users')
+          await window.sb.from('vblocks_users')
             .update(update)
             .or(`auth_id.eq.${uid},id.eq.${uid}`);
         }
@@ -502,7 +502,7 @@
         const { data: { user } } = await window.sb.auth.getUser();
         const uid = user?.id || null;
         if (uid) {
-          const q = await window.sb.from('users')
+          const q = await window.sb.from('vblocks_users')
             .select('country,lang')
             .or(`auth_id.eq.${uid},id.eq.${uid}`)
             .maybeSingle();
@@ -523,14 +523,14 @@
       try {
         // accepte GLOBAL ou global, sans risque de maybeSingle() avec 2 lignes
         let row = (await window.sb
-          .from('config')
+          .from('vblocks_config')
           .select('concours_enabled, concours_countries')
           .eq('id', 'GLOBAL')
           .maybeSingle()).data;
 
         if (!row) {
           row = (await window.sb
-            .from('config')
+            .from('vblocks_config')
             .select('concours_enabled, concours_countries')
             .eq('id', 'global')
             .maybeSingle()).data;
@@ -1034,7 +1034,7 @@ window.addEventListener("load", async function () {
 
     try {
       const { data, error } = await sb
-        .from('users')
+        .from('vblocks_users')
         .select('themes_possedes')
         .or(`id.eq.${uid},auth_id.eq.${uid}`)
         .maybeSingle();

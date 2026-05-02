@@ -643,7 +643,7 @@ function fillRectThemeSafe(c, px, py, size) {
       if (!duelId || !sb) return;
       let tries = 0, data = null;
       while (tries++ < 20) {
-        let res = await sb.from('duels').select('*').eq('id', duelId).single();
+        let res = await sb.from('vblocks_duels').select('*').eq('id', duelId).single();
         if (res?.data && res.data.pieces_seq) { data = res.data; break; }
         await new Promise(r => setTimeout(r, 1500));
       }

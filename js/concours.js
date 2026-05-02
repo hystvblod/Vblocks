@@ -480,7 +480,7 @@ function fillRectThemeSafe(c, px, py, size) {
       if (!duelId || !sb) return;
       let tries = 0, data = null;
       while (tries++ < 20) {
-        let res = await sb.from('duels').select('*').eq('id', duelId).single();
+        let res = await sb.from('vblocks_duels').select('*').eq('id', duelId).single();
         if (res?.data && res.data.pieces_seq) { data = res.data; break; }
         await new Promise(r => setTimeout(r, 1500));
       }
@@ -1433,7 +1433,7 @@ function fillRectThemeSafe(c, px, py, size) {
     async function getScoreToBeat() {
       if (!sb) return 0;
       try {
-        const { data, error } = await sb.rpc('concours_get_score_to_beat');
+        const { data, error } = await sb.rpc('vblocks_concours_get_score_to_beat');
         if (error) throw error;
         return Number(data ?? 0);
       } catch { return 0; }
@@ -2232,13 +2232,13 @@ function fillRectThemeSafe(c, px, py, size) {
     async function setLastScoreSupabase(score) {
       if (!sb) return;
       const val = parseInt(score, 10) || 0;
-      await sb.rpc('concours_set_lastscore', { new_last: val });
+      await sb.rpc('vblocks_concours_set_lastscore', { new_last: val });
     }
 
     async function setHighScoreSupabase(score, durationMs, linesDone) {
       if (!sb) return;
       const val = parseInt(score, 10) || 0;
-      await sb.rpc('concours_set_highscore', {
+      await sb.rpc('vblocks_concours_set_highscore', {
         new_high: val,
         new_duration_ms: Number.isFinite(durationMs) ? Math.max(0, Math.round(durationMs)) : null,
         new_lines: Number.isFinite(linesDone) ? Math.max(0, Math.round(linesDone)) : null
@@ -2249,7 +2249,7 @@ function fillRectThemeSafe(c, px, py, size) {
       if (!sb) return 0;
       try {
         // RLS => renverra la ligne de l'utilisateur courant
-        const { data, error } = await sb.from('concours_scores').select('highscore').single();
+        const { data, error } = await sb.from('vblocks_concours_scores').select('highscore').single();
         if (error) return 0;
         return Number(data?.highscore ?? 0);
       } catch { return 0; }
