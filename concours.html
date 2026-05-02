@@ -284,7 +284,28 @@
       border-radius: 1.1em;
       background: rgba(255,255,255,.06);
     }
-  </style>
+  
+
+.top-mini-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: clamp(1px, 0.6vw, 2px);
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  flex: 0 1 auto;
+}
+
+.top-mini-action img {
+  width: clamp(30px, 10vw, 36px);
+  height: clamp(30px, 10vw, 36px);
+  display: block;
+  object-fit: contain;
+}
+</style>
 </head>
 <body>
   <canvas id="starfield" style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-1; display:none;"></canvas>
@@ -337,8 +358,8 @@
           <span class="score-to-beat-label" data-i18n="game.score_to_beat">Score à battre</span>&nbsp;:
           <span id="score-to-beat-value-legacy">--</span>
         </div>
-        <button id="pause-btn"  style="background:none;border:none;cursor:pointer;padding:2px;border-radius:99px;" >
-          <img src="assets/icons/pause.svg" alt="Pause" style="width:36px;height:36px;display:block;">
+        <button id="pause-btn" class="top-mini-action">
+          <img src="assets/icons/pause.svg" alt="Pause">
         </button>
       </div>
       <div class="side-canvas-block">
