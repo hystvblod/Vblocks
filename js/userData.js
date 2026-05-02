@@ -4,8 +4,8 @@
 // =============================
 
 // ---------- INIT SUPABASE (création unique) ----------
-const SUPABASE_URL = 'https://youhealyblgbwjhsskca.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlvdWhlYWx5YmxnYndqaHNza2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4NjAwMzcsImV4cCI6MjA2NDQzNjAzN30.2PUwMKq-xQOF3d2J_gg9EkZSBEbR-X5DachRUp6Auiw';
+  const SUPABASE_URL = "https://fbkbqfkgdjkjdfijmggd.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZia2JxZmtnZGpramRmaWptZ2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5MTIyOTgsImV4cCI6MjA4MTQ4ODI5OH0.ylBfBeXBWliR13GumJrFazRjP57RyBR3mzaebF7Iy24";
 
 if (!window.sb) {
   window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
