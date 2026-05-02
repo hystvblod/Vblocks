@@ -1847,9 +1847,19 @@ function fillRectThemeSafe(c, px, py, size) {
         (cssH - 2 * PAD) / 3
       );
 
+      /*
+        Correction preview :
+        les petites pièces 2x2 comme C ne doivent pas être zoomées
+        plus fort que les pièces normales 3x3.
+      */
+      const maxNormalPreviewCellSize = Math.min(
+        (cssW - 2 * PAD) / 3,
+        (cssH - 2 * PAD) / 3
+      );
+
       const cellSize = piece.letter === 'P'
         ? pixelCellSize
-        : normalCellSize;
+        : Math.min(normalCellSize, maxNormalPreviewCellSize);
 
       const offsetX = (cssW - (w * cellSize)) / 2 - minX * cellSize;
       const offsetY = (cssH - (h * cellSize)) / 2 - minY * cellSize;

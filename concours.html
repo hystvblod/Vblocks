@@ -130,10 +130,17 @@
       .main-title { font-size: .99em; }
       .btn-back { width: 32px; height: 32px; }
       .btn-back img, .btn-icon img { width: 20px; height: 20px; }
-      .wallet-block { gap: 8px; margin-bottom: 4px; }
-      .vcoin-icon, .jeton-icon { width: 16px; height: 16px; margin-right: 3px; }
-      .vcoins { font-size: .97em; }
-      .jetons { font-size: .88em; }
+      .wallet-block { gap: 14px; margin-bottom: 8px; }
+      .vcoin-icon, .jeton-icon { width: 18px; height: 18px; margin-right: 4px; }
+      .vcoins, .jetons { font-size: .97em; }
+      .top-canvas-row {
+        grid-template-columns: 72px minmax(116px, 1fr) 72px;
+        column-gap: 6px;
+        margin-top: 0;
+      }
+      .side-canvas-block label {
+        font-size: .9em;
+      }
       .score-to-beat-row { margin: 2px 0 4px; }
     }
 
@@ -154,7 +161,7 @@
       .top-canvas-row {
         width: min(100%, 700px) !important;
         max-width: 700px !important;
-        margin-top: -12px !important;
+        margin-top: 0 !important;
       }
 
       #gameCanvas {
@@ -191,7 +198,7 @@
       .top-canvas-row {
         width: min(100%, 560px) !important;
         max-width: 560px !important;
-        margin-top: -14px !important;
+        margin-top: 0 !important;
       }
 
       #gameCanvas {
@@ -212,10 +219,14 @@
     }
 
     .top-canvas-row {
-      width: 100%; max-width: 410px;
-      display: flex; justify-content: space-between; align-items: flex-end;
-      margin-bottom: 2px;
-      margin-top: -30px;
+      width: 100%;
+      max-width: 410px;
+      display: grid;
+      grid-template-columns: 82px minmax(118px, 1fr) 82px;
+      align-items: end;
+      column-gap: 8px;
+      margin-top: 0;
+      margin-bottom: 6px;
       flex-shrink: 0;
     }
     .side-canvas-block {
