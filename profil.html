@@ -383,9 +383,9 @@
       try {
         const { data: { session } } = await sb.auth.getSession();
         if (!session) await sb.auth.signInAnonymously();
-        await sb.rpc('ensure_user', { default_lang: (localStorage.getItem('langue') || 'EN'), default_pseudo: null });
+        await sb.rpc('vblocks_ensure_user', { default_lang: (localStorage.getItem('langue') || 'EN'), default_pseudo: null });
       } catch (e) {}
-      const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
+      const { error } = await sb.rpc('vblocks_update_pseudo_secure', { new_pseudo: np });
       if (error) throw error;
       localStorage.setItem('pseudo', np);
       return true;
@@ -399,7 +399,7 @@
       try {
         const { data: { session } } = await sb.auth.getSession();
         if (!session) await sb.auth.signInAnonymously();
-        await sb.rpc('ensure_user', { default_lang: (localStorage.getItem('langue') || 'EN'), default_pseudo: null });
+        await sb.rpc('vblocks_ensure_user', { default_lang: (localStorage.getItem('langue') || 'EN'), default_pseudo: null });
       } catch (e) {}
 
       // ✅ Applique le thème local au boot (visuel uniquement)
@@ -411,7 +411,7 @@
         const uid = user?.id || null;
         if (uid) {
           const { data, error } = await sb
-            .from('users')
+            .from('vblocks_users')
             .select('pseudo')
             .or(`id.eq.${uid},auth_id.eq.${uid}`)
             .maybeSingle();
@@ -461,7 +461,7 @@
       // 3) SELECT direct sur la table users
       try {
         const { data, error } = await sb
-          .from('users')
+          .from('vblocks_users')
           .select('themes_possedes')
           .or(`id.eq.${uid},auth_id.eq.${uid}`)
           .maybeSingle();

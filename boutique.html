@@ -310,7 +310,7 @@ async function getUnlockedThemesNoSQL(){
   const { data:{ user } } = await sb.auth.getUser();
   const uid = user?.id; if(!uid) return [];
   try{
-    const { data, error } = await sb.from('users').select('themes_possedes')
+    const { data, error } = await sb.from('vblocks_users').select('themes_possedes')
       .or(`id.eq.${uid},auth_id.eq.${uid}`).maybeSingle();
     if(error) return [];
     const arr = Array.isArray(data?.themes_possedes)?data.themes_possedes:[];

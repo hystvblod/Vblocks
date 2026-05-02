@@ -515,7 +515,7 @@ function fillRectThemeSafe(c, px, py, size) {
       }
       let tries = 0, data = null;
       while (tries++ < 20) {
-        const res = await sb.from('duels').select('*').eq('id', duelId).single();
+        const res = await sb.from('vblocks_duels').select('*').eq('id', duelId).single();
         if (res?.data && res.data.pieces_seq) { data = res.data; break; }
         await new Promise(r => setTimeout(r, 1500));
       }
@@ -538,7 +538,7 @@ function fillRectThemeSafe(c, px, py, size) {
           ? window.genDuelCode()
           : Math.random().toString(36).slice(2, 8).toUpperCase();
 
-        const { data: created, error: createErr } = await sb.from('duels').insert([{
+        const { data: created, error: createErr } = await sb.from('vblocks_duels').insert([{
           code: newCode,
           player1: uid,
           status: 'waiting'
@@ -550,7 +550,7 @@ function fillRectThemeSafe(c, px, py, size) {
           return;
         }
 
-        const { error: updErr } = await sb.from('duels')
+        const { error: updErr } = await sb.from('vblocks_duels')
           .update({
             rematch_requested_by: uid,
             rematch_status: 'pending',
@@ -575,7 +575,7 @@ function fillRectThemeSafe(c, px, py, size) {
     async function pollRematch() {
       let tries = 0;
       while (tries++ < 120) {
-        const { data } = await sb.from('duels').select('*').eq('id', duelId).single();
+        const { data } = await sb.from('vblocks_duels').select('*').eq('id', duelId).single();
         if (!data) {
           await new Promise(r => setTimeout(r, 1500));
           continue;
@@ -599,13 +599,13 @@ function fillRectThemeSafe(c, px, py, size) {
       let tries = 0;
       while (tries++ < 120) {
         const uid = (window.getUserId ? await window.getUserId() : null);
-        const { data } = await sb.from('duels').select('*').eq('id', duelId).single();
+        const { data } = await sb.from('vblocks_duels').select('*').eq('id', duelId).single();
 
         if (data && data.rematch_status === 'pending' && data.rematch_requested_by && data.rematch_requested_by !== uid && data.rematch_code) {
           const accept = confirm(t('duel.rematch.ask'));
           if (!accept) return;
 
-          await sb.from('duels')
+          await sb.from('vblocks_duels')
             .update({ rematch_status: 'accepted' })
             .eq('id', duelId);
 
@@ -619,11 +619,11 @@ function fillRectThemeSafe(c, px, py, size) {
 
     async function handleDuelEnd(myScore) {
       const field = (duelPlayerNum === 1) ? 'score1' : 'score2';
-      await sb.from('duels').update({ [field]: myScore }).eq('id', duelId);
+      await sb.from('vblocks_duels').update({ [field]: myScore }).eq('id', duelId);
 
       let tries = 0, otherScore = null;
       while (tries++ < 40) {
-        let { data } = await sb.from('duels').select('*').eq('id', duelId).single();
+        let { data } = await sb.from('vblocks_duels').select('*').eq('id', duelId).single();
         if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
         if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
         await new Promise(r => setTimeout(r, 1500));

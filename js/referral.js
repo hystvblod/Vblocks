@@ -162,7 +162,7 @@
     if (!sb?.rpc) return;
 
     try {
-      const { data, error } = await sb.rpc("secure_claim_referral_install", {
+      const { data, error } = await sb.rpc("vblocks_secure_claim_referral_install", {
         p_inviter: pendingInviter,
         p_raw: pendingRaw || null
       });

@@ -223,7 +223,7 @@ async function linkLegacyIfNeeded() {
   if (already === '1') return;
 
   try {
-    const { error } = await sb.rpc('link_auth_to_legacy', { legacy_id: legacy });
+    const { error } = await sb.rpc('vblocks_link_auth_to_legacy', { legacy_id: legacy });
     if (!error) localStorage.setItem('legacy_linked', '1');
   } catch (e) {
     console.warn('[linkLegacyIfNeeded] non bloquant:', e?.message || e);
@@ -290,7 +290,7 @@ async function ensureUserRow() {
 
     var pseudoFallback = getPseudoLocal();
 
-    var rpc = await sb.rpc('ensure_user', {
+    var rpc = await sb.rpc('vblocks_ensure_user', {
       default_lang: langNorm,
       default_pseudo: pseudoFallback
     });
@@ -301,7 +301,7 @@ async function ensureUserRow() {
 
       if (code === '429' || msg.indexOf('too many') !== -1) {
         await new Promise(function (r) { setTimeout(r, 500); });
-        rpc = await sb.rpc('ensure_user', {
+        rpc = await sb.rpc('vblocks_ensure_user', {
           default_lang: langNorm,
           default_pseudo: pseudoFallback
         });
@@ -326,7 +326,7 @@ async function ensureUserRow() {
     if (cc) update.country = cc;
 
     try {
-      await sb.from('users')
+      await sb.from('vblocks_users')
         .update(update)
         .or('id.eq.' + uid + ',auth_id.eq.' + uid);
     } catch (_) {}
@@ -509,7 +509,7 @@ async function getProfileSecure() {
 
   // 1) RPC
   try {
-    const { data, error } = await sb.rpc('get_balances');
+    const { data, error } = await sb.rpc('vblocks_get_balances');
     if (error) throw error;
     const row = (Array.isArray(data) ? data[0] : data) || {};
 
@@ -518,7 +518,7 @@ async function getProfileSecure() {
       const uid = await getAuthUserId();
       if (uid) {
         const { data: direct, error: e2 } = await sb
-          .from('users')
+          .from('vblocks_users')
           .select('themes_possedes')
           .or(`id.eq.${uid},auth_id.eq.${uid}`)
           .maybeSingle();
@@ -538,7 +538,7 @@ async function getProfileSecure() {
   if (!uid) return {};
   try {
     const { data, error } = await sb
-      .from('users')
+      .from('vblocks_users')
       .select('id, auth_id, pseudo, lang, vcoins, jetons, highscore, lastscore, themes_possedes')
       .or(`id.eq.${uid},auth_id.eq.${uid}`)
       .maybeSingle();
@@ -561,7 +561,7 @@ async function updatePseudoSecure(newPseudo) {
   await bootstrapAuthAndProfile();
   const np = String(newPseudo || '').trim();
   if (np.length < 3) throw new Error('Pseudo trop court.');
-  const { error } = await sb.rpc('update_pseudo_secure', { new_pseudo: np });
+  const { error } = await sb.rpc('vblocks_update_pseudo_secure', { new_pseudo: np });
   if (error) throw error;
   setPseudoLocal(np);
   return true;
@@ -577,7 +577,7 @@ async function updateLangDirect(langCode) {
   if (!uid) throw new Error('No auth user');
 
   const { error } = await sb
-    .from('users')
+    .from('vblocks_users')
     .update({ lang: normalized })
     .or(`id.eq.${uid},auth_id.eq.${uid}`);
   if (error) throw error;
@@ -588,7 +588,7 @@ async function updateLangDirect(langCode) {
 async function addVCoinsSecure(amount) {
   await bootstrapAuthAndProfile();
   const delta = parseInt(amount, 10) || 0;
-  const { error } = await sb.rpc('ajouter_vcoins', { montant: delta });
+  const { error } = await sb.rpc('vblocks_ajouter_vcoins', { montant: delta });
   if (error) throw error;
 }
 async function getVCoinsSecure() {
@@ -600,7 +600,7 @@ async function getVCoinsSecure() {
 async function addJetonsSecure(amount) {
   await bootstrapAuthAndProfile();
   const delta = parseInt(amount, 10) || 0;
-  const { error } = await sb.rpc('ajouter_jetons', { montant: delta });
+  const { error } = await sb.rpc('vblocks_ajouter_jetons', { montant: delta });
   if (error) throw error;
 }
 async function getJetonsSecure() {
@@ -633,7 +633,7 @@ async function getUnlockedThemesCloud() {
       const uid = await getAuthUserId();
       if (uid) {
         const { data: d2, error: e2 } = await sb
-          .from('users')
+          .from('vblocks_users')
           .select('themes_possedes')
           .or(`id.eq.${uid},auth_id.eq.${uid}`)
           .maybeSingle();
@@ -659,13 +659,13 @@ async function getUnlockedThemesCloud() {
 
 async function setUnlockedThemesCloud(themes) {
   await bootstrapAuthAndProfile();
-  const { error } = await sb.rpc('set_themes_secure', { themes });
+  const { error } = await sb.rpc('vblocks_set_themes_secure', { themes });
   if (error) throw error;
   return true;
 }
 async function purchaseThemeSecure(themeKey, price) {
   await bootstrapAuthAndProfile();
-  const { error } = await sb.rpc('purchase_theme', {
+  const { error } = await sb.rpc('vblocks_purchase_theme', {
     theme_key: String(themeKey),
     price: parseInt(price, 10) || 0
   });
@@ -683,7 +683,7 @@ function setLocalHighScore(score) {
 async function setHighScoreSecure(score) {
   await bootstrapAuthAndProfile();
   const val = parseInt(score, 10) || 0;
-  const { error } = await sb.rpc('set_highscore_secure', { new_score: val });
+  const { error } = await sb.rpc('vblocks_set_highscore_secure', { new_score: val });
   if (error) throw error;
 }
 async function getHighScoreSecure() {
@@ -693,7 +693,7 @@ async function getHighScoreSecure() {
 async function setLastScoreSecure(score) {
   await bootstrapAuthAndProfile();
   const val = parseInt(score, 10) || 0;
-  const { error } = await sb.rpc('set_lastscore_secure', { last_score: val });
+  const { error } = await sb.rpc('vblocks_set_lastscore_secure', { last_score: val });
   if (error) throw error;
 }
 function updateScoreIfHigher(newScore) {
@@ -765,7 +765,7 @@ function setupPseudoPopup() {
 async function checkConcoursStatus() {
   try {
     const { data, error } = await sb
-      .from('config')
+      .from('vblocks_config')
       .select('concours_enabled')
       .eq('id', 'global')
       .single();
@@ -784,7 +784,7 @@ async function checkAndShowPopupOnce() {
     if (!me) return;
 
     const { data, error } = await sb
-      .from('messages_popup')
+      .from('vblocks_messages_popup')
       .select('id,message,vue,created_at')
       .eq('userid', me)
       .order('created_at', { ascending: false })
@@ -794,7 +794,7 @@ async function checkAndShowPopupOnce() {
     const msg = data[0];
     if (!msg.vue) {
       alert(msg.message);
-      await sb.from('messages_popup').update({ vue: true }).eq('id', msg.id);
+      await sb.from('vblocks_messages_popup').update({ vue: true }).eq('id', msg.id);
     }
   } catch {}
 }
@@ -808,11 +808,11 @@ async function listenPopupsRealtime() {
 
     sb.channel('popups_for_' + me)
       .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages_popup', filter: `userid=eq.${me}` },
+        { event: 'INSERT', schema: 'public', table: 'vblocks_messages_popup', filter: `userid=eq.${me}` },
         async (payload) => {
           const m = payload.new;
           alert(m.message);
-          await sb.from('messages_popup').update({ vue: true }).eq('id', m.id);
+          await sb.from('vblocks_messages_popup').update({ vue: true }).eq('id', m.id);
         }
       )
       .subscribe();

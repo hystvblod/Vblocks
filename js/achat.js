@@ -4,9 +4,9 @@
 /**
  * achat.js — Cordova Purchase v13 (Google Play)
  * Crédit côté client comme les pubs (mêmes RPC) :
- *   - points  → sb.rpc('secure_add_points', { p_user_id, p_amount, p_product })
- *   - jetons  → sb.rpc('secure_add_jetons', { p_user_id, p_amount, p_product })
- *   - nopub   → sb.rpc('secure_set_nopub', { p_user_id, p_product })
+ *   - points  → sb.rpc('vblocks_secure_add_points', { p_user_id, p_amount, p_product })
+ *   - jetons  → sb.rpc('vblocks_secure_add_jetons', { p_user_id, p_amount, p_product })
+ *   - nopub   → sb.rpc('vblocks_secure_set_nopub', { p_user_id, p_product })
  * Dédoublonnage local par purchaseToken (ou fallback), finish() systématique.
  */
 
@@ -162,7 +162,7 @@ async function ensureAuthStrict() {
   //   CRÉDIT CLIENT (mêmes RPC que pub.js)
   // =========================
   async function addPointsClientSide(userId, amount, sku) {
-    const { data, error } = await sb.rpc('secure_add_points', {
+    const { data, error } = await sb.rpc('vblocks_secure_add_points', {
       p_user_id: userId,
       p_amount: Number(amount || 0),
       p_product: `iap:${sku}`
@@ -171,7 +171,7 @@ async function ensureAuthStrict() {
     return data;
   }
   async function addJetonsClientSide(userId, amount, sku) {
-    const { data, error } = await sb.rpc('secure_add_jetons', {
+    const { data, error } = await sb.rpc('vblocks_secure_add_jetons', {
       p_user_id: userId,
       p_amount: Number(amount || 0),
       p_product: `iap:${sku}`
@@ -185,7 +185,7 @@ async function ensureAuthStrict() {
     const uid = await ensureAuthStrict(); // <- lit getUser() d’abord
     if (!uid) throw new Error('no_session');
 
-    const { error: rpcErr } = await sb.rpc('secure_set_nopub', {
+    const { error: rpcErr } = await sb.rpc('vblocks_secure_set_nopub', {
       p_user_id: uid,
       p_product: enabled ? 'iap:nopub' : 'iap:nopub_off'
     });

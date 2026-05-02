@@ -219,7 +219,7 @@
       if (!info) return;
       if (window.bootstrapAuthAndProfile) await window.bootstrapAuthAndProfile();
       if (window.sb && window.sb.rpc) {
-        await window.sb.rpc('update_ads_consent', { new_consent: info.canRequestAds ? 'accept' : 'refuse' });
+        await window.sb.rpc('vblocks_update_ads_consent', { new_consent: info.canRequestAds ? 'accept' : 'refuse' });
       }
     } catch (_) {}
   }
@@ -507,7 +507,7 @@
     await ensureAuth();
     var sb = window.sb;
     if (!sb || !sb.rpc) throw new Error('Supabase non initialisé (window.sb manquant)');
-    var res = await sb.rpc('get_balances');
+    var res = await sb.rpc('vblocks_get_balances');
     if (res.error) throw res.error;
     var row = Array.isArray(res.data) ? res.data[0] : res.data;
     return row || {};
@@ -674,12 +674,12 @@
 
     try {
       if (String(type) === 'jeton') {
-        var r1 = await sb.rpc('secure_add_jetons', params);
+        var r1 = await sb.rpc('vblocks_secure_add_jetons', params);
         if (r1 && r1.error) throw r1.error;
         return true;
       }
       if (String(type) === 'vcoin') {
-        var r2 = await sb.rpc('secure_add_points', params);
+        var r2 = await sb.rpc('vblocks_secure_add_points', params);
         if (r2 && r2.error) throw r2.error;
         return true;
       }
