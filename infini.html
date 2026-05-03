@@ -29,6 +29,14 @@
       width: 100vw;
       align-items: center; justify-content: flex-start;
     }
+    .game-viewport {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
     .main-content {
       display: flex;
       flex-direction: column;
@@ -160,16 +168,27 @@
   touch-action: manipulation;
 }
     .game-flex-wrap {
-      width: 100%; flex: 1 1 0; min-height: 0; min-width: 0;
-      display: flex; justify-content: center; align-items: center;
+      width: 100%;
+      flex: 0 0 auto;
+      min-height: 0;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       margin-bottom: 4px;
     }
+
     #gameCanvas {
-      width: 100%; max-width: 330px; aspect-ratio: 12/22;
-      height: auto; max-height: 100%;
+      width: 100%;
+      max-width: 330px;
+      aspect-ratio: 12/22;
+      height: auto;
+      max-height: none;
       background: var(--canvas-bg, #180654);
-      border-radius: 0.4em; box-shadow: 0 6px 32px #39ff1411;
-      display: block; margin: 0 auto;
+      border-radius: 0.4em;
+      box-shadow: 0 6px 32px #39ff1411;
+      display: block;
+      margin: 0 auto;
       touch-action: none;
     }
     .score-row {
@@ -296,16 +315,31 @@
 }
 
 .top-mini-action img {
-  width: clamp(30px, 10vw, 36px);
-  height: clamp(30px, 10vw, 36px);
+  width: clamp(21px, 7vw, 25px);
+  height: clamp(21px, 7vw, 25px);
   display: block;
   object-fit: contain;
+}
+
+@media (max-width: 380px) {
+  .top-mini-action img {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}
+
+@media (max-width: 340px) {
+  .top-mini-action img {
+    width: 20px !important;
+    height: 20px !important;
+  }
 }
 </style>
 </head>
 <body>
   <canvas id="starfield" style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-1; display:none;"></canvas>
-  <div class="main-content">
+  <div class="game-viewport">
+    <div class="main-content">
     <!-- BARRE TOP -->
     <div class="top-bar">
       <div class="top-bar-row">
@@ -376,6 +410,7 @@
     <div id="controls">
       <button id="music-btn">Musique</button>
       <button onclick="location.reload()">Rejouer</button>
+    </div>
     </div>
   </div>
   <audio id="music" src="assets/sounds/chill.mp3" loop></audio>
