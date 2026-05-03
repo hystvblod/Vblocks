@@ -188,10 +188,24 @@
 }
 
     .top-mini-action img {
-  width: clamp(30px, 10vw, 36px);
-  height: clamp(30px, 10vw, 36px);
+  width: clamp(21px, 7vw, 25px);
+  height: clamp(21px, 7vw, 25px);
   display: block;
   object-fit: contain;
+}
+
+@media (max-width: 380px) {
+  .top-mini-action img {
+    width: 22px !important;
+    height: 22px !important;
+  }
+}
+
+@media (max-width: 340px) {
+  .top-mini-action img {
+    width: 20px !important;
+    height: 20px !important;
+  }
 }
     .side-canvas-block {
       display: flex; flex-direction: column; align-items: center; gap: 2px;
