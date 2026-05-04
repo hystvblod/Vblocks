@@ -134,6 +134,8 @@
   "duel.yourscore": "Jouw score:",
   "duel.opponentscore": "Tegenstander score:",
   "duel.waiting": "Wachten...",
+  "duel.waiting_results_title": "Wachten op resultaten",
+  "duel.waiting_results_text": "Wachten op de resultaten van je tegenstander...",
   "gameover.title": "Spel afgelopen!",
   "gameover.points": "punten gewonnen!",
   "gameover.tokens": "Tokensaldo:",

@@ -134,6 +134,8 @@
   "duel.yourscore": "Ton score :",
   "duel.opponentscore": "Score adverse :",
   "duel.waiting": "En attente...",
+  "duel.waiting_results_title": "En attente des résultats",
+  "duel.waiting_results_text": "En attente des résultats de l’adversaire...",
   "gameover.title": "Partie terminée !",
   "gameover.points": "points gagnés !",
   "gameover.tokens": "Solde jetons :",

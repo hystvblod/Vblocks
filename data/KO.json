@@ -134,6 +134,8 @@
   "duel.yourscore": "당신의 점수:",
   "duel.opponentscore": "상대 점수:",
   "duel.waiting": "대기 중...",
+  "duel.waiting_results_title": "결과 대기 중",
+  "duel.waiting_results_text": "상대의 결과를 기다리는 중...",
   "gameover.title": "게임 종료!",
   "gameover.points": "획득 점수!",
   "gameover.tokens": "토큰 잔액:",

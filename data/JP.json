@@ -134,6 +134,8 @@
   "duel.yourscore": "あなたのスコア:",
   "duel.opponentscore": "相手のスコア:",
   "duel.waiting": "待機中...",
+  "duel.waiting_results_title": "結果を待っています",
+  "duel.waiting_results_text": "相手の結果を待っています...",
   "gameover.title": "ゲームオーバー！",
   "gameover.points": "ポイント獲得！",
   "gameover.tokens": "トークン残高:",

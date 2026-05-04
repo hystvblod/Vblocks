@@ -134,6 +134,8 @@
   "duel.yourscore": "Dein Punktestand:",
   "duel.opponentscore": "Gegnerischer Punktestand:",
   "duel.waiting": "Warten...",
+  "duel.waiting_results_title": "Warten auf Ergebnisse",
+  "duel.waiting_results_text": "Warte auf die Ergebnisse deines Gegners...",
   "gameover.title": "Spiel vorbei!",
   "gameover.points": "Punkte gewonnen!",
   "gameover.tokens": "Token-Guthaben:",
