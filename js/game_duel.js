@@ -618,163 +618,205 @@ function fillRectThemeSafe(c, px, py, size) {
     }
 
     async function handleDuelEnd(myScore) {
-      const field = (duelPlayerNum === 1) ? 'score1' : 'score2';
-      await sb.from('vblocks_duels').update({ [field]: myScore }).eq('id', duelId);
+  const field = (duelPlayerNum === 1) ? 'score1' : 'score2';
 
-      let tries = 0, otherScore = null;
-      while (tries++ < 40) {
-        let { data } = await sb.from('vblocks_duels').select('*').eq('id', duelId).single();
-        if (duelPlayerNum === 1 && data?.score2 != null) { otherScore = data.score2; break; }
-        if (duelPlayerNum === 2 && data?.score1 != null) { otherScore = data.score1; break; }
-        await new Promise(r => setTimeout(r, 1500));
+  try {
+    await sb.from('vblocks_duels').update({ [field]: myScore }).eq('id', duelId);
+  } catch (err) {
+    console.error('[DUEL] Impossible d’envoyer le score :', err);
+  }
+
+  const rewardAmount = Number(window.REWARD_VCOINS || 300);
+  let rewardClaimed = false;
+
+  const div = document.createElement('div');
+  div.id = 'duel-popup';
+  div.style = 'position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;';
+
+  div.innerHTML = `
+    <div style="background:#23294a;padding:2em 2em 1.1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;min-width:280px;max-width:92vw;">
+      <div id="duel-result-title" style="font-weight:bold;font-size:1.12em;">
+        ${t('duel.waiting_results_title')}
+      </div>
+
+      <div id="duel-result-message" style="margin-top:14px;line-height:1.45;">
+        ${t('duel.waiting_results_text')}
+      </div>
+
+      <div id="duel-result-scores" style="display:none;margin-top:14px;">
+        <div>${t('duel.yourscore')} <b>${myScore}</b></div>
+        <div>${t('duel.opponentscore')} <b id="duel-other-score">${t('duel.waiting')}</b></div>
+      </div>
+
+      <button
+        id="duel-rematch-btn"
+        style="
+          width:100%;
+          margin-top:16px;
+          padding:.9em 1em;
+          border-radius:1em;
+          border:none;
+          background:linear-gradient(180deg,#ff9f2f 0%,#ff7b1e 100%);
+          color:#fff;
+          cursor:pointer;
+          font-weight:800;
+          box-shadow:0 0 14px rgba(255,160,60,.45);
+          display:none;
+        "
+      >
+        ${t('duel.rematch')}
+      </button>
+
+      <button
+        id="duel-reward-vcoins"
+        style="
+          width:100%;
+          margin-top:12px;
+          padding:.85em 1em;
+          border-radius:1em;
+          border:none;
+          background:linear-gradient(180deg,#2f7bff 0%,#1e55d6 100%);
+          color:#fff;
+          cursor:pointer;
+          display:none;
+          align-items:center;
+          justify-content:center;
+          gap:12px;
+          box-shadow:0 0 12px #39f7;
+          font-weight:700;
+        "
+      >
+        <span>${t('end.reward.vcoins')}</span>
+        <span style="display:flex;align-items:center;gap:8px;font-weight:800;">
+          <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
+          <span>+${rewardAmount} ${t('wallet.vcoins')}</span>
+        </span>
+      </button>
+
+      <button
+        id="duel-back-home"
+        style="margin-top:12px;padding:0.55em 1.2em;font-size:0.95em;border-radius:0.7em;border:none;background:#444;color:#fff;cursor:pointer;"
+      >
+        ${t('button.back')}
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(div);
+
+  const btnReward = document.getElementById('duel-reward-vcoins');
+  const btnBack = document.getElementById('duel-back-home');
+  const btnRematch = document.getElementById('duel-rematch-btn');
+  const titleEl = document.getElementById('duel-result-title');
+  const messageEl = document.getElementById('duel-result-message');
+  const scoresEl = document.getElementById('duel-result-scores');
+  const otherScoreEl = document.getElementById('duel-other-score');
+
+  if (btnBack) {
+    const goHome = function (e) {
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
+      window.location.replace('index.html');
+    };
+
+    btnBack.addEventListener('click', goHome, { passive: false });
+    btnBack.addEventListener('touchend', goHome, { passive: false });
+    btnBack.style.touchAction = 'manipulation';
+  }
+
+  let tries = 0;
+  let otherScore = null;
+
+  while (tries++ < 40) {
+    try {
+      let { data } = await sb.from('vblocks_duels').select('*').eq('id', duelId).single();
+
+      if (duelPlayerNum === 1 && data?.score2 != null) {
+        otherScore = data.score2;
+        break;
       }
 
-      const rewardAmount = Number(window.REWARD_VCOINS || 300);
-      let rewardClaimed = false;
-
-      const div = document.createElement('div');
-      div.id = 'duel-popup';
-      div.style = 'position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:999999;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2em;';
-
-      div.innerHTML = `
-        <div style="background:#23294a;padding:2em 2em 1.1em 2em;border-radius:1.2em;box-shadow:0 0 12px #39ff1477;text-align:center;min-width:280px;max-width:92vw;">
-          <div style="font-weight:bold;font-size:1.12em;">${t('duel.finished')}</div>
-
-          <div style="margin-top:10px;">${t('duel.yourscore')} <b>${myScore}</b></div>
-          <div>${t('duel.opponentscore')} <b>${otherScore != null ? otherScore : t('duel.waiting')}</b></div>
-
-          <button
-            id="duel-rematch-btn"
-            style="
-              width:100%;
-              margin-top:16px;
-              padding:.9em 1em;
-              border-radius:1em;
-              border:none;
-              background:linear-gradient(180deg,#ff9f2f 0%,#ff7b1e 100%);
-              color:#fff;
-              cursor:pointer;
-              font-weight:800;
-              box-shadow:0 0 14px rgba(255,160,60,.45);
-            "
-          >
-            ${t('duel.rematch')}
-          </button>
-
-          <button
-            id="duel-reward-vcoins"
-            style="
-              width:100%;
-              margin-top:12px;
-              padding:.85em 1em;
-              border-radius:1em;
-              border:none;
-              background:linear-gradient(180deg,#2f7bff 0%,#1e55d6 100%);
-              color:#fff;
-              cursor:pointer;
-              display:flex;
-              align-items:center;
-              justify-content:center;
-              gap:12px;
-              box-shadow:0 0 12px #39f7;
-              font-weight:700;
-            "
-          >
-            <span>${t('end.reward.vcoins')}</span>
-            <span style="display:flex;align-items:center;gap:8px;font-weight:800;">
-              <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
-              <span>+${rewardAmount} ${t('wallet.vcoins')}</span>
-            </span>
-          </button>
-
-          <button
-            id="duel-back-home"
-            style="margin-top:12px;padding:0.55em 1.2em;font-size:0.95em;border-radius:0.7em;border:none;background:#444;color:#fff;cursor:pointer;"
-          >
-            ${t('button.back')}
-          </button>
-        </div>
-      `;
-
-      document.body.appendChild(div);
-
-      const btnReward = document.getElementById('duel-reward-vcoins');
-      const btnBack = document.getElementById('duel-back-home');
-      const btnRematch = document.getElementById('duel-rematch-btn');
-
-      if (btnRematch?.animate) {
-        btnRematch.animate(
-          [
-            { transform: 'scale(1)', boxShadow: '0 0 14px rgba(255,160,60,.35)' },
-            { transform: 'scale(1.05)', boxShadow: '0 0 24px rgba(255,160,60,.65)' },
-            { transform: 'scale(1)', boxShadow: '0 0 14px rgba(255,160,60,.35)' }
-          ],
-          {
-            duration: 1400,
-            iterations: Infinity,
-            easing: 'ease-in-out'
-          }
-        );
+      if (duelPlayerNum === 2 && data?.score1 != null) {
+        otherScore = data.score1;
+        break;
       }
-
-      if (btnBack) {
-        const goHome = function (e) {
-          e?.preventDefault?.();
-          e?.stopPropagation?.();
-          window.location.replace('index.html');
-        };
-
-        btnBack.addEventListener('click', goHome, { passive: false });
-        btnBack.addEventListener('touchend', goHome, { passive: false });
-        btnBack.style.touchAction = 'manipulation';
-      }
-
-      if (btnRematch) {
-        btnRematch.onclick = async function () {
-          btnRematch.disabled = true;
-          btnRematch.style.opacity = '.7';
-          await requestRematch();
-        };
-      }
-
-      if (btnReward) {
-        btnReward.onclick = async function () {
-          if (rewardClaimed) return;
-
-          btnReward.disabled = true;
-          btnReward.style.opacity = '.7';
-
-          try {
-            const ok = (typeof window.showRewardVcoins === 'function')
-              ? await window.showRewardVcoins()
-              : false;
-
-            if (!ok) {
-              btnReward.disabled = false;
-              btnReward.style.opacity = '1';
-              return;
-            }
-
-            rewardClaimed = true;
-            btnReward.style.display = 'none';
-
-            try {
-              const vcoins = await window.userData?.getVCoins?.();
-              const el = document.getElementById('vcoin-amount');
-              if (el) el.textContent = String(vcoins ?? 0);
-            } catch (_) {}
-          } catch (_) {
-            btnReward.disabled = false;
-            btnReward.style.opacity = '1';
-            alert(t('pub.err'));
-          }
-        };
-      }
-
-      watchIncomingRematchProposal();
+    } catch (err) {
+      console.error('[DUEL] Lecture du score adverse impossible :', err);
     }
 
-    function showEndPopup(points) {
+    await new Promise(r => setTimeout(r, 1500));
+  }
+
+  if (titleEl) titleEl.textContent = t('duel.finished');
+  if (messageEl) messageEl.style.display = 'none';
+  if (scoresEl) scoresEl.style.display = 'block';
+  if (otherScoreEl) otherScoreEl.textContent = otherScore != null ? String(otherScore) : t('duel.waiting');
+
+  if (btnRematch) {
+    btnRematch.style.display = 'block';
+
+    if (btnRematch.animate) {
+      btnRematch.animate(
+        [
+          { transform: 'scale(1)', boxShadow: '0 0 14px rgba(255,160,60,.35)' },
+          { transform: 'scale(1.05)', boxShadow: '0 0 24px rgba(255,160,60,.65)' },
+          { transform: 'scale(1)', boxShadow: '0 0 14px rgba(255,160,60,.35)' }
+        ],
+        {
+          duration: 1400,
+          iterations: Infinity,
+          easing: 'ease-in-out'
+        }
+      );
+    }
+
+    btnRematch.onclick = async function () {
+      btnRematch.disabled = true;
+      btnRematch.style.opacity = '.7';
+      await requestRematch();
+    };
+  }
+
+  if (btnReward) {
+    btnReward.style.display = 'flex';
+
+    btnReward.onclick = async function () {
+      if (rewardClaimed) return;
+
+      btnReward.disabled = true;
+      btnReward.style.opacity = '.7';
+
+      try {
+        const ok = (typeof window.showRewardVcoins === 'function')
+          ? await window.showRewardVcoins()
+          : false;
+
+        if (!ok) {
+          btnReward.disabled = false;
+          btnReward.style.opacity = '1';
+          return;
+        }
+
+        rewardClaimed = true;
+        btnReward.style.display = 'none';
+
+        try {
+          const vcoins = await window.userData?.getVCoins?.();
+          const el = document.getElementById('vcoin-amount');
+          if (el) el.textContent = String(vcoins ?? 0);
+        } catch (_) {}
+      } catch (_) {
+        btnReward.disabled = false;
+        btnReward.style.opacity = '1';
+        alert(t('pub.err'));
+      }
+    };
+  }
+
+  watchIncomingRematchProposal();
+}
+
+function showEndPopup(points) {
       paused = true;
       stopSoftDrop();
       safeRedraw();

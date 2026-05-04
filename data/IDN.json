@@ -134,6 +134,8 @@
   "duel.yourscore": "Skormu:",
   "duel.opponentscore": "Skor lawan:",
   "duel.waiting": "Menunggu...",
+  "duel.waiting_results_title": "Menunggu hasil",
+  "duel.waiting_results_text": "Menunggu hasil dari lawan...",
   "gameover.title": "Permainan selesai!",
   "gameover.points": "poin didapat!",
   "gameover.tokens": "Saldo token:",

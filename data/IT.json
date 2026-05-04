@@ -134,6 +134,8 @@
   "duel.yourscore": "Il tuo punteggio:",
   "duel.opponentscore": "Punteggio avversario:",
   "duel.waiting": "In attesa...",
+  "duel.waiting_results_title": "In attesa dei risultati",
+  "duel.waiting_results_text": "In attesa dei risultati dell’avversario...",
   "gameover.title": "Partita terminata!",
   "gameover.points": "punti vinti!",
   "gameover.tokens": "Saldo gettoni:",

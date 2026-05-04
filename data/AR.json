@@ -134,6 +134,8 @@
   "duel.yourscore": "نتيجتك:",
   "duel.opponentscore": "نتيجة الخصم:",
   "duel.waiting": "بانتظار...",
+  "duel.waiting_results_title": "في انتظار النتائج",
+  "duel.waiting_results_text": "بانتظار نتائج الخصم...",
   "gameover.title": "انتهت اللعبة!",
   "gameover.points": "نقاط مكتسبة!",
   "gameover.tokens": "رصيد الرموز:",
