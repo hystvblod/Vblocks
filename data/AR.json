@@ -318,5 +318,8 @@
   "rewind.tip.reward": "تفضل، سنمنحك واحدة لتجربتها",
   "rewind.tip.cta": "فهمت",
   "rewind.tip.line1": "يمكنك الضغط على هذا الزر للرجوع 5 قطع إلى الخلف.",
-  "rewind.tip.line2": "يمكنك الضغط على هذا الزر لإزالة آخر 5 أسطر."
+  "rewind.tip.line2": "يمكنك الضغط على هذا الزر لإزالة آخر 5 أسطر.",
+  "end.reward.fixed": "+{amount}",
+  "end.reward.double": "مضاعفة الربح: +{amount}",
+  "common.reward_video": "فيديو بمكافأة"
 }

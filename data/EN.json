@@ -318,5 +318,8 @@
   "rewind.tip.reward": "Here, we’re giving you one to try it out",
   "rewind.tip.cta": "Got it",
   "rewind.tip.line1": "You can tap this button to go back 5 pieces.",
-  "rewind.tip.line2": "You can tap this button to remove the bottom 5 lines."
+  "rewind.tip.line2": "You can tap this button to remove the bottom 5 lines.",
+  "end.reward.fixed": "+{amount}",
+  "end.reward.double": "Double reward: +{amount}",
+  "common.reward_video": "Rewarded video"
 }

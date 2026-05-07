@@ -961,7 +961,12 @@ overlay.querySelector('#resume-yes').onclick = () => {
         position: fixed; left:0; top:0; width:100vw; height:100vh; z-index:99999;
         background: rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center;
       `;
-      const rewardAmount = Number(window.REWARD_VCOINS || 300);
+      const baseRewardAmount = Number(window.REWARD_VCOINS || 300);
+      const realWinAmount = Math.max(0, Math.floor(Number(points) || 0));
+      const rewardAmount = realWinAmount > baseRewardAmount ? realWinAmount : baseRewardAmount;
+      const rewardLabel = realWinAmount > baseRewardAmount
+        ? tt('end.reward.double', 'Gain x2 : +{amount}', { amount: rewardAmount })
+        : tt('end.reward.fixed', '+{amount}', { amount: rewardAmount });
       const referralRewardAmount = Number(window.REFERRAL_INVITE_VCOINS || 500);
       if (!recordBeatAlreadyCountedThisRun && points > (Number(runStartHighscore) || 0)) {
         recordBeatAlreadyCountedThisRun = true;
@@ -1039,7 +1044,7 @@ overlay.querySelector('#resume-yes').onclick = () => {
             >
               <span style="display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;width:100%;">
                 <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
-                <span>+${rewardAmount}</span>
+                <span>${rewardLabel}</span>
               </span>
             </button>
 
@@ -1342,7 +1347,7 @@ overlay.querySelector('#resume-yes').onclick = () => {
 
           try {
             const ok = (typeof window.showRewardVcoins === 'function')
-              ? await window.showRewardVcoins()
+              ? await window.showRewardVcoins(rewardAmount)
               : false;
 
             if (!ok) {
@@ -1481,7 +1486,11 @@ async function doRewindWithAd() {
     });
 
     resetAds();
-    if (!ok) return;
+    if (!ok) {
+      paused = false;
+      if (!gameOver) requestAnimationFrame(update);
+      return;
+    }
 
     rewindHistoryAndResume(5, 3);
     return;
@@ -1524,18 +1533,22 @@ function showRewindConfirmPopup() {
         )}
       </div>
 
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button id="rewind-confirm-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">
-          ${tt(
-            'rewind.confirm',
-            'Utiliser 1 <img src="assets/images/jeton.webp" alt="" style="width:1.35em;height:1.35em;vertical-align:-0.22em;object-fit:contain;">'
-          )}
-        </button>
+      <div style="display:flex;flex-direction:column;gap:10px;justify-content:center;align-items:center;">
+      <button id="rewind-confirm-btn" style="width:100%;padding:.75em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;font-weight:800;">
+        ${tt(
+          'rewind.confirm',
+          'Utiliser 1 <img src="assets/images/jeton.webp" alt="" style="width:1.35em;height:1.35em;vertical-align:-0.22em;object-fit:contain;">'
+        )}
+      </button>
 
-        <button id="rewind-cancel-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#444;color:#fff;cursor:pointer;">
-          ${tt('common.cancel','Annuler')}
-        </button>
-      </div>
+      <button id="rewind-reward-btn" style="width:100%;padding:.75em 1em;border:none;border-radius:.85em;background:#a73;color:#fff;cursor:pointer;font-weight:800;">
+        ${tt('common.reward_video', 'Vidéo récompensée')}
+      </button>
+
+      <button id="rewind-cancel-btn" style="margin-top:2px;background:transparent;border:none;color:#cfd8ff;cursor:pointer;opacity:.9;">
+        ${tt('common.cancel','Annuler')}
+      </button>
+    </div>
     </div>
   `;
 
@@ -1552,6 +1565,11 @@ function showRewindConfirmPopup() {
   popup.querySelector('#rewind-cancel-btn')?.addEventListener('click', closeOnly);
   popup.addEventListener('click', (e) => {
     if (e.target === popup) closeOnly();
+  });
+
+  popup.querySelector('#rewind-reward-btn')?.addEventListener('click', async () => {
+    popup.remove();
+    await doRewindWithAd();
   });
 
   popup.querySelector('#rewind-confirm-btn')?.addEventListener('click', async () => {
@@ -1703,15 +1721,19 @@ function showClearBottomConfirmPopup() {
         <strong>× 1</strong>
       </div>
 
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button id="clear-bottom-confirm-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">
-          ${tt('clear_bottom.confirm', 'Utiliser')}
-        </button>
+      <div style="display:flex;flex-direction:column;gap:10px;justify-content:center;align-items:center;">
+      <button id="clear-bottom-confirm-btn" style="width:100%;padding:.75em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;font-weight:800;">
+        ${tt('clear_bottom.confirm', 'Utiliser 1 jeton')}
+      </button>
 
-        <button id="clear-bottom-cancel-btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#444;color:#fff;cursor:pointer;">
-          ${tt('common.cancel', 'Annuler')}
-        </button>
-      </div>
+      <button id="clear-bottom-reward-btn" style="width:100%;padding:.75em 1em;border:none;border-radius:.85em;background:#a73;color:#fff;cursor:pointer;font-weight:800;">
+        ${tt('common.reward_video', 'Vidéo récompensée')}
+      </button>
+
+      <button id="clear-bottom-cancel-btn" style="margin-top:2px;background:transparent;border:none;color:#cfd8ff;cursor:pointer;opacity:.9;">
+        ${tt('common.cancel', 'Annuler')}
+      </button>
+    </div>
     </div>
   `;
 
@@ -1726,6 +1748,11 @@ function showClearBottomConfirmPopup() {
   popup.querySelector('#clear-bottom-cancel-btn')?.addEventListener('click', closeOnly);
   popup.addEventListener('click', (e) => {
     if (e.target === popup) closeOnly();
+  });
+
+  popup.querySelector('#clear-bottom-reward-btn')?.addEventListener('click', async () => {
+    popup.remove();
+    await doClearBottomWithAd();
   });
 
   popup.querySelector('#clear-bottom-confirm-btn')?.addEventListener('click', async () => {

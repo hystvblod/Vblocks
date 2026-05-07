@@ -318,5 +318,8 @@
   "rewind.tip.reward": "Nih, kami kasih satu supaya kamu bisa mencobanya",
   "rewind.tip.cta": "Mengerti",
   "rewind.tip.line1": "Kamu bisa menekan tombol ini untuk mundur 5 keping.",
-  "rewind.tip.line2": "Kamu bisa menekan tombol ini untuk menghapus 5 baris terbawah."
+  "rewind.tip.line2": "Kamu bisa menekan tombol ini untuk menghapus 5 baris terbawah.",
+  "end.reward.fixed": "+{amount}",
+  "end.reward.double": "Hadiah x2: +{amount}",
+  "common.reward_video": "Video berhadiah"
 }
