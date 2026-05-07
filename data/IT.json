@@ -318,5 +318,8 @@
   "rewind.tip.reward": "Ecco, te ne diamo uno per provarlo",
   "rewind.tip.cta": "Capito",
   "rewind.tip.line1": "Puoi premere questo pulsante per tornare indietro di 5 pezzi.",
-  "rewind.tip.line2": "Puoi premere questo pulsante per eliminare le 5 righe inferiori."
+  "rewind.tip.line2": "Puoi premere questo pulsante per eliminare le 5 righe inferiori.",
+  "end.reward.fixed": "+{amount}",
+  "end.reward.double": "Guadagno x2: +{amount}",
+  "common.reward_video": "Video ricompensa"
 }

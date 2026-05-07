@@ -318,5 +318,8 @@
   "rewind.tip.reward": "Hier, wir geben dir eins zum Ausprobieren",
   "rewind.tip.cta": "Verstanden",
   "rewind.tip.line1": "Du kannst auf diese Taste tippen, um 5 Teile zurückzugehen.",
-  "rewind.tip.line2": "Du kannst auf diese Taste tippen, um die unteren 5 Reihen zu entfernen."
+  "rewind.tip.line2": "Du kannst auf diese Taste tippen, um die unteren 5 Reihen zu entfernen.",
+  "end.reward.fixed": "+{amount}",
+  "end.reward.double": "Gewinn x2: +{amount}",
+  "common.reward_video": "Belohnungsvideo"
 }

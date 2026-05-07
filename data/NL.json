@@ -318,5 +318,8 @@
   "rewind.tip.reward": "Hier, we geven je er één om het uit te proberen",
   "rewind.tip.cta": "Begrepen",
   "rewind.tip.line1": "Je kunt op deze knop drukken om 5 stukken terug te gaan.",
-  "rewind.tip.line2": "Je kunt op deze knop drukken om de onderste 5 lijnen te verwijderen."
+  "rewind.tip.line2": "Je kunt op deze knop drukken om de onderste 5 lijnen te verwijderen.",
+  "end.reward.fixed": "+{amount}",
+  "end.reward.double": "Winst x2: +{amount}",
+  "common.reward_video": "Beloningsvideo"
 }

@@ -824,9 +824,14 @@
     });
   }
 
-  async function showRewardVcoins() {
+  async function showRewardVcoins(amount) {
     return new Promise(function(resolve){
-      showRewardedType('vcoin', window.REWARD_VCOINS, function(ok){ resolve(!!ok); });
+      var n = Number(amount);
+      var finalAmount = (Number.isFinite(n) && n > 0)
+        ? Math.floor(n)
+        : Number(window.REWARD_VCOINS || 300);
+
+      showRewardedType('vcoin', finalAmount, function(ok){ resolve(!!ok); });
     });
   }
 

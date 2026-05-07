@@ -318,5 +318,8 @@
   "rewind.tip.reward": "お試し用に1つプレゼントします",
   "rewind.tip.cta": "わかった",
   "rewind.tip.line1": "このボタンを押すと5ピース戻れます。",
-  "rewind.tip.line2": "このボタンを押すと下の5ラインを消せます。"
+  "rewind.tip.line2": "このボタンを押すと下の5ラインを消せます。",
+  "end.reward.fixed": "+{amount}",
+  "end.reward.double": "獲得量2倍：+{amount}",
+  "common.reward_video": "リワード動画"
 }

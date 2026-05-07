@@ -318,5 +318,8 @@
   "rewind.tip.reward": "Tiens, on t’en donne un pour essayer",
   "rewind.tip.cta": "Compris",
   "rewind.tip.line1": "Tu peux cliquer sur ce bouton pour revenir 5 pièces en arrière.",
-  "rewind.tip.line2": "Tu peux appuyer sur ce bouton pour supprimer les 5 lignes du bas."
+  "rewind.tip.line2": "Tu peux appuyer sur ce bouton pour supprimer les 5 lignes du bas.",
+  "end.reward.fixed": "+{amount}",
+  "end.reward.double": "Gain x2 : +{amount}",
+  "common.reward_video": "Vidéo récompensée"
 }
