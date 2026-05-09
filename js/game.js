@@ -558,7 +558,7 @@ function fillRectThemeSafe(c, px, py, size) {
     let heldPiece = null;
     let holdUsed = false; // conservé pour compat, mais ignoré (échanges illimités)
     let score = 0;
-    let dropInterval = 500;
+    let dropInterval = 800;
     let lastTime = 0;
     let gameOver = false;
     let paused = false;
@@ -1638,7 +1638,7 @@ function clearBottomFiveLinesAsCompleted() {
   }
 
   if (mode === 'classic' || mode === 'duel') {
-    let level = Math.floor(linesCleared / 7);
+    let level = Math.floor(linesCleared / 4);
     if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
     dropInterval = SPEED_TABLE[level];
   }
@@ -2075,9 +2075,8 @@ function showNoJetonPopup(opts = {}) {
     }, 200);
 
     const SPEED_TABLE = [
-      800, 720, 630, 550, 470, 380, 300, 220, 130, 100,
-       83,  83,  83,  67,  67,  67,  50,   50,  50,  33,
-       33,  33,  33,  33,  33,  33,  33,  33,  17
+      800, 680, 560, 460, 370, 300, 240, 190, 150, 120,
+      100,  85,  70,  58,  48,  40,  33,  27,  22,  17
     ];
 
 const scoreEl = document.getElementById('score');
@@ -2237,7 +2236,7 @@ if (score > highscoreCloud) {
 
 
         if (mode === 'classic' || mode === 'duel') {
-          let level = Math.floor(linesCleared / 7);
+          let level = Math.floor(linesCleared / 4);
           if (level >= SPEED_TABLE.length) level = SPEED_TABLE.length - 1;
           dropInterval = SPEED_TABLE[level];
         }
