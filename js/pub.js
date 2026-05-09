@@ -33,10 +33,10 @@
   // --- Réglages interstitiels ---
   var INTERSTITIEL_APRES_X_ACTIONS = 2;        // pub au début de la 3e action réelle
   var INTERSTITIEL_APRES_MS = 0;               // désactivé : remplacé par le timer de temps d'écran ci-dessous
-  var INTER_COOLDOWN_MS = 3 * 60 * 1000;       // minimum 3 minutes entre deux pubs
+  var INTER_COOLDOWN_MS = 135 * 1000;       // minimum 3 minutes entre deux pubs
 
   // --- Timer auto hors jeu / index ---
-  var INTER_ECRAN_VISIBLE_MS = 3 * 60 * 1000;  // pub auto toutes les 3 minutes de temps d'écran visible
+  var INTER_ECRAN_VISIBLE_MS = 135 * 1000;  // pub auto toutes les 3 minutes de temps d'écran visible
   var INTER_ECRAN_TICK_MS = 15000;             // vérification légère toutes les 15s
 
   // --- Récompenses par défaut (affichage/UI) ---
