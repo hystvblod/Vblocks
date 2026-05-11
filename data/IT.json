@@ -66,6 +66,7 @@
   "game.pause": "Pausa",
   "game.rewind": "Indietro",
   "game.clear_bottom": "Elimina le 5 righe inferiori",
+  "inter.lines.bravo": "Ben fatto, sei a {count} linee!",
   "clear_bottom.title": "Potere di emergenza",
   "clear_bottom.body": "Usare 1 gettone per eliminare le 5 righe inferiori?",
   "clear_bottom.confirm": "Usa",

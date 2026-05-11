@@ -66,6 +66,7 @@
   "game.pause": "Pause",
   "game.rewind": "Rewind",
   "game.clear_bottom": "Clear the bottom 5 lines",
+  "inter.lines.bravo": "Well done, you’re at {count} lines!",
   "clear_bottom.title": "Emergency power",
   "clear_bottom.body": "Use 1 token to clear the bottom 5 lines?",
   "clear_bottom.confirm": "Use",

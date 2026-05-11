@@ -66,6 +66,7 @@
   "game.pause": "일시정지",
   "game.rewind": "되돌리기",
   "game.clear_bottom": "아래 5줄 지우기",
+  "inter.lines.bravo": "잘했어요! {count}줄 달성!",
   "clear_bottom.title": "긴급 파워",
   "clear_bottom.body": "토큰 1개를 사용해 아래 5줄을 지울까요?",
   "clear_bottom.confirm": "사용",

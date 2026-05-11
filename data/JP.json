@@ -66,6 +66,7 @@
   "game.pause": "一時停止",
   "game.rewind": "巻き戻し",
   "game.clear_bottom": "下の5ラインを消す",
+  "inter.lines.bravo": "よくできました！{count}ライン達成です！",
   "clear_bottom.title": "緊急パワー",
   "clear_bottom.body": "トークンを1個使って下の5ラインを消しますか？",
   "clear_bottom.confirm": "使う",

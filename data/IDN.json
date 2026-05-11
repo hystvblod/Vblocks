@@ -66,6 +66,7 @@
   "game.pause": "Jeda",
   "game.rewind": "Mundur",
   "game.clear_bottom": "Hapus 5 baris terbawah",
+  "inter.lines.bravo": "Well done, you’re at {count} lines!",
   "clear_bottom.title": "Kekuatan darurat",
   "clear_bottom.body": "Gunakan 1 token untuk menghapus 5 baris terbawah?",
   "clear_bottom.confirm": "Gunakan",

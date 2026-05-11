@@ -66,6 +66,7 @@
   "game.pause": "Pause",
   "game.rewind": "Retour arrière",
   "game.clear_bottom": "Valider les 5 lignes du bas",
+  "inter.lines.bravo": "Bravo, tu es à {count} lignes !",
   "clear_bottom.title": "Pouvoir de secours",
   "clear_bottom.body": "Utiliser 1 jeton pour valider les 5 lignes du bas ?",
   "clear_bottom.confirm": "Utiliser",

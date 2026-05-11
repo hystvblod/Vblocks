@@ -66,6 +66,7 @@
   "game.pause": "إيقاف مؤقت",
   "game.rewind": "رجوع للخلف",
   "game.clear_bottom": "إزالة آخر 5 أسطر",
+  "inter.lines.bravo": "أحسنت! وصلت إلى {count} سطر!",
   "clear_bottom.title": "قوة الطوارئ",
   "clear_bottom.body": "هل تريد استخدام رمز واحد لإزالة آخر 5 أسطر؟",
   "clear_bottom.confirm": "استخدام",

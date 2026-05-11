@@ -568,6 +568,72 @@ function fillRectThemeSafe(c, px, py, size) {
     let piecesLockedThisRun = 0;
     let rewindTutorialShownThisRun = false;
     let rewindTutorialBusy = false;
+    let pieceLockTransitionRunning = false;
+
+    function waitMs(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function showPreInterstitialLinesMessage() {
+      const old = document.getElementById('pre-interstitial-lines-message');
+      if (old) old.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'pre-interstitial-lines-message';
+      overlay.style = `
+        position: fixed;
+        inset: 0;
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(5, 10, 25, 0.58);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        pointer-events: auto;
+      `;
+
+      const card = document.createElement('div');
+      card.style = `
+        width: min(86vw, 360px);
+        border-radius: 26px;
+        padding: 24px 22px;
+        text-align: center;
+        color: #ffffff;
+        font-weight: 900;
+        font-size: 22px;
+        line-height: 1.25;
+        background: linear-gradient(135deg, rgba(88, 101, 242, 0.96), rgba(178, 92, 255, 0.96));
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38), inset 0 0 0 1px rgba(255,255,255,0.24);
+        transform: scale(0.96);
+        animation: preInterPop 220ms ease-out forwards;
+      `;
+
+      card.textContent = t('inter.lines.bravo', { count: linesCleared });
+
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+
+      if (!document.getElementById('pre-interstitial-lines-style')) {
+        const style = document.createElement('style');
+        style.id = 'pre-interstitial-lines-style';
+        style.textContent = `
+          @keyframes preInterPop {
+            from { opacity: 0; transform: scale(0.92) translateY(8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      return overlay;
+    }
+
+    function hidePreInterstitialLinesMessage() {
+      const overlay = document.getElementById('pre-interstitial-lines-message');
+      if (overlay) overlay.remove();
+    }
 
     // revive ramp
     let reviveRampActive = false;
@@ -2253,22 +2319,63 @@ if (score > highscoreCloud) {
     }
 
     function dropPiece() {
+      if (pieceLockTransitionRunning) return;
       if (!currentPiece || !currentPiece.shape) return;
+
       currentPiece.y++;
+
       if (collision()) {
         currentPiece.y--;
+        handlePieceLocked();
+      }
+    }
+
+    async function handlePieceLocked() {
+      if (pieceLockTransitionRunning) return;
+
+      pieceLockTransitionRunning = true;
+
+      try {
         stopSoftDrop();
         mustLiftFingerForNextSoftDrop = true;
 
         merge();
         saveHistory();
         piecesLockedThisRun += 1;
+
+        safeRedraw();
+
+        if (
+          typeof window.consumeInterstitialAtSafePoint === 'function' &&
+          typeof window.__ads_waiting_choice === 'undefined'
+        ) {
+          const overlay = showPreInterstitialLinesMessage();
+
+          await waitMs(2500);
+
+          hidePreInterstitialLinesMessage();
+
+          try {
+            const shown = await window.consumeInterstitialAtSafePoint();
+
+            if (shown) {
+              lastTime = performance.now();
+            }
+          } catch (_) {}
+
+          if (overlay && overlay.isConnected) overlay.remove();
+        }
+
         setTimeout(() => { maybeShowRewindTutorialPopup(); }, 120);
+
         reset();
+
         if (collision()) {
           showEndPopup(score);
           gameOver = true;
         }
+      } finally {
+        pieceLockTransitionRunning = false;
       }
     }
 
