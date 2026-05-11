@@ -948,18 +948,31 @@
     persistInterstitialScreenClock();
   }
 
-  async function maybeShowInterstitialByScreenTime() {
+  function isInterstitialDueByScreenTime() {
     if (document.hidden) return false;
     if (!isRealGameScreen()) return false;
     if (hasBlockingUiForAutoInterstitial()) return false;
     if (getInterstitialScreenVisibleMs() < INTER_ECRAN_VISIBLE_MS) return false;
     if (!canShowInterstitialNow()) return false;
+    return true;
+  }
+
+  async function maybeShowInterstitialByScreenTime() {
+    // En jeu, on ne coupe plus directement.
+    // La pub attend le safe point dans game.js.
+    return false;
+  }
+
+  async function consumeInterstitialAtSafePoint() {
+    if (!isInterstitialDueByScreenTime()) return false;
 
     var shown = await showInterstitial();
+
     if (shown) {
       resetInterstitialScreenClock();
       return true;
     }
+
     return false;
   }
 
@@ -1151,6 +1164,7 @@
   // Expose global
   // =============================
   window.showInterstitial     = showInterstitial;
+  window.consumeInterstitialAtSafePoint = consumeInterstitialAtSafePoint;
   window.showRewardBoutique   = showRewardBoutique;
   window.showRewardVcoins     = showRewardVcoins;
   window.showRewardRevive     = showRewardRevive;

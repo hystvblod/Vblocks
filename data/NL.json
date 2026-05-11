@@ -66,6 +66,7 @@
   "game.pause": "Pauze",
   "game.rewind": "Terug",
   "game.clear_bottom": "Verwijder de onderste 5 lijnen",
+  "inter.lines.bravo": "Goed gedaan, je zit op {count} lijnen!",
   "clear_bottom.title": "Noodkracht",
   "clear_bottom.body": "1 token gebruiken om de onderste 5 lijnen te verwijderen?",
   "clear_bottom.confirm": "Gebruiken",

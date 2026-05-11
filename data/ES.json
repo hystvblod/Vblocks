@@ -66,6 +66,7 @@
   "game.pause": "Pausa",
   "game.rewind": "Volver atrás",
   "game.clear_bottom": "Eliminar las 5 líneas inferiores",
+  "inter.lines.bravo": "¡Bien hecho, llevas {count} líneas!",
   "clear_bottom.title": "Poder de emergencia",
   "clear_bottom.body": "¿Usar 1 ficha para eliminar las 5 líneas inferiores?",
   "clear_bottom.confirm": "Usar",

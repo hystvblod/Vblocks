@@ -66,6 +66,7 @@
   "game.pause": "Pause",
   "game.rewind": "Zurück",
   "game.clear_bottom": "Die unteren 5 Reihen entfernen",
+  "inter.lines.bravo": "Gut gemacht, du bist bei {count} Linien!",
   "clear_bottom.title": "Notfall-Power",
   "clear_bottom.body": "1 Jeton verwenden, um die unteren 5 Reihen zu entfernen?",
   "clear_bottom.confirm": "Verwenden",
