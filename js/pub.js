@@ -1164,6 +1164,7 @@
   // Expose global
   // =============================
   window.showInterstitial     = showInterstitial;
+  window.isInterstitialDueAtSafePoint = isInterstitialDueByScreenTime;
   window.consumeInterstitialAtSafePoint = consumeInterstitialAtSafePoint;
   window.showRewardBoutique   = showRewardBoutique;
   window.showRewardVcoins     = showRewardVcoins;
