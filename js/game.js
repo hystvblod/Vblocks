@@ -2347,7 +2347,8 @@ if (score > highscoreCloud) {
 
         if (
           typeof window.consumeInterstitialAtSafePoint === 'function' &&
-          typeof window.__ads_waiting_choice === 'undefined'
+          typeof window.isInterstitialDueAtSafePoint === 'function' &&
+          window.isInterstitialDueAtSafePoint() === true
         ) {
           const overlay = showPreInterstitialLinesMessage();
 
