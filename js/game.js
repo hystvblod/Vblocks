@@ -610,12 +610,10 @@ function fillRectThemeSafe(c, px, py, size) {
         animation: preInterPop 220ms ease-out forwards;
       `;
 
-      if (linesCleared > 0) {
-        if (linesCleared > 0) {
-  card.textContent = t('inter.lines.bravo', { count: linesCleared });
-} else {
-  card.textContent = t('inter.pause.ready');
-}
+      const safeLinesCleared = Number(linesCleared) || 0;
+
+      if (safeLinesCleared > 0) {
+        card.textContent = t('inter.lines.bravo', { count: safeLinesCleared });
       } else {
         card.textContent = t('inter.pause.ready');
       }
