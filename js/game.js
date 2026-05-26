@@ -569,6 +569,7 @@ function fillRectThemeSafe(c, px, py, size) {
     let rewindTutorialShownThisRun = false;
     let rewindTutorialBusy = false;
     let pieceLockTransitionRunning = false;
+    let interstitialSafePointRequested = false;
 
     function waitMs(ms) {
       return new Promise(resolve => setTimeout(resolve, ms));
@@ -640,6 +641,10 @@ function fillRectThemeSafe(c, px, py, size) {
       const overlay = document.getElementById('pre-interstitial-lines-message');
       if (overlay) overlay.remove();
     }
+
+    window.addEventListener('vblocks:interstitial-safe-point-requested', function () {
+      interstitialSafePointRequested = true;
+    });
 
     // revive ramp
     let reviveRampActive = false;
@@ -2351,7 +2356,13 @@ if (score > highscoreCloud) {
 
         safeRedraw();
 
-        if (typeof window.consumeInterstitialAtSafePoint === 'function') {
+        if (
+          (interstitialSafePointRequested || window.__vblocksInterstitialSafePointRequested === true) &&
+          typeof window.consumeInterstitialAtSafePoint === 'function'
+        ) {
+          interstitialSafePointRequested = false;
+          window.__vblocksInterstitialSafePointRequested = false;
+
           try {
             const shown = await window.consumeInterstitialAtSafePoint(async function () {
               const overlay = showPreInterstitialLinesMessage();
