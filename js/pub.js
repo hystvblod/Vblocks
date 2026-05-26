@@ -954,6 +954,12 @@
     if (hasBlockingUiForAutoInterstitial()) return false;
     if (getInterstitialScreenVisibleMs() < INTER_ECRAN_VISIBLE_MS) return false;
     if (!canShowInterstitialNow()) return false;
+
+    // Important : on ne dit "pub due" que si une vraie inter peut partir.
+    // Sinon game.js affiche le message, puis aucune pub ne sort.
+    if (!isNative()) return false;
+    if (!AdMob || !AdMob.prepareInterstitial || !AdMob.showInterstitial) return false;
+
     return true;
   }
 
@@ -1073,17 +1079,9 @@
 
     ensureInterstitialCycleStarted();
 
-    var now = Date.now();
-    var needAdByActions = interActionsCount >= INTERSTITIEL_APRES_X_ACTIONS;
-    var needAdByTime = INTERSTITIEL_APRES_MS > 0 && (now - interCycleStartedTs) >= INTERSTITIEL_APRES_MS;
-
-    if (needAdByActions || needAdByTime) {
-      var shown = await showInterstitial();
-      if (shown) {
-        return;
-      }
-    }
-
+    // On ne lance plus d'interstitielle ici.
+    // Les inters doivent passer par le safe point dans game.js :
+    // message tampon → pub → reprise du jeu.
     interActionsCount++;
     localStorage.setItem('inter_actions_count', String(interActionsCount));
   }
