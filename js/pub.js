@@ -63,6 +63,9 @@
   var interScreenVisibleMs = parseInt(localStorage.getItem('inter_screen_visible_ms') || '0', 10);
   var interScreenLastResumeTs = parseInt(localStorage.getItem('inter_screen_last_resume_ts') || '0', 10);
   var interScreenTimer = null;
+  var interstitialSafePointPending = false;
+
+  window.__vblocksInterstitialSafePointRequested = false;
 
   if (!Number.isFinite(interActionsCount)) interActionsCount = 0;
   if (!Number.isFinite(lastInterTs)) lastInterTs = 0;
@@ -964,18 +967,36 @@
   }
 
   async function maybeShowInterstitialByScreenTime() {
-    // En jeu, on ne coupe plus directement.
-    // La pub attend le safe point dans game.js.
-    return false;
+    if (interstitialSafePointPending) return false;
+    if (!isInterstitialDueByScreenTime()) return false;
+
+    interstitialSafePointPending = true;
+    window.__vblocksInterstitialSafePointRequested = true;
+
+    try {
+      window.dispatchEvent(new CustomEvent('vblocks:interstitial-safe-point-requested'));
+    } catch (_) {}
+
+    return true;
   }
 
   async function consumeInterstitialAtSafePoint(beforeShow) {
-    if (!isInterstitialDueByScreenTime()) return false;
+    if (!interstitialSafePointPending && window.__vblocksInterstitialSafePointRequested !== true) {
+      return false;
+    }
+
+    interstitialSafePointPending = false;
+    window.__vblocksInterstitialSafePointRequested = false;
+
+    if (!isInterstitialDueByScreenTime()) {
+      return false;
+    }
 
     var shown = await showInterstitial(beforeShow);
 
+    resetInterstitialScreenClock();
+
     if (shown) {
-      resetInterstitialScreenClock();
       return true;
     }
 
@@ -1192,7 +1213,9 @@
   // Expose global
   // =============================
   window.showInterstitial     = showInterstitial;
-  window.isInterstitialDueAtSafePoint = isInterstitialDueByScreenTime;
+  window.isInterstitialDueAtSafePoint = function () {
+    return interstitialSafePointPending || window.__vblocksInterstitialSafePointRequested === true;
+  };
   window.consumeInterstitialAtSafePoint = consumeInterstitialAtSafePoint;
   window.showRewardBoutique   = showRewardBoutique;
   window.showRewardVcoins     = showRewardVcoins;
