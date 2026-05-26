@@ -2351,26 +2351,23 @@ if (score > highscoreCloud) {
 
         safeRedraw();
 
-        if (
-          typeof window.consumeInterstitialAtSafePoint === 'function' &&
-          typeof window.isInterstitialDueAtSafePoint === 'function' &&
-          window.isInterstitialDueAtSafePoint() === true
-        ) {
-          const overlay = showPreInterstitialLinesMessage();
-
-          await waitMs(2500);
-
-          hidePreInterstitialLinesMessage();
-
+        if (typeof window.consumeInterstitialAtSafePoint === 'function') {
           try {
-            const shown = await window.consumeInterstitialAtSafePoint();
+            const shown = await window.consumeInterstitialAtSafePoint(async function () {
+              const overlay = showPreInterstitialLinesMessage();
+
+              try {
+                await waitMs(2500);
+              } finally {
+                hidePreInterstitialLinesMessage();
+                if (overlay && overlay.isConnected) overlay.remove();
+              }
+            });
 
             if (shown) {
               lastTime = performance.now();
             }
           } catch (_) {}
-
-          if (overlay && overlay.isConnected) overlay.remove();
         }
 
         setTimeout(() => { maybeShowRewindTutorialPopup(); }, 120);
