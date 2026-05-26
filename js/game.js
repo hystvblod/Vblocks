@@ -611,7 +611,11 @@ function fillRectThemeSafe(c, px, py, size) {
       `;
 
       if (linesCleared > 0) {
-        card.textContent = t('inter.lines.bravo', { count: linesCleared });
+        if (linesCleared > 0) {
+  card.textContent = t('inter.lines.bravo', { count: linesCleared });
+} else {
+  card.textContent = t('inter.pause.ready');
+}
       } else {
         card.textContent = t('inter.pause.ready');
       }
