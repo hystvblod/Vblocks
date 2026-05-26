@@ -969,10 +969,10 @@
     return false;
   }
 
-  async function consumeInterstitialAtSafePoint() {
+  async function consumeInterstitialAtSafePoint(beforeShow) {
     if (!isInterstitialDueByScreenTime()) return false;
 
-    var shown = await showInterstitial();
+    var shown = await showInterstitial(beforeShow);
 
     if (shown) {
       resetInterstitialScreenClock();
@@ -1003,25 +1003,30 @@
     resetInterstitialScreenClock();
   }
 
-  async function showInterstitial() {
+  async function showInterstitial(beforeShow) {
     try {
       var path = (location.pathname || '').toLowerCase();
       if (path.endsWith('/duel.html')) return false;
     } catch (_) {}
 
     var watchdog = null;
+
     try {
       if (await hasNoAds()) { return false; }
       if (!isNative()) { return false; }
+
       if (!AdMob || !AdMob.prepareInterstitial || !AdMob.showInterstitial) {
         return false;
       }
+
       if (!canShowInterstitialNow()) { return false; }
       if (__showLock) { return false; }
 
       var adConsent = await ensureCanRequestAds();
       var adId = AD_UNIT_ID_INTERSTITIEL;
 
+      // On prépare d'abord la vraie interstitielle.
+      // Si cette étape échoue, aucun message tampon ne s'affiche.
       await AdMob.prepareInterstitial({
         adId: adId,
         requestOptions: buildAdMobRequestOptions(adConsent.limited)
@@ -1029,6 +1034,16 @@
 
       __showLock = true;
       currentAdKind = "interstitial";
+
+      // Le message tampon est affiché seulement après préparation réussie.
+      if (typeof beforeShow === 'function') {
+        try {
+          await beforeShow();
+        } catch (_) {
+          return false;
+        }
+      }
+
       preShowAdCleanup();
 
       watchdog = setTimeout(function(){
@@ -1044,24 +1059,39 @@
 
       if (res !== false) {
         markInterstitialShownNow();
+
         try {
           window.VRAnalytics?.logEvent?.('interstitial_show', {
             page: window.VRAnalytics?.getPageName?.() || 'unknown'
           });
         } catch (_) {}
+
         setTimeout(function(){
-          AdMob.prepareInterstitial({ adId: adId, requestOptions: buildAdMobRequestOptions(true) }).catch(function(){});
+          AdMob.prepareInterstitial({
+            adId: adId,
+            requestOptions: buildAdMobRequestOptions(true)
+          }).catch(function(){});
         }, 1200);
+
         return true;
       }
+
       return false;
     } catch (_e) {
       try {
-        AdMob.prepareInterstitial({ adId: AD_UNIT_ID_INTERSTITIEL, requestOptions: buildAdMobRequestOptions(true) }).catch(function(){});
+        AdMob.prepareInterstitial({
+          adId: AD_UNIT_ID_INTERSTITIEL,
+          requestOptions: buildAdMobRequestOptions(true)
+        }).catch(function(){});
       } catch(_) {}
+
       return false;
     } finally {
-      if (watchdog) { clearTimeout(watchdog); watchdog = null; }
+      if (watchdog) {
+        clearTimeout(watchdog);
+        watchdog = null;
+      }
+
       __showLock = false;
       currentAdKind = null;
       postAdCleanup();
