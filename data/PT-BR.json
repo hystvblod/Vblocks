@@ -299,7 +299,6 @@
   "crosspromo.apps.vchronicles.popup2.body": "Instale VChronicles, abra uma vez e depois volte ao VBlocks para receber 1000 VCoins.",
   "crosspromo.apps.vchronicles.popup3.title": "Você ainda pode ganhar mais",
   "crosspromo.apps.vchronicles.popup3.body": "Teste VChronicles e receba 1000 VCoins no VBlocks.",
-
   "crosspromo.apps.vmonster.name": "VMonster",
   "crosspromo.apps.vmonster.store_desc": "Funda monstros, desbloqueie novos mundos e avance em um jogo divertido e estratégico.",
   "crosspromo.apps.vmonster.popup1.title": "Conheça VMonster",
@@ -331,5 +330,6 @@
   "rewind.tip.line2": "Você pode tocar neste botão para remover as 5 linhas de baixo.",
   "end.reward.fixed": "+{amount}",
   "end.reward.double": "Ganho x2: +{amount}",
-  "common.reward_video": "Vídeo recompensado"
+  "common.reward_video": "Vídeo recompensado",
+  "inter.pause.ready": "Uma pausa rápida antes de continuar!"
 }

@@ -299,7 +299,6 @@
   "crosspromo.apps.vchronicles.popup2.body": "Instal VChronicles, buka sekali, lalu kembali ke VBlocks untuk mendapatkan 1000 VCoins.",
   "crosspromo.apps.vchronicles.popup3.title": "Kamu masih bisa mendapatkan lebih banyak",
   "crosspromo.apps.vchronicles.popup3.body": "Coba VChronicles dan dapatkan 1000 VCoins di VBlocks.",
-
   "crosspromo.apps.vmonster.name": "VMonster",
   "crosspromo.apps.vmonster.store_desc": "Gabungkan monster, buka dunia baru, dan maju dalam game strategi yang seru.",
   "crosspromo.apps.vmonster.popup1.title": "Temukan VMonster",
@@ -331,5 +330,6 @@
   "rewind.tip.line2": "Kamu bisa menekan tombol ini untuk menghapus 5 baris terbawah.",
   "end.reward.fixed": "+{amount}",
   "end.reward.double": "Hadiah x2: +{amount}",
-  "common.reward_video": "Video berhadiah"
+  "common.reward_video": "Video berhadiah",
+  "inter.pause.ready": "Istirahat sebentar sebelum lanjut!"
 }
