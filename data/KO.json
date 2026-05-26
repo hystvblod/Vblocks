@@ -299,7 +299,6 @@
   "crosspromo.apps.vchronicles.popup2.body": "VChronicles를 설치하고 한 번 실행한 뒤 VBlocks로 돌아와 1000 VCoins를 받으세요.",
   "crosspromo.apps.vchronicles.popup3.title": "아직 더 얻을 수 있어요",
   "crosspromo.apps.vchronicles.popup3.body": "VChronicles를 플레이하고 VBlocks에서 1000 VCoins를 받으세요.",
-
   "crosspromo.apps.vmonster.name": "VMonster",
   "crosspromo.apps.vmonster.store_desc": "몬스터를 합성하고 새로운 월드를 잠금 해제하며 재미있는 전략 게임을 진행하세요.",
   "crosspromo.apps.vmonster.popup1.title": "VMonster 발견하기",
@@ -331,5 +330,6 @@
   "rewind.tip.line2": "이 버튼을 누르면 아래 5줄을 제거할 수 있습니다.",
   "end.reward.fixed": "+{amount}",
   "end.reward.double": "보상 2배: +{amount}",
-  "common.reward_video": "보상형 동영상"
+  "common.reward_video": "보상형 동영상",
+  "inter.pause.ready": "계속하기 전에 잠깐 쉬어가요!"
 }

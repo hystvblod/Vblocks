@@ -610,7 +610,11 @@ function fillRectThemeSafe(c, px, py, size) {
         animation: preInterPop 220ms ease-out forwards;
       `;
 
-      card.textContent = t('inter.lines.bravo', { count: linesCleared });
+      if (linesCleared > 0) {
+        card.textContent = t('inter.lines.bravo', { count: linesCleared });
+      } else {
+        card.textContent = t('inter.pause.ready');
+      }
 
       overlay.appendChild(card);
       document.body.appendChild(overlay);
