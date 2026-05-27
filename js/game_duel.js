@@ -163,40 +163,9 @@ function fillRectThemeSafe(c, px, py, size) {
     const mainContent = document.querySelector('.main-content');
     let resizeRAF = null;
 
-    function clampNumber(value, min, max) {
-      return Math.max(min, Math.min(max, value));
-    }
-
     function fitCanvasToCSS() {
-      const vv = window.visualViewport;
-      const viewportW = Math.round(vv?.width || window.innerWidth || 430);
-      const viewportH = Math.round(vv?.height || window.innerHeight || 800);
-
-      const isTabletLike = viewportW >= 700 && viewportH >= 560;
-
-      const maxBoardW = isTabletLike ? 570 : 340;
-      const minBoardW = viewportW <= 360 ? 282 : 304;
-
-      const horizontalLimit = viewportW - (isTabletLike ? 80 : 18);
-      const verticalReserve = isTabletLike
-        ? (viewportH >= 900 ? 295 : 245)
-        : 210;
-
-      const verticalLimit = (viewportH - verticalReserve) * (COLS / ROWS);
-
-      let cssW = Math.round(
-        clampNumber(
-          Math.min(horizontalLimit, verticalLimit, maxBoardW),
-          minBoardW,
-          maxBoardW
-        )
-      );
-
-      if (viewportW <= 360) {
-        cssW = Math.min(cssW, viewportW - 18);
-      }
-
-      canvas.style.width = cssW + 'px';
+      const cssW = Math.round(canvas.clientWidth || canvas.getBoundingClientRect().width);
+      if (!cssW) return;
 
       BLOCK_SIZE = cssW / COLS;
 
@@ -204,16 +173,10 @@ function fillRectThemeSafe(c, px, py, size) {
       const usedH = BLOCK_SIZE * ROWS;
 
       canvas.style.height = usedH + 'px';
-
       canvas.width = Math.round(usedW * DPR);
       canvas.height = Math.round(usedH * DPR);
 
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-
-      if (mainContent) {
-        const uiScale = clampNumber(cssW / 330, 0.88, 1.5);
-        mainContent.style.setProperty('--vblocks-ui-scale', String(uiScale));
-      }
     }
 
     function fitWholeGameUI() {
@@ -251,19 +214,10 @@ function fillRectThemeSafe(c, px, py, size) {
     }
     function sizeMiniCanvas(cnv, c2d, target = 48) {
       if (!cnv || !c2d) return;
-
-      let uiScale = 1;
-      try {
-        uiScale = parseFloat(mainContent?.style.getPropertyValue('--vblocks-ui-scale')) || 1;
-      } catch (_) {}
-
-      const finalTarget = Math.round(clampNumber(target * uiScale, 44, 82));
-
-      cnv.style.width = finalTarget + 'px';
-      cnv.style.height = finalTarget + 'px';
-      cnv.width = Math.round(finalTarget * DPR);
-      cnv.height = Math.round(finalTarget * DPR);
-
+      cnv.style.width = target + 'px';
+      cnv.style.height = target + 'px';
+      cnv.width = Math.round(target * DPR);
+      cnv.height = Math.round(target * DPR);
       c2d.setTransform(DPR, 0, 0, DPR, 0, 0);
       c2d.imageSmoothingEnabled = false;
     }
