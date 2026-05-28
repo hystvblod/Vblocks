@@ -1120,7 +1120,7 @@ overlay.querySelector('#resume-yes').onclick = () => {
               "
             >
               <span style="display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;width:100%;">
-                <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;">
+                <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;transform:translateY(2px);">
                 <span>${rewardLabel}</span>
               </span>
             </button>
@@ -1131,7 +1131,12 @@ overlay.querySelector('#resume-yes').onclick = () => {
                 class="btn"
                 style="padding:.6em 1.1em;border-radius:.8em;background:#2a7;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}"
               >
-                ${tt('end.revive.token','Revivre (1 jeton)')}
+                <span style="display:flex;align-items:center;justify-content:center;gap:7px;font-weight:800;">
+  <span>${tt('end.revive.label','Revivre')}</span>
+  <span>(1</span>
+  <img src="assets/images/jeton.webp" alt="" style="width:22px;height:22px;object-fit:contain;">
+  <span>)</span>
+</span>
               </button>
 
               <button
@@ -1139,7 +1144,12 @@ overlay.querySelector('#resume-yes').onclick = () => {
                 class="btn"
                 style="padding:.6em 1.1em;border:none;border-radius:.8em;background:#a73;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}"
               >
-                ${tt('end.revive.ad','Revivre (pub)')}
+                <span style="display:flex;align-items:center;justify-content:center;gap:7px;font-weight:800;">
+  <span>${tt('end.revive.label','Revivre')}</span>
+  <span>(</span>
+  <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';" style="width:22px;height:22px;object-fit:contain;">
+  <span>)</span>
+</span>
               </button>
             </div>
 
