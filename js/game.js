@@ -267,10 +267,17 @@ function fillRectThemeSafe(c, px, py, size) {
 
     function sizeMiniCanvas(cnv, c2d, target = 48) {
       if (!cnv || !c2d) return;
-      cnv.style.width  = target + 'px';
+
+      cnv.style.width = target + 'px';
       cnv.style.height = target + 'px';
-      cnv.width  = Math.round(target * DPR);
-      cnv.height = Math.round(target * DPR);
+
+      const rect = cnv.getBoundingClientRect();
+      const cssW = Math.max(1, Math.round(rect.width || target));
+      const cssH = Math.max(1, Math.round(rect.height || target));
+
+      cnv.width = Math.round(cssW * DPR);
+      cnv.height = Math.round(cssH * DPR);
+
       c2d.setTransform(DPR, 0, 0, DPR, 0, 0);
       c2d.imageSmoothingEnabled = false;
     }
