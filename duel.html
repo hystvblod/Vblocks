@@ -152,27 +152,14 @@
 
     /* === Panneaux HOLD/NEXT + pause identiques === */
     .top-canvas-row {
-  width: min(100%, 410px);
+  width: 100%;
   max-width: 410px;
-  display: grid;
-  grid-template-columns: minmax(52px, 1fr) auto minmax(52px, 1fr);
-  align-items: end;
-  column-gap: clamp(6px, 2vw, 12px);
-  margin-bottom: clamp(8px, 1.4vh, 13px);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: clamp(10px, 1.8vh, 16px);
   margin-top: -30px;
   flex-shrink: 0;
-}
-
-.top-canvas-row .side-canvas-block:first-child {
-  justify-self: start;
-}
-
-.top-canvas-row .side-canvas-block:last-child {
-  justify-self: end;
-}
-
-.top-canvas-row .center-top-controls {
-  justify-self: center;
 }
     .side-canvas-block { display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .side-canvas-block label {
@@ -339,10 +326,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(3px, 1.7vw, 8px);
+  gap: clamp(4px, 2.4vw, 10px);
   min-width: 0;
-  max-width: 100%;
   padding-bottom: 6px;
+  flex-shrink: 1;
 }
 
 .top-mini-action {
@@ -359,8 +346,8 @@
 }
 
 .top-mini-action img {
-  width: clamp(19px, 6vw, 24px);
-  height: clamp(19px, 6vw, 24px);
+  width: clamp(21px, 7vw, 25px);
+  height: clamp(21px, 7vw, 25px);
   display: block;
   object-fit: contain;
 }
