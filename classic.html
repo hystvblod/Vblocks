@@ -154,24 +154,37 @@
       .jetons { font-size: .88em; }
     }
     .top-canvas-row {
-  width: 100%;
+  width: min(100%, 410px);
   max-width: 410px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: clamp(10px, 1.8vh, 16px);
+  display: grid;
+  grid-template-columns: minmax(52px, 1fr) auto minmax(52px, 1fr);
+  align-items: end;
+  column-gap: clamp(6px, 2vw, 12px);
+  margin-bottom: clamp(8px, 1.4vh, 13px);
   margin-top: -30px;
   flex-shrink: 0;
+}
+
+.top-canvas-row .side-canvas-block:first-child {
+  justify-self: start;
+}
+
+.top-canvas-row .side-canvas-block:last-child {
+  justify-self: end;
+}
+
+.top-canvas-row .center-top-controls {
+  justify-self: center;
 }
 
     .center-top-controls {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(4px, 2.4vw, 10px);
+  gap: clamp(3px, 1.7vw, 8px);
   min-width: 0;
+  max-width: 100%;
   padding-bottom: 6px;
-  flex-shrink: 1;
 }
 
     .top-mini-action {
@@ -188,8 +201,8 @@
 }
 
     .top-mini-action img {
-  width: clamp(21px, 7vw, 25px);
-  height: clamp(21px, 7vw, 25px);
+  width: clamp(19px, 6vw, 24px);
+  height: clamp(19px, 6vw, 24px);
   display: block;
   object-fit: contain;
 }
