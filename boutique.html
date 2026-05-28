@@ -102,7 +102,8 @@
 
     .achats-list .cartouche-reward {
       justify-content:center;
-      gap:2px;
+      gap:0;
+      min-height:74px;
     }
 
     .achats-list .cartouche-reward .theme-ico {
@@ -143,8 +144,24 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:8px;
-      margin-bottom:2px;
+      gap:7px;
+      margin-bottom:0;
+    }
+
+    .achats-list .cartouche-reward .reward-ad-icon img,
+    .achats-list .cartouche-reward .reward-prize-icon img {
+      width:26px;
+      height:26px;
+      object-fit:contain;
+      display:block;
+    }
+
+    .achats-list .cartouche-reward .reward-ad-icon img {
+      transform:translateY(1px);
+    }
+
+    .achats-list .cartouche-reward .reward-prize-icon img {
+      transform:translateY(2px);
     }
 
     .achats-list .cartouche-reward .reward-amount {
@@ -342,16 +359,23 @@ function renderCartouche(c, extraClass = ''){
           ? 'data-action="reward-vcoins"'
           : '';
 
+    const rewardPrizeIcon =
+      c.key === "boutique.cartouche.pub1jeton"
+        ? '<img src="assets/images/jeton.webp" alt="">'
+        : '<img src="assets/images/vcoin.webp" alt="">';
+
     return `
       <div class="special-cartouche ${c.color} ${classes}"
            ${c.productId ? `data-product-id="${c.productId}"` : ""}
            data-reward-key="${c.key}"
            ${rewardAction}>
         <div class="reward-top">
-          <span class="theme-ico">${c.icon}</span>
-          <span class="reward-amount">+ ${c.amount}</span>
+          <span class="reward-ad-icon">
+            <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';">
+          </span>
+          <span class="reward-prize-icon">${rewardPrizeIcon}</span>
+          <span class="reward-amount">+${c.amount}</span>
         </div>
-        <span class="theme-label" data-i18n="${c.key}">${t(c.key)}</span>
       </div>
     `;
   }
