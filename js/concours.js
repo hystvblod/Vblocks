@@ -865,8 +865,9 @@ function fillRectThemeSafe(c, px, py, size) {
                 box-shadow:0 0 12px #39f7;
               "
             >
-              <span style="display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;width:100%;">
-                <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;transform:translateY(2px);">
+              <span style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;width:100%;">
+                <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';" style="width:21px;height:21px;object-fit:contain;transform:translateY(1px);">
+                <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;transform:translateY(3px);">
                 <span>+${rewardAmount}</span>
               </span>
             </button>
@@ -877,11 +878,10 @@ function fillRectThemeSafe(c, px, py, size) {
                 class="btn"
                 style="padding:.6em 1.1em;border-radius:.8em;background:#2a7;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}"
               >
-                <span style="display:flex;align-items:center;justify-content:center;gap:7px;font-weight:800;">
+                <span style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
   <span>${tt('end.revive.label','Revivre')}</span>
-  <span>(1</span>
-  <img src="assets/images/jeton.webp" alt="" style="width:22px;height:22px;object-fit:contain;">
-  <span>)</span>
+  <span>1</span>
+  <img src="assets/images/jeton.webp" alt="" style="width:22px;height:22px;object-fit:contain;transform:translateY(4px);">
 </span>
               </button>
 
@@ -890,11 +890,9 @@ function fillRectThemeSafe(c, px, py, size) {
                 class="btn"
                 style="padding:.6em 1.1em;border:none;border-radius:.8em;background:#a73;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}"
               >
-                <span style="display:flex;align-items:center;justify-content:center;gap:7px;font-weight:800;">
+                <span style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
   <span>${tt('end.revive.label','Revivre')}</span>
-  <span>(</span>
-  <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';" style="width:22px;height:22px;object-fit:contain;">
-  <span>)</span>
+  <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';" style="width:20px;height:20px;object-fit:contain;transform:translateY(1px);">
 </span>
               </button>
             </div>
@@ -1064,11 +1062,17 @@ function fillRectThemeSafe(c, px, py, size) {
                 <span>1</span>
               </span>
               <span style="font-weight:900;font-size:1.1em;">=</span>
-              <span style="font-weight:700;">${tt('end.revive.ad','Revivre (pub)')}</span>
+              <span style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
+  <span>${tt('end.revive.label','Revivre')}</span>
+  <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';" style="width:20px;height:20px;object-fit:contain;transform:translateY(1px);">
+</span>
             </div>
             <div style="opacity:.92;line-height:1.42;margin-bottom:14px;">${tt('end.no_tokens.body','Regarde une pub pour obtenir 1 reprise ou va à la boutique.')}</div>
             <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-              <button id="no-jeton-watch-ad" class="btn-primary" style="padding:.7em 1em;border:none;border-radius:.85em;background:#a73;color:#fff;cursor:pointer;">${tt('end.revive.ad','Revivre (pub)')}</button>
+              <button id="no-jeton-watch-ad" class="btn-primary" style="padding:.7em 1em;border:none;border-radius:.85em;background:#a73;color:#fff;cursor:pointer;"><span style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
+  <span>${tt('end.revive.label','Revivre')}</span>
+  <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';" style="width:20px;height:20px;object-fit:contain;transform:translateY(1px);">
+</span></button>
               <button id="no-jeton-shop" class="btn" style="padding:.7em 1em;border:none;border-radius:.85em;background:#39f;color:#fff;cursor:pointer;">${tt('menu.boutique','Boutique')}</button>
             </div>
             <button id="no-jeton-close" style="margin-top:12px;background:transparent;border:none;color:#cfd8ff;cursor:pointer;opacity:.85;">${tt('common.later','Plus tard')}</button>

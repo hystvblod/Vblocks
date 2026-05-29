@@ -1119,8 +1119,9 @@ overlay.querySelector('#resume-yes').onclick = () => {
                 box-shadow:0 0 12px #39f7;
               "
             >
-              <span style="display:flex;align-items:center;justify-content:center;gap:10px;font-weight:800;width:100%;">
-                <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;transform:translateY(2px);">
+              <span style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;width:100%;">
+                <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';" style="width:21px;height:21px;object-fit:contain;transform:translateY(1px);">
+                <img src="assets/images/vcoin.webp" alt="" style="width:24px;height:24px;object-fit:contain;transform:translateY(3px);">
                 <span>${rewardLabel}</span>
               </span>
             </button>
@@ -1131,11 +1132,10 @@ overlay.querySelector('#resume-yes').onclick = () => {
                 class="btn"
                 style="padding:.6em 1.1em;border-radius:.8em;background:#2a7;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}"
               >
-                <span style="display:flex;align-items:center;justify-content:center;gap:7px;font-weight:800;">
+                <span style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
   <span>${tt('end.revive.label','Revivre')}</span>
-  <span>(1</span>
-  <img src="assets/images/jeton.webp" alt="" style="width:22px;height:22px;object-fit:contain;">
-  <span>)</span>
+  <span>1</span>
+  <img src="assets/images/jeton.webp" alt="" style="width:22px;height:22px;object-fit:contain;transform:translateY(4px);">
 </span>
               </button>
 
@@ -1144,11 +1144,9 @@ overlay.querySelector('#resume-yes').onclick = () => {
                 class="btn"
                 style="padding:.6em 1.1em;border:none;border-radius:.8em;background:#a73;color:#fff;cursor:pointer;${canRevive ? '' : 'display:none;'}"
               >
-                <span style="display:flex;align-items:center;justify-content:center;gap:7px;font-weight:800;">
+                <span style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
   <span>${tt('end.revive.label','Revivre')}</span>
-  <span>(</span>
-  <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';" style="width:22px;height:22px;object-fit:contain;">
-  <span>)</span>
+  <img src="assets/images/reward.webp" alt="" onerror="this.onerror=null;this.src='assets/images/ads.png';" style="width:20px;height:20px;object-fit:contain;transform:translateY(1px);">
 </span>
               </button>
             </div>

@@ -82,7 +82,7 @@ html, body {
   width: 230px;
   max-width: 74vw;
   margin-bottom: 13vh;
-  margin-top: 1vh;
+  margin-top: 2.6vh;
   filter: drop-shadow(0 8px 36px #28205c66);
   animation: pop-in .9s cubic-bezier(.21,1.1,.45,1.12);
   user-select: none;
@@ -99,7 +99,7 @@ html, body {
   gap: 2.6rem;
   width: 94vw;
   max-width: 430px;
-  margin-top: 7vh;
+  margin-top: 8.6vh;
 }
 .menu-btn {
   width: 100%;
@@ -209,8 +209,8 @@ html, body {
   to   { opacity: 1; transform: translateX(-50%) translateY(20px) scale(1);}
 }
 @media (max-width: 540px) {
-  .vblocks-logo { width: 49vw; margin-bottom: 7vh;}
-  .menu-list { gap: 1.6rem; max-width: 99vw; margin-top: 3vh;}
+  .vblocks-logo { width: 49vw; margin-top: 1.8vh; margin-bottom: 7vh; }
+  .menu-list { gap: 1.6rem; max-width: 99vw; margin-top: 4.2vh; }
   .menu-btn { font-size: 1.04rem; min-height: 59px; padding: 0 1.1rem;}
   .info-btn { width: 33px; height: 33px; font-size: 1.07rem;}
   .btn-label { font-size: 1.02em;}
@@ -642,14 +642,14 @@ body[data-universe="new_world_explorer"].vr-body-game #view-game .vr-choice-labe
   .vblocks-logo {
     width: min(320px, 42vw);
     max-width: 320px;
-    margin-top: 0.5vh;
+    margin-top: 1.6vh;
     margin-bottom: 7vh;
   }
 
   .menu-list {
     width: min(620px, 100%);
     max-width: 620px;
-    margin-top: 3vh;
+    margin-top: 4.2vh;
     gap: 2rem;
   }
 
