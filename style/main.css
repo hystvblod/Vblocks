@@ -84,10 +84,10 @@ html, body {
   margin-bottom: 13vh;
   margin-top: 3vh;
   filter: drop-shadow(0 8px 36px #28205c66);
-  animation: pop-in .9s cubic-bezier(.21,1.1,.45,1.12);
+  animation: none;
   user-select: none;
   display: block;
-  transition: width 0.18s;
+  transition: none;
 }
 @keyframes pop-in {
   from { transform: scale(.86) translateY(40px); opacity:0; }
@@ -209,8 +209,8 @@ html, body {
   to   { opacity: 1; transform: translateX(-50%) translateY(20px) scale(1);}
 }
 @media (max-width: 540px) {
-  .vblocks-logo { width: 49vw; margin-top: 3vh; margin-bottom: 7vh; }
-  .menu-list { gap: 1.6rem; max-width: 99vw; margin-top: 4.2vh; }
+  .vblocks-logo { width: 49vw; margin-top: 3vh; margin-bottom: 2.2vh; }
+  .menu-list { gap: 1.6rem; max-width: 99vw; margin-top: 0; }
   .menu-btn { font-size: 1.04rem; min-height: 59px; padding: 0 1.1rem;}
   .info-btn { width: 33px; height: 33px; font-size: 1.07rem;}
   .btn-label { font-size: 1.02em;}
