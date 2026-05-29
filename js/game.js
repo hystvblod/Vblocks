@@ -1135,7 +1135,7 @@ overlay.querySelector('#resume-yes').onclick = () => {
                 <span style="display:flex;align-items:center;justify-content:center;gap:6px;font-weight:800;">
   <span>${tt('end.revive.label','Revivre')}</span>
   <span>1</span>
-  <img src="assets/images/jeton.webp" alt="" style="width:22px;height:22px;object-fit:contain;transform:translateY(4px);">
+  <img src="assets/images/jeton.webp" alt="" style="width:22px;height:22px;object-fit:contain;transform:translateY(1px);">
 </span>
               </button>
 
