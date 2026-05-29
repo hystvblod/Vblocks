@@ -74,7 +74,7 @@ html, body {
   justify-content: flex-start;
   position: relative;
   gap: 0;
-  padding-top: calc(var(--safe-top) + 18px);
+  padding-top: calc(var(--safe-top) + 42px);
   padding-bottom: calc(var(--safe-bottom) + 16px);
   box-sizing: border-box;
 }
@@ -633,7 +633,7 @@ body[data-universe="new_world_explorer"].vr-body-game #view-game .vr-choice-labe
   }
 
   .container {
-    padding-top: 2.5vh;
+    padding-top: 5vh;
     padding-left: 18px;
     padding-right: 18px;
     box-sizing: border-box;
