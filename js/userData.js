@@ -687,8 +687,23 @@ async function setHighScoreSecure(score) {
   if (error) throw error;
 }
 async function getHighScoreSecure() {
-  const p = await getProfileSecure();
-  return p?.highscore || 0;
+  await bootstrapAuthAndProfile();
+
+  const uid = await getAuthUserId();
+  if (!uid) return 0;
+
+  const { data, error } = await sb
+    .from('vblocks_users')
+    .select('highscore')
+    .or(`id.eq.${uid},auth_id.eq.${uid}`)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('[VBlocks] getHighScoreSecure failed:', error);
+    return 0;
+  }
+
+  return Number(data?.highscore || 0);
 }
 async function setLastScoreSecure(score) {
   await bootstrapAuthAndProfile();
