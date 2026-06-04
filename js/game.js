@@ -3220,32 +3220,37 @@ if (score > highscoreCloud) {
     };
   }
 
-  // === SUPABASE helpers déjà présents ailleurs dans ton app ===
+  // === SUPABASE helpers VBlocks ===
   async function getHighScoreSupabase() {
     try {
-      if (typeof window.secureGetMe === 'function') {
-        const me = await window.secureGetMe();
-        return Number(me?.high_score ?? 0);
+      if (window.userData && typeof window.userData.getHighScore === 'function') {
+        return Number(await window.userData.getHighScore()) || 0;
       }
-    } catch (_) {}
+    } catch (e) {
+      console.warn('[VBlocks] getHighScoreSupabase failed:', e);
+    }
     return 0;
   }
 
   async function setHighScoreSupabase(value) {
     try {
-      if (typeof window.secureSetHighScore === 'function') {
-        return await window.secureSetHighScore(value);
+      if (window.userData && typeof window.userData.setHighScore === 'function') {
+        return await window.userData.setHighScore(value);
       }
-    } catch (_) {}
+    } catch (e) {
+      console.warn('[VBlocks] setHighScoreSupabase failed:', e);
+    }
     return null;
   }
 
   async function setLastScoreSupabase(value) {
     try {
-      if (typeof window.secureSetLastScore === 'function') {
-        return await window.secureSetLastScore(value);
+      if (window.userData && typeof window.userData.setLastScore === 'function') {
+        return await window.userData.setLastScore(value);
       }
-    } catch (_) {}
+    } catch (e) {
+      console.warn('[VBlocks] setLastScoreSupabase failed:', e);
+    }
     return null;
   }
 
