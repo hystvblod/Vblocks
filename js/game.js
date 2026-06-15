@@ -2489,8 +2489,8 @@ if (score > highscoreCloud) {
       safeRedraw();
     }
 
-    function getGhostPiece() {
-      if (!ghostPieceEnabled) return null;
+    function getGhostPiece(ignoreVisibility = false) {
+      if (!ignoreVisibility && !ghostPieceEnabled) return null;
       if (!currentPiece || !currentPiece.shape) return null;
       let ghost = JSON.parse(JSON.stringify(currentPiece));
       while (!collision(ghost)) { ghost.y++; }
@@ -2501,7 +2501,7 @@ if (score > highscoreCloud) {
     // === HARD DROP
     function hardDrop() {
       if (!currentPiece) return;
-      const ghost = getGhostPiece();
+      const ghost = getGhostPiece(true);
       if (!ghost) return;
       currentPiece.y = ghost.y;
       stopSoftDrop();
@@ -2906,6 +2906,7 @@ if (score > highscoreCloud) {
     canvas.addEventListener('touchstart', function (e) {
       if (gameOver || window.__ads_active) return;
       if (e.touches.length !== 1) return;
+      if (e.cancelable) e.preventDefault();
 
       const t = e.touches[0];
       startX = t.clientX;
@@ -2929,10 +2930,11 @@ if (score > highscoreCloud) {
           stopHorizontalRepeat();
         }
       }, HOLD_ACTIVATION_MS);
-    }, { passive: true });
+    }, { passive: false });
 
     canvas.addEventListener('touchmove', function (e) {
       if (!dragging || window.__ads_active) return;
+      if (e.cancelable) e.preventDefault();
 
       const t = e.touches[0];
       const now = Date.now();
@@ -2959,18 +2961,21 @@ if (score > highscoreCloud) {
         return;
       }
 
-      if (gestureMode === 'vertical' || isSoftDropping || elapsed >= VERTICAL_LOCK_EARLY_MS) {
+      const verticalIntent = movedY > Math.max(Math.abs(movedX), DEAD_ZONE) && movedY > 12;
+
+      if (gestureMode === 'vertical' || isSoftDropping || (elapsed >= VERTICAL_LOCK_EARLY_MS && verticalIntent)) {
         gestureMode = 'vertical';
         rotationLocked = true;
         stopHorizontalRepeat();
 
-        if (!quickDropLock && !isSoftDropping && !rotationLocked && isQuickSwipeUp(elapsed, movedY)) {
-          rotatePiece();
-          touchStartTime = now;
+        if (movedY > 18) {
+          if (!isSoftDropping) startSoftDrop();
+          dropPiece();
           startY = t.clientY;
+          movedY = 0;
+          clearTimeout(holdToDropTimeout);
         }
 
-        clearTimeout(holdToDropTimeout);
         return;
       }
 
@@ -3016,9 +3021,10 @@ if (score > highscoreCloud) {
       if (Math.abs(movedX) > 18 || movedY < -18) {
         clearTimeout(holdToDropTimeout);
       }
-    }, { passive: true });
+    }, { passive: false });
 
-    canvas.addEventListener('touchend', function () {
+    canvas.addEventListener('touchend', function (e) {
+      if (e && e.cancelable) e.preventDefault();
       const wasHard = didHardDrop;
       dragging = false;
       clearTimeout(holdToDropTimeout);
@@ -3063,9 +3069,10 @@ if (score > highscoreCloud) {
       gestureMode = 'none';
       quickDropLock = false;
       rotationLocked = false;
-    }, { passive: true });
+    }, { passive: false });
 
-    canvas.addEventListener('touchcancel', function () {
+    canvas.addEventListener('touchcancel', function (e) {
+      if (e && e.cancelable) e.preventDefault();
       dragging = false;
       clearTimeout(holdToDropTimeout);
       stopHorizontalRepeat();
@@ -3077,7 +3084,7 @@ if (score > highscoreCloud) {
       didHardDrop = false;
       quickDropLock = false;
       rotationLocked = false;
-    }, { passive: true });
+    }, { passive: false });
 
     // ===== INPUTS tactiles (boutons) =====
     function bindHoldToRepeat(el, onStart, onEnd) {
