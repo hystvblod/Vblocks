@@ -1697,8 +1697,8 @@ function fillRectThemeSafe(c, px, py, size) {
       safeRedraw();
     }
 
-    function getGhostPiece() {
-      if (!ghostPieceEnabled) return null;
+    function getGhostPiece(ignoreVisibility = false) {
+      if (!ignoreVisibility && !ghostPieceEnabled) return null;
       if (!currentPiece || !currentPiece.shape) return null;
       let ghost = JSON.parse(JSON.stringify(currentPiece));
       while (!collision(ghost)) { ghost.y++; }
@@ -1709,7 +1709,7 @@ function fillRectThemeSafe(c, px, py, size) {
     // === HARD DROP
     function hardDrop() {
       if (!currentPiece) return;
-      const ghost = getGhostPiece();
+      const ghost = getGhostPiece(true);
       if (!ghost) return;
       currentPiece.y = ghost.y;
       stopSoftDrop();

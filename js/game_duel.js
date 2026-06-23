@@ -1003,8 +1003,15 @@ function showEndPopup(points) {
       safeRedraw();
     }
 
-    function getGhostPiece() {
-      if (!ghostPieceEnabled || !currentPiece || !currentPiece.shape) return null;
+    function getGhostPiece(ignoreVisibility = false) {
+      if (
+        (!ignoreVisibility && !ghostPieceEnabled) ||
+        !currentPiece ||
+        !currentPiece.shape
+      ) {
+        return null;
+      }
+
       const ghost = JSON.parse(JSON.stringify(currentPiece));
       while (!collision(ghost)) { ghost.y++; }
       ghost.y--;
@@ -1013,7 +1020,7 @@ function showEndPopup(points) {
 
     function hardDrop() {
       if (!currentPiece) return;
-      const ghost = getGhostPiece();
+      const ghost = getGhostPiece(true);
       if (!ghost) return;
       currentPiece.y = ghost.y;
       stopSoftDrop();
